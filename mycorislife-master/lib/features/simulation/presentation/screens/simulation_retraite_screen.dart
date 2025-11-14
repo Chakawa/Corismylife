@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_retraite.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class CorisRetraiteScreen extends StatefulWidget {
   const CorisRetraiteScreen({super.key});
@@ -1193,27 +1194,45 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SouscriptionRetraitePage(
-                        simulationData: {
-                          'type': selectedOption,
-                          'duree': int.parse(_dureeController.text),
-                          'periodicite': selectedPeriodicite,
-                          'capital': selectedOption == 'capital'
-                              ? double.parse(
-                                  _valeurController.text.replaceAll(' ', ''))
-                              : result!,
-                          'prime': selectedOption == 'prime'
-                              ? double.parse(
-                                  _valeurController.text.replaceAll(' ', ''))
-                              : result!,
-                        },
+                onPressed: () async {
+                  // Préparer les données de simulation
+                  final simulationData = {
+                    'type': selectedOption,
+                    'duree': int.parse(_dureeController.text),
+                    'periodicite': selectedPeriodicite,
+                    'capital': selectedOption == 'capital'
+                        ? double.parse(
+                            _valeurController.text.replaceAll(' ', ''))
+                        : result!,
+                    'prime': selectedOption == 'prime'
+                        ? double.parse(
+                            _valeurController.text.replaceAll(' ', ''))
+                        : result!,
+                  };
+                  
+                  // Vérifier le rôle et rediriger
+                  final userRole = await AuthService.getUserRole();
+                  if (userRole == 'commercial') {
+                    // Pour les commerciaux, rediriger vers la sélection de client
+                    Navigator.pushNamed(
+                      context,
+                      '/commercial/select_client',
+                      arguments: {
+                        'productType': 'retraite',
+                        'simulationData': simulationData,
+                      },
+                    );
+                  } else {
+                    // Pour les clients, rediriger directement vers la souscription
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SouscriptionRetraitePage(
+                          simulationData: simulationData,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: vertCoris,

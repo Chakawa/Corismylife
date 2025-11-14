@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_etude.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class SimulationEtudeScreen extends StatefulWidget {
   const SimulationEtudeScreen({super.key});
@@ -1833,25 +1834,55 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SouscriptionEtudePage(
-                        ageParent: ageParent,
-                        ageEnfant: int.parse(_ageEnfantController.text),
-                        prime: selectedOption == 'rente'
-                            ? double.parse(
-                                _valeurController.text.replaceAll(' ', ''))
-                            : result!,
-                        rente: selectedOption == 'prime'
-                            ? double.parse(
-                                _valeurController.text.replaceAll(' ', ''))
-                            : result!,
-                        periodicite: selectedPeriodicite,
+                onPressed: () async {
+                  // Préparer les données de simulation
+                  final simulationData = {
+                    'ageParent': ageParent,
+                    'ageEnfant': int.parse(_ageEnfantController.text),
+                    'prime': selectedOption == 'rente'
+                        ? double.parse(
+                            _valeurController.text.replaceAll(' ', ''))
+                        : result!,
+                    'rente': selectedOption == 'prime'
+                        ? double.parse(
+                            _valeurController.text.replaceAll(' ', ''))
+                        : result!,
+                    'periodicite': selectedPeriodicite,
+                  };
+                  
+                  // Vérifier le rôle et rediriger
+                  final userRole = await AuthService.getUserRole();
+                  if (userRole == 'commercial') {
+                    // Pour les commerciaux, rediriger vers la sélection de client
+                    Navigator.pushNamed(
+                      context,
+                      '/commercial/select_client',
+                      arguments: {
+                        'productType': 'etude',
+                        'simulationData': simulationData,
+                      },
+                    );
+                  } else {
+                    // Pour les clients, rediriger directement vers la souscription
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SouscriptionEtudePage(
+                          ageParent: ageParent,
+                          ageEnfant: int.parse(_ageEnfantController.text),
+                          prime: selectedOption == 'rente'
+                              ? double.parse(
+                                  _valeurController.text.replaceAll(' ', ''))
+                              : result!,
+                          rente: selectedOption == 'prime'
+                              ? double.parse(
+                                  _valeurController.text.replaceAll(' ', ''))
+                              : result!,
+                          periodicite: selectedPeriodicite,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: vertCoris,

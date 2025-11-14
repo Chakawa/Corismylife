@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class DescriptionSolidaritePage extends StatelessWidget {
   const DescriptionSolidaritePage({super.key});
@@ -267,10 +268,29 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Navigation directe vers la page de souscription CORIS SOLIDARITÉ
-                        Navigator.pushNamed(
-                            context, '/souscription_solidarite');
+                      onPressed: () async {
+                        // Vérifier le rôle de l'utilisateur pour déterminer le flux de navigation
+                        // Si c'est un commercial, il doit passer par la sélection de client
+                        // Si c'est un client, il peut accéder directement à la souscription
+                        final userRole = await AuthService.getUserRole();
+                        if (userRole == 'commercial') {
+                          // Pour les commerciaux, rediriger vers la sélection de client
+                          // Cela permet au commercial de choisir un client existant ou d'en créer un nouveau
+                          Navigator.pushNamed(
+                            context,
+                            '/commercial/select_client',
+                            arguments: {
+                              'productType': 'solidarite',
+                              'simulationData': null, // Pas de simulation, accès direct
+                            },
+                          );
+                        } else {
+                          // Pour les clients, navigation directe vers la page de souscription
+                          Navigator.pushNamed(
+                            context,
+                            '/souscription_solidarite',
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),

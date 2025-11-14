@@ -63,4 +63,25 @@ router.put('/change-password', verifyToken, userController.changePassword);
  */
 router.get('/check-data', verifyToken, userController.checkUserData);
 
+/**
+ * GET /api/users/:id
+ * Récupère un utilisateur par son ID (pour les commerciaux)
+ * ⚠️ IMPORTANT: Cette route doit être en dernier pour ne pas intercepter les routes spécifiques
+ * Headers : Authorization: Bearer <token>
+ * Retour : { success: true, user: { id, nom, prenom, email, ... } }
+ */
+router.get('/:id', verifyToken, (req, res, next) => {
+  // Vérifier que l'ID n'est pas une route réservée
+  const reservedRoutes = ['profile', 'check-data', 'upload-photo', 'change-password'];
+  if (reservedRoutes.includes(req.params.id)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Route non trouvée'
+    });
+  }
+  // Passer au contrôleur
+  userController.getUserById(req, res, next);
+});
+
 module.exports = router;
+

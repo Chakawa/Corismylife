@@ -127,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() => _notificationsEnabled = value);
                 _saveSetting('notifications_enabled', value);
               },
-              activeColor: vertSucces,
+              activeThumbColor: vertSucces,
             ),
           ),
           if (_notificationsEnabled) ...[
@@ -141,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setState(() => _emailNotifications = value);
                   _saveSetting('email_notifications', value);
                 },
-                activeColor: vertSucces,
+                activeThumbColor: vertSucces,
               ),
             ),
             _buildSettingCard(
@@ -154,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setState(() => _smsNotifications = value);
                   _saveSetting('sms_notifications', value);
                 },
-                activeColor: vertSucces,
+                activeThumbColor: vertSucces,
               ),
             ),
           ],
@@ -173,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() => _biometricEnabled = value);
                 _saveSetting('biometric_enabled', value);
               },
-              activeColor: vertSucces,
+              activeThumbColor: vertSucces,
             ),
           ),
           _buildSettingCard(
@@ -278,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -291,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: bleuCoris.withOpacity(0.1),
+            color: bleuCoris.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: bleuCoris, size: 24),
@@ -324,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -337,7 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: rougeCoris.withOpacity(0.1),
+                color: rougeCoris.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.logout, color: rougeCoris, size: 24),
@@ -380,7 +380,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: bleuCoris.withOpacity(0.1),
+                color: bleuCoris.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.lock_rounded, color: bleuCoris, size: 24),
@@ -590,13 +590,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Affiche un message pour les fonctionnalités à venir
-  void _showComingSoonDialog(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature - En cours de développement'),
-        backgroundColor: bleuCoris,
-      ),
-    );
-  }
 }

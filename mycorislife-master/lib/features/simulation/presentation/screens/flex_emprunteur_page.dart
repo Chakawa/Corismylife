@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class FlexEmprunteurPage extends StatefulWidget {
   const FlexEmprunteurPage({super.key});
@@ -770,12 +771,11 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         categorie: categorie, // Filtrer par catégorie (amortissable ou decouvert)
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
 
       // Vérifier que le tarif correspond à la catégorie demandée (si spécifiée)
       if (tarifFromDB != null && tarifFromDB.prime != null) {
-        // Si une catégorie est spécifiée, vérifier qu'elle correspond
-        if (categorie != null && tarifFromDB.categorie != categorie) {
+        // Vérifier que la catégorie correspond
+        if (tarifFromDB.categorie != categorie) {
           print('   ⚠️  Tarif trouvé mais catégorie différente (DB: ${tarifFromDB.categorie}, attendu: $categorie)');
           print('   💡 Passage au fallback (données hardcodées)');
         } else {
@@ -886,7 +886,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         categorie: 'perte_emploi', // Filtrer par catégorie perte_emploi
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
 
       // Vérifier que le tarif correspond à la catégorie perte_emploi
       if (tarifFromDB != null && 
@@ -926,63 +925,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
     return 0.0;
   }
 
-  /// ==========================================
-  /// FONCTION FALLBACK (conservée pour compatibilité)
-  /// ==========================================
-  /// Cette fonction est conservée pour compatibilité mais ne sera utilisée
-  /// que si getRateFromDbOrFallback échoue.
-  double _findRateInMap({
-    required Map<String, double> table,
-    required int age,
-    required int dureeMois,
-  }) {
-    final exactKey = '${age}_$dureeMois';
-    if (table.containsKey(exactKey)) {
-      return table[exactKey]!;
-    }
-
-    final possibleKeys = table.keys.where((key) => key.startsWith('${age}_')).toList();
-    if (possibleKeys.isNotEmpty) {
-      possibleKeys.sort((a, b) {
-        final dureeA = int.tryParse(a.split('_')[1]) ?? 0;
-        final dureeB = int.tryParse(b.split('_')[1]) ?? 0;
-        return (dureeA - dureeMois).abs().compareTo((dureeB - dureeMois).abs());
-      });
-      return table[possibleKeys.first]!;
-    }
-
-    final allAges = table.keys.map((key) => int.tryParse(key.split('_')[0]) ?? 0).toSet().toList();
-    allAges.sort((a, b) => (a - age).abs().compareTo((b - age).abs()));
-    
-    if (allAges.isNotEmpty) {
-      final closestAge = allAges.first;
-      final closestAgeKeys = table.keys.where((key) => key.startsWith('${closestAge}_')).toList();
-      if (closestAgeKeys.isNotEmpty) {
-        closestAgeKeys.sort((a, b) {
-          final dureeA = int.tryParse(a.split('_')[1]) ?? 0;
-          final dureeB = int.tryParse(b.split('_')[1]) ?? 0;
-          return (dureeA - dureeMois).abs().compareTo((dureeB - dureeMois).abs());
-        });
-        return table[closestAgeKeys.first]!;
-      }
-    }
-
-    return 0.0;
-  }
-
-  /// ==========================================
-  /// FONCTION FALLBACK (conservée pour compatibilité)
-  /// ==========================================
-  /// Cette fonction est conservée pour compatibilité mais ne sera utilisée
-  /// que si getRatePerteEmploiFromDbOrFallback échoue.
-  double _findRatePerteEmploi(int dureeAnnees, Map<String, double> table) {
-    if (dureeAnnees > 6) {
-      dureeAnnees = 6;
-    }
-    
-    String cle = dureeAnnees.toString();
-    return table[cle] ?? 0.0;
-  }
 
   void _simuler() async {
     if (!_validateInputs()) return;
@@ -1365,7 +1307,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: typePret,
+          initialValue: typePret,
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.account_balance, color: Color(0xFF002B6B)),
@@ -1697,24 +1639,42 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SouscriptionFlexPage(
-                        simulationData: {
-                          'typePret': typePret,
-                          'capital': _parseDouble(_capitalController.text.replaceAll(' ', '')),
-                          'duree': _parseInt(_dureeController.text.replaceAll(' ', '')),
-                          'dureeType': dureeType,
-                          'garantiePrevoyance': garantiePrevoyance,
-                          'capitalPrevoyance': garantiePrevoyance ? _parseDouble(_capitalPrevoyanceController.text.replaceAll(' ', '')) : 0,
-                          'garantiePerteEmploi': garantiePerteEmploi,
-                          'capitalPerteEmploi': garantiePerteEmploi ? _parseDouble(_capitalPerteEmploiController.text.replaceAll(' ', '')) : 0,
-                        },
+                onPressed: () async {
+                  // Préparer les données de simulation
+                  final simulationData = {
+                    'typePret': typePret,
+                    'capital': _parseDouble(_capitalController.text.replaceAll(' ', '')),
+                    'duree': _parseInt(_dureeController.text.replaceAll(' ', '')),
+                    'dureeType': dureeType,
+                    'garantiePrevoyance': garantiePrevoyance,
+                    'capitalPrevoyance': garantiePrevoyance ? _parseDouble(_capitalPrevoyanceController.text.replaceAll(' ', '')) : 0,
+                    'garantiePerteEmploi': garantiePerteEmploi,
+                    'capitalPerteEmploi': garantiePerteEmploi ? _parseDouble(_capitalPerteEmploiController.text.replaceAll(' ', '')) : 0,
+                  };
+                  
+                  // Vérifier le rôle et rediriger
+                  final userRole = await AuthService.getUserRole();
+                  if (userRole == 'commercial') {
+                    // Pour les commerciaux, rediriger vers la sélection de client
+                    Navigator.pushNamed(
+                      context,
+                      '/commercial/select_client',
+                      arguments: {
+                        'productType': 'emprunteur',
+                        'simulationData': simulationData,
+                      },
+                    );
+                  } else {
+                    // Pour les clients, rediriger directement vers la souscription
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SouscriptionFlexPage(
+                          simulationData: simulationData,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: vertCoris,
@@ -1835,7 +1795,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(
             prefixIcon: (icon != null)

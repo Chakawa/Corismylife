@@ -7,10 +7,24 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
 
+/// Page de souscription pour le produit CORIS FAMILIS
+/// Permet de souscrire à une assurance famille
+///
+/// [simulationData] : Données de simulation (capital, durée, périodicité)
+/// [clientId] : ID du client si souscription par commercial (optionnel)
+/// [clientData] : Données du client si souscription par commercial (optionnel)
 class SouscriptionFamilisPage extends StatefulWidget {
   final Map<String, dynamic>? simulationData;
+  final String? clientId; // ID du client si souscription par commercial
+  final Map<String, dynamic>?
+      clientData; // Données du client si souscription par commercial
 
-  const SouscriptionFamilisPage({super.key, this.simulationData});
+  const SouscriptionFamilisPage({
+    super.key,
+    this.simulationData,
+    this.clientId,
+    this.clientData,
+  });
 
   @override
   SouscriptionFamilisPageState createState() => SouscriptionFamilisPageState();
@@ -47,6 +61,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   int _currentStep = 0;
 
+  // Données utilisateur (pour les clients)
+  Map<String, dynamic> _userData = {};
+
   // Form controllers
   final _formKey = GlobalKey<FormState>();
 
@@ -57,6 +74,28 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
   int? _age;
+
+  // Variables pour commercial (souscription pour un client)
+  bool _isCommercial = false;
+  DateTime? _clientDateNaissance;
+  int? _clientAge;
+
+  // Contrôleurs pour les informations client (si commercial)
+  final TextEditingController _clientNomController = TextEditingController();
+  final TextEditingController _clientPrenomController = TextEditingController();
+  final TextEditingController _clientDateNaissanceController =
+      TextEditingController();
+  final TextEditingController _clientLieuNaissanceController =
+      TextEditingController();
+  final TextEditingController _clientTelephoneController =
+      TextEditingController();
+  final TextEditingController _clientEmailController = TextEditingController();
+  final TextEditingController _clientAdresseController =
+      TextEditingController();
+  final TextEditingController _clientNumeroPieceController =
+      TextEditingController();
+  String _selectedClientCivilite = 'Monsieur';
+  String _selectedClientIndicatif = '+225';
 
   // Step 2 controllers
   final _beneficiaireNomController = TextEditingController();
@@ -2228,6 +2267,86 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _loadUserData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Vérifier si c'est un commercial qui fait la souscription
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['isCommercial'] == true) {
+      if (!_isCommercial) {
+        setState(() {
+          _isCommercial = true;
+        });
+      }
+
+      // Pré-remplir les champs avec les informations du client si disponibles
+      if (args['clientInfo'] != null) {
+        final clientInfo = args['clientInfo'] as Map<String, dynamic>;
+        _clientNomController.text = clientInfo['nom'] ?? '';
+        _clientPrenomController.text = clientInfo['prenom'] ?? '';
+        _clientEmailController.text = clientInfo['email'] ?? '';
+        _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+        _clientLieuNaissanceController.text =
+            clientInfo['lieu_naissance'] ?? '';
+        _clientAdresseController.text = clientInfo['adresse'] ?? '';
+        _clientNumeroPieceController.text =
+            clientInfo['numero_piece_identite'] ?? '';
+
+        if (clientInfo['civilite'] != null) {
+          _selectedClientCivilite = clientInfo['civilite'];
+        }
+
+        // Gérer la date de naissance
+        if (clientInfo['date_naissance'] != null) {
+          try {
+            DateTime? dateNaissance;
+            if (clientInfo['date_naissance'] is String) {
+              dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+            } else if (clientInfo['date_naissance'] is DateTime) {
+              dateNaissance = clientInfo['date_naissance'];
+            }
+
+            if (dateNaissance != null) {
+              final finalDate = dateNaissance;
+              setState(() {
+                _clientDateNaissance = finalDate;
+                _clientDateNaissanceController.text =
+                    '${finalDate.day.toString().padLeft(2, '0')}/${finalDate.month.toString().padLeft(2, '0')}/${finalDate.year}';
+                final now = DateTime.now();
+                _clientAge = now.year - finalDate.year;
+                if (now.month < finalDate.month ||
+                    (now.month == finalDate.month && now.day < finalDate.day)) {
+                  _clientAge = (_clientAge ?? 0) - 1;
+                }
+                // Utiliser l'âge du client pour le calcul
+                _age = _clientAge;
+              });
+            }
+          } catch (e) {
+            print('Erreur parsing date de naissance: $e');
+          }
+        }
+
+        // Extraire l'indicatif du téléphone si présent
+        final telephone = clientInfo['telephone'] ?? '';
+        if (telephone.isNotEmpty && telephone.startsWith('+')) {
+          final parts = telephone.split(' ');
+          if (parts.isNotEmpty) {
+            _selectedClientIndicatif = parts[0];
+            if (parts.length > 1) {
+              _clientTelephoneController.text = parts.sublist(1).join(' ');
+            }
+          }
+        }
+      }
+    }
+
+    if (!_isCommercial) {
+      _loadUserData();
+    }
+  }
+
   void _prefillSimulationData() {
     if (widget.simulationData != null) {
       final data = widget.simulationData!;
@@ -2255,6 +2374,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   // Méthode pour charger les données utilisateur
   Future<void> _loadUserData() async {
+    // Ne pas charger les données si c'est un commercial
+    if (_isCommercial) {
+      return;
+    }
+
     try {
       final userData = await _loadUserDataForRecap();
       if (userData.isNotEmpty && userData['age'] != null) {
@@ -2437,56 +2561,100 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
   }
 
+  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
+  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
+  /// si elles ne sont pas déjà disponibles dans _userData
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
     try {
+      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      if (_userData.isNotEmpty) {
+        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        return _userData;
+      }
+
       final token = await storage.read(key: 'token');
       if (token == null) {
+        debugPrint('❌ Token non trouvé');
         throw Exception('Token non trouvé');
       }
+
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/auth/profile'),
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          final userData = data['user'];
+        if (data['success'] == true && data['user'] != null) {
+          final userData = data['user'] as Map<String, dynamic>;
+          // Calculer l'âge si la date de naissance est disponible
           if (userData['date_naissance'] != null) {
-            final dateNaissance = DateTime.parse(userData['date_naissance']);
-            final maintenant = DateTime.now();
-            int age = maintenant.year - dateNaissance.year;
-            if (maintenant.month < dateNaissance.month ||
-                (maintenant.month == dateNaissance.month &&
-                    maintenant.day < dateNaissance.day)) {
-              age--;
+            try {
+              final dateNaissance = DateTime.parse(userData['date_naissance']);
+              final maintenant = DateTime.now();
+              int age = maintenant.year - dateNaissance.year;
+              if (maintenant.month < dateNaissance.month ||
+                  (maintenant.month == dateNaissance.month &&
+                      maintenant.day < dateNaissance.day)) {
+                age--;
+              }
+              userData['age'] = age;
+            } catch (e) {
+              debugPrint('Erreur parsing date de naissance: $e');
             }
-            userData['age'] = age;
+          }
+          debugPrint(
+              '✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
+          // Mettre à jour _userData pour éviter de recharger
+          if (mounted) {
+            setState(() {
+              _userData = userData;
+            });
           }
           return userData;
         } else {
-          throw Exception(
-              data['message'] ?? 'Erreur lors de la récupération des données');
+          debugPrint(
+              '⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
         }
       } else {
-        throw Exception('Erreur serveur: ${response.statusCode}');
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
+
+      // Fallback vers _userData si la requête échoue
+      return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
-      debugPrint('Erreur lors du chargement des données utilisateur: $e');
-      return {};
+      debugPrint(
+          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      // Fallback vers _userData en cas d'erreur
+      return _userData.isNotEmpty ? _userData : {};
     }
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    final maxStep = _isCommercial ? 3 : 2;
+    if (_currentStep < maxStep) {
       bool canProceed = false;
 
-      if (_currentStep == 0 && _validateStep1()) {
-        canProceed = true;
-      } else if (_currentStep == 1 && _validateStep2()) {
-        canProceed = true;
+      if (_isCommercial) {
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations
+        if (_currentStep == 0 && _validateStepClientInfo()) {
+          canProceed = true;
+        } else if (_currentStep == 1 && _validateStep1()) {
+          canProceed = true;
+        } else if (_currentStep == 2 && _validateStep2()) {
+          canProceed = true;
+        }
+      } else {
+        // Pour les clients: step 0 = paramètres, step 1 = informations
+        if (_currentStep == 0 && _validateStep1()) {
+          canProceed = true;
+        } else if (_currentStep == 1 && _validateStep2()) {
+          canProceed = true;
+        }
       }
 
       if (canProceed) {
@@ -2517,7 +2685,65 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
   }
 
+  bool _validateStepClientInfo() {
+    if (_clientNomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le nom du client');
+      return false;
+    }
+    if (_clientPrenomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      return false;
+    }
+    if (_clientDateNaissance == null) {
+      _showErrorSnackBar('Veuillez saisir la date de naissance du client');
+      return false;
+    }
+    final maintenant = DateTime.now();
+    _clientAge = maintenant.year - _clientDateNaissance!.year;
+    if (maintenant.month < _clientDateNaissance!.month ||
+        (maintenant.month == _clientDateNaissance!.month &&
+            maintenant.day < _clientDateNaissance!.day)) {
+      _clientAge = (_clientAge ?? 0) - 1;
+    }
+    if (_clientAge == null || _clientAge! < 18 || _clientAge! > 65) {
+      _showErrorSnackBar(
+          'Âge du client non valide (18-65 ans requis). Âge calculé: ${_clientAge ?? 0} ans');
+      return false;
+    }
+    if (_clientEmailController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir l\'email du client');
+      return false;
+    }
+    if (_clientTelephoneController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      return false;
+    }
+    // Utiliser l'âge du client pour le calcul
+    _age = _clientAge;
+    return true;
+  }
+
   bool _validateStep1() {
+    // Si c'est un client, valider son propre âge
+    if (!_isCommercial) {
+      // Valider l'âge seulement à l'étape 2 si disponible
+      // À l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
+      if (_currentStep == 1) {
+        if (_age == null || _age! <= 0) {
+          _showErrorSnackBar(
+              'Veuillez renseigner votre date de naissance dans votre profil');
+          return false;
+        }
+
+        if (_age! < 18 || _age! > 65) {
+          _showErrorSnackBar(
+              'L\'âge doit être compris entre 18 et 65 ans. Votre âge: ${_age} ans');
+          return false;
+        }
+      }
+    }
+
+    // Valider les champs de simulation
     if (_capitalController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le capital à garantir');
       return false;
@@ -2525,17 +2751,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
     if (_dureeController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir la durée du contrat');
-      return false;
-    }
-
-    if (_age == null) {
-      _showErrorSnackBar('Chargement des informations en cours...');
-      return false;
-    }
-
-    if (_age! < 18 || _age! > 65) {
-      _showErrorSnackBar(
-          'L\'âge doit être compris entre 18 et 65 ans. Votre âge: $_age ans');
       return false;
     }
 
@@ -2614,6 +2829,23 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
+
+      // Si c'est un commercial, ajouter les infos client
+      if (_isCommercial) {
+        subscriptionData['client_info'] = {
+          'nom': _clientNomController.text.trim(),
+          'prenom': _clientPrenomController.text.trim(),
+          'date_naissance':
+              _clientDateNaissance?.toIso8601String().split('T').first,
+          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+          'telephone':
+              '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
+          'email': _clientEmailController.text.trim(),
+          'adresse': _clientAdresseController.text.trim(),
+          'civilite': _selectedClientCivilite,
+          'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+        };
+      }
 
       final response =
           await subscriptionService.createSubscription(subscriptionData);
@@ -2823,11 +3055,18 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                  _buildStep3(),
-                ],
+                children: _isCommercial
+                    ? [
+                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                        _buildStep1(), // Page 1: Paramètres
+                        _buildStep2(), // Page 2: Informations
+                        _buildStep3(), // Page 3: Récapitulatif
+                      ]
+                    : [
+                        _buildStep1(), // Page 0: Paramètres
+                        _buildStep2(), // Page 1: Informations
+                        _buildStep3(), // Page 2: Récapitulatif
+                      ],
               ),
             ),
             _buildNavigationButtons(),
@@ -2853,7 +3092,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < 3; i++) ...[
+          for (int i = 0; i < (_isCommercial ? 4 : 3); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -2874,22 +3113,38 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           : null,
                     ),
                     child: Icon(
-                      i == 0
-                          ? Icons.account_balance_wallet
-                          : i == 1
-                              ? Icons.person_add
-                              : Icons.check_circle,
+                      _isCommercial
+                          ? (i == 0
+                              ? Icons.person
+                              : i == 1
+                                  ? Icons.account_balance_wallet
+                                  : i == 2
+                                      ? Icons.person_add
+                                      : Icons.check_circle)
+                          : (i == 0
+                              ? Icons.account_balance_wallet
+                              : i == 1
+                                  ? Icons.person_add
+                                  : Icons.check_circle),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    i == 0
-                        ? 'Paramètres'
-                        : i == 1
-                            ? 'Informations'
-                            : 'Validation',
+                    _isCommercial
+                        ? (i == 0
+                            ? 'Client'
+                            : i == 1
+                                ? 'Paramètres'
+                                : i == 2
+                                    ? 'Informations'
+                                    : 'Validation')
+                        : (i == 0
+                            ? 'Paramètres'
+                            : i == 1
+                                ? 'Informations'
+                                : 'Validation'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -2900,7 +3155,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 ],
               ),
             ),
-            if (i < 2)
+            if (i < (_isCommercial ? 3 : 2))
               Expanded(
                 child: Container(
                   height: 2,
@@ -2914,6 +3169,116 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           ],
         ],
       ),
+    );
+  }
+
+  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  Widget _buildStepClientInfo() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: ListView(
+                children: [
+                  _buildFormSection(
+                    'Informations du Client',
+                    Icons.person,
+                    [
+                      _buildDropdownField(
+                        value: _selectedClientCivilite,
+                        label: 'Civilité',
+                        icon: Icons.person_outline,
+                        items: ['Monsieur', 'Madame', 'Mademoiselle'],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedClientCivilite = value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientNomController,
+                        label: 'Nom du client',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientPrenomController,
+                        label: 'Prénom du client',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDateField(
+                        controller: _clientDateNaissanceController,
+                        label: 'Date de naissance',
+                        icon: Icons.calendar_today,
+                        onDateSelected: (date) {
+                          setState(() {
+                            _clientDateNaissance = date;
+                            _clientDateNaissanceController.text =
+                                '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                            // Calculer l'âge et effectuer le calcul
+                            final maintenant = DateTime.now();
+                            _clientAge = maintenant.year - date.year;
+                            if (maintenant.month < date.month ||
+                                (maintenant.month == date.month &&
+                                    maintenant.day < date.day)) {
+                              _clientAge = (_clientAge ?? 0) - 1;
+                            }
+                            _age = _clientAge;
+                            _calculatePrime();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientLieuNaissanceController,
+                        label: 'Lieu de naissance',
+                        icon: Icons.location_on,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPhoneFieldWithIndicatif(
+                        controller: _clientTelephoneController,
+                        label: 'Téléphone du client',
+                        selectedIndicatif: _selectedClientIndicatif,
+                        onIndicatifChanged: (value) {
+                          setState(() {
+                            _selectedClientIndicatif = value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientEmailController,
+                        label: 'Email du client',
+                        icon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientAdresseController,
+                        label: 'Adresse du client',
+                        icon: Icons.home,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientNumeroPieceController,
+                        label: 'Numéro de pièce d\'identité',
+                        icon: Icons.badge,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -3455,6 +3820,95 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     );
   }
 
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ValueChanged<DateTime> onDateSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+          ),
+        ),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now().subtract(Duration(days: 365 * 30)),
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: bleuCoris,
+                      onPrimary: blanc,
+                    ),
+                    dialogTheme: DialogThemeData(
+                      backgroundColor: blanc,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              onDateSelected(picked);
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: label,
+                prefixIcon: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: bleuCoris.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: bleuCoris, size: 20),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                ),
+                filled: true,
+                fillColor: fondCarte,
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                suffixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Ce champ est obligatoire';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDropdownField({
     required String? value,
     required String label,
@@ -3613,8 +4067,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: FutureBuilder<Map<String, dynamic>>(
-                future: _loadUserDataForRecap(),
+                future: _isCommercial ? null : _loadUserDataForRecap(),
                 builder: (context, snapshot) {
+                  // Pour les commerciaux, utiliser directement les données des contrôleurs
+                  if (_isCommercial) {
+                    return _buildRecapContent();
+                  }
+
+                  // Pour les clients, attendre le chargement des données
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
                       child: CircularProgressIndicator(color: bleuCoris),
@@ -3622,6 +4082,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   }
 
                   if (snapshot.hasError) {
+                    debugPrint(
+                        'Erreur chargement données récapitulatif: ${snapshot.error}');
+                    // En cas d'erreur, essayer d'utiliser _userData si disponible
+                    if (_userData.isNotEmpty) {
+                      return _buildRecapContent(userData: _userData);
+                    }
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -3638,8 +4104,25 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     );
                   }
 
-                  final userData = snapshot.data ?? {};
-                  return _buildRecapContent(userData);
+                  // Pour les clients, utiliser les données chargées depuis la base de données
+                  // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
+                  final userData = snapshot.data ?? _userData;
+
+                  // Si userData est vide, recharger les données
+                  if (userData.isEmpty && !_isCommercial) {
+                    // Recharger les données utilisateur
+                    _loadUserDataForRecap().then((data) {
+                      if (mounted && data.isNotEmpty) {
+                        setState(() {
+                          _userData = data;
+                        });
+                      }
+                    });
+                    return Center(
+                        child: CircularProgressIndicator(color: bleuCoris));
+                  }
+
+                  return _buildRecapContent(userData: userData);
                 },
               ),
             ),
@@ -3649,9 +4132,29 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     );
   }
 
-  Widget _buildRecapContent(Map<String, dynamic> userData) {
+  Widget _buildRecapContent({Map<String, dynamic>? userData}) {
     final capital = _parseDouble(_capitalController.text);
     final duree = int.tryParse(_dureeController.text) ?? 0;
+
+    /**
+     * CONSTRUCTION DU RÉCAPITULATIF:
+     * 
+     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     */
+    final displayData = _isCommercial
+        ? {
+            'civilite': _selectedClientCivilite,
+            'nom': _clientNomController.text,
+            'prenom': _clientPrenomController.text,
+            'email': _clientEmailController.text,
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
+            'lieu_naissance': _clientLieuNaissanceController.text,
+            'adresse': _clientAdresseController.text,
+          }
+        : (userData ?? {});
 
     return ListView(
       children: [
@@ -3663,26 +4166,26 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           [
             _buildCombinedRecapRow(
                 'Civilité',
-                userData['civilite'] ?? 'Non renseigné',
+                displayData['civilite'] ?? 'Non renseigné',
                 'Nom',
-                userData['nom'] ?? 'Non renseigné'),
+                displayData['nom'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Prénom',
-                userData['prenom'] ?? 'Non renseigné',
+                displayData['prenom'] ?? 'Non renseigné',
                 'Email',
-                userData['email'] ?? 'Non renseigné'),
+                displayData['email'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Téléphone',
-                userData['telephone'] ?? 'Non renseigné',
+                displayData['telephone'] ?? 'Non renseigné',
                 'Date de naissance',
-                userData['date_naissance'] != null
-                    ? _formatDate(userData['date_naissance'])
+                displayData['date_naissance'] != null
+                    ? _formatDate(displayData['date_naissance'].toString())
                     : 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                userData['lieu_naissance'] ?? 'Non renseigné',
+                displayData['lieu_naissance'] ?? 'Non renseigné',
                 'Adresse',
-                userData['adresse'] ?? 'Non renseigné'),
+                displayData['adresse'] ?? 'Non renseigné'),
           ],
         ),
 
@@ -3984,7 +4487,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == 2 ? 'Finaliser' : 'Suivant',
+                      _currentStep == 2 ? 'Payer maintenant' : 'Suivant',
                       style: const TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4018,6 +4521,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
+    // Dispose des contrôleurs client
+    _clientNomController.dispose();
+    _clientPrenomController.dispose();
+    _clientDateNaissanceController.dispose();
+    _clientLieuNaissanceController.dispose();
+    _clientTelephoneController.dispose();
+    _clientEmailController.dispose();
+    _clientAdresseController.dispose();
+    _clientNumeroPieceController.dispose();
     super.dispose();
   }
 }

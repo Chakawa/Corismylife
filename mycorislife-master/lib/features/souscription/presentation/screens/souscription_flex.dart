@@ -7,73 +7,170 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
 
+/// ===============================================
+/// PAGE DE SOUSCRIPTION - FLEX EMPRUNTEUR
+/// ===============================================
+/// 
+/// Cette page permet de souscrire à une assurance emprunteur (FLEX EMPRUNTEUR)
+/// avec garanties prévoyance et perte d'emploi.
+/// 
+/// FONCTIONNALITÉS :
+/// - Formulaire multi-étapes (simulation → informations → récapitulatif)
+/// - Calcul automatique de la prime selon l'âge et la durée
+/// - Support pour deux workflows :
+///   * Client direct : utilise les données du profil connecté
+///   * Commercial : saisit les informations du client
+/// - Validation de l'âge (18-65 ans)
+/// - Upload de pièce d'identité
+/// - Options de paiement (Wave, Orange Money)
+/// 
+/// WORKFLOW :
+/// 1. Étape 1 : Paramètres de simulation (capital, durée, type de prêt, garanties)
+/// 2. Étape 2 : Informations complémentaires (bénéficiaire, contact d'urgence)
+/// 3. Étape 3 : Récapitulatif et paiement
+/// 
+/// Pour les commerciaux, une étape supplémentaire (étape 0) permet de saisir
+/// les informations du client avant les paramètres de simulation.
+/// 
+/// [simulationData] : Données de simulation pré-remplies (optionnel)
+/// [clientId] : ID du client si souscription par commercial (DEPRECATED)
+/// [clientData] : Données du client si souscription par commercial (pour pré-remplissage)
 class SouscriptionFlexPage extends StatefulWidget {
-  final Map<String, dynamic>? simulationData;
-  const SouscriptionFlexPage({super.key, this.simulationData});
+  final Map<String, dynamic>? simulationData; // Données de simulation (capital, durée, etc.)
+  final String? clientId; // ID du client si souscription par commercial (DEPRECATED)
+  final Map<String, dynamic>?
+      clientData; // Données du client si souscription par commercial (nom, prénom, téléphone, etc.)
+  
+  const SouscriptionFlexPage({
+    super.key,
+    this.simulationData,
+    this.clientId,
+    this.clientData,
+  });
 
   @override
   SouscriptionFlexPageState createState() => SouscriptionFlexPageState();
 }
 
+/// ===============================================
+/// ÉTAT DE LA PAGE DE SOUSCRIPTION
+/// ===============================================
+/// 
+/// Gère l'état de la page de souscription, incluant :
+/// - Navigation entre les étapes (PageView)
+/// - Animations (fade, slide)
+/// - Données utilisateur et client
+/// - Validation des formulaires
+/// - Calcul de la prime
 class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     with TickerProviderStateMixin {
-  // Charte graphique CORIS améliorée
-  static const Color bleuCoris = Color(0xFF002B6B);
-  static const Color rougeCoris = Color(0xFFE30613);
-  static const Color bleuSecondaire = Color(0xFF1E4A8C);
-  static const Color blanc = Colors.white;
-  static const Color fondCarte = Color(0xFFF8FAFC);
-  static const Color grisTexte = Color(0xFF64748B);
-  static const Color grisLeger = Color(0xFFF1F5F9);
-  static const Color vertSucces = Color(0xFF10B981);
-  static const Color orangeWarning = Color(0xFFF59E0B);
+  // ============================================
+  // CHARTE GRAPHIQUE CORIS
+  // ============================================
+  // Couleurs officielles de la marque CORIS
+  static const Color bleuCoris = Color(0xFF002B6B); // Bleu principal CORIS
+  static const Color rougeCoris = Color(0xFFE30613); // Rouge principal CORIS
+  static const Color bleuSecondaire = Color(0xFF1E4A8C); // Bleu secondaire
+  static const Color blanc = Colors.white; // Blanc
+  static const Color fondCarte = Color(0xFFF8FAFC); // Fond gris clair pour les cartes
+  static const Color grisTexte = Color(0xFF64748B); // Gris pour les textes secondaires
+  static const Color grisLeger = Color(0xFFF1F5F9); // Gris très clair pour les fonds
+  static const Color vertSucces = Color(0xFF10B981); // Vert pour les messages de succès
+  static const Color orangeWarning = Color(0xFFF59E0B); // Orange pour les avertissements
 
-  final PageController _pageController = PageController();
-  late AnimationController _animationController;
-  late AnimationController _progressController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
+  // ============================================
+  // CONTRÔLEURS DE NAVIGATION ET ANIMATION
+  // ============================================
+  final PageController _pageController = PageController(); // Contrôleur pour la navigation entre les pages (étapes)
+  late AnimationController _animationController; // Contrôleur pour les animations de transition
+  late AnimationController _progressController; // Contrôleur pour l'animation de la barre de progression
+  late Animation<double> _fadeAnimation; // Animation de fondu (opacité)
+  late Animation<double> _slideAnimation; // Animation de glissement (translation verticale)
 
-  int _currentStep = 0;
+  // ============================================
+  // ÉTAT DE NAVIGATION
+  // ============================================
+  int _currentStep = 0; // Étape actuelle (0 = première étape, 1 = deuxième, etc.)
 
-  // Données utilisateur
-  Map<String, dynamic> _userData = {};
-  DateTime? _dateNaissance;
-  int _age = 0;
+  // ============================================
+  // DONNÉES UTILISATEUR (pour les clients)
+  // ============================================
+  Map<String, dynamic> _userData = {}; // Données complètes du profil utilisateur (nom, prénom, email, etc.)
+  DateTime? _dateNaissance; // Date de naissance de l'utilisateur (pour calcul de l'âge)
+  int _age = 0; // Âge calculé de l'utilisateur (utilisé pour le calcul de la prime)
 
-  // Contrôleurs pour la simulation
-  final TextEditingController _capitalController = TextEditingController();
-  final TextEditingController _dureeController = TextEditingController();
+  // ============================================
+  // VARIABLES POUR COMMERCIAL (souscription pour un client)
+  // ============================================
+  bool _isCommercial = false; // Indique si l'utilisateur connecté est un commercial
+  DateTime? _clientDateNaissance; // Date de naissance du client (si souscription par commercial)
+  int _clientAge = 0; // Âge calculé du client (utilisé pour le calcul de la prime)
+
+  // ============================================
+  // CONTRÔLEURS POUR LES INFORMATIONS CLIENT (si commercial)
+  // ============================================
+  // Ces contrôleurs sont utilisés uniquement lorsque _isCommercial = true
+  // Ils permettent au commercial de saisir les informations du client
+  final TextEditingController _clientNomController = TextEditingController(); // Nom du client
+  final TextEditingController _clientPrenomController = TextEditingController(); // Prénom du client
+  final TextEditingController _clientDateNaissanceController =
+      TextEditingController(); // Date de naissance (format DD/MM/YYYY)
+  final TextEditingController _clientLieuNaissanceController =
+      TextEditingController(); // Lieu de naissance
+  final TextEditingController _clientTelephoneController =
+      TextEditingController(); // Numéro de téléphone (sans indicatif)
+  final TextEditingController _clientEmailController = TextEditingController(); // Email du client
+  final TextEditingController _clientAdresseController =
+      TextEditingController(); // Adresse complète
+  final TextEditingController _clientNumeroPieceController =
+      TextEditingController(); // Numéro de pièce d'identité
+  String _selectedClientCivilite = 'Monsieur'; // Civilité sélectionnée (Monsieur, Madame, Mademoiselle)
+  String _selectedClientIndicatif = '+225'; // Indicatif téléphonique sélectionné
+
+  // ============================================
+  // CONTRÔLEURS POUR LA SIMULATION
+  // ============================================
+  // Ces champs permettent de configurer les paramètres de l'assurance
+  final TextEditingController _capitalController = TextEditingController(); // Capital à garantir (montant du prêt)
+  final TextEditingController _dureeController = TextEditingController(); // Durée du prêt (en mois ou années)
   final TextEditingController _capitalPrevoyanceController =
-      TextEditingController();
+      TextEditingController(); // Capital pour la garantie prévoyance (optionnel)
   final TextEditingController _capitalPerteEmploiController =
-      TextEditingController();
+      TextEditingController(); // Capital pour la garantie perte d'emploi (optionnel)
 
-  // Variables pour la simulation
-  String _selectedDureeType = 'mois';
-  String _selectedTypePret = 'Prêt amortissable';
-  bool _garantiePrevoyance = false;
-  bool _garantiePerteEmploi = false;
-  DateTime? _dateEffetContrat;
-  DateTime? _dateEcheanceContrat;
-  double _calculatedPrime = 0.0;
-  double _calculatedCapital = 0.0;
+  // ============================================
+  // VARIABLES POUR LA SIMULATION
+  // ============================================
+  String _selectedDureeType = 'mois'; // Type de durée sélectionné ('mois' ou 'années')
+  String _selectedTypePret = 'Prêt amortissable'; // Type de prêt sélectionné
+  bool _garantiePrevoyance = false; // Indique si la garantie prévoyance est activée
+  bool _garantiePerteEmploi = false; // Indique si la garantie perte d'emploi est activée
+  DateTime? _dateEffetContrat; // Date de début du contrat
+  DateTime? _dateEcheanceContrat; // Date de fin du contrat
+  double _calculatedPrime = 0.0; // Prime calculée (en FCFA)
+  double _calculatedCapital = 0.0; // Capital total calculé (somme des garanties)
 
-  // Contrôleurs pour la souscription
-  final _formKey = GlobalKey<FormState>();
-  final _beneficiaireNomController = TextEditingController();
-  final _beneficiaireContactController = TextEditingController();
-  String _selectedLienParente = 'Enfant';
-  final _personneContactNomController = TextEditingController();
-  final _personneContactTelController = TextEditingController();
-  String _selectedLienParenteUrgence = 'Parent';
-  String _selectedBeneficiaireIndicatif = '+225';
-  String _selectedContactIndicatif = '+225';
+  // ============================================
+  // CONTRÔLEURS POUR LA SOUSCRIPTION
+  // ============================================
+  // Informations complémentaires nécessaires pour finaliser la souscription
+  final _formKey = GlobalKey<FormState>(); // Clé pour valider le formulaire
+  final _beneficiaireNomController = TextEditingController(); // Nom du bénéficiaire en cas de décès
+  final _beneficiaireContactController = TextEditingController(); // Contact du bénéficiaire
+  String _selectedLienParente = 'Enfant'; // Lien de parenté avec le bénéficiaire
+  final _personneContactNomController = TextEditingController(); // Nom de la personne à contacter en urgence
+  final _personneContactTelController = TextEditingController(); // Téléphone de la personne à contacter
+  String _selectedLienParenteUrgence = 'Parent'; // Lien de parenté avec la personne à contacter
+  String _selectedBeneficiaireIndicatif = '+225'; // Indicatif téléphonique du bénéficiaire
+  String _selectedContactIndicatif = '+225'; // Indicatif téléphonique du contact d'urgence
 
-  File? _pieceIdentite;
+  File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
 
-  // Options
+  // ============================================
+  // OPTIONS ET LISTES DE SÉLECTION
+  // ============================================
   final List<String> _lienParenteOptions = [
+    // Options pour le lien de parenté avec le bénéficiaire
     'Enfant',
     'Conjoint',
     'Parent',
@@ -82,21 +179,33 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     'Autre'
   ];
   final List<String> _typePretOptions = [
-    'Prêt amortissable',
-    'Prêt découvert',
-    'Prêt scolaire'
+    // Types de prêts disponibles pour le calcul de la prime
+    'Prêt amortissable', // Prêt classique avec remboursement mensuel
+    'Prêt découvert', // Autorisation de découvert
+    'Prêt scolaire' // Prêt pour les études
   ];
-  final List<String> _dureeOptions = ['mois', 'années'];
+  final List<String> _dureeOptions = ['mois', 'années']; // Options pour le type de durée
   final List<String> _indicatifs = [
-    '+225',
-    '+226',
-    '+237',
-    '+228',
-    '+229',
-    '+234'
+    // Indicatifs téléphoniques disponibles (pays d'Afrique de l'Ouest)
+    '+225', // Côte d'Ivoire
+    '+226', // Burkina Faso
+    '+237', // Cameroun
+    '+228', // Togo
+    '+229', // Bénin
+    '+234' // Nigeria
   ];
-  final storage = const FlutterSecureStorage();
+  final storage = const FlutterSecureStorage(); // Stockage sécurisé pour le token JWT
 
+  // ============================================
+  // TABLEAUX DE TARIFS
+  // ============================================
+  // Ces tableaux contiennent les taux de prime selon l'âge et la durée
+  // Format de la clé : 'AGE_DUREE' (ex: '18_12' = 18 ans, 12 mois)
+  // Valeur : taux de prime (pourcentage du capital)
+  
+  /// Tarifs pour les prêts amortissables
+  /// Clé : 'AGE_DUREE' (ex: '18_12' = 18 ans, 12 mois)
+  /// Valeur : taux de prime en pourcentage (ex: 0.150 = 0.15% du capital)
   final Map<String, double> tarifsPretAmortissable = {
     '18_12': 0.150,
     '18_24': 0.295,
@@ -1572,7 +1681,87 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     _animationController.forward();
 
     _prefillSimulationData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Vérifier si c'est un commercial qui fait la souscription
+    // On fait ça dans didChangeDependencies car on accède à ModalRoute
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['isCommercial'] == true) {
+      if (!_isCommercial) {
+        setState(() {
+          _isCommercial = true;
+        });
+      }
+
+      // Pré-remplir les champs avec les informations du client si disponibles
+      if (args['clientInfo'] != null) {
+        final clientInfo = args['clientInfo'] as Map<String, dynamic>;
+        _clientNomController.text = clientInfo['nom'] ?? '';
+        _clientPrenomController.text = clientInfo['prenom'] ?? '';
+        _clientEmailController.text = clientInfo['email'] ?? '';
+        _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+        _clientLieuNaissanceController.text =
+            clientInfo['lieu_naissance'] ?? '';
+        _clientAdresseController.text = clientInfo['adresse'] ?? '';
+        _clientNumeroPieceController.text =
+            clientInfo['numero_piece_identite'] ?? '';
+
+        if (clientInfo['civilite'] != null) {
+          _selectedClientCivilite = clientInfo['civilite'];
+        }
+
+        // Gérer la date de naissance
+        if (clientInfo['date_naissance'] != null) {
+          try {
+            DateTime? dateNaissance;
+            if (clientInfo['date_naissance'] is String) {
+              dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+            } else if (clientInfo['date_naissance'] is DateTime) {
+              dateNaissance = clientInfo['date_naissance'];
+            }
+
+            if (dateNaissance != null) {
+              final finalDate = dateNaissance;
+              setState(() {
+                _clientDateNaissance = finalDate;
+                _clientDateNaissanceController.text =
+                    '${finalDate.day.toString().padLeft(2, '0')}/${finalDate.month.toString().padLeft(2, '0')}/${finalDate.year}';
+                final now = DateTime.now();
+                _clientAge = now.year - finalDate.year;
+                if (now.month < finalDate.month ||
+                    (now.month == finalDate.month && now.day < finalDate.day)) {
+                  _clientAge--;
+                }
+                // Utiliser l'âge du client pour le calcul
+                _age = _clientAge;
+              });
+            }
+          } catch (e) {
+            print('Erreur parsing date de naissance: $e');
+          }
+        }
+
+        // Extraire l'indicatif du téléphone si présent
+        final telephone = clientInfo['telephone'] ?? '';
+        if (telephone.isNotEmpty && telephone.startsWith('+')) {
+          final parts = telephone.split(' ');
+          if (parts.isNotEmpty) {
+            _selectedClientIndicatif = parts[0];
+            if (parts.length > 1) {
+              _clientTelephoneController.text = parts.sublist(1).join(' ');
+            }
+          }
+        }
+      }
+    }
+
+    if (!_isCommercial) {
     _loadUserData();
+    }
   }
 
   void _prefillSimulationData() {
@@ -1607,7 +1796,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/auth/profile'),
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -1732,7 +1921,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }
 
   void _effectuerCalcul() {
-    if (_age < 18 || _age > 65) {
+    // Ne pas calculer si l'âge n'est pas encore déterminé ou invalide
+    if (_age <= 0 || _age < 18 || _age > 65) {
       return;
     }
 
@@ -1883,13 +2073,26 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    final maxStep = _isCommercial ? 3 : 2;
+    if (_currentStep < maxStep) {
       bool canProceed = false;
 
+      if (_isCommercial) {
+        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire
+        if (_currentStep == 0 && _validateStepClientInfo()) {
+          canProceed = true;
+        } else if (_currentStep == 1 && _validateStep1()) {
+          canProceed = true;
+        } else if (_currentStep == 2 && _validateStep2()) {
+          canProceed = true;
+        }
+      } else {
+        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire
       if (_currentStep == 0 && _validateStep1()) {
         canProceed = true;
       } else if (_currentStep == 1 && _validateStep2()) {
         canProceed = true;
+        }
       }
 
       if (canProceed) {
@@ -1920,6 +2123,38 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     }
   }
 
+  bool _validateStepClientInfo() {
+    if (_clientNomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le nom du client');
+      return false;
+    }
+    if (_clientPrenomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      return false;
+    }
+    if (_clientDateNaissance == null) {
+      _showErrorSnackBar('Veuillez saisir la date de naissance du client');
+      return false;
+    }
+    if (_clientAge < 18 || _clientAge > 65) {
+      _showErrorSnackBar('L\'âge du client doit être entre 18 et 65 ans');
+      return false;
+    }
+    if (_clientEmailController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir l\'email du client');
+      return false;
+    }
+    if (_clientTelephoneController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      return false;
+    }
+    // Utiliser l'âge du client pour le calcul
+    _age = _clientAge;
+    // Recalculer avec le nouvel âge
+    _effectuerCalcul();
+    return true;
+  }
+
   bool _validateStep1() {
     if (_capitalController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le montant du prêt à couvrir');
@@ -1931,9 +2166,40 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       return false;
     }
 
+    // Pour les clients, valider l'âge depuis les données utilisateur
+    if (!_isCommercial) {
+      // Si c'est un client, valider son propre âge
+      // À l'étape 1 (simulation), on ne valide pas l'âge car il sera calculé automatiquement
+      // L'âge sera validé seulement si on essaie de passer à l'étape 2
+      if (_currentStep == 0) {
+        // À l'étape 1, on ne valide pas l'âge
+        // L'âge sera calculé automatiquement lors du chargement des données utilisateur
+        // et utilisé pour le calcul de la prime
+      } else if (_currentStep == 1) {
+        // À l'étape 2, on valide l'âge si disponible
+        if (_dateNaissance != null) {
+          // Recalculer l'âge si la date de naissance est disponible
+          final maintenant = DateTime.now();
+          _age = maintenant.year - _dateNaissance!.year;
+          if (maintenant.month < _dateNaissance!.month ||
+              (maintenant.month == _dateNaissance!.month &&
+                  maintenant.day < _dateNaissance!.day)) {
+            _age--;
+          }
+
+          // Valider l'âge seulement s'il est calculé
+          if (_age > 0) {
     if (_age < 18 || _age > 65) {
-      _showErrorSnackBar('Âge non valide (18-65 ans requis)');
+              _showErrorSnackBar(
+                  'Âge non valide (18-65 ans requis). Votre âge: $_age ans');
       return false;
+            }
+          }
+        } else if (_age <= 0) {
+          // Si l'âge n'est pas encore calculé, on ne bloque pas
+          // Il sera calculé automatiquement
+        }
+      }
     }
 
     if (_garantiePrevoyance &&
@@ -1954,6 +2220,21 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }
 
   bool _validateStep2() {
+    // Si c'est un commercial, valider aussi les infos client
+    if (_isCommercial) {
+      if (_clientNomController.text.trim().isEmpty ||
+          _clientPrenomController.text.trim().isEmpty ||
+          _clientDateNaissanceController.text.trim().isEmpty ||
+          _clientLieuNaissanceController.text.trim().isEmpty ||
+          _clientTelephoneController.text.trim().isEmpty ||
+          _clientEmailController.text.trim().isEmpty ||
+          _clientAdresseController.text.trim().isEmpty) {
+        _showErrorSnackBar(
+            'Veuillez remplir toutes les informations du client');
+        return false;
+      }
+    }
+
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _personneContactNomController.text.trim().isEmpty ||
@@ -2043,10 +2324,17 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               child: PageView(
                 controller: _pageController,
                 physics: NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                  _buildStep3(),
+                children: _isCommercial
+                    ? [
+                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                        _buildStep1(), // Page 1: Simulation
+                        _buildStep2(), // Page 2: Bénéficiaire/Contact
+                        _buildStep3(), // Page 3: Récapitulatif
+                      ]
+                    : [
+                        _buildStep1(), // Page 0: Simulation
+                        _buildStep2(), // Page 1: Bénéficiaire/Contact
+                        _buildStep3(), // Page 2: Récapitulatif
                 ],
               ),
             ),
@@ -2073,7 +2361,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < 3; i++) ...[
+          for (int i = 0; i < (_isCommercial ? 4 : 3); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -2094,22 +2382,38 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           : null,
                     ),
                     child: Icon(
-                      i == 0
+                      _isCommercial
+                          ? (i == 0
+                              ? Icons.person
+                              : i == 1
+                                  ? Icons.credit_card
+                                  : i == 2
+                                      ? Icons.person_add
+                                      : Icons.check_circle)
+                          : (i == 0
                           ? Icons.credit_card
                           : i == 1
                               ? Icons.person_add
-                              : Icons.check_circle,
+                                  : Icons.check_circle),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
                     ),
                   ),
                   SizedBox(height: 6),
                   Text(
-                    i == 0
+                    _isCommercial
+                        ? (i == 0
+                            ? 'Client'
+                            : i == 1
+                                ? 'Prêt'
+                                : i == 2
+                                    ? 'Infos'
+                                    : 'Récap')
+                        : (i == 0
                         ? 'Prêt'
                         : i == 1
-                            ? 'Informations'
-                            : 'Validation',
+                                ? 'Infos'
+                                : 'Récap'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -2120,7 +2424,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                 ],
               ),
             ),
-            if (i < 2)
+            if (i < (_isCommercial ? 3 : 2))
               Expanded(
                 child: Container(
                   height: 2,
@@ -2558,6 +2862,119 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     );
   }
 
+  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  Widget _buildStepClientInfo() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    _buildFormSection(
+                      'Informations du Client',
+                      Icons.person,
+                      [
+                        _buildDropdownFieldStep2(
+                          value: _selectedClientCivilite,
+                          label: 'Civilité',
+                          icon: Icons.person_outline,
+                          items: ['Monsieur', 'Madame', 'Mademoiselle'],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedClientCivilite = value!;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientNomController,
+                          label: 'Nom du client',
+                          icon: Icons.person_outline,
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientPrenomController,
+                          label: 'Prénom du client',
+                          icon: Icons.person_outline,
+                        ),
+                        SizedBox(height: 16),
+                        _buildDateField(
+                          controller: _clientDateNaissanceController,
+                          label: 'Date de naissance',
+                          icon: Icons.calendar_today,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _clientDateNaissance = date;
+                              _clientDateNaissanceController.text =
+                                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                              // Calculer l'âge et effectuer le calcul
+                              final maintenant = DateTime.now();
+                              _clientAge = maintenant.year - date.year;
+                              if (maintenant.month < date.month ||
+                                  (maintenant.month == date.month &&
+                                      maintenant.day < date.day)) {
+                                _clientAge--;
+                              }
+                              _age = _clientAge;
+                              _effectuerCalcul();
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientLieuNaissanceController,
+                          label: 'Lieu de naissance',
+                          icon: Icons.location_on,
+                        ),
+                        SizedBox(height: 16),
+                        _buildPhoneFieldWithIndicatif(
+                          controller: _clientTelephoneController,
+                          label: 'Téléphone du client',
+                          selectedIndicatif: _selectedClientIndicatif,
+                          onIndicatifChanged: (value) {
+                            setState(() {
+                              _selectedClientIndicatif = value!;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientEmailController,
+                          label: 'Email du client',
+                          icon: Icons.email,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientAdresseController,
+                          label: 'Adresse du client',
+                          icon: Icons.home,
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientNumeroPieceController,
+                          label: 'Numéro de pièce d\'identité',
+                          icon: Icons.badge,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildStep2() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -2788,6 +3205,95 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     );
   }
 
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ValueChanged<DateTime> onDateSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+          ),
+        ),
+        SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now().subtract(Duration(days: 365 * 30)),
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: bleuCoris,
+                      onPrimary: blanc,
+                    ),
+                    dialogTheme: DialogThemeData(
+                      backgroundColor: blanc,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              onDateSelected(picked);
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: label,
+                prefixIcon: Container(
+                  margin: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(0, 43, 107, 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: bleuCoris, size: 20),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                ),
+                filled: true,
+                fillColor: fondCarte,
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                suffixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Ce champ est obligatoire';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPhoneFieldWithIndicatif({
     required TextEditingController controller,
     required String label,
@@ -2965,6 +3471,19 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }
 
   Widget _buildStep3() {
+    /**
+     * MODIFICATION IMPORTANTE:
+     * 
+     * Pour les CLIENTS (plateforme client):
+     * - Les informations sont déjà pré-enregistrées dans la base de données lors de l'inscription
+     * - On doit TOUJOURS charger les données depuis _loadUserData() qui récupère le profil de l'utilisateur connecté
+     * - _userData doit contenir les informations du client connecté
+     * 
+     * Pour les COMMERCIAUX (plateforme commercial):
+     * - Le commercial saisit les informations du client dans les champs du formulaire
+     * - On utilise les valeurs des contrôleurs (_clientNomController, etc.)
+     * - Ces informations sont ensuite stockées dans souscriptiondata.client_info
+     */
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
@@ -2972,7 +3491,144 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: Padding(
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: _isCommercial ? null : _loadUserDataForRecap(),
+              builder: (context, snapshot) {
+                // Pour les commerciaux, utiliser directement les données des contrôleurs
+                if (_isCommercial) {
+                  return _buildRecapContent();
+                }
+                
+                // Pour les clients, attendre le chargement des données
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(color: bleuCoris),
+                  );
+                }
+                
+                if (snapshot.hasError) {
+                  debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                  // En cas d'erreur, essayer d'utiliser _userData si disponible
+                  if (_userData.isNotEmpty) {
+                    return _buildRecapContent(userData: _userData);
+                  }
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error, size: 48, color: rougeCoris),
+                        SizedBox(height: 16),
+                        Text('Erreur lors du chargement des données'),
+                        TextButton(
+                          onPressed: () => setState(() {}),
+                          child: Text('Réessayer'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                // Utiliser les données chargées ou _userData en fallback
+                final userData = snapshot.data ?? _userData;
+                
+                // Si userData est vide, recharger les données
+                if (userData.isEmpty && !_isCommercial) {
+                  // Recharger les données utilisateur
+                  _loadUserDataForRecap().then((data) {
+                    if (mounted && data.isNotEmpty) {
+                      setState(() {
+                        _userData = data;
+                      });
+                    }
+                  });
+                  return Center(
+                      child: CircularProgressIndicator(color: bleuCoris));
+                }
+                
+                return _buildRecapContent(userData: userData);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
+  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
+  /// si elles ne sont pas déjà disponibles dans _userData
+  Future<Map<String, dynamic>> _loadUserDataForRecap() async {
+    try {
+      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      if (_userData.isNotEmpty) {
+        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        return _userData;
+      }
+      
+      final token = await storage.read(key: 'token');
+      if (token == null) {
+        debugPrint('❌ Token non trouvé');
+        throw Exception('Token non trouvé');
+      }
+
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['user'] != null) {
+          final userData = data['user'] as Map<String, dynamic>;
+          debugPrint('✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
+          // Mettre à jour _userData pour éviter de recharger
+          if (mounted) {
+            setState(() {
+              _userData = userData;
+            });
+          }
+          return userData;
+        } else {
+          debugPrint('⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+        }
+      } else {
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+      }
+      
+      // Fallback vers _userData si la requête échoue
+      return _userData.isNotEmpty ? _userData : {};
+    } catch (e) {
+      debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      // Fallback vers _userData en cas d'erreur
+      return _userData.isNotEmpty ? _userData : {};
+    }
+  }
+
+  Widget _buildRecapContent({Map<String, dynamic>? userData}) {
+    /**
+     * CONSTRUCTION DU RÉCAPITULATIF:
+     * 
+     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     */
+    final displayData = _isCommercial
+        ? {
+            'civilite': _selectedClientCivilite,
+            'nom': _clientNomController.text,
+            'prenom': _clientPrenomController.text,
+            'email': _clientEmailController.text,
+            'telephone': '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
+            'lieu_naissance': _clientLieuNaissanceController.text,
+            'adresse': _clientAdresseController.text,
+          }
+        : (userData ?? _userData);
+
+    return Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: ListView(
                 children: [
@@ -2983,32 +3639,36 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                     [
                       _buildCombinedRecapRow(
                           'Civilité',
-                          _userData['civilite'] ?? 'Non renseigné',
+                displayData['civilite'] ?? 'Non renseigné',
                           'Nom',
-                          _userData['nom'] ?? 'Non renseigné'),
+                displayData['nom'] ?? 'Non renseigné',
+              ),
                       _buildCombinedRecapRow(
                           'Prénom',
-                          _userData['prenom'] ?? 'Non renseigné',
+                displayData['prenom'] ?? 'Non renseigné',
                           'Email',
-                          _userData['email'] ?? 'Non renseigné'),
+                displayData['email'] ?? 'Non renseigné',
+              ),
                       _buildCombinedRecapRow(
                           'Téléphone',
-                          _userData['telephone'] ?? 'Non renseigné',
+                displayData['telephone'] ?? 'Non renseigné',
                           'Date de naissance',
-                          _userData['date_naissance'] != null
-                              ? _formatDate(_userData['date_naissance'])
-                              : 'Non renseigné'),
+                displayData['date_naissance'] != null
+                    ? _formatDate(displayData['date_naissance'].toString())
+                    : 'Non renseigné',
+              ),
                       _buildCombinedRecapRow(
                           'Lieu de naissance',
-                          _userData['lieu_naissance'] ?? 'Non renseigné',
+                displayData['lieu_naissance'] ?? 'Non renseigné',
                           'Adresse',
-                          _userData['adresse'] ?? 'Non renseigné'),
+                displayData['adresse'] ?? 'Non renseigné',
+              ),
                     ],
                   ),
                   SizedBox(height: 20),
                   _buildRecapSection(
                     'Produit Souscrit',
-                    Icons.account_balance, // Icône corrigée pour prêt
+            Icons.account_balance,
                     vertSucces,
                     [
                       _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR',
@@ -3018,19 +3678,16 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           _formatMontant(_calculatedCapital),
                           'Durée',
                           '${_dureeController.text} $_selectedDureeType'),
-                      if (_dateEffetContrat != null &&
-                          _dateEcheanceContrat != null)
+              if (_dateEffetContrat != null && _dateEcheanceContrat != null)
                         _buildCombinedRecapRow(
                             'Date d\'effet',
                             _formatDate(_dateEffetContrat!.toString()),
                             'Date d\'échéance',
                             _formatDate(_dateEcheanceContrat!.toString())),
-                      if (_dateEffetContrat != null &&
-                          _dateEcheanceContrat == null)
+              if (_dateEffetContrat != null && _dateEcheanceContrat == null)
                         _buildCombinedRecapRow('Date d\'effet',
                             _formatDate(_dateEffetContrat!.toString()), '', ''),
-                      if (_dateEffetContrat == null &&
-                          _dateEcheanceContrat != null)
+              if (_dateEffetContrat == null && _dateEcheanceContrat != null)
                         _buildCombinedRecapRow(
                             'Date d\'échéance',
                             _formatDate(_dateEcheanceContrat!.toString()),
@@ -3041,23 +3698,19 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                       if (_garantiePrevoyance && _garantiePerteEmploi)
                         _buildCombinedRecapRow(
                             'Garantie Prévoyance',
-                            _formatMontant(_parseDouble(
-                                _capitalPrevoyanceController.text)),
+                    _formatMontant(_parseDouble(_capitalPrevoyanceController.text)),
                             'Garantie Perte d\'emploi',
-                            _formatMontant(_parseDouble(
-                                _capitalPerteEmploiController.text))),
+                    _formatMontant(_parseDouble(_capitalPerteEmploiController.text))),
                       if (_garantiePrevoyance && !_garantiePerteEmploi)
                         _buildCombinedRecapRow(
                             'Garantie Prévoyance',
-                            _formatMontant(_parseDouble(
-                                _capitalPrevoyanceController.text)),
+                    _formatMontant(_parseDouble(_capitalPrevoyanceController.text)),
                             '',
                             ''),
                       if (!_garantiePrevoyance && _garantiePerteEmploi)
                         _buildCombinedRecapRow(
                             'Garantie Perte d\'emploi',
-                            _formatMontant(_parseDouble(
-                                _capitalPerteEmploiController.text)),
+                    _formatMontant(_parseDouble(_capitalPerteEmploiController.text)),
                             '',
                             ''),
                     ],
@@ -3086,8 +3739,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                               : _personneContactNomController.text),
                       _buildRecapRow('Contact',
                           '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-                      _buildRecapRow(
-                          'Lien de parenté', _selectedLienParenteUrgence),
+              _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
                     ],
                   ),
                   SizedBox(height: 20),
@@ -3098,8 +3750,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                     [
                       _buildRecapRow(
                           'Pièce d\'identité',
-                          _pieceIdentite?.path.split('/').last ??
-                              'Non téléchargée'),
+                  _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
                     ],
                   ),
                   SizedBox(height: 20),
@@ -3108,13 +3759,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                     decoration: BoxDecoration(
                       color: Color.fromRGBO(245, 158, 11, 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Color.fromRGBO(245, 158, 11, 0.3)),
+              border: Border.all(color: Color.fromRGBO(245, 158, 11, 0.3)),
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.info_outline,
-                            color: orangeWarning, size: 28),
+                Icon(Icons.info_outline, color: orangeWarning, size: 28),
                         SizedBox(height: 10),
                         Text(
                           'Vérification Importante',
@@ -3140,11 +3789,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                   ),
                   SizedBox(height: 20),
                 ],
-              ),
-            ),
           ),
-        );
-      },
     );
   }
 
@@ -3371,7 +4016,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == 2 ? 'Finaliser' : 'Suivant',
+                      _currentStep == 2 ? 'Payer maintenant' : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -3439,6 +4084,23 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
       };
+
+      // Si c'est un commercial, ajouter les infos client
+      if (_isCommercial) {
+        subscriptionData['client_info'] = {
+          'nom': _clientNomController.text.trim(),
+          'prenom': _clientPrenomController.text.trim(),
+          'date_naissance':
+              _clientDateNaissance?.toIso8601String().split('T').first,
+          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+          'telephone':
+              '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
+          'email': _clientEmailController.text.trim(),
+          'adresse': _clientAdresseController.text.trim(),
+          'civilite': _selectedClientCivilite,
+          'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+        };
+      }
 
       final response =
           await subscriptionService.createSubscription(subscriptionData);
@@ -3552,6 +4214,15 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
+    // Dispose des contrôleurs client
+    _clientNomController.dispose();
+    _clientPrenomController.dispose();
+    _clientDateNaissanceController.dispose();
+    _clientLieuNaissanceController.dispose();
+    _clientTelephoneController.dispose();
+    _clientEmailController.dispose();
+    _clientAdresseController.dispose();
+    _clientNumeroPieceController.dispose();
     super.dispose();
   }
 }

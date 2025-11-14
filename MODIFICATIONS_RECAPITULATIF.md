@@ -206,3 +206,5 @@ Le système affiche correctement les détails pour tous les produits :
 
 
 
+
+

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class DescriptionSerenitePage extends StatelessWidget {
   const DescriptionSerenitePage({super.key});
@@ -263,9 +264,25 @@ Dans un environnement financier en constante évolution, CORIS SÉRÉNITÉ PLUS 
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Navigation directe vers la page de souscription CORIS SÉRÉNITÉ
-                        Navigator.pushNamed(context, '/souscription_serenite');
+                      onPressed: () async {
+                        // Vérifier le rôle de l'utilisateur pour déterminer le flux de navigation
+                        // Si c'est un commercial, il doit passer par la sélection de client
+                        // Si c'est un client, il peut accéder directement à la souscription
+                        final userRole = await AuthService.getUserRole();
+                        if (userRole == 'commercial') {
+                          // Pour les commerciaux, rediriger vers la sélection de client
+                          Navigator.pushNamed(
+                            context,
+                            '/commercial/select_client',
+                            arguments: {
+                              'productType': 'serenite',
+                              'simulationData': null, // Pas de simulation, accès direct
+                            },
+                          );
+                        } else {
+                          // Pour les clients, navigation directe vers la page de souscription
+                          Navigator.pushNamed(context, '/souscription_serenite');
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE30613),

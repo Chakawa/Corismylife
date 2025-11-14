@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class SimulationFamilisScreen extends StatefulWidget {
   const SimulationFamilisScreen({super.key});
@@ -2383,7 +2384,6 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
         periodicite: periodicite,
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
@@ -2923,20 +2923,38 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SouscriptionFamilisPage(
-                        simulationData: {
-                          'capital': double.parse(
-                              _capitalController.text.replaceAll(' ', '')),
-                          'duree': int.parse(_dureeController.text),
-                          'periodicite': periodicite,
-                        },
+                onPressed: () async {
+                  // Préparer les données de simulation
+                  final simulationData = {
+                    'capital': double.parse(
+                        _capitalController.text.replaceAll(' ', '')),
+                    'duree': int.parse(_dureeController.text),
+                    'periodicite': periodicite,
+                  };
+                  
+                  // Vérifier le rôle et rediriger
+                  final userRole = await AuthService.getUserRole();
+                  if (userRole == 'commercial') {
+                    // Pour les commerciaux, rediriger vers la sélection de client
+                    Navigator.pushNamed(
+                      context,
+                      '/commercial/select_client',
+                      arguments: {
+                        'productType': 'familis',
+                        'simulationData': simulationData,
+                      },
+                    );
+                  } else {
+                    // Pour les clients, rediriger directement vers la souscription
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SouscriptionFamilisPage(
+                          simulationData: simulationData,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: vertCoris,

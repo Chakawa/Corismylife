@@ -4,17 +4,33 @@
  * ===============================================
  * 
  * Ce fichier gère toutes les opérations liées aux souscriptions :
- * - Création de souscription
- * - Mise à jour du statut
- * - Upload de documents
- * - Récupération des propositions
- * - Récupération des contrats
- * - Gestion des paiements
+ * - Création de souscription (pour clients et commerciaux)
+ * - Mise à jour du statut (proposition → contrat)
+ * - Upload de documents (pièce d'identité, etc.)
+ * - Récupération des propositions (en attente de paiement)
+ * - Récupération des contrats (payés et activés)
+ * - Gestion des paiements (Wave, Orange Money)
+ * - Génération de PDF pour propositions/contrats
+ * 
+ * ARCHITECTURE :
+ * - Utilise PostgreSQL pour le stockage des données
+ * - Stocke les données flexibles dans une colonne JSONB (souscriptiondata)
+ * - Gère deux workflows : client direct et commercial pour client
+ * - Pour les commerciaux : stocke les infos client dans souscriptiondata.client_info
+ * - Pour les clients : utilise directement user_id de la table users
+ * 
+ * SÉCURITÉ :
+ * - Toutes les routes nécessitent une authentification JWT (verifyToken middleware)
+ * - Vérification des permissions selon le rôle (commercial vs client)
+ * - Validation des données avant insertion en base
  */
 
-const pool = require('../db');  // Connexion à la base de données PostgreSQL
-const { generatePolicyNumber } = require('../utils/helpers');  // Génération numéro de police
-const PDFDocument = require('pdfkit'); // Génération de PDF pour propositions
+// ============================================
+// IMPORTS ET DÉPENDANCES
+// ============================================
+const pool = require('../db');  // Pool de connexions PostgreSQL (gestion automatique des connexions)
+const { generatePolicyNumber } = require('../utils/helpers');  // Fonction utilitaire pour générer un numéro de police unique (format: PROD-YYYY-XXXXX)
+const PDFDocument = require('pdfkit'); // Bibliothèque pour générer des PDF dynamiques (utilisée pour les propositions/contrats)
 
 /**
  * ===============================================
@@ -50,11 +66,57 @@ exports.createSubscription = async (req, res) => {
     // Extraire le type de produit et le reste des données
     const {
       product_type,
+      client_id, // ID du client (optionnel, pour les commerciaux - DEPRECATED: ne plus utiliser)
+      client_info, // Informations du client (nom, prénom, date_naissance, etc.) - pour les commerciaux
       ...subscriptionData
     } = req.body;
 
     // Récupérer l'ID de l'utilisateur connecté (depuis le token JWT)
-    const userId = req.user.id;
+    const currentUserId = req.user.id;
+    const userRole = req.user.role;
+    const codeApporteur = req.user.code_apporteur;
+    
+    let userId = currentUserId;
+    let finalCodeApporteur = null;
+    
+    // NOUVEAU WORKFLOW: Si c'est un commercial qui crée une souscription pour un client
+    if (userRole === 'commercial') {
+      // Le commercial enregistre son code_apporteur
+      finalCodeApporteur = codeApporteur;
+      
+      // Si des informations client sont fournies, les ajouter dans souscription_data
+      if (client_info) {
+        subscriptionData.client_info = {
+          nom: client_info.nom,
+          prenom: client_info.prenom,
+          date_naissance: client_info.date_naissance,
+          lieu_naissance: client_info.lieu_naissance,
+          telephone: client_info.telephone,
+          email: client_info.email,
+          adresse: client_info.adresse,
+          civilite: client_info.civilite || client_info.genre,
+          numero_piece_identite: client_info.numero_piece_identite || client_info.numero
+        };
+      }
+      
+      // Si un client_id est fourni (ancien workflow), on l'utilise mais on enregistre aussi le code_apporteur
+      if (client_id) {
+        // Vérifier que le client appartient au commercial
+        const clientCheckQuery = `
+          SELECT id FROM users 
+          WHERE id = $1 AND code_apporteur = $2 AND role = 'client'
+        `;
+        const clientCheckResult = await pool.query(clientCheckQuery, [client_id, codeApporteur]);
+        
+        if (clientCheckResult.rows.length > 0) {
+          userId = client_id;
+        }
+        // Si le client n'existe pas, on laisse userId = currentUserId (commercial)
+        // et on enregistre les infos client dans souscription_data
+      }
+      // Si pas de client_id, userId reste celui du commercial
+      // Les infos client sont dans souscription_data.client_info
+    }
     
     // Générer un numéro de police unique pour cette souscription
     // Format: PROD-YYYY-XXXXX (ex: SER-2025-00123)
@@ -63,17 +125,18 @@ exports.createSubscription = async (req, res) => {
     // Requête SQL pour insérer la nouvelle souscription
     // IMPORTANT : Le statut par défaut est "proposition" (pas encore payé)
     const query = `
-      INSERT INTO subscriptions (user_id, numero_police, produit_nom, souscriptiondata)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO subscriptions (user_id, numero_police, produit_nom, souscriptiondata, code_apporteur)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *;
     `;
     
     // Valeurs à insérer
     const values = [
-      userId,             // $1 - ID de l'utilisateur
+      userId,             // $1 - ID de l'utilisateur (client ou commercial)
       numeroPolice,       // $2 - Numéro de police généré
       product_type,       // $3 - Type de produit
-      subscriptionData    // $4 - Toutes les données (stockées en JSONB)
+      subscriptionData,  // $4 - Toutes les données (stockées en JSONB)
+      finalCodeApporteur  // $5 - Code apporteur du commercial (si commercial)
     ];
     
     // Exécuter la requête
@@ -315,12 +378,47 @@ exports.getUserPropositions = async (req, res) => {
   try {
     // Récupérer l'ID de l'utilisateur depuis le token JWT
     const userId = req.user.id;
+    const userRole = req.user.role;
     
-    // Requête SQL pour récupérer uniquement les propositions
-    const result = await pool.query(
-      "SELECT * FROM subscriptions WHERE user_id = $1 AND statut = 'proposition' ORDER BY date_creation DESC",
-      [userId]
-    );
+    let result;
+    
+    // Si c'est un commercial, récupérer uniquement les souscriptions avec son code_apporteur
+    if (userRole === 'commercial') {
+      const codeApporteur = req.user.code_apporteur;
+      if (!codeApporteur) {
+        return res.json({ success: true, data: [] });
+      }
+      result = await pool.query(
+        "SELECT * FROM subscriptions WHERE code_apporteur = $1 AND statut = 'proposition' ORDER BY date_creation DESC",
+        [codeApporteur]
+      );
+    } else {
+      // Si c'est un client, récupérer:
+      // 1. Les souscriptions où user_id correspond
+      // 2. Les souscriptions où code_apporteur existe ET le numéro dans souscription_data correspond au numéro du client
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
+      
+      // Extraire le numéro de téléphone (sans indicatif)
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      
+      result = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE statut = 'proposition' 
+         AND (
+           user_id = $1 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $2
+           )
+         )
+         ORDER BY date_creation DESC`,
+        [userId, `%${telephoneNumber}%`]
+      );
+    }
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -347,12 +445,47 @@ exports.getUserPropositions = async (req, res) => {
 exports.getUserContracts = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     
-    // Requête SQL pour récupérer uniquement les contrats actifs
-    const result = await pool.query(
-      "SELECT * FROM subscriptions WHERE user_id = $1 AND statut = 'contrat' ORDER BY date_creation DESC",
-      [userId]
-    );
+    let result;
+    
+    // Si c'est un commercial, récupérer uniquement les souscriptions avec son code_apporteur
+    if (userRole === 'commercial') {
+      const codeApporteur = req.user.code_apporteur;
+      if (!codeApporteur) {
+        return res.json({ success: true, data: [] });
+      }
+      result = await pool.query(
+        "SELECT * FROM subscriptions WHERE code_apporteur = $1 AND statut = 'contrat' ORDER BY date_creation DESC",
+        [codeApporteur]
+      );
+    } else {
+      // Si c'est un client, récupérer:
+      // 1. Les souscriptions où user_id correspond
+      // 2. Les souscriptions où code_apporteur existe ET le numéro dans souscription_data correspond au numéro du client
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
+      
+      // Extraire le numéro de téléphone (sans indicatif)
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      
+      result = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE statut = 'contrat' 
+         AND (
+           user_id = $1 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $2
+           )
+         )
+         ORDER BY date_creation DESC`,
+        [userId, `%${telephoneNumber}%`]
+      );
+    }
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -377,12 +510,46 @@ exports.getUserContracts = async (req, res) => {
 exports.getUserSubscriptions = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     
-    // Requête SQL pour récupérer TOUTES les souscriptions
-    const result = await pool.query(
-      "SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY date_creation DESC",
-      [userId]
-    );
+    let result;
+    
+    // Si c'est un commercial, récupérer uniquement les souscriptions avec son code_apporteur
+    if (userRole === 'commercial') {
+      const codeApporteur = req.user.code_apporteur;
+      if (!codeApporteur) {
+        return res.json({ success: true, data: [] });
+      }
+      result = await pool.query(
+        "SELECT * FROM subscriptions WHERE code_apporteur = $1 ORDER BY date_creation DESC",
+        [codeApporteur]
+      );
+    } else {
+      // Si c'est un client, récupérer:
+      // 1. Les souscriptions où user_id correspond
+      // 2. Les souscriptions où code_apporteur existe ET le numéro dans souscription_data correspond au numéro du client
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
+      
+      // Extraire le numéro de téléphone (sans indicatif)
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      
+      result = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE (
+           user_id = $1 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $2
+           )
+         )
+         ORDER BY date_creation DESC`,
+        [userId, `%${telephoneNumber}%`]
+      );
+    }
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -471,14 +638,47 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.role;
     
     // =========================================
     // ÉTAPE 1 : Récupérer la souscription
     // =========================================
-    const subscriptionResult = await pool.query(
-      "SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2",
-      [id, userId]
-    );
+    let subscriptionResult;
+    
+    if (userRole === 'commercial') {
+      const codeApporteur = req.user.code_apporteur;
+      if (!codeApporteur) {
+        return res.status(404).json({
+          success: false,
+          message: 'Souscription non trouvée'
+        });
+      }
+      subscriptionResult = await pool.query(
+        "SELECT * FROM subscriptions WHERE id = $1 AND code_apporteur = $2",
+        [id, codeApporteur]
+      );
+    } else {
+      // Pour un client, vérifier user_id OU code_apporteur avec numéro correspondant
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      
+      subscriptionResult = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE id = $1 
+         AND (
+           user_id = $2 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $3
+           )
+         )`,
+        [id, userId, `%${telephoneNumber}%`]
+      );
+    }
     
     // Vérifier que la souscription existe
     if (subscriptionResult.rows.length === 0) {
@@ -488,19 +688,40 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
       });
     }
     
+    const subscription = subscriptionResult.rows[0];
+    
     // =========================================
     // ÉTAPE 2 : Récupérer les infos utilisateur
     // =========================================
-    // On récupère uniquement les champs nécessaires (sans le mot de passe !)
-    const userResult = await pool.query(
-      "SELECT id, civilite, nom, prenom, email, telephone, date_naissance, lieu_naissance, adresse FROM users WHERE id = $1",
-      [userId]
-    );
+    // Si la souscription a été créée par un commercial, utiliser les infos client dans souscription_data
+    let userData = null;
+    
+    if (subscription.code_apporteur && subscription.souscriptiondata?.client_info) {
+      // Utiliser les infos client depuis souscription_data
+      const clientInfo = subscription.souscriptiondata.client_info;
+      userData = {
+        id: subscription.user_id || null,
+        civilite: clientInfo.civilite || clientInfo.genre || 'Monsieur',
+        nom: clientInfo.nom || '',
+        prenom: clientInfo.prenom || '',
+        email: clientInfo.email || '',
+        telephone: clientInfo.telephone || '',
+        date_naissance: clientInfo.date_naissance || null,
+        lieu_naissance: clientInfo.lieu_naissance || '',
+        adresse: clientInfo.adresse || ''
+      };
+    } else {
+      // Sinon, récupérer depuis la table users
+      const userResult = await pool.query(
+        "SELECT id, civilite, nom, prenom, email, telephone, date_naissance, lieu_naissance, adresse FROM users WHERE id = $1",
+        [subscription.user_id || userId]
+      );
+      userData = userResult.rows[0] || null;
+    }
     
     // =========================================
     // ÉTAPE 3 : Formater les données utilisateur (comme dans /auth/profile)
     // =========================================
-    const userData = userResult.rows[0] || null;
     if (userData && userData.date_naissance) {
       // Formater la date comme dans /auth/profile pour cohérence avec Flutter
       if (userData.date_naissance instanceof Date) {
@@ -529,8 +750,8 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     res.json({ 
       success: true, 
       data: {
-        subscription: subscriptionResult.rows[0],  // Données de la souscription
-        user: userData                              // Données de l'utilisateur formatées
+        subscription: subscription,  // Données de la souscription
+        user: userData              // Données de l'utilisateur formatées (client ou depuis souscription_data)
       }
     });
   } catch (error) {
@@ -602,34 +823,82 @@ exports.getSubscriptionPDF = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.role;
+    const codeApporteur = req.user.code_apporteur;
 
-    // Récupérer la souscription + utilisateur
-    const subResult = await pool.query(
-      "SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2",
-      [id, userId]
-    );
+    // Récupérer la souscription
+    // Si c'est un commercial, vérifier le code_apporteur
+    // Si c'est un client, vérifier user_id ou code_apporteur avec téléphone correspondant
+    let subResult;
+    if (userRole === 'commercial' && codeApporteur) {
+      subResult = await pool.query(
+        "SELECT * FROM subscriptions WHERE id = $1 AND code_apporteur = $2",
+        [id, codeApporteur]
+      );
+    } else {
+      // Pour les clients, vérifier user_id ou code_apporteur avec téléphone correspondant
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      
+      subResult = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE id = $1 
+         AND (
+           user_id = $2 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $3
+           )
+         )`,
+        [id, userId, `%${telephoneNumber}%`]
+      );
+    }
+    
     if (subResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Souscription non trouvée' });
     }
     const subscription = subResult.rows[0];
 
-    // Récupérer les données utilisateur avec casting explicite pour les dates
-    const userResult = await pool.query(
-      `SELECT 
-        id, 
-        civilite, 
-        nom, 
-        prenom, 
-        email, 
-        telephone, 
-        date_naissance::text as date_naissance,
-        COALESCE(lieu_naissance, '')::text as lieu_naissance,
-        adresse 
-      FROM users 
-      WHERE id = $1`,
-      [userId]
-    );
-    const user = userResult.rows[0] || {};
+    // Récupérer les données utilisateur
+    // Si la souscription a un code_apporteur et des client_info, utiliser ces infos en priorité
+    let user = {};
+    if (subscription.code_apporteur && subscription.souscriptiondata?.client_info) {
+      // Utiliser les infos client depuis souscription_data
+      const clientInfo = subscription.souscriptiondata.client_info;
+      user = {
+        id: subscription.user_id || null,
+        civilite: clientInfo.civilite || '',
+        nom: clientInfo.nom || '',
+        prenom: clientInfo.prenom || '',
+        email: clientInfo.email || '',
+        telephone: clientInfo.telephone || '',
+        date_naissance: clientInfo.date_naissance || null,
+        lieu_naissance: clientInfo.lieu_naissance || '',
+        adresse: clientInfo.adresse || ''
+      };
+    } else if (subscription.user_id) {
+      // Récupérer depuis la table users
+      const userResult = await pool.query(
+        `SELECT 
+          id, 
+          civilite, 
+          nom, 
+          prenom, 
+          email, 
+          telephone, 
+          date_naissance::text as date_naissance,
+          COALESCE(lieu_naissance, '')::text as lieu_naissance,
+          adresse 
+        FROM users 
+        WHERE id = $1`,
+        [subscription.user_id]
+      );
+      user = userResult.rows[0] || {};
+    }
     
     // Vérifier et convertir date_naissance si c'est un objet Date PostgreSQL
     // PostgreSQL peut retourner la date comme un objet Date JavaScript ou une string
@@ -735,13 +1004,21 @@ exports.getSubscriptionPDF = async (req, res) => {
       return `${Math.round(v).toLocaleString('fr-FR').replace(/\s/g, '.').replace(/,/g, '.')} FCFA`;
     };
     const productName = (subscription.produit_nom || '').toLowerCase();
-    const TITLE = productName.includes('etude') ? 'CORIS ETUDE'
-      : productName.includes('retraite') ? 'CORIS RETRAITE'
-      : productName.includes('serenite') ? 'CORIS SERENITE'
-      : productName.includes('emprunteur') ? 'FLEX EMPRUNTEUR'
-      : productName.includes('familis') ? 'CORIS FAMILIS'
-      : productName.includes('solidarite') ? 'CORIS SOLIDARITE'
-      : productName.includes('epargne') ? 'CORIS EPARGNE BONUS'
+    const isEtude = productName.includes('etude');
+    const isRetraite = productName.includes('retraite');
+    const isSerenite = productName.includes('serenite');
+    const isEmprunteur = productName.includes('emprunteur');
+    const isFamilis = productName.includes('familis');
+    const isSolidarite = productName.includes('solidarite');
+    const isEpargne = productName.includes('epargne');
+    
+    const TITLE = isEtude ? 'CORIS ETUDE'
+      : isRetraite ? 'CORIS RETRAITE'
+      : isSerenite ? 'CORIS SERENITE'
+      : isEmprunteur ? 'FLEX EMPRUNTEUR'
+      : isFamilis ? 'CORIS FAMILIS'
+      : isSolidarite ? 'CORIS SOLIDARITE'
+      : isEpargne ? 'CORIS EPARGNE BONUS'
       : (subscription.produit_nom || 'ASSURANCE VIE').toUpperCase();
 
     // Couleur bleue Coris - Gris normal pour les cases
@@ -1064,7 +1341,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     curY += rowH;
     
     // Récupérer les bénéficiaires selon le type de produit
-    const isSolidarite = productName.includes('solidarite');
+    // isSolidarite est déjà défini plus haut
     let beneficiairesList = [];
     
     if (isSolidarite) {
@@ -1172,52 +1449,182 @@ exports.getSubscriptionPDF = async (req, res) => {
     writeCentered('Caractéristiques', startX, curY + 4, fullW, 10, '#000000', true);
     curY += boxH + 5;
     
-    const hasRente = productName.includes('etude') || productName.includes('retraite') || productName.includes('serenite');
-    const hasCapital = productName.includes('solidarite') || productName.includes('familis') || productName.includes('emprunteur');
+    // Calculer Prime Nette (Cotisation Périodique)
+    const primeNette = d.prime || d.prime_mensuelle || d.prime_annuelle || 0;
     
-    // Optimiser : 2 lignes au lieu de plusieurs
-    drawRow(startX, curY, fullW, rowH * 2);
+    // Déterminer le nombre de lignes nécessaires
+    let caracteristiquesLignes = 1;
+    if (isEtude && d.rente_calculee) caracteristiquesLignes++;
+    else if ((isRetraite || isSerenite) && d.rente_calculee) caracteristiquesLignes++;
+    else if ((isSolidarite || isFamilis || isEmprunteur) && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
+    else if (isEpargne && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
     
-    // Ligne 1: Cotisation Mensuelle / Taux d'intérêt Net
-    write('Cotisation Mensuelle', startX + 5, curY + 3, 9, '#666', 130);
-    write(money(d.prime || d.prime_mensuelle || d.prime_annuelle || 0), startX + 145, curY + 3, 9, '#000', 150);
+    drawRow(startX, curY, fullW, rowH * caracteristiquesLignes);
+    
+    // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
+    write('Cotisation Périodique', startX + 5, curY + 3, 9, '#666', 130);
+    write(money(primeNette), startX + 145, curY + 3, 9, '#000', 150);
     write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
     write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
     
     // Ligne 2: Rente ou Capital (selon le produit)
-    if (hasRente && d.rente_calculee) {
-      write('Valeur de la Rente', startX + 5, curY + 3 + 13, 9, '#666', 130);
-      write(money(d.rente_calculee || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
-    } else if (hasCapital && (d.capital || d.capital_garanti)) {
-      write('Valeur du Capital', startX + 5, curY + 3 + 13, 9, '#666', 130);
-      write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+    if (caracteristiquesLignes > 1) {
+      if ((isEtude || isRetraite || isSerenite) && d.rente_calculee) {
+        write('Valeur de la Rente', startX + 5, curY + 3 + 13, 9, '#666', 130);
+        write(money(d.rente_calculee || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+      } else if ((isSolidarite || isFamilis || isEmprunteur || isEpargne) && (d.capital || d.capital_garanti)) {
+        write('Valeur du Capital', startX + 5, curY + 3 + 13, 9, '#666', 130);
+        write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+      }
     }
     
-    curY += rowH * 2 + 5;
+    curY += rowH * caracteristiquesLignes + 5;
 
-    // Garanties - Case grise avec en-têtes
-    drawRow(startX, curY, fullW, boxH, grisNormal);
-    write('Garanties', startX + 5, curY + 4, 9, '#000000', 180, true);
-    writeCentered('Capital (FCFA)', startX + 200, curY + 4, 165, 9, '#000000', true);
-    writeCentered('Primes Période (FCFA)', startX + 365, curY + 4, 170, 9, '#000000', true);
-    curY += boxH;
+    // Garanties - Adapté selon le produit
+    // Pré-calculer le nombre de lignes de garanties avant de créer l'en-tête
+    let garantiesLignes = 0;
+    const capitalDeces = d.capital || d.capital_garanti || d.capital_deces || 0;
+    const capitalVie = d.capital_garanti || d.capital || 0;
     
-    drawRow(startX, curY, fullW, rowH);
-    write('Décès ou Invalidité Permanente Totale', startX + 5, curY + 4, 9, '#000', 185);
-    writeCentered(money(d.capital || d.capital_garanti || 0), startX + 200, curY + 4, 165, 9);
-    writeCentered(money(d.prime || d.prime_mensuelle || d.prime_annuelle || 0), startX + 365, curY + 4, 170, 9);
-    curY += rowH;
-    
-    // Ligne "En Cas de Vie à Terme" si applicable
-    if (hasRente || d.capital_garanti || d.capital) {
-      drawRow(startX, curY, fullW, rowH);
-      write('En Cas de Vie à Terme', startX + 5, curY + 4, 9, '#000', 185);
-      writeCentered(money(d.capital_garanti || d.capital || 0), startX + 200, curY + 4, 165, 9);
-      writeCentered('', startX + 365, curY + 4, 170, 9);
-      curY += rowH;
+    // Compter les lignes de garanties selon le produit
+    if (isEtude) {
+      if (capitalDeces > 0) garantiesLignes++;
+      if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
+    } else if (isRetraite) {
+      if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
+    } else if (isEpargne) {
+      // Pas de garanties affichées
+    } else if (isSerenite) {
+      if (capitalDeces > 0) garantiesLignes++;
+    } else if (isSolidarite) {
+      if (capitalDeces > 0) garantiesLignes++;
+    } else if (isEmprunteur) {
+      if (capitalDeces > 0) garantiesLignes++;
+      if (d.prevoyance && d.capital_prevoyance) garantiesLignes++;
+      if (d.perte_emploi) garantiesLignes++;
+    } else {
+      if (capitalDeces > 0) garantiesLignes++;
+      if (capitalVie > 0 && (isFamilis || d.capital_garanti)) garantiesLignes++;
     }
     
-    curY += 5;
+    // Créer l'en-tête seulement s'il y a des garanties à afficher
+    if (garantiesLignes > 0) {
+      drawRow(startX, curY, fullW, boxH, grisNormal);
+      write('Garanties', startX + 5, curY + 4, 9, '#000000', 180, true);
+      writeCentered('Capital (FCFA)', startX + 200, curY + 4, 165, 9, '#000000', true);
+      writeCentered('Primes Période (FCFA)', startX + 365, curY + 4, 170, 9, '#000000', true);
+      curY += boxH;
+      
+      garantiesLignes = 0; // Réinitialiser pour compter les lignes affichées
+      
+      // Coris Etude : Décès (si renseigné) + Vie à terme (si renseigné)
+      if (isEtude) {
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Garantie en cas de décès', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(primeNette), startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+        if (capitalVie > 0 && d.rente_calculee) {
+          drawRow(startX, curY, fullW, rowH);
+          write('En Cas de Vie à Terme', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalVie), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      // Coris Retraite : Pas de décès, seulement Vie à terme (si renseigné)
+      else if (isRetraite) {
+        if (capitalVie > 0 && d.rente_calculee) {
+          drawRow(startX, curY, fullW, rowH);
+          write('En Cas de Vie à Terme', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalVie), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      // Epargne Bonus : Pas de décès/invalidité
+      else if (isEpargne) {
+        // Pas de garanties affichées
+      }
+      // Coris Sérénité : Décès (si renseigné), pas de Vie à terme
+      else if (isSerenite) {
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Décès ou Invalidité Permanente Totale', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(primeNette), startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      // Coris Solidarité : Décès (si renseigné), pas de Vie à terme
+      else if (isSolidarite) {
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Décès ou Invalidité Permanente Totale', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(primeNette), startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      // Flex Emprunteur : Décès (si renseigné) + Prévoyance + Perte d'emploi (si renseignés), pas de Vie à terme
+      else if (isEmprunteur) {
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Décès ou Invalidité Permanente Totale', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(primeNette), startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+        // Prévoyance
+        if (d.prevoyance && d.capital_prevoyance) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Prévoyance', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(d.capital_prevoyance || 0), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+        // Perte d'emploi (pas de capital, juste l'option)
+        if (d.perte_emploi) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Perte d\'emploi', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered('-', startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      // Autres produits (Coris Familis, etc.) : Décès + Vie à terme (si renseignés)
+      else {
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Décès ou Invalidité Permanente Totale', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(primeNette), startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+        if (capitalVie > 0 && (isFamilis || d.capital_garanti)) {
+          drawRow(startX, curY, fullW, rowH);
+          write('En Cas de Vie à Terme', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalVie), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+      }
+      
+      // Ajouter un espacement après les garanties
+      curY += 5;
+    }
 
     // Décompte Prime - Case grise
     const decompteNum = safe(d.decompte_prime_num || `101${String(subscription.id).padStart(7,'0')}`);
@@ -1227,21 +1634,38 @@ exports.getSubscriptionPDF = async (req, res) => {
     writeCentered(decompteText, startX, curY + 4, fullW, 9, '#000000', true);
     curY += boxH + 5;
     
+    // Calculer Accessoires selon le produit
+    // Flex Emprunteur = 1000 FCFA
+    // Coris Etude, Coris Retraite, Coris Sérénité = 5000 FCFA
+    // Autres produits (Epargne Bonus, Coris Solidarité, Coris Familis) = 0 FCFA
+    let accessoiresMontant = 0;
+    if (isEmprunteur) {
+      accessoiresMontant = 1000;
+    } else if (isEtude || isRetraite || isSerenite) {
+      accessoiresMontant = 5000;
+    } else {
+      // Epargne Bonus, Coris Solidarité, Coris Familis et autres = 0
+      accessoiresMontant = 0;
+    }
+    
+    // Prime Totale = Accessoires + Prime Nette
+    const primeTotale = accessoiresMontant + primeNette;
+    
     // Prime Nette, Accessoires, Prime Totale - Tableau horizontal compact
     const primeBoxW = Math.floor(fullW / 3);
     
     // En-têtes et valeurs dans la même ligne pour économiser l'espace
     drawRow(startX, curY, primeBoxW, rowH * 1.5);
     writeCentered('Prime Nette', startX, curY + 3, primeBoxW, 8, '#666');
-    writeCentered(money(d.prime || d.prime_mensuelle || d.prime_annuelle || 0), startX, curY + 3 + 11, primeBoxW, 8, '#000', true);
+    writeCentered(money(primeNette), startX, curY + 3 + 11, primeBoxW, 8, '#000', true);
     
     drawRow(startX + primeBoxW, curY, primeBoxW, rowH * 1.5);
     writeCentered('Accessoires', startX + primeBoxW, curY + 3, primeBoxW, 8, '#666');
-    writeCentered(money(d.accessoires || 0), startX + primeBoxW, curY + 3 + 11, primeBoxW, 8, '#000', true);
+    writeCentered(money(accessoiresMontant), startX + primeBoxW, curY + 3 + 11, primeBoxW, 8, '#000', true);
     
     drawRow(startX + primeBoxW * 2, curY, primeBoxW, rowH * 1.5);
     writeCentered('Prime Totale', startX + primeBoxW * 2, curY + 3, primeBoxW, 8, '#666');
-    writeCentered(money(d.prime_totale || d.prime || d.prime_mensuelle || d.prime_annuelle || 0), startX + primeBoxW * 2, curY + 3 + 11, primeBoxW, 8, '#000', true);
+    writeCentered(money(primeTotale), startX + primeBoxW * 2, curY + 3 + 11, primeBoxW, 8, '#000', true);
     
     curY += rowH * 1.5 + 6;
 
@@ -1301,11 +1725,11 @@ exports.getSubscriptionPDF = async (req, res) => {
       }
     }
 
-    curY = sigY + sigHeight + 8;
+    curY = sigY + sigHeight + 12; // Espacement augmenté pour séparer du trait noir
 
-    // Trait noir en bas (épaisseur 1 pour visibilité)
+    // Trait noir en bas (épaisseur 1 pour visibilité) - Descendu légèrement
     doc.lineWidth(1).moveTo(startX, curY).lineTo(startX + fullW, curY).stroke('#000000');
-    curY += 5;
+    curY += 8; // Espacement augmenté après le trait noir
 
     // Informations de l'entreprise en bas de page - Centré, taille réduite pour tenir sur une page
     doc.fontSize(6).fillColor('#000000').font('Helvetica');
@@ -1322,6 +1746,107 @@ exports.getSubscriptionPDF = async (req, res) => {
     const textHeight = doc.heightOfString(footerText, { width: fullW, align: 'center', lineGap: 1 });
     curY += textHeight;
     console.log('✅ Footer ajouté à curY =', curY, 'Total utilisé:', curY, '/ 782px disponibles');
+
+    // Pour Coris Solidarité : Ajouter une deuxième page avec les bénéficiaires détaillés
+    if (isSolidarite) {
+      doc.addPage();
+      curY = 30; // Réinitialiser la position Y pour la nouvelle page
+      
+      // Titre de la page
+      doc.fontSize(14).fillColor('#000000').font('Helvetica-Bold');
+      doc.text('CORIS SOLIDARITE - BÉNÉFICIAIRES', startX, curY, { width: fullW, align: 'center' });
+      curY += 20;
+      
+      // En-tête du tableau des bénéficiaires
+      drawRow(startX, curY, fullW, boxH, grisNormal);
+      const benefDetailColW = [180, 100, 120, 135]; // Nom et Prénom, Date de Naissance, Lieu de Naissance, Capital décès
+      let benefDetailCurX = startX;
+      
+      write('Nom et Prénom', benefDetailCurX + 4, curY + 4, 9, '#000000', benefDetailColW[0] - 8, true);
+      benefDetailCurX += benefDetailColW[0];
+      write('Date de Naissance', benefDetailCurX + 4, curY + 4, 9, '#000000', benefDetailColW[1] - 8, true);
+      benefDetailCurX += benefDetailColW[1];
+      write('Lieu de Naissance', benefDetailCurX + 4, curY + 4, 9, '#000000', benefDetailColW[2] - 8, true);
+      benefDetailCurX += benefDetailColW[2];
+      write('Capital décès', benefDetailCurX + 4, curY + 4, 9, '#000000', benefDetailColW[3] - 8, true);
+      curY += boxH;
+      
+      // Récupérer tous les bénéficiaires (souscripteur, conjoints, enfants, ascendants)
+      const conjoints = Array.isArray(d.conjoints) ? d.conjoints : [];
+      const enfants = Array.isArray(d.enfants) ? d.enfants : [];
+      const ascendants = Array.isArray(d.ascendants) ? d.ascendants : [];
+      const beneficiaireDeces = d.beneficiaire || {};
+      
+      // Souscripteur
+      drawRow(startX, curY, fullW, rowH);
+      benefDetailCurX = startX;
+      write(`${safe(usr.nom)} ${safe(usr.prenom)}`, benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[0] - 8);
+      benefDetailCurX += benefDetailColW[0];
+      write(formatDate(usr.date_naissance || ''), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[1] - 8);
+      benefDetailCurX += benefDetailColW[1];
+      write(usr.lieu_naissance || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[2] - 8);
+      benefDetailCurX += benefDetailColW[2];
+      write(money(d.capital || d.capital_deces || 0), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[3] - 8);
+      curY += rowH;
+      
+      // Bénéficiaire en cas de décès (si renseigné)
+      if (beneficiaireDeces.nom) {
+        drawRow(startX, curY, fullW, rowH);
+        benefDetailCurX = startX;
+        write(beneficiaireDeces.nom || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[0] - 8);
+        benefDetailCurX += benefDetailColW[0];
+        write(formatDate(beneficiaireDeces.date_naissance || beneficiaireDeces.dateNaissance || ''), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[1] - 8);
+        benefDetailCurX += benefDetailColW[1];
+        write(beneficiaireDeces.lieu_naissance || beneficiaireDeces.lieuNaissance || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[2] - 8);
+        benefDetailCurX += benefDetailColW[2];
+        write(money(d.capital || d.capital_deces || 0), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[3] - 8);
+        curY += rowH;
+      }
+      
+      // Conjoints
+      conjoints.forEach((c) => {
+        drawRow(startX, curY, fullW, rowH);
+        benefDetailCurX = startX;
+        write(c.nom_prenom || c.nom || 'Conjoint', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[0] - 8);
+        benefDetailCurX += benefDetailColW[0];
+        write(formatDate(c.date_naissance || c.dateNaissance || ''), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[1] - 8);
+        benefDetailCurX += benefDetailColW[1];
+        write(c.lieu_naissance || c.lieuNaissance || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[2] - 8);
+        benefDetailCurX += benefDetailColW[2];
+        write(money(c.capital_deces || d.capital || d.capital_deces || 0), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[3] - 8);
+        curY += rowH;
+      });
+      
+      // Enfants
+      enfants.forEach((e) => {
+        drawRow(startX, curY, fullW, rowH);
+        benefDetailCurX = startX;
+        write(e.nom_prenom || e.nom || 'Enfant', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[0] - 8);
+        benefDetailCurX += benefDetailColW[0];
+        write(formatDate(e.date_naissance || e.dateNaissance || ''), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[1] - 8);
+        benefDetailCurX += benefDetailColW[1];
+        write(e.lieu_naissance || e.lieuNaissance || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[2] - 8);
+        benefDetailCurX += benefDetailColW[2];
+        write(money(e.capital_deces || d.capital || d.capital_deces || 0), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[3] - 8);
+        curY += rowH;
+      });
+      
+      // Ascendants
+      ascendants.forEach((a) => {
+        drawRow(startX, curY, fullW, rowH);
+        benefDetailCurX = startX;
+        write(a.nom_prenom || a.nom || 'Ascendant', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[0] - 8);
+        benefDetailCurX += benefDetailColW[0];
+        write(formatDate(a.date_naissance || a.dateNaissance || ''), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[1] - 8);
+        benefDetailCurX += benefDetailColW[1];
+        write(a.lieu_naissance || a.lieuNaissance || '', benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[2] - 8);
+        benefDetailCurX += benefDetailColW[2];
+        write(money(a.capital_deces || d.capital || d.capital_deces || 0), benefDetailCurX + 4, curY + 4, 9, '#000', benefDetailColW[3] - 8);
+        curY += rowH;
+      });
+      
+      console.log('✅ Page 2 ajoutée pour Coris Solidarité avec bénéficiaires détaillés');
+    }
 
     doc.end();
   } catch (error) {

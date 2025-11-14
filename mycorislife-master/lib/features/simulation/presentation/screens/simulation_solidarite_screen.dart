@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/sousription_solidarite.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 
 class SolidariteSimulationPage extends StatefulWidget {
@@ -156,20 +157,44 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     );
   }
 
-  void _navigateToSubscription() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SouscriptionSolidaritePage(
-        capital: selectedCapital,
-        periodicite: selectedPeriodicite,
-        nbConjoints: nbConjoints,
-        nbEnfants: nbEnfants,
-        nbAscendants: nbAscendants,
-      ),
-    ),
-  );
-}
+  void _navigateToSubscription() async {
+    // Préparer les données de simulation
+    final simulationData = {
+      'capital': selectedCapital,
+      'periodicite': selectedPeriodicite,
+      'nbConjoints': nbConjoints,
+      'nbEnfants': nbEnfants,
+      'nbAscendants': nbAscendants,
+    };
+    
+    // Vérifier le rôle et rediriger
+    final userRole = await AuthService.getUserRole();
+    if (userRole == 'commercial') {
+      // Pour les commerciaux, rediriger vers la sélection de client
+      Navigator.pushNamed(
+        context,
+        '/commercial/select_client',
+        arguments: {
+          'productType': 'solidarite',
+          'simulationData': simulationData,
+        },
+      );
+    } else {
+      // Pour les clients, rediriger directement vers la souscription
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SouscriptionSolidaritePage(
+            capital: selectedCapital,
+            periodicite: selectedPeriodicite,
+            nbConjoints: nbConjoints,
+            nbEnfants: nbEnfants,
+            nbAscendants: nbAscendants,
+          ),
+        ),
+      );
+    }
+  }
 
   Widget _buildModernHeader() {
     return Container(

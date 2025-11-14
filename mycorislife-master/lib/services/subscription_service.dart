@@ -8,7 +8,11 @@ class SubscriptionService {
   static const String baseUrl = AppConfig.baseUrl;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
-  // Créer une souscription
+  /// Crée une nouvelle souscription
+  /// 
+  /// [subscriptionData] : Données de la souscription (product_type, capital, prime, etc.)
+  /// Si client_id est présent dans subscriptionData, la souscription sera créée pour ce client
+  /// (cas d'une souscription commerciale)
   Future<http.Response> createSubscription(Map<String, dynamic> subscriptionData) async {
     final token = await storage.read(key: 'token');
     
@@ -103,23 +107,16 @@ class SubscriptionService {
     throw Exception("Erreur lors de la récupération des contrats");
   }
 
-  // Récupérer toutes les souscriptions
+  // Récupérer toutes les souscriptions (combine propositions et contrats)
   Future<List<Subscription>> getAllSubscriptions() async {
-    final token = await storage.read(key: 'token');
-    final response = await http.get(
-      Uri.parse('$baseUrl/subscriptions/user/all'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success']) {
-        return (data['data'] as List)
-            .map((item) => Subscription.fromJson(item))
-            .toList();
-      }
+    try {
+      // Récupérer les propositions et les contrats, puis les combiner
+      final propositions = await getPropositions();
+      final contrats = await getContrats();
+      return [...propositions, ...contrats];
+    } catch (e) {
+      throw Exception("Erreur lors de la récupération des souscriptions: $e");
     }
-    throw Exception("Erreur lors de la récupération des souscriptions");
   }
 
   // Uploader un document
@@ -173,7 +170,7 @@ class SubscriptionService {
     try {
       final token = await storage.read(key: 'token');
       final response = await http.get(
-        Uri.parse('$baseUrl/subscriptions/detail/$subscriptionId'),
+        Uri.parse('$baseUrl/subscriptions/$subscriptionId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_serenite.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class SimulationSereniteScreen extends StatefulWidget {
   const SimulationSereniteScreen({super.key});
@@ -1012,7 +1013,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         periodicite: 'annuel',
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
@@ -1087,7 +1087,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     });
   }
 
-  void _navigateToSubscription() {
+  void _navigateToSubscription() async {
     // Préparer les données de simulation
     final simulationData = {
       'capital': _currentSimulation == SimulationType.parCapital
@@ -1105,14 +1105,28 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           : 'Par Prime',
     };
 
-    // Naviguer vers la page de souscription
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            SouscriptionSerenitePage(simulationData: simulationData),
-      ),
-    );
+    // Vérifier le rôle et rediriger
+    final userRole = await AuthService.getUserRole();
+    if (userRole == 'commercial') {
+      // Pour les commerciaux, rediriger vers la sélection de client
+      Navigator.pushNamed(
+        context,
+        '/commercial/select_client',
+        arguments: {
+          'productType': 'serenite',
+          'simulationData': simulationData,
+        },
+      );
+    } else {
+      // Pour les clients, rediriger directement vers la souscription
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              SouscriptionSerenitePage(simulationData: simulationData),
+        ),
+      );
+    }
   }
 
   void _effectuerCalcul() async {

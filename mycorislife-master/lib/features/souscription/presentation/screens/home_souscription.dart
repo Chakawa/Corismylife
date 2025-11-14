@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 class HomeSouscriptionPage extends StatelessWidget {
   const HomeSouscriptionPage({super.key}); // ✅ super parameter utilisé
@@ -8,46 +9,56 @@ class HomeSouscriptionPage extends StatelessWidget {
   static const Color blanc = Colors.white;
   static const Color ombrage = Colors.black;
 
+  /**
+   * MODIFICATION: Les routes pointent maintenant directement vers les pages de souscription.
+   * 
+   * FLUX:
+   * 1. L'utilisateur clique sur un produit
+   * 2. Pour les commerciaux: redirection vers sélection de client puis souscription
+   * 3. Pour les clients: redirection directe vers la souscription
+   * 
+   * Plus besoin de passer par la page de description.
+   */
   final List<Map<String, dynamic>> produits = const [
     {
       'image': 'assets/images/retraitee.png',
       'title': 'CORIS RETRAITE',
-      'route': '/souscription_retraite',
+      'route': '/souscription_retraite', // Page de souscription directe
     },
     {
       'image': 'assets/images/etudee.png',
       'title': 'CORIS ETUDE',
-      'route': '/souscription_etude',
+      'route': '/souscription_etude', // Page de souscription directe
     },
     {
       'image': 'assets/images/serenite.png',
       'title': 'CORIS SERENITE PLUS',
-      'route': '/souscription_serenite',
+      'route': '/souscription_serenite', // Page de souscription directe
     },
     {
       'image': 'assets/images/solidarite.png',
       'title': 'CORIS SOLIDARITE',
-      'route': '/souscription_solidarite',
+      'route': '/sousription_solidarite', // Page de souscription directe
     },
     {
       'image': 'assets/images/emprunteur.png',
       'title': 'FLEX EMPRUNTEUR',
-      'route': '/souscription_emprunteur',
+      'route': '/souscription_flex', // Page de souscription directe
     },
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
-      'route': '/souscription_familis',
+      'route': '/souscription_familis', // Page de souscription directe
     },
     {
       'image': 'assets/images/prets.png',
       'title': 'PRETS SCOLAIRE',
-      'route': '/souscription_prets',
+      'route': '/souscription_prets_scolaire', // Page de souscription directe
     },
     {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS EPARGNE BONUS',
-      'route': '/souscription_epargne',
+      'route': '/souscription_epargne', // Page de souscription directe
     },
   ];
 
@@ -201,7 +212,30 @@ class HomeSouscriptionPage extends StatelessWidget {
         itemBuilder: (context, index) {
           final produit = produits[index];
           return InkWell(
-            onTap: () => Navigator.pushNamed(context, produit['route']),
+            onTap: () async {
+              // Vérifier le rôle de l'utilisateur
+              final userRole = await AuthService.getUserRole();
+              
+              // Si c'est un commercial, rediriger vers la sélection de client
+              if (userRole == 'commercial') {
+                // Extraire le type de produit depuis la route
+                String productType = produit['route']
+                    .replaceAll('/souscription_', '')
+                    .replaceAll('/sousription_', ''); // Gérer la typo dans solidarite
+                
+                Navigator.pushNamed(
+                  context,
+                  '/commercial/select_client',
+                  arguments: {
+                    'productType': productType,
+                    'simulationData': null,
+                  },
+                );
+              } else {
+                // Si c'est un client, rediriger directement vers la souscription
+                Navigator.pushNamed(context, produit['route']);
+              }
+            },
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

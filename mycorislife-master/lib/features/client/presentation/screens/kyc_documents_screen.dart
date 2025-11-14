@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:mycorislife/services/kyc_service.dart';
-import 'package:mycorislife/config/app_config.dart';
 
 /// Écran de gestion des documents KYC
 class KYCDocumentsScreen extends StatefulWidget {
@@ -100,3 +98,6 @@ class _KYCDocumentsScreenState extends State<KYCDocumentsScreen> {
     );
   }
 }
+
+
+

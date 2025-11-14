@@ -1,5 +1,8 @@
-//import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../domain/commercial_service.dart';
+import 'mes_clients_screen.dart';
+import 'mes_commissions_screen.dart';
 
 class CommercialHomePage extends StatefulWidget {
   const CommercialHomePage({super.key});
@@ -12,6 +15,47 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
   int _selectedIndex = 0;
   static const bleuCoris = Color(0xFF002B6B);
   static const rougeCoris = Color(0xFFE30613);
+  
+  // Statistiques
+  int _nbClients = 0;
+  int _nbContrats = 0;
+  bool _isLoadingStats = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+  
+  Future<void> _loadStats() async {
+    try {
+      setState(() {
+        _isLoadingStats = true;
+      });
+      
+      final stats = await CommercialService.getStats();
+      
+      if (mounted) {
+        setState(() {
+          _nbClients = stats['nbClients'] ?? 0;
+          _nbContrats = stats['nbContrats'] ?? 0;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingStats = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
  
   final List<Map<String, dynamic>> _services = [
@@ -62,30 +106,36 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
 
   final List<Widget> _pages = [
     SizedBox.shrink(),
-    Center(child: Text("Aucun client apporté", style: TextStyle(fontSize: 18))),
+    const MesClientsScreen(),
     SizedBox.shrink(),
-    Center(child: Text("Aucun bordereaux de commission trouvé ", style: TextStyle(fontSize: 18))),
+    const MesCommissionsScreen(),
     SizedBox.shrink(),
   ];
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: bleuCoris,
-        elevation: 0,
-        automaticallyImplyLeading: false,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        // Si on essaie de revenir en arrière, rester sur la page d'accueil
+        // Ne pas permettre de revenir à la page de connexion
+        final navigator = Navigator.of(context);
+        if (navigator.canPop()) {
+          navigator.pop();
+        } else {
+          // Si on ne peut pas revenir en arrière, rester sur la page d'accueil
+          setState(() {
+            _selectedIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          backgroundColor: bleuCoris,
+          elevation: 0,
+          automaticallyImplyLeading: false,
         title: Row(
           children: [
             Container(
@@ -117,7 +167,9 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/notifications');
+            },
           ),
         ],
       ),
@@ -163,6 +215,7 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
             label: "Profil",
           ),
         ],
+      ),
       ),
     );
   }
@@ -292,6 +345,8 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
               itemBuilder: (context, index) {
                 return InkWell(
                   onTap: () {
+                    // Pour les commerciaux, naviguer vers la page de description du produit
+                    // qui contiendra le bouton "Souscrire maintenant"
                     Navigator.pushNamed(context, _services[index]['route']);
                   },
                   child: Container(
@@ -460,7 +515,7 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                     Expanded(
                       child: _buildQuickStat(
                         icon: Icons.people_outline,
-                        value: "36",
+                        value: _isLoadingStats ? "..." : _nbClients.toString(),
                         label: "Clients",
                         screenWidth: screenWidth,
                       ),
@@ -469,7 +524,7 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                     Expanded(
                       child: _buildQuickStat(
                         icon: Icons.assignment_turned_in,
-                        value: "07",
+                        value: _isLoadingStats ? "..." : _nbContrats.toString(),
                         label: "Contrats actifs",
                         screenWidth: screenWidth,
                       ),

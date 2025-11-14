@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 /// ============================================
 /// PAGE DESCRIPTION PRÊTS SCOLAIRES
@@ -280,9 +281,25 @@ Avec notre solution, vous investissez dans l'avenir de vos enfants tout en bén�
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Navigation directe vers la page de souscription PRÊTS SCOLAIRES
+                      onPressed: () async {
+                        // Vérifier le rôle de l'utilisateur pour déterminer le flux de navigation
+                        // Si c'est un commercial, il doit passer par la sélection de client
+                        // Si c'est un client, il peut accéder directement à la souscription
+                        final userRole = await AuthService.getUserRole();
+                        if (userRole == 'commercial') {
+                          // Pour les commerciaux, rediriger vers la sélection de client
+                          Navigator.pushNamed(
+                            context,
+                            '/commercial/select_client',
+                            arguments: {
+                              'productType': 'prets',
+                              'simulationData': null, // Pas de simulation, accès direct
+                            },
+                          );
+                        } else {
+                          // Pour les clients, navigation directe vers la page de souscription
                         Navigator.pushNamed(context, '/souscription_prets');
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3B82F6),

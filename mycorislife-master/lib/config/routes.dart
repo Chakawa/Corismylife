@@ -30,6 +30,10 @@ import 'package:mycorislife/features/produit/presentation/screens/description_fl
 import 'package:mycorislife/features/produit/presentation/screens/description_etude.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/profile_commercial.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/select_client_screen.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/create_client_screen.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/register_client_screen.dart';
+import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
 
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
@@ -59,18 +63,91 @@ final Map<String, WidgetBuilder> appRoutes = {
   // Souscriptions Client
   '/souscription': (context) => HomeSouscriptionPage(),
   '/souscription_epargne': (context) => SouscriptionEpargnePage(),
-  '/souscription_etude': (context) =>   SouscriptionEtudePage(),
-  '/souscription_familis': (context) =>  SouscriptionFamilisPage(),
-  '/souscription_emprunteur': (context) => SouscriptionFlexPage(),
+  '/souscription_etude': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionEtudePage(
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+      ageParent: args?['simulationData']?['ageParent'],
+      ageEnfant: args?['simulationData']?['ageEnfant'],
+      prime: args?['simulationData']?['prime'],
+      rente: args?['simulationData']?['rente'],
+      periodicite: args?['simulationData']?['periodicite'],
+    );
+  },
+  '/souscription_familis': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionFamilisPage(
+      simulationData: args?['simulationData'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
+  '/souscription_emprunteur': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionFlexPage(
+      simulationData: args?['simulationData'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
+  '/souscription_flex': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionFlexPage(
+      simulationData: args?['simulationData'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
   '/souscription_prets': (context) => const SouscriptionPretsScolairePage(),
-  '/souscription_retraite': (context) =>  SouscriptionRetraitePage(),
-  '/souscription_serenite': (context) =>  SouscriptionSerenitePage(),
-  '/souscription_solidarite': (context) => const SouscriptionSolidaritePage(),
+  '/souscription_retraite': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionRetraitePage(
+      simulationData: args?['simulationData'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
+  '/souscription_serenite': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionSerenitePage(
+      simulationData: args?['simulationData'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
+  '/souscription_solidarite': (context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionSolidaritePage(
+      capital: args?['simulationData']?['capital'],
+      periodicite: args?['simulationData']?['periodicite'],
+      nbConjoints: args?['simulationData']?['nbConjoints'],
+      nbEnfants: args?['simulationData']?['nbEnfants'],
+      nbAscendants: args?['simulationData']?['nbAscendants'],
+      clientId: args?['client_id'],
+      clientData: args?['client'],
+    );
+  },
 
   // commercial route
   '/commercial_home': (context) => const CommercialHomePage(),
   '/commercialHome': (context) => CommercialHomePage(),
   '/profileCommercial': (context) => CommercialProfile(),
+  '/commercial/create_client': (context) => const CreateClientScreen(),
+  '/commercial/select_client': (context) {
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    return SelectClientScreen(
+      productType: args?['productType'] ?? '',
+      simulationData: args?['simulationData'],
+    );
+  },
+  '/commercial/register_client': (context) {
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    return RegisterClientScreen(
+      productType: args?['productType'],
+      simulationData: args?['simulationData'],
+    );
+  },
   
   // adminroute
  
@@ -90,6 +167,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/profile': (context) => const ProfilPage(),
   '/commercial-profile': (context) => const CommercialProfile(),
 
+  // notifications
+  '/notifications': (context) => const NotificationsScreen(),
 
   
 };

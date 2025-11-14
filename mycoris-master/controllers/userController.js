@@ -314,6 +314,128 @@ exports.changePassword = async (req, res) => {
 };
 
 /**
+ * Récupère un utilisateur par son ID (pour les commerciaux)
+ * Vérifie que l'utilisateur connecté est un commercial et que le client a son code_apporteur
+ */
+exports.getUserById = async (req, res) => {
+  try {
+    const commercialId = req.user.id;
+    const { id } = req.params;
+    
+    console.log('📋 Récupération utilisateur ID:', id, 'par commercial ID:', commercialId);
+    
+    // Vérifier que l'utilisateur connecté est un commercial
+    const commercialQuery = 'SELECT code_apporteur, role FROM users WHERE id = $1';
+    const commercialResult = await pool.query(commercialQuery, [commercialId]);
+    
+    if (commercialResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Commercial non trouvé'
+      });
+    }
+    
+    const commercial = commercialResult.rows[0];
+    
+    // Si l'utilisateur connecté n'est pas un commercial, vérifier qu'il accède à son propre profil
+    if (commercial.role !== 'commercial' && parseInt(id) !== commercialId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé'
+      });
+    }
+    
+    // Si c'est un commercial, vérifier que le client a son code_apporteur
+    if (commercial.role === 'commercial') {
+      const clientQuery = 'SELECT code_apporteur FROM users WHERE id = $1';
+      const clientResult = await pool.query(clientQuery, [id]);
+      
+      if (clientResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Client non trouvé'
+        });
+      }
+      
+      const client = clientResult.rows[0];
+      
+      // Vérifier que le client appartient à ce commercial
+      if (client.code_apporteur !== commercial.code_apporteur) {
+        return res.status(403).json({
+          success: false,
+          message: 'Accès non autorisé à ce client'
+        });
+      }
+    }
+    
+    // Récupérer les données de l'utilisateur
+    const query = `
+      SELECT 
+        id, 
+        civilite, 
+        nom, 
+        prenom, 
+        email, 
+        telephone, 
+        date_naissance,
+        lieu_naissance,
+        adresse, 
+        pays,
+        photo_url, 
+        role, 
+        code_apporteur,
+        created_at, 
+        updated_at
+      FROM users 
+      WHERE id = $1
+    `;
+    
+    const result = await pool.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+    
+    const user = result.rows[0];
+    
+    // Formater date_naissance si elle existe
+    if (user.date_naissance) {
+      if (user.date_naissance instanceof Date) {
+        user.date_naissance = user.date_naissance.toISOString().split('T')[0];
+      } else if (typeof user.date_naissance === 'string') {
+        user.date_naissance = user.date_naissance.split('T')[0];
+      }
+    } else {
+      user.date_naissance = null;
+    }
+    
+    // S'assurer que lieu_naissance est une string
+    if (!user.lieu_naissance) {
+      user.lieu_naissance = null;
+    }
+    
+    // Ne pas retourner les informations sensibles
+    delete user.password_hash;
+    
+    console.log('✅ Utilisateur récupéré avec succès');
+    
+    res.json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    console.error('❌ Erreur récupération utilisateur par ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération de l\'utilisateur'
+    });
+  }
+};
+
+/**
  * Configuration de multer pour l'upload de photos
  */
 const storage = multer.diskStorage({

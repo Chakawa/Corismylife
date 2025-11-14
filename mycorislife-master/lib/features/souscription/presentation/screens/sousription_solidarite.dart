@@ -28,12 +28,25 @@ class Membre {
   Membre({required this.nomPrenom, required this.dateNaissance});
 }
 
+/// Page de souscription pour le produit CORIS SOLIDARITÉ
+/// Permet de souscrire à une assurance famille avec conjoints, enfants et ascendants
+///
+/// [capital] : Capital garanti
+/// [periodicite] : Périodicité de paiement (Mensuel, Trimestriel, etc.)
+/// [nbConjoints] : Nombre de conjoints
+/// [nbEnfants] : Nombre d'enfants
+/// [nbAscendants] : Nombre d'ascendants
+/// [clientId] : ID du client si souscription par commercial (optionnel)
+/// [clientData] : Données du client si souscription par commercial (optionnel)
 class SouscriptionSolidaritePage extends StatefulWidget {
   final int? capital;
   final String? periodicite;
   final int? nbConjoints;
   final int? nbEnfants;
   final int? nbAscendants;
+  final String? clientId; // ID du client si souscription par commercial
+  final Map<String, dynamic>?
+      clientData; // Données du client si souscription par commercial
 
   const SouscriptionSolidaritePage({
     super.key,
@@ -42,6 +55,8 @@ class SouscriptionSolidaritePage extends StatefulWidget {
     this.nbConjoints,
     this.nbEnfants,
     this.nbAscendants,
+    this.clientId,
+    this.clientData,
   });
 
   @override
@@ -72,6 +87,47 @@ class _SouscriptionSolidaritePageState
   Map<String, dynamic> _userData = {};
   final storage = FlutterSecureStorage();
   bool _isLoading = true;
+
+  /**
+   * ============================================
+   * NOUVELLES VARIABLES POUR LE MODE COMMERCIAL
+   * ============================================
+   * 
+   * Ces variables permettent à un commercial de créer une souscription pour un client
+   * sans que le client ait besoin d'avoir un compte dans le système.
+   * 
+   * FONCTIONNEMENT:
+   * 1. _isCommercial : Indique si la souscription est créée par un commercial
+   * 2. _clientDateNaissance, _clientAge : Stockent les informations de date de naissance et âge du client
+   * 3. Les TextEditingController : Contrôlent les champs de saisie pour les informations du client
+   * 4. _selectedClientCivilite : Civilité sélectionnée (Monsieur, Madame, Mademoiselle)
+   * 5. _selectedClientIndicatif : Indicatif téléphonique sélectionné (+225, +226, etc.)
+   */
+  bool _isCommercial =
+      false; // Indique si c'est un commercial qui fait la souscription
+  DateTime?
+      _clientDateNaissance; // Date de naissance du client (pour validation d'âge)
+  int _clientAge =
+      0; // Âge calculé du client (utilisé pour les validations et calculs)
+
+  // Contrôleurs pour les informations client (si commercial)
+  // Ces contrôleurs gèrent la saisie des informations du client dans le formulaire
+  final TextEditingController _clientNomController = TextEditingController();
+  final TextEditingController _clientPrenomController = TextEditingController();
+  final TextEditingController _clientDateNaissanceController =
+      TextEditingController();
+  final TextEditingController _clientLieuNaissanceController =
+      TextEditingController();
+  final TextEditingController _clientTelephoneController =
+      TextEditingController();
+  final TextEditingController _clientEmailController = TextEditingController();
+  final TextEditingController _clientAdresseController =
+      TextEditingController();
+  final TextEditingController _clientNumeroPieceController =
+      TextEditingController();
+  String _selectedClientCivilite = 'Monsieur'; // Civilité par défaut
+  String _selectedClientIndicatif =
+      '+225'; // Indicatif par défaut (Côte d'Ivoire)
 
   // Contrôleurs pour l'étape 2 (bénéficiaire et contact d'urgence)
   final TextEditingController _beneficiaireNomController =
@@ -226,7 +282,7 @@ class _SouscriptionSolidaritePageState
       }
 
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/auth/profile'),
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -276,8 +332,175 @@ class _SouscriptionSolidaritePageState
     // Calculer la prime initiale
     _calculerPrime();
 
-    // Charger les données utilisateur
-    _loadUserData();
+    // Charger les données utilisateur seulement si ce n'est pas un commercial
+    // Pour les commerciaux, on chargera les données dans didChangeDependencies
+  }
+
+  /**
+   * ============================================
+   * MÉTHODE didChangeDependencies
+   * ============================================
+   * 
+   * Cette méthode est appelée automatiquement par Flutter lorsque les dépendances du widget changent.
+   * Elle est utilisée ici pour:
+   * 1. Détecter si c'est un commercial qui accède à la page
+   * 2. Pré-remplir les champs avec les informations d'un client existant (si sélectionné)
+   * 3. Initialiser le mode commercial si nécessaire
+   * 
+   * ARGUMENTS ATTENDUS (via ModalRoute):
+   * - isCommercial: true si c'est un commercial qui fait la souscription
+   * - clientInfo: Map contenant les informations du client (si un client existant est sélectionné)
+   * 
+   * FLUX:
+   * - Si isCommercial = true : Active le mode commercial et affiche les champs client
+   * - Si clientInfo existe : Pré-remplit tous les champs avec les données du client
+   * - Si isCommercial = false : Charge les données de l'utilisateur connecté (mode client normal)
+   */
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Récupérer les arguments passés lors de la navigation vers cette page
+    // Ces arguments peuvent contenir isCommercial et clientInfo
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    // Vérifier si c'est un commercial qui fait la souscription
+    if (args != null && args['isCommercial'] == true) {
+      // Activer le mode commercial si ce n'est pas déjà fait
+      if (!_isCommercial) {
+        setState(() {
+          _isCommercial = true;
+        });
+      }
+
+      /**
+       * PRÉ-REMPLISSAGE AUTOMATIQUE DES CHAMPS CLIENT
+       * 
+       * Si un client existant a été sélectionné (depuis select_client_screen),
+       * on pré-remplit automatiquement tous les champs avec ses informations.
+       * Cela permet au commercial de gagner du temps lors de la création d'une nouvelle souscription
+       * pour un client pour lequel il a déjà créé des souscriptions.
+       */
+      if (args['clientInfo'] != null) {
+        // Extraire les informations du client depuis les arguments
+        final clientInfo = args['clientInfo'] as Map<String, dynamic>;
+
+        // Pré-remplir tous les champs texte avec les informations du client
+        // L'opérateur ?? permet d'utiliser une chaîne vide si la valeur est null
+        _clientNomController.text = clientInfo['nom'] ?? '';
+        _clientPrenomController.text = clientInfo['prenom'] ?? '';
+        _clientEmailController.text = clientInfo['email'] ?? '';
+        _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+        _clientLieuNaissanceController.text =
+            clientInfo['lieu_naissance'] ?? '';
+        _clientAdresseController.text = clientInfo['adresse'] ?? '';
+        _clientNumeroPieceController.text =
+            clientInfo['numero_piece_identite'] ?? '';
+
+        // Pré-remplir la civilité si disponible
+        if (clientInfo['civilite'] != null) {
+          _selectedClientCivilite = clientInfo['civilite'];
+        }
+
+        /**
+         * GESTION DE LA DATE DE NAISSANCE
+         * 
+         * La date peut être reçue sous deux formats:
+         * 1. String (format ISO 8601, ex: "1995-11-19")
+         * 2. DateTime (objet DateTime directement)
+         * 
+         * On convertit toujours en DateTime pour faciliter les calculs d'âge.
+         * On formate ensuite la date au format français (JJ/MM/AAAA) pour l'affichage.
+         * On calcule aussi l'âge du client pour les validations ultérieures.
+         */
+        if (clientInfo['date_naissance'] != null) {
+          try {
+            DateTime? dateNaissance;
+            // Vérifier le type de la date et la convertir en DateTime si nécessaire
+            if (clientInfo['date_naissance'] is String) {
+              // Si c'est une String, utiliser DateTime.parse pour la convertir
+              dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+            } else if (clientInfo['date_naissance'] is DateTime) {
+              // Si c'est déjà un DateTime, l'utiliser directement
+              dateNaissance = clientInfo['date_naissance'];
+            }
+
+            if (dateNaissance != null) {
+              final finalDate = dateNaissance;
+              setState(() {
+                // Stocker la date de naissance
+                _clientDateNaissance = finalDate;
+
+                // Formater la date au format français (JJ/MM/AAAA)
+                // padLeft(2, '0') assure que les jours et mois ont toujours 2 chiffres
+                _clientDateNaissanceController.text =
+                    '${finalDate.day.toString().padLeft(2, '0')}/${finalDate.month.toString().padLeft(2, '0')}/${finalDate.year}';
+
+                // Calculer l'âge du client
+                final now = DateTime.now();
+                _clientAge = now.year - finalDate.year;
+                // Ajuster l'âge si l'anniversaire n'a pas encore eu lieu cette année
+                if (now.month < finalDate.month ||
+                    (now.month == finalDate.month && now.day < finalDate.day)) {
+                  _clientAge--;
+                }
+              });
+            }
+          } catch (e) {
+            // En cas d'erreur de parsing, afficher un message dans la console
+            print('Erreur parsing date de naissance: $e');
+          }
+        }
+
+        /**
+         * EXTRACTION DE L'INDICATIF TÉLÉPHONIQUE
+         * 
+         * Si le numéro de téléphone commence par un indicatif (ex: +225),
+         * on sépare l'indicatif du reste du numéro pour un affichage correct
+         * dans les champs séparés (indicatif + numéro).
+         */
+        final telephone = clientInfo['telephone'] ?? '';
+        if (telephone.isNotEmpty && telephone.startsWith('+')) {
+          // Séparer l'indicatif du numéro (ex: "+225 0707889919" -> ["+225", "0707889919"])
+          final parts = telephone.split(' ');
+          if (parts.isNotEmpty) {
+            // Le premier élément est l'indicatif
+            _selectedClientIndicatif = parts[0];
+            // Le reste est le numéro de téléphone
+            if (parts.length > 1) {
+              _clientTelephoneController.text = parts.sublist(1).join(' ');
+            }
+          }
+        }
+      }
+    }
+
+    /**
+     * CHARGEMENT DES DONNÉES UTILISATEUR
+     * 
+     * - Si c'est un client normal : Charger ses données depuis le serveur
+     * - Si c'est un commercial : Ne pas charger les données utilisateur car on utilise les infos client saisies
+     *   et mettre _isLoading à false pour permettre l'affichage de la page
+     */
+    if (!_isCommercial) {
+      // Mode client : Charger les données de l'utilisateur connecté
+      _loadUserData();
+    } else {
+      /**
+       * MODE COMMERCIAL : Pas besoin de charger les données utilisateur
+       * 
+       * CORRECTION DU BUG DE CHARGEMENT:
+       * - Avant: _isLoading restait à true pour les commerciaux, ce qui bloquait l'affichage
+       * - Maintenant: On met _isLoading à false immédiatement pour permettre l'affichage
+       * - Les données client seront saisies manuellement ou pré-remplies depuis clientInfo
+       */
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _calculerPrime() {
@@ -570,6 +793,103 @@ class _SouscriptionSolidaritePageState
             ),
           );
         }),
+      ),
+    );
+  }
+
+  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  Widget _buildStepClientInfo() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFormSection(
+            'Informations du Client',
+            Icons.person,
+            [
+              _buildDropdownField(
+                value: _selectedClientCivilite,
+                label: 'Civilité',
+                icon: Icons.person_outline,
+                items: ['Monsieur', 'Madame', 'Mademoiselle'],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedClientCivilite = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientNomController,
+                label: 'Nom du client',
+                icon: Icons.person_outline,
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientPrenomController,
+                label: 'Prénom du client',
+                icon: Icons.person_outline,
+              ),
+              const SizedBox(height: 16),
+              _buildDateField(
+                controller: _clientDateNaissanceController,
+                label: 'Date de naissance',
+                icon: Icons.calendar_today,
+                onDateSelected: (date) {
+                  setState(() {
+                    _clientDateNaissance = date;
+                    _clientDateNaissanceController.text =
+                        '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                    final maintenant = DateTime.now();
+                    _clientAge = maintenant.year - date.year;
+                    if (maintenant.month < date.month ||
+                        (maintenant.month == date.month &&
+                            maintenant.day < date.day)) {
+                      _clientAge = _clientAge - 1;
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientLieuNaissanceController,
+                label: 'Lieu de naissance',
+                icon: Icons.location_on,
+              ),
+              const SizedBox(height: 16),
+              _buildPhoneFieldWithIndicatif(
+                controller: _clientTelephoneController,
+                label: 'Téléphone du client',
+                selectedIndicatif: _selectedClientIndicatif,
+                onIndicatifChanged: (value) {
+                  setState(() {
+                    _selectedClientIndicatif = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientEmailController,
+                label: 'Email du client',
+                icon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientAdresseController,
+                label: 'Adresse du client',
+                icon: Icons.home,
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientNumeroPieceController,
+                label: 'Numéro de pièce d\'identité',
+                icon: Icons.badge,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1113,6 +1433,105 @@ class _SouscriptionSolidaritePageState
     );
   }
 
+  /**
+   * ============================================
+   * WIDGET _buildDateField
+   * ============================================
+   * 
+   * Crée un champ de saisie de date avec un sélecteur de date intégré.
+   * 
+   * PARAMÈTRES:
+   * - controller: TextEditingController pour gérer le texte affiché dans le champ
+   * - label: Label affiché au-dessus du champ
+   * - icon: Icône affichée dans le champ (généralement Icons.calendar_today)
+   * - onDateSelected: Callback appelé quand une date est sélectionnée
+   * 
+   * FONCTIONNEMENT:
+   * 1. Affiche un TextFormField en lecture seule (AbsorbPointer)
+   * 2. Quand l'utilisateur tape sur le champ, ouvre un DatePicker
+   * 3. Le DatePicker utilise un Theme personnalisé pour éviter les erreurs MaterialLocalizations
+   * 4. Une fois la date sélectionnée, appelle onDateSelected avec la date choisie
+   * 
+   * CORRECTION DU BUG:
+   * - Avant: Utilisation de ThemeData.light() causait des erreurs MaterialLocalizations
+   * - Maintenant: Utilisation de Theme.of(context).copyWith() pour hériter du contexte parent
+   */
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required Function(DateTime) onDateSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: _clientDateNaissance ??
+                  DateTime.now().subtract(const Duration(days: 365 * 30)),
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: bleuCoris,
+                      onPrimary: blanc,
+                      surface: blanc,
+                      onSurface: bleuCoris,
+                    ),
+                    dialogBackgroundColor: blanc,
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              onDateSelected(picked);
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                hintText: 'JJ/MM/AAAA',
+                hintStyle: const TextStyle(fontSize: 14),
+                prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color: bleuCoris.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Icon(icon, color: bleuCoris, size: 20)),
+                filled: true,
+                fillColor: fondCarte,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: bleuCoris, width: 1.5),
+                ),
+              ),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Ce champ est obligatoire'
+                  : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPhoneFieldWithIndicatif({
     required TextEditingController controller,
     required String label,
@@ -1362,7 +1781,14 @@ class _SouscriptionSolidaritePageState
 
   // Méthode pour déterminer les étapes actives en fonction des membres
   List<Widget> _getActiveSteps() {
-    List<Widget> steps = [_buildStep1()];
+    List<Widget> steps = [];
+
+    // Si commercial, ajouter la page d'informations client en premier
+    if (_isCommercial) {
+      steps.add(_buildStepClientInfo());
+    }
+
+    steps.add(_buildStep1());
 
     if (nbConjoints > 0) {
       steps.add(_buildStepConjoints());
@@ -1385,6 +1811,7 @@ class _SouscriptionSolidaritePageState
   // Méthode pour obtenir le nombre total d'étapes
   int _getTotalSteps() {
     int total = 2; // Étape 1 et étape finale (bénéficiaire/contact)
+    if (_isCommercial) total++; // Page client pour commercial
     if (nbConjoints > 0) total++;
     if (nbEnfants > 0) total++;
     if (nbAscendants > 0) total++;
@@ -1392,7 +1819,152 @@ class _SouscriptionSolidaritePageState
     return total;
   }
 
+  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
+  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
+  /// si elles ne sont pas déjà disponibles dans _userData
+  Future<Map<String, dynamic>> _loadUserDataForRecap() async {
+    try {
+      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      if (_userData.isNotEmpty) {
+        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        return _userData;
+      }
+      
+      final token = await storage.read(key: 'token');
+      if (token == null) {
+        debugPrint('❌ Token non trouvé');
+        throw Exception('Token non trouvé');
+      }
+
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['user'] != null) {
+          final userData = data['user'] as Map<String, dynamic>;
+          debugPrint('✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
+          // Mettre à jour _userData pour éviter de recharger
+          if (mounted) {
+            setState(() {
+              _userData = userData;
+            });
+          }
+          return userData;
+        } else {
+          debugPrint('⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+        }
+      } else {
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+      }
+      
+      // Fallback vers _userData si la requête échoue
+      return _userData.isNotEmpty ? _userData : {};
+    } catch (e) {
+      debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      // Fallback vers _userData en cas d'erreur
+      return _userData.isNotEmpty ? _userData : {};
+    }
+  }
+
   Widget _buildStepRecap() {
+    /**
+     * MODIFICATION IMPORTANTE:
+     * 
+     * Pour les CLIENTS (plateforme client):
+     * - Les informations sont déjà pré-enregistrées dans la base de données lors de l'inscription
+     * - On doit TOUJOURS charger les données depuis _loadUserDataForRecap() qui récupère le profil de l'utilisateur connecté
+     * 
+     * Pour les COMMERCIAUX (plateforme commercial):
+     * - Le commercial saisit les informations du client dans les champs du formulaire
+     * - On utilise les valeurs des contrôleurs (_clientNomController, etc.)
+     */
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _isCommercial ? null : _loadUserDataForRecap(),
+      builder: (context, snapshot) {
+        // Pour les commerciaux, utiliser directement les données des contrôleurs
+        if (_isCommercial) {
+          return _buildRecapContent();
+        }
+
+        // Pour les clients, attendre le chargement des données
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(color: bleuCoris),
+          );
+        }
+
+        if (snapshot.hasError) {
+          debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+          // En cas d'erreur, essayer d'utiliser _userData si disponible
+          if (_userData.isNotEmpty) {
+            return _buildRecapContent(userData: _userData);
+          }
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 48, color: rougeCoris),
+                SizedBox(height: 16),
+                Text('Erreur lors du chargement des données'),
+                TextButton(
+                  onPressed: () => setState(() {}),
+                  child: Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Utiliser les données chargées ou _userData en fallback
+        final userData = snapshot.data ?? _userData;
+        
+        // Si userData est vide, recharger les données
+        if (userData.isEmpty && !_isCommercial) {
+          // Recharger les données utilisateur
+          _loadUserDataForRecap().then((data) {
+            if (mounted && data.isNotEmpty) {
+              setState(() {
+                _userData = data;
+              });
+            }
+          });
+          return Center(
+              child: CircularProgressIndicator(color: bleuCoris));
+        }
+        
+        return _buildRecapContent(userData: userData);
+      },
+    );
+  }
+
+  Widget _buildRecapContent({Map<String, dynamic>? userData}) {
+    /**
+     * CONSTRUCTION DU RÉCAPITULATIF:
+     * 
+     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     */
+    final displayData = _isCommercial
+        ? {
+            'civilite': _selectedClientCivilite,
+            'nom': _clientNomController.text,
+            'prenom': _clientPrenomController.text,
+            'email': _clientEmailController.text,
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
+            'lieu_naissance': _clientLieuNaissanceController.text,
+            'adresse': _clientAdresseController.text,
+          }
+        : (userData ?? _userData);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1403,24 +1975,26 @@ class _SouscriptionSolidaritePageState
               'Informations Personnelles', Icons.person, bleuCoris, [
             _buildCombinedRecapRow(
                 'Civilité',
-                _userData['civilite'] ?? 'Non renseigné',
+                displayData['civilite'] ?? 'Non renseigné',
                 'Nom',
-                _userData['nom'] ?? 'Non renseigné'),
+                displayData['nom'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Prénom',
-                _userData['prenom'] ?? 'Non renseigné',
+                displayData['prenom'] ?? 'Non renseigné',
                 'Email',
-                _userData['email'] ?? 'Non renseigné'),
+                displayData['email'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Téléphone',
-                _userData['telephone'] ?? 'Non renseigné',
+                displayData['telephone'] ?? 'Non renseigné',
                 'Date de naissance',
-                _formatDate(_userData['date_naissance'] ?? '')),
+                displayData['date_naissance'] != null
+                    ? _formatDate(displayData['date_naissance'].toString())
+                    : 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                _userData['lieu_naissance'] ?? 'Non renseigné',
+                displayData['lieu_naissance'] ?? 'Non renseigné',
                 'Adresse',
-                _userData['adresse'] ?? 'Non renseigné'),
+                displayData['adresse'] ?? 'Non renseigné'),
           ]),
           const SizedBox(height: 12),
 
@@ -1663,7 +2237,50 @@ class _SouscriptionSolidaritePageState
     }
   }
 
+  bool _validateStepClientInfo() {
+    if (_clientNomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le nom du client');
+      return false;
+    }
+    if (_clientPrenomController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      return false;
+    }
+    if (_clientDateNaissance == null) {
+      _showErrorSnackBar('Veuillez saisir la date de naissance du client');
+      return false;
+    }
+    final maintenant = DateTime.now();
+    _clientAge = maintenant.year - _clientDateNaissance!.year;
+    if (maintenant.month < _clientDateNaissance!.month ||
+        (maintenant.month == _clientDateNaissance!.month &&
+            maintenant.day < _clientDateNaissance!.day)) {
+      _clientAge = _clientAge - 1;
+    }
+    if (_clientAge < 18 || _clientAge > 65) {
+      _showErrorSnackBar(
+          'Âge du client non valide (18-65 ans requis). Âge calculé: $_clientAge ans');
+      return false;
+    }
+    if (_clientEmailController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir l\'email du client');
+      return false;
+    }
+    if (_clientTelephoneController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      return false;
+    }
+    return true;
+  }
+
   void _nextStep() {
+    // Valider la page client si c'est un commercial et qu'on est à l'étape 0
+    if (_isCommercial && _currentStep == 0) {
+      if (!_validateStepClientInfo()) {
+        return; // Ne pas passer à l'étape suivante si la validation échoue
+      }
+    }
+
     if (_currentStep < _getTotalSteps() - 1) {
       setState(() => _currentStep++);
       _pageController.nextPage(
@@ -1754,7 +2371,7 @@ class _SouscriptionSolidaritePageState
                               children: [
                                 Text(
                                     _currentStep == _getTotalSteps() - 1
-                                        ? 'Finaliser'
+                                        ? 'Payer maintenant'
                                         : 'Suivant',
                                     style: TextStyle(
                                         color: blanc,
