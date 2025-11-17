@@ -921,7 +921,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       _loadUserData().then((data) {
         _calculatedAgeParent =
             _calculateAgeFromBirthDate(data['date_naissance']);
-        _recalculerValeurs(); // Recalculer après chargement
+        // FORCER le recalcul après chargement des données
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _recalculerValeurs();
+        });
         if (mounted) {
           setState(() {}); // Rafraîchir l'UI
         }
@@ -940,6 +943,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
+
+    // FORCER le recalcul initial
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _recalculerValeurs();
+    });
   }
 
   @override
@@ -1057,7 +1065,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             return Map<String, dynamic>.from(data['user']);
           }
           if (data.containsKey('id') && data.containsKey('email')) {
@@ -1140,12 +1150,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     // Mettre à jour la date d'échéance
     _updateEcheanceDate();
 
-    // Forcer le recalcul immédiat des valeurs
+    // FORCER le recalcul immédiat avec un délai pour s'assurer que tout est initialisé
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _recalculerValeurs();
-      if (mounted) {
-        setState(() {});
-      }
+      Future.delayed(Duration(milliseconds: 100), () {
+        _recalculerValeurs();
+        if (mounted) {
+          setState(() {});
+        }
+      });
     });
   }
 
@@ -1295,9 +1307,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1307,11 +1322,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -1322,9 +1340,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1336,7 +1358,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1353,7 +1376,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       } else if (response.statusCode == 401) {
         debugPrint('❌ Non authentifié (401): Token expiré ou invalide');
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
+        debugPrint(
+            '❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue - GARANTIR non-null
@@ -1935,55 +1959,99 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _recalculerValeurs() {
-    // Vérifier que toutes les données nécessaires sont disponibles
-    if (_calculatedAgeParent == null ||
-        _dureeController.text.isEmpty ||
-        _montantController.text.isEmpty ||
-        _selectedPeriodicite == null) {
-      _primeCalculee = 0;
-      _renteCalculee = 0;
+    debugPrint('🔁 [_recalculerValeurs] start');
+
+    final periodicite = _selectedPeriodicite ?? '';
+    final mode = _selectedMode ?? '';
+
+    if (periodicite.isEmpty || mode.isEmpty) {
+      debugPrint(
+          '❌ [_recalculerValeurs] periodicite or mode missing: periodicite="$periodicite", mode="$mode"');
+      if (mounted)
+        setState(() {
+          _primeCalculee = 0.0;
+          _renteCalculee = 0.0;
+        });
       return;
     }
+
+    // Parse montant safely (accepts spaces, commas)
+    final montantRaw = _montantController.text
+        .replaceAll(RegExp('[^0-9.,-]'), '')
+        .replaceAll(',', '.');
+    final montant = double.tryParse(montantRaw) ?? 0.0;
+    if (montant <= 0) {
+      debugPrint(
+          '❌ [_recalculerValeurs] invalid montant: "$montantRaw" -> $montant');
+      if (mounted)
+        setState(() {
+          _primeCalculee = 0.0;
+          _renteCalculee = 0.0;
+        });
+      return;
+    }
+
+    if (_calculatedAgeParent == null) {
+      debugPrint('❌ [_recalculerValeurs] _calculatedAgeParent is null');
+      if (mounted)
+        setState(() {
+          _primeCalculee = 0.0;
+          _renteCalculee = 0.0;
+        });
+      return;
+    }
+
+    // Parse enfant age
+    final ageEnfant = int.tryParse(_dureeController.text) ?? -1;
+    if (ageEnfant < 0 || ageEnfant > 17) {
+      debugPrint(
+          '❌ [_recalculerValeurs] invalid ageEnfant: ${_dureeController.text}');
+      if (mounted)
+        setState(() {
+          _primeCalculee = 0.0;
+          _renteCalculee = 0.0;
+        });
+      return;
+    }
+
+    final dureeMois = ((17 - ageEnfant) * 12).round();
+    final dureeEffective = _closestDuree(dureeMois);
+
     try {
-      // Nettoyer le montant (supprimer les espaces)
-      final montantText = _montantController.text.replaceAll(' ', '');
-      final montant = double.parse(montantText);
+      final modeLower = mode.toLowerCase();
 
-      // Calculer la durée en mois (jusqu'à 17 ans)
-      final ageEnfant = int.parse(_dureeController.text);
-      final dureeMois = ((17 - ageEnfant) * 12).round();
-      final dureeEffective = _closestDuree(dureeMois);
-
-      // Déterminer le mode de calcul en fonction de _selectedMode
-      if (_selectedMode == 'Mode Prime') {
-        // Mode Prime: calculer la rente correspondante
-        double primeMensuelle =
-            _convertToMensuel(montant, _selectedPeriodicite!);
-
-        _renteCalculee = _calculateRente(
+      if (modeLower.contains('prime')) {
+        // Mode Prime: montant is a prime
+        final primeMensuelle = _convertToMensuel(montant, periodicite);
+        final rente = _calculateRente(
             _calculatedAgeParent!, dureeEffective, primeMensuelle);
-        _primeCalculee = montant;
+        debugPrint(
+            '✅ [_recalculerValeurs] mode=prime primeMensuelle=$primeMensuelle rente=$rente');
+        if (mounted)
+          setState(() {
+            _primeCalculee = montant;
+            _renteCalculee = rente;
+          });
       } else {
-        // Mode Rente: calculer la prime correspondante
-        double primeMensuelle =
+        // Mode Rente: montant is a rente
+        final primeMensuelle =
             _calculatePrime(_calculatedAgeParent!, dureeEffective, montant);
-
-        _primeCalculee =
-            _convertFromMensuel(primeMensuelle, _selectedPeriodicite!);
-        _renteCalculee = montant;
+        final primeAffiche = _convertFromMensuel(primeMensuelle, periodicite);
+        debugPrint(
+            '✅ [_recalculerValeurs] mode=rente primeMensuelle=$primeMensuelle primeAffiche=$primeAffiche');
+        if (mounted)
+          setState(() {
+            _primeCalculee = primeAffiche;
+            _renteCalculee = montant;
+          });
       }
-
-      // Forcer la mise à jour de l'interface
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      // En cas d'erreur, mettre les valeurs à 0
-      _primeCalculee = 0;
-      _renteCalculee = 0;
-      if (mounted) {
-        setState(() {});
-      }
+    } catch (e, st) {
+      debugPrint('❌ [_recalculerValeurs] error: $e\n$st');
+      if (mounted)
+        setState(() {
+          _primeCalculee = 0.0;
+          _renteCalculee = 0.0;
+        });
     }
   }
 
@@ -3194,7 +3262,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
                         // Pour les clients, attendre le chargement des données
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
                             child: CircularProgressIndicator(color: bleuCoris),
                           );
@@ -3236,7 +3305,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             }
                           });
                           return Center(
-                              child: CircularProgressIndicator(color: bleuCoris));
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
                         }
 
                         return _buildRecapContent(userData: userData);
@@ -3250,28 +3320,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    // Pour les clients, charger et calculer automatiquement si pas déjà fait
-    if (!_isCommercial && (_primeCalculee == 0 || _renteCalculee == 0)) {
-      // Remplir les contrôleurs avec des valeurs par défaut si vides
-      if (_dureeController.text.isEmpty && _calculatedAgeParent != null) {
-        _dureeController.text = '0'; // Enfant nouveau-né par défaut
+    // Ensure recalculation happens after the frame when needed to avoid build-time side effects
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_primeCalculee == 0 || _renteCalculee == 0) {
+        debugPrint(
+            '🧩 [_buildRecapContent] detected zero values, calling _recalculerValeurs post-frame');
+        _recalculerValeurs();
       }
-      if (_montantController.text.isEmpty) {
-        _montantController.text = '100000'; // Montant par défaut
-      }
-      if ((_selectedPeriodicite ?? '').isEmpty) {
-        _selectedPeriodicite = 'Mensuelle';
-      }
-      if ((_selectedMode ?? '').isEmpty) {
-        _selectedMode = 'Mode Prime';
-      }
-      
-      // Déclencher le calcul IMMÉDIATEMENT (synchronique) pour affichage correct
-      _recalculerValeurs();
-    }
+    });
 
-    final primeDisplay = _primeCalculee;
-    final renteDisplay = _renteCalculee;
+    // Fallback local values to avoid flashing zeros
+    double primeDisplay = _primeCalculee > 0 ? _primeCalculee : 0.0;
+    double renteDisplay = _renteCalculee > 0 ? _renteCalculee : 0.0;
     final duree = int.tryParse(_dureeController.text) ?? 0;
 
     /**
@@ -3293,6 +3353,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             'adresse': _clientAdresseController.text,
           }
         : (userData ?? {});
+
+    // If still zero, attempt a synchronous recalculation as last resort
+    if (primeDisplay == 0.0 && renteDisplay == 0.0) {
+      debugPrint(
+          '⚠️ [_buildRecapContent] values still zero, attempting immediate recalculation');
+      _recalculerValeurs();
+      primeDisplay = _primeCalculee > 0 ? _primeCalculee : 0.0;
+      renteDisplay = _renteCalculee > 0 ? _renteCalculee : 0.0;
+    }
 
     return ListView(
       children: [
@@ -3371,10 +3440,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Icons.calculate,
           bleuSecondaire,
           [
-            _buildCombinedRecapRow(
-                'Mode',
-                _selectedMode,
-                'Périodicité',
+            _buildCombinedRecapRow('Mode', _selectedMode, 'Périodicité',
                 _selectedPeriodicite ?? 'Non sélectionnée'),
             _buildRecapRow(
                 'Date d\'effet',

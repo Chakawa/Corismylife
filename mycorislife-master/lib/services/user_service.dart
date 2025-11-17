@@ -13,7 +13,7 @@ import 'package:mycorislife/config/app_config.dart';
 
 class UserService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
-  
+
   static String get baseUrl => '${AppConfig.baseUrl}/users';
 
   /// ==========================================
@@ -21,11 +21,11 @@ class UserService {
   /// ==========================================
   /// Récupère les informations du profil de l'utilisateur connecté depuis le serveur.
   /// Nécessite une connexion Internet et un token d'authentification valide.
-  /// 
+  ///
   /// Les données récupérées sont sauvegardées en cache local pour consultation offline.
-  /// 
+  ///
   /// @returns Map contenant toutes les données du profil utilisateur
-  /// 
+  ///
   /// @throws Exception avec message clair si :
   ///   - Pas de token d'authentification
   ///   - Pas de connexion Internet
@@ -38,57 +38,75 @@ class UserService {
         throw Exception('Vous devez être connecté pour voir votre profil.');
       }
 
-      // Vérifier la connexion Internet rapidement
+      // Vérifier rapidement la résolution DNS de l'hôte API. Ne PAS lever
+      // immédiatement une exception si la vérification échoue : dans des
+      // environnements locaux (émulateur / 10.0.2.2) ou lorsque google.com est
+      // filtré, la vérification DNS peut fausser le diagnostique. On augmente
+      // le timeout et on poursuit ; l'appel HTTP réel décidera de la suite.
       try {
-        final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 2));
+        final host = Uri.parse(AppConfig.baseUrl).host;
+        final result = await InternetAddress.lookup(host)
+            .timeout(const Duration(seconds: 5));
         if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw Exception('Aucune connexion Internet.');
+          debugPrint(
+              '⚠️ getProfile: lookup renvoyé une adresse vide pour $host');
         }
-      } catch (_) {
-        throw Exception('Impossible de récupérer le profil. Vérifiez votre connexion Internet.');
+      } catch (e) {
+        debugPrint('⚠️ getProfile: vérification DNS échouée (ignore): $e');
+        // On n'interrompt pas l'exécution ici ; laisser l'appel HTTP gérer
+        // l'absence de connectivité ou l'indisponibilité du backend.
       }
 
-      final response = await http
-          .get(Uri.parse('$baseUrl/profile'), headers: {
+      final response = await http.get(Uri.parse('$baseUrl/profile'), headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       }).timeout(const Duration(seconds: 8), onTimeout: () {
         throw Exception('Le serveur met trop de temps à répondre.');
       });
 
-  // response.body is always a String; avoid dead null-aware expression
-  final bodyText = response.body;
+      // response.body is always a String; avoid dead null-aware expression
+      final bodyText = response.body;
       Map<String, dynamic> data = {};
       try {
         final parsed = json.decode(bodyText);
         if (parsed is Map<String, dynamic>) data = parsed;
       } catch (e) {
         debugPrint('⚠️ getProfile: réponse non JSON: $bodyText');
-        throw Exception('Réponse invalide du serveur lors de la récupération du profil.');
+        throw Exception(
+            'Réponse invalide du serveur lors de la récupération du profil.');
       }
 
       // Extraire l'objet utilisateur en acceptant plusieurs schémas
       Map<String, dynamic>? user;
-      
+
       // 1) Cas: { success: true, data: { id, civilite, nom, prenom, ... } }
-      if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+      if (data['success'] == true &&
+          data['data'] != null &&
+          data['data'] is Map) {
         final dataObj = data['data'] as Map<String, dynamic>;
         if (dataObj.containsKey('id') || dataObj.containsKey('email')) {
           user = dataObj;
         }
       }
-      
+
       // 2) Cas: { success: true, data: { user: { id, ... } } }
-      if (user == null && data['success'] == true && data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+      if (user == null &&
+          data['success'] == true &&
+          data['data'] != null &&
+          data['data'] is Map &&
+          data['data']['user'] != null &&
+          data['data']['user'] is Map) {
         user = Map<String, dynamic>.from(data['data']['user']);
       }
-      
+
       // 3) Cas: { success: true, user: { id, ... } }
-      if (user == null && data['success'] == true && data['user'] != null && data['user'] is Map) {
+      if (user == null &&
+          data['success'] == true &&
+          data['user'] != null &&
+          data['user'] is Map) {
         user = Map<String, dynamic>.from(data['user']);
       }
-      
+
       // 4) Cas: { id, civilite, nom, prenom, ... } (objet utilisateur direct)
       if (user == null && data.containsKey('id') && data.containsKey('email')) {
         user = Map<String, dynamic>.from(data);
@@ -99,18 +117,22 @@ class UserService {
         return user;
       }
 
-      debugPrint('⚠️ getProfile: réponse inattendue (${response.statusCode}): $bodyText');
+      debugPrint(
+          '⚠️ getProfile: réponse inattendue (${response.statusCode}): $bodyText');
 
       if (response.statusCode == 401) {
         throw Exception('Session expirée. Veuillez vous reconnecter.');
       }
 
-      throw Exception(data['message'] ?? 'Erreur lors de la récupération du profil.');
+      throw Exception(
+          data['message'] ?? 'Erreur lors de la récupération du profil.');
     } on SocketException {
-      throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
+      throw Exception(
+          'Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
     } catch (e) {
       if (e is Exception) rethrow;
-      throw Exception('Erreur lors de la récupération du profil: ${e.toString()}');
+      throw Exception(
+          'Erreur lors de la récupération du profil: ${e.toString()}');
     }
   }
 
@@ -119,7 +141,7 @@ class UserService {
   /// ==========================================
   /// Met à jour les informations du profil utilisateur sur le serveur.
   /// Nécessite une connexion Internet et un token d'authentification valide.
-  /// 
+  ///
   /// @param civilite: La civilité (M, Mme, etc.)
   /// @param nom: Le nom de l'utilisateur
   /// @param prenom: Le prénom de l'utilisateur
@@ -128,9 +150,9 @@ class UserService {
   /// @param dateNaissance: La date de naissance (optionnel)
   /// @param lieuNaissance: Le lieu de naissance (optionnel)
   /// @param pays: Le pays (optionnel)
-  /// 
+  ///
   /// @returns Map contenant les données du profil mis à jour
-  /// 
+  ///
   /// @throws Exception avec message clair si :
   ///   - Pas de token d'authentification
   ///   - Pas de connexion Internet
@@ -152,17 +174,21 @@ class UserService {
         throw Exception('Vous devez être connecté pour modifier votre profil.');
       }
 
-      // Vérifier la connexion Internet
+      // Vérifier rapidement la résolution DNS de l'hôte API (timeout augmenté).
+      // Même si cette vérification échoue, on ne bloque pas la mise à jour :
+      // l'appel HTTP avec timeout produira une erreur claire si le backend
+      // n'est pas accessible (meilleur signal pour l'utilisateur).
       try {
-        final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 2));
+        final host = Uri.parse(AppConfig.baseUrl).host;
+        final result = await InternetAddress.lookup(host)
+            .timeout(const Duration(seconds: 5));
         if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw Exception(
-              'Aucune connexion Internet. La mise à jour du profil nécessite une connexion Internet.');
+          debugPrint(
+              '⚠️ updateProfile: lookup renvoyé une adresse vide pour $host');
         }
       } catch (e) {
-        throw Exception(
-            'Impossible de mettre à jour le profil. Vérifiez votre connexion Internet.');
+        debugPrint('⚠️ updateProfile: vérification DNS échouée (ignore): $e');
+        // Ne pas lever d'exception ici ; laisser la requête HTTP gérer l'erreur.
       }
 
       // Préparer le corps de la requête avec les données à mettre à jour
@@ -178,14 +204,16 @@ class UserService {
       };
 
       // Faire la requête PUT avec timeout réduit à 5 secondes
-      final response = await http.put(
+      final response = await http
+          .put(
         Uri.parse('$baseUrl/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode(body),
-      ).timeout(
+      )
+          .timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           throw Exception(
@@ -203,7 +231,7 @@ class UserService {
         if (response.statusCode == 401) {
           throw Exception('Session expirée. Veuillez vous reconnecter.');
         } else {
-          throw Exception(data['message'] ?? 
+          throw Exception(data['message'] ??
               'Erreur lors de la mise à jour du profil. Veuillez réessayer.');
         }
       }
@@ -211,14 +239,15 @@ class UserService {
       throw Exception(
           'Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
     } catch (e) {
-      if (e is Exception && 
-          (e.toString().contains('Timeout') || 
-           e.toString().contains('timeout') ||
-           e.toString().contains('connexion') ||
-           e.toString().contains('Internet'))) {
+      if (e is Exception &&
+          (e.toString().contains('Timeout') ||
+              e.toString().contains('timeout') ||
+              e.toString().contains('connexion') ||
+              e.toString().contains('Internet'))) {
         rethrow;
       }
-      throw Exception('Erreur lors de la mise à jour du profil: ${e.toString()}');
+      throw Exception(
+          'Erreur lors de la mise à jour du profil: ${e.toString()}');
     }
   }
 
@@ -235,7 +264,8 @@ class UserService {
       }
 
       // Faire la requête PUT avec timeout réduit à 5 secondes
-      final response = await http.put(
+      final response = await http
+          .put(
         Uri.parse('$baseUrl/change-password'),
         headers: {
           'Content-Type': 'application/json',
@@ -245,7 +275,8 @@ class UserService {
           'oldPassword': oldPassword,
           'newPassword': newPassword,
         }),
-      ).timeout(
+      )
+          .timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           throw Exception(
@@ -259,10 +290,10 @@ class UserService {
         if (response.statusCode == 401) {
           throw Exception('Ancien mot de passe incorrect. Veuillez réessayer.');
         } else if (response.statusCode == 400) {
-          throw Exception(data['message'] ?? 
+          throw Exception(data['message'] ??
               'Le nouveau mot de passe ne respecte pas les critères requis.');
         } else {
-          throw Exception(data['message'] ?? 
+          throw Exception(data['message'] ??
               'Erreur lors du changement de mot de passe. Veuillez réessayer.');
         }
       }
@@ -270,14 +301,15 @@ class UserService {
       throw Exception(
           'Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
     } catch (e) {
-      if (e is Exception && 
-          (e.toString().contains('Timeout') || 
-           e.toString().contains('timeout') ||
-           e.toString().contains('connexion') ||
-           e.toString().contains('Internet'))) {
+      if (e is Exception &&
+          (e.toString().contains('Timeout') ||
+              e.toString().contains('timeout') ||
+              e.toString().contains('connexion') ||
+              e.toString().contains('Internet'))) {
         rethrow;
       }
-      throw Exception('Erreur lors du changement de mot de passe: ${e.toString()}');
+      throw Exception(
+          'Erreur lors du changement de mot de passe: ${e.toString()}');
     }
   }
 
@@ -345,9 +377,3 @@ class UserService {
     }
   }
 }
-
-
-
-
-
-

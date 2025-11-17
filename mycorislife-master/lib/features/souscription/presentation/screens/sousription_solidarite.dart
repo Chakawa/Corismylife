@@ -293,7 +293,9 @@ class _SouscriptionSolidaritePageState
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             if (mounted) {
               setState(() {
@@ -305,7 +307,9 @@ class _SouscriptionSolidaritePageState
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
@@ -320,7 +324,10 @@ class _SouscriptionSolidaritePageState
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             if (mounted) {
               setState(() {
@@ -1876,7 +1883,7 @@ class _SouscriptionSolidaritePageState
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
-      
+
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
@@ -1894,14 +1901,17 @@ class _SouscriptionSolidaritePageState
       ).timeout(Duration(seconds: 10), onTimeout: () {
         throw Exception('Timeout lors de la requête API');
       });
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1911,11 +1921,14 @@ class _SouscriptionSolidaritePageState
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -1926,9 +1939,13 @@ class _SouscriptionSolidaritePageState
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1940,7 +1957,8 @@ class _SouscriptionSolidaritePageState
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1949,19 +1967,21 @@ class _SouscriptionSolidaritePageState
             return userData;
           }
 
-          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
-      
+
       // Fallback vers _userData si la requête échoue - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     } catch (e) {
-      debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      debugPrint(
+          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
@@ -1993,7 +2013,8 @@ class _SouscriptionSolidaritePageState
               }
 
               if (snapshot.hasError) {
-                debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                debugPrint(
+                    'Erreur chargement données récapitulatif: ${snapshot.error}');
                 // En cas d'erreur, essayer d'utiliser _userData si disponible
                 if (_userData.isNotEmpty) {
                   return _buildRecapContent(userData: _userData);
@@ -2016,7 +2037,7 @@ class _SouscriptionSolidaritePageState
 
               // Utiliser les données chargées ou _userData en fallback
               final userData = snapshot.data ?? _userData;
-              
+
               // Si userData est vide, recharger les données
               if (userData.isEmpty && !_isCommercial) {
                 // Recharger les données utilisateur
@@ -2030,7 +2051,7 @@ class _SouscriptionSolidaritePageState
                 return Center(
                     child: CircularProgressIndicator(color: bleuCoris));
               }
-              
+
               return _buildRecapContent(userData: userData);
             },
           );
@@ -2065,19 +2086,35 @@ class _SouscriptionSolidaritePageState
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
             'email': _clientEmailController.text,
-            'telephone': '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
             'date_naissance': _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
         : {
             'civilite': pick(['civilite', 'title', 'gender', 'genre']),
-            'nom': pick(['nom', 'last_name', 'name', 'full_name', 'surname', 'family_name']),
-            'prenom': pick(['prenom', 'first_name', 'given_name', 'middle_name']),
+            'nom': pick([
+              'nom',
+              'last_name',
+              'name',
+              'full_name',
+              'surname',
+              'family_name'
+            ]),
+            'prenom':
+                pick(['prenom', 'first_name', 'given_name', 'middle_name']),
             'email': pick(['email', 'mail', 'email_address']),
-            'telephone': pick(['telephone', 'phone', 'phone_number', 'tel', 'mobile']),
-            'date_naissance': pick(['date_naissance', 'birth_date', 'dob', 'dateDeNaissance']),
-            'lieu_naissance': pick(['lieu_naissance', 'place_of_birth', 'birth_place', 'lieuDeNaissance']),
+            'telephone':
+                pick(['telephone', 'phone', 'phone_number', 'tel', 'mobile']),
+            'date_naissance': pick(
+                ['date_naissance', 'birth_date', 'dob', 'dateDeNaissance']),
+            'lieu_naissance': pick([
+              'lieu_naissance',
+              'place_of_birth',
+              'birth_place',
+              'lieuDeNaissance'
+            ]),
             'adresse': pick(['adresse', 'address', 'adresse_postale']),
           };
 

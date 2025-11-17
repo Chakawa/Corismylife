@@ -225,7 +225,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data == null || data is! Map) {
-          debugPrint('⚠️ Profil: réponse API vide ou non-Map: ${response.body}');
+          debugPrint(
+              '⚠️ Profil: réponse API vide ou non-Map: ${response.body}');
           if (mounted) {
             setState(() {
               _userData = _userData.isNotEmpty ? _userData : {};
@@ -237,11 +238,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         Map<String, dynamic>? userData;
 
         // 1) Cas standard: { success: true, user: { ... } }
-        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+        if (data['success'] == true &&
+            data['user'] != null &&
+            data['user'] is Map) {
           userData = Map<String, dynamic>.from(data['user']);
         }
         // 2) Cas nested: { success: true, data: { ... } }
-        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+        else if (data['success'] == true &&
+            data['data'] != null &&
+            data['data'] is Map) {
           userData = Map<String, dynamic>.from(data['data']);
         }
         // 3) Direct user object
@@ -375,12 +380,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             // Calculer l'âge si la date de naissance est disponible
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -393,7 +401,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -403,13 +412,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
               if (userData['date_naissance'] != null) {
                 try {
-                  final dateNaissance = DateTime.parse(userData['date_naissance']);
+                  final dateNaissance =
+                      DateTime.parse(userData['date_naissance']);
                   final maintenant = DateTime.now();
                   int age = maintenant.year - dateNaissance.year;
                   if (maintenant.month < dateNaissance.month ||
@@ -422,7 +434,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   debugPrint('Erreur parsing date: $e');
                 }
               }
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -433,11 +446,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -450,7 +467,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -464,7 +482,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             final userData = Map<String, dynamic>.from(data);
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -477,7 +496,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -486,7 +506,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             return userData;
           }
 
-          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
@@ -1923,7 +1944,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
                         // Pour les clients, attendre le chargement des données
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
                             child: CircularProgressIndicator(color: bleuCoris),
                           );
@@ -1967,7 +1989,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             }
                           });
                           return Center(
-                              child: CircularProgressIndicator(color: bleuCoris));
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
                         }
 
                         return _buildRecapContent(userData: userData);
@@ -2336,7 +2359,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 3 : 2)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),

@@ -2595,12 +2595,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             // Calculer l'âge si la date de naissance est disponible
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -2613,7 +2616,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2623,13 +2627,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
               if (userData['date_naissance'] != null) {
                 try {
-                  final dateNaissance = DateTime.parse(userData['date_naissance']);
+                  final dateNaissance =
+                      DateTime.parse(userData['date_naissance']);
                   final maintenant = DateTime.now();
                   int age = maintenant.year - dateNaissance.year;
                   if (maintenant.month < dateNaissance.month ||
@@ -2642,7 +2649,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   debugPrint('Erreur parsing date: $e');
                 }
               }
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -2653,11 +2661,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -2670,7 +2682,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2684,7 +2697,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             final userData = Map<String, dynamic>.from(data);
             if (userData['date_naissance'] != null) {
               try {
-                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final dateNaissance =
+                    DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
                 int age = maintenant.year - dateNaissance.year;
                 if (maintenant.month < dateNaissance.month ||
@@ -2697,7 +2711,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 debugPrint('Erreur parsing date: $e');
               }
             }
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2713,7 +2728,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       } else if (response.statusCode == 401) {
         debugPrint('❌ Non authentifié (401): Token expiré ou invalide');
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
+        debugPrint(
+            '❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue
@@ -4184,7 +4200,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
                         // Pour les clients, attendre le chargement des données
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
                             child: CircularProgressIndicator(color: bleuCoris),
                           );
@@ -4194,8 +4211,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           // En cas d'erreur de chargement, ne pas bloquer l'UI :
                           // utiliser les données déjà en cache si disponibles,
                           // sinon afficher le récap (champs non renseignés) sans écran d'erreur.
-                          debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
-                          final fallback = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+                          debugPrint(
+                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                          final fallback = _userData.isNotEmpty
+                              ? _userData
+                              : <String, dynamic>{};
                           return _buildRecapContent(userData: fallback);
                         }
 
@@ -4214,7 +4234,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                             }
                           });
                           return Center(
-                              child: CircularProgressIndicator(color: bleuCoris));
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
                         }
 
                         return _buildRecapContent(userData: userData);
@@ -4792,7 +4813,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.schedule, color: Color(0xFFF59E0B), size: 20),
+                        Icon(Icons.schedule,
+                            color: Color(0xFFF59E0B), size: 20),
                         SizedBox(width: 12),
                         Expanded(
                           child: Column(

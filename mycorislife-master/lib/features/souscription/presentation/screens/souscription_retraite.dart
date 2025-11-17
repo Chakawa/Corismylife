@@ -617,11 +617,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         Map<String, dynamic>? userData;
 
         // 1) Cas standard: { success: true, user: { ... } }
-        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+        if (data['success'] == true &&
+            data['user'] != null &&
+            data['user'] is Map) {
           userData = Map<String, dynamic>.from(data['user']);
         }
         // 2) Cas nested: { success: true, data: { ... } }
-        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+        else if (data['success'] == true &&
+            data['data'] != null &&
+            data['data'] is Map) {
           userData = Map<String, dynamic>.from(data['data']);
         }
         // 3) Direct user object
@@ -2106,9 +2110,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2118,11 +2125,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -2133,9 +2143,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2147,7 +2161,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2156,7 +2171,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             return userData;
           }
 
-          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
@@ -2192,9 +2208,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
                         // Pour les clients, attendre le chargement des données
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
-                              child: CircularProgressIndicator(color: bleuCoris));
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
                         }
 
                         if (snapshot.hasError) {
@@ -2203,7 +2221,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
                               child: _buildRecapContent(userData: _userData),
                             );
                           }
@@ -2238,7 +2257,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             }
                           });
                           return Center(
-                              child: CircularProgressIndicator(color: bleuCoris));
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
                         }
 
                         return Padding(
@@ -2537,7 +2557,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
+              onPressed: _currentStep == (_isCommercial ? 3 : 2)
+                  ? _showPaymentOptions
+                  : _nextStep,
               style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -2547,14 +2569,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   shadowColor: bleuCoris.withValues(alpha: 0.3)),
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(_currentStep == (_isCommercial ? 3 : 2) ? 'Payer maintenant' : 'Suivant',
+                Text(
+                    _currentStep == (_isCommercial ? 3 : 2)
+                        ? 'Payer maintenant'
+                        : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
                         fontSize: 16)),
                 const SizedBox(width: 8),
-                Icon(_currentStep == (_isCommercial ? 3 : 2) ? Icons.check : Icons.arrow_forward,
-                    color: blanc, size: 20),
+                Icon(
+                    _currentStep == (_isCommercial ? 3 : 2)
+                        ? Icons.check
+                        : Icons.arrow_forward,
+                    color: blanc,
+                    size: 20),
               ]),
             ),
           ),

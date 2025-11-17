@@ -10,10 +10,10 @@ import 'dart:io';
 /// ===============================================
 /// PAGE DE SOUSCRIPTION - FLEX EMPRUNTEUR
 /// ===============================================
-/// 
+///
 /// Cette page permet de souscrire à une assurance emprunteur (FLEX EMPRUNTEUR)
 /// avec garanties prévoyance et perte d'emploi.
-/// 
+///
 /// FONCTIONNALITÉS :
 /// - Formulaire multi-étapes (simulation → informations → récapitulatif)
 /// - Calcul automatique de la prime selon l'âge et la durée
@@ -23,24 +23,26 @@ import 'dart:io';
 /// - Validation de l'âge (18-65 ans)
 /// - Upload de pièce d'identité
 /// - Options de paiement (Wave, Orange Money)
-/// 
+///
 /// WORKFLOW :
 /// 1. Étape 1 : Paramètres de simulation (capital, durée, type de prêt, garanties)
 /// 2. Étape 2 : Informations complémentaires (bénéficiaire, contact d'urgence)
 /// 3. Étape 3 : Récapitulatif et paiement
-/// 
+///
 /// Pour les commerciaux, une étape supplémentaire (étape 0) permet de saisir
 /// les informations du client avant les paramètres de simulation.
-/// 
+///
 /// [simulationData] : Données de simulation pré-remplies (optionnel)
 /// [clientId] : ID du client si souscription par commercial (DEPRECATED)
 /// [clientData] : Données du client si souscription par commercial (pour pré-remplissage)
 class SouscriptionFlexPage extends StatefulWidget {
-  final Map<String, dynamic>? simulationData; // Données de simulation (capital, durée, etc.)
-  final String? clientId; // ID du client si souscription par commercial (DEPRECATED)
+  final Map<String, dynamic>?
+      simulationData; // Données de simulation (capital, durée, etc.)
+  final String?
+      clientId; // ID du client si souscription par commercial (DEPRECATED)
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial (nom, prénom, téléphone, etc.)
-  
+
   const SouscriptionFlexPage({
     super.key,
     this.simulationData,
@@ -55,7 +57,7 @@ class SouscriptionFlexPage extends StatefulWidget {
 /// ===============================================
 /// ÉTAT DE LA PAGE DE SOUSCRIPTION
 /// ===============================================
-/// 
+///
 /// Gère l'état de la page de souscription, incluant :
 /// - Navigation entre les étapes (PageView)
 /// - Animations (fade, slide)
@@ -72,67 +74,90 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   static const Color rougeCoris = Color(0xFFE30613); // Rouge principal CORIS
   static const Color bleuSecondaire = Color(0xFF1E4A8C); // Bleu secondaire
   static const Color blanc = Colors.white; // Blanc
-  static const Color fondCarte = Color(0xFFF8FAFC); // Fond gris clair pour les cartes
-  static const Color grisTexte = Color(0xFF64748B); // Gris pour les textes secondaires
-  static const Color grisLeger = Color(0xFFF1F5F9); // Gris très clair pour les fonds
-  static const Color vertSucces = Color(0xFF10B981); // Vert pour les messages de succès
-  static const Color orangeWarning = Color(0xFFF59E0B); // Orange pour les avertissements
+  static const Color fondCarte =
+      Color(0xFFF8FAFC); // Fond gris clair pour les cartes
+  static const Color grisTexte =
+      Color(0xFF64748B); // Gris pour les textes secondaires
+  static const Color grisLeger =
+      Color(0xFFF1F5F9); // Gris très clair pour les fonds
+  static const Color vertSucces =
+      Color(0xFF10B981); // Vert pour les messages de succès
+  static const Color orangeWarning =
+      Color(0xFFF59E0B); // Orange pour les avertissements
 
   // ============================================
   // CONTRÔLEURS DE NAVIGATION ET ANIMATION
   // ============================================
-  final PageController _pageController = PageController(); // Contrôleur pour la navigation entre les pages (étapes)
-  late AnimationController _animationController; // Contrôleur pour les animations de transition
-  late AnimationController _progressController; // Contrôleur pour l'animation de la barre de progression
+  final PageController _pageController =
+      PageController(); // Contrôleur pour la navigation entre les pages (étapes)
+  late AnimationController
+      _animationController; // Contrôleur pour les animations de transition
+  late AnimationController
+      _progressController; // Contrôleur pour l'animation de la barre de progression
   late Animation<double> _fadeAnimation; // Animation de fondu (opacité)
-  late Animation<double> _slideAnimation; // Animation de glissement (translation verticale)
+  late Animation<double>
+      _slideAnimation; // Animation de glissement (translation verticale)
 
   // ============================================
   // ÉTAT DE NAVIGATION
   // ============================================
-  int _currentStep = 0; // Étape actuelle (0 = première étape, 1 = deuxième, etc.)
+  int _currentStep =
+      0; // Étape actuelle (0 = première étape, 1 = deuxième, etc.)
 
   // ============================================
   // DONNÉES UTILISATEUR (pour les clients)
   // ============================================
-  Map<String, dynamic> _userData = {}; // Données complètes du profil utilisateur (nom, prénom, email, etc.)
-  DateTime? _dateNaissance; // Date de naissance de l'utilisateur (pour calcul de l'âge)
-  int _age = 0; // Âge calculé de l'utilisateur (utilisé pour le calcul de la prime)
+  Map<String, dynamic> _userData =
+      {}; // Données complètes du profil utilisateur (nom, prénom, email, etc.)
+  DateTime?
+      _dateNaissance; // Date de naissance de l'utilisateur (pour calcul de l'âge)
+  int _age =
+      0; // Âge calculé de l'utilisateur (utilisé pour le calcul de la prime)
 
   // ============================================
   // VARIABLES POUR COMMERCIAL (souscription pour un client)
   // ============================================
-  bool _isCommercial = false; // Indique si l'utilisateur connecté est un commercial
-  DateTime? _clientDateNaissance; // Date de naissance du client (si souscription par commercial)
-  int _clientAge = 0; // Âge calculé du client (utilisé pour le calcul de la prime)
+  bool _isCommercial =
+      false; // Indique si l'utilisateur connecté est un commercial
+  DateTime?
+      _clientDateNaissance; // Date de naissance du client (si souscription par commercial)
+  int _clientAge =
+      0; // Âge calculé du client (utilisé pour le calcul de la prime)
 
   // ============================================
   // CONTRÔLEURS POUR LES INFORMATIONS CLIENT (si commercial)
   // ============================================
   // Ces contrôleurs sont utilisés uniquement lorsque _isCommercial = true
   // Ils permettent au commercial de saisir les informations du client
-  final TextEditingController _clientNomController = TextEditingController(); // Nom du client
-  final TextEditingController _clientPrenomController = TextEditingController(); // Prénom du client
+  final TextEditingController _clientNomController =
+      TextEditingController(); // Nom du client
+  final TextEditingController _clientPrenomController =
+      TextEditingController(); // Prénom du client
   final TextEditingController _clientDateNaissanceController =
       TextEditingController(); // Date de naissance (format DD/MM/YYYY)
   final TextEditingController _clientLieuNaissanceController =
       TextEditingController(); // Lieu de naissance
   final TextEditingController _clientTelephoneController =
       TextEditingController(); // Numéro de téléphone (sans indicatif)
-  final TextEditingController _clientEmailController = TextEditingController(); // Email du client
+  final TextEditingController _clientEmailController =
+      TextEditingController(); // Email du client
   final TextEditingController _clientAdresseController =
       TextEditingController(); // Adresse complète
   final TextEditingController _clientNumeroPieceController =
       TextEditingController(); // Numéro de pièce d'identité
-  String _selectedClientCivilite = 'Monsieur'; // Civilité sélectionnée (Monsieur, Madame, Mademoiselle)
-  String _selectedClientIndicatif = '+225'; // Indicatif téléphonique sélectionné
+  String _selectedClientCivilite =
+      'Monsieur'; // Civilité sélectionnée (Monsieur, Madame, Mademoiselle)
+  String _selectedClientIndicatif =
+      '+225'; // Indicatif téléphonique sélectionné
 
   // ============================================
   // CONTRÔLEURS POUR LA SIMULATION
   // ============================================
   // Ces champs permettent de configurer les paramètres de l'assurance
-  final TextEditingController _capitalController = TextEditingController(); // Capital à garantir (montant du prêt)
-  final TextEditingController _dureeController = TextEditingController(); // Durée du prêt (en mois ou années)
+  final TextEditingController _capitalController =
+      TextEditingController(); // Capital à garantir (montant du prêt)
+  final TextEditingController _dureeController =
+      TextEditingController(); // Durée du prêt (en mois ou années)
   final TextEditingController _capitalPrevoyanceController =
       TextEditingController(); // Capital pour la garantie prévoyance (optionnel)
   final TextEditingController _capitalPerteEmploiController =
@@ -141,14 +166,18 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   // ============================================
   // VARIABLES POUR LA SIMULATION
   // ============================================
-  String _selectedDureeType = 'mois'; // Type de durée sélectionné ('mois' ou 'années')
+  String _selectedDureeType =
+      'mois'; // Type de durée sélectionné ('mois' ou 'années')
   String _selectedTypePret = 'Prêt amortissable'; // Type de prêt sélectionné
-  bool _garantiePrevoyance = false; // Indique si la garantie prévoyance est activée
-  bool _garantiePerteEmploi = false; // Indique si la garantie perte d'emploi est activée
+  bool _garantiePrevoyance =
+      false; // Indique si la garantie prévoyance est activée
+  bool _garantiePerteEmploi =
+      false; // Indique si la garantie perte d'emploi est activée
   DateTime? _dateEffetContrat; // Date de début du contrat
   DateTime? _dateEcheanceContrat; // Date de fin du contrat
   double _calculatedPrime = 0.0; // Prime calculée (en FCFA)
-  double _calculatedCapital = 0.0; // Capital total calculé (somme des garanties)
+  double _calculatedCapital =
+      0.0; // Capital total calculé (somme des garanties)
 
   // ============================================
   // CONTRÔLEURS POUR LA SOUSCRIPTION
@@ -157,15 +186,24 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   // Utiliser des clés séparées pour chaque étape afin d'éviter
   // la réutilisation d'un même GlobalKey dans plusieurs Form widgets.
   final _formKeyClientInfo = GlobalKey<FormState>();
-  final _formKeyStep2 = GlobalKey<FormState>(); // Clé pour valider le formulaire
-  final _beneficiaireNomController = TextEditingController(); // Nom du bénéficiaire en cas de décès
-  final _beneficiaireContactController = TextEditingController(); // Contact du bénéficiaire
-  String _selectedLienParente = 'Enfant'; // Lien de parenté avec le bénéficiaire
-  final _personneContactNomController = TextEditingController(); // Nom de la personne à contacter en urgence
-  final _personneContactTelController = TextEditingController(); // Téléphone de la personne à contacter
-  String _selectedLienParenteUrgence = 'Parent'; // Lien de parenté avec la personne à contacter
-  String _selectedBeneficiaireIndicatif = '+225'; // Indicatif téléphonique du bénéficiaire
-  String _selectedContactIndicatif = '+225'; // Indicatif téléphonique du contact d'urgence
+  final _formKeyStep2 =
+      GlobalKey<FormState>(); // Clé pour valider le formulaire
+  final _beneficiaireNomController =
+      TextEditingController(); // Nom du bénéficiaire en cas de décès
+  final _beneficiaireContactController =
+      TextEditingController(); // Contact du bénéficiaire
+  String _selectedLienParente =
+      'Enfant'; // Lien de parenté avec le bénéficiaire
+  final _personneContactNomController =
+      TextEditingController(); // Nom de la personne à contacter en urgence
+  final _personneContactTelController =
+      TextEditingController(); // Téléphone de la personne à contacter
+  String _selectedLienParenteUrgence =
+      'Parent'; // Lien de parenté avec la personne à contacter
+  String _selectedBeneficiaireIndicatif =
+      '+225'; // Indicatif téléphonique du bénéficiaire
+  String _selectedContactIndicatif =
+      '+225'; // Indicatif téléphonique du contact d'urgence
 
   File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
 
@@ -187,7 +225,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     'Prêt découvert', // Autorisation de découvert
     'Prêt scolaire' // Prêt pour les études
   ];
-  final List<String> _dureeOptions = ['mois', 'années']; // Options pour le type de durée
+  final List<String> _dureeOptions = [
+    'mois',
+    'années'
+  ]; // Options pour le type de durée
   final List<String> _indicatifs = [
     // Indicatifs téléphoniques disponibles (pays d'Afrique de l'Ouest)
     '+225', // Côte d'Ivoire
@@ -197,7 +238,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     '+229', // Bénin
     '+234' // Nigeria
   ];
-  final storage = const FlutterSecureStorage(); // Stockage sécurisé pour le token JWT
+  final storage =
+      const FlutterSecureStorage(); // Stockage sécurisé pour le token JWT
 
   // ============================================
   // TABLEAUX DE TARIFS
@@ -205,7 +247,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   // Ces tableaux contiennent les taux de prime selon l'âge et la durée
   // Format de la clé : 'AGE_DUREE' (ex: '18_12' = 18 ans, 12 mois)
   // Valeur : taux de prime (pourcentage du capital)
-  
+
   /// Tarifs pour les prêts amortissables
   /// Clé : 'AGE_DUREE' (ex: '18_12' = 18 ans, 12 mois)
   /// Valeur : taux de prime en pourcentage (ex: 0.150 = 0.15% du capital)
@@ -1763,7 +1805,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     }
 
     if (!_isCommercial) {
-    _loadUserData();
+      _loadUserData();
     }
   }
 
@@ -1811,11 +1853,15 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         Map<String, dynamic>? userData;
 
         // 1) Cas standard: { success: true, user: { ... } }
-        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+        if (data['success'] == true &&
+            data['user'] != null &&
+            data['user'] is Map) {
           userData = Map<String, dynamic>.from(data['user']);
         }
         // 2) Cas nested: { success: true, data: { ... } }
-        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+        else if (data['success'] == true &&
+            data['data'] != null &&
+            data['data'] is Map) {
           userData = Map<String, dynamic>.from(data['data']);
         }
         // 3) Direct user object
@@ -2106,10 +2152,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         }
       } else {
         // Pour les clients: step 0 = simulation, step 1 = bénéficiaire
-      if (_currentStep == 0 && _validateStep1()) {
-        canProceed = true;
-      } else if (_currentStep == 1 && _validateStep2()) {
-        canProceed = true;
+        if (_currentStep == 0 && _validateStep1()) {
+          canProceed = true;
+        } else if (_currentStep == 1 && _validateStep2()) {
+          canProceed = true;
         }
       }
 
@@ -2215,10 +2261,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
           // Valider l'âge seulement s'il est calculé
           if (_age > 0) {
-    if (_age < 18 || _age > 65) {
+            if (_age < 18 || _age > 65) {
               _showErrorSnackBar(
                   'Âge non valide (18-65 ans requis). Votre âge: $_age ans');
-      return false;
+              return false;
             }
           }
         } else if (_age <= 0) {
@@ -2361,7 +2407,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                         _buildStep1(), // Page 0: Simulation
                         _buildStep2(), // Page 1: Bénéficiaire/Contact
                         _buildStep3(), // Page 2: Récapitulatif
-                ],
+                      ],
               ),
             ),
             _buildNavigationButtons(),
@@ -2417,9 +2463,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                                       ? Icons.person_add
                                       : Icons.check_circle)
                           : (i == 0
-                          ? Icons.credit_card
-                          : i == 1
-                              ? Icons.person_add
+                              ? Icons.credit_card
+                              : i == 1
+                                  ? Icons.person_add
                                   : Icons.check_circle),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
@@ -2436,8 +2482,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                                     ? 'Infos'
                                     : 'Récap')
                         : (i == 0
-                        ? 'Prêt'
-                        : i == 1
+                            ? 'Prêt'
+                            : i == 1
                                 ? 'Infos'
                                 : 'Récap'),
                     style: TextStyle(
@@ -3528,9 +3574,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           child: CircularProgressIndicator(color: bleuCoris),
                         );
                       }
-                      
+
                       if (snapshot.hasError) {
-                        debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                        debugPrint(
+                            'Erreur chargement données récapitulatif: ${snapshot.error}');
                         // En cas d'erreur, essayer d'utiliser _userData si disponible
                         if (_userData.isNotEmpty) {
                           return _buildRecapContent(userData: _userData);
@@ -3550,10 +3597,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           ),
                         );
                       }
-                      
+
                       // Utiliser les données chargées ou _userData en fallback
                       final userData = snapshot.data ?? _userData;
-                      
+
                       // Si userData est vide, recharger les données
                       if (userData.isEmpty && !_isCommercial) {
                         // Recharger les données utilisateur
@@ -3567,7 +3614,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                         return Center(
                             child: CircularProgressIndicator(color: bleuCoris));
                       }
-                      
+
                       return _buildRecapContent(userData: userData);
                     },
                   ),
@@ -3587,7 +3634,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
-      
+
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
@@ -3608,9 +3655,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
-            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3620,11 +3670,14 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           }
 
           // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
-              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -3635,9 +3688,13 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
-            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3649,7 +3706,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
-            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3658,18 +3716,20 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             return userData;
           }
 
-          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
-      
+
       // Fallback vers _userData si la requête échoue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
-      debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      debugPrint(
+          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
@@ -3704,7 +3764,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
             'email': _clientEmailController.text,
-            'telephone': '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
             'date_naissance': _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
@@ -3716,172 +3777,173 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             'email': pick(['email', 'mail']),
             'telephone': pick(['telephone', 'phone', 'phone_number', 'tel']),
             'date_naissance': pick(['date_naissance', 'birth_date', 'dob']),
-            'lieu_naissance': pick(['lieu_naissance', 'place_of_birth', 'birth_place']),
+            'lieu_naissance':
+                pick(['lieu_naissance', 'place_of_birth', 'birth_place']),
             'adresse': pick(['adresse', 'address']),
           };
 
     return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: ListView(
-                children: [
-                  _buildRecapSection(
-                    'Informations Personnelles',
-                    Icons.person,
-                    bleuCoris,
-                    [
-                      _buildCombinedRecapRow(
-                          'Civilité',
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: ListView(
+        children: [
+          _buildRecapSection(
+            'Informations Personnelles',
+            Icons.person,
+            bleuCoris,
+            [
+              _buildCombinedRecapRow(
+                'Civilité',
                 displayData['civilite'] ?? 'Non renseigné',
-                          'Nom',
+                'Nom',
                 displayData['nom'] ?? 'Non renseigné',
               ),
-                      _buildCombinedRecapRow(
-                          'Prénom',
+              _buildCombinedRecapRow(
+                'Prénom',
                 displayData['prenom'] ?? 'Non renseigné',
-                          'Email',
+                'Email',
                 displayData['email'] ?? 'Non renseigné',
               ),
-                      _buildCombinedRecapRow(
-                          'Téléphone',
+              _buildCombinedRecapRow(
+                'Téléphone',
                 displayData['telephone'] ?? 'Non renseigné',
-                          'Date de naissance',
+                'Date de naissance',
                 displayData['date_naissance'] != null
                     ? _formatDate(displayData['date_naissance'].toString())
                     : 'Non renseigné',
               ),
-                      _buildCombinedRecapRow(
-                          'Lieu de naissance',
+              _buildCombinedRecapRow(
+                'Lieu de naissance',
                 displayData['lieu_naissance'] ?? 'Non renseigné',
-                          'Adresse',
+                'Adresse',
                 displayData['adresse'] ?? 'Non renseigné',
               ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  _buildRecapSection(
-                    'Produit Souscrit',
-            Icons.account_balance,
-                    vertSucces,
-                    [
-                      _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR',
-                          'Type de prêt', _selectedTypePret),
-                      _buildCombinedRecapRow(
-                          'Capital à garantir',
-                          _formatMontant(_calculatedCapital),
-                          'Durée',
-                          '${_dureeController.text} $_selectedDureeType'),
-              if (_dateEffetContrat != null && _dateEcheanceContrat != null)
-                        _buildCombinedRecapRow(
-                            'Date d\'effet',
-                            _formatDate(_dateEffetContrat!.toString()),
-                            'Date d\'échéance',
-                            _formatDate(_dateEcheanceContrat!.toString())),
-              if (_dateEffetContrat != null && _dateEcheanceContrat == null)
-                        _buildCombinedRecapRow('Date d\'effet',
-                            _formatDate(_dateEffetContrat!.toString()), '', ''),
-              if (_dateEffetContrat == null && _dateEcheanceContrat != null)
-                        _buildCombinedRecapRow(
-                            'Date d\'échéance',
-                            _formatDate(_dateEcheanceContrat!.toString()),
-                            '',
-                            ''),
-                      _buildCombinedRecapRow('Prime annuelle estimée',
-                          _formatMontant(_calculatedPrime), '', ''),
-                      if (_garantiePrevoyance && _garantiePerteEmploi)
-                        _buildCombinedRecapRow(
-                            'Garantie Prévoyance',
-                    _formatMontant(_parseDouble(_capitalPrevoyanceController.text)),
-                            'Garantie Perte d\'emploi',
-                    _formatMontant(_parseDouble(_capitalPerteEmploiController.text))),
-                      if (_garantiePrevoyance && !_garantiePerteEmploi)
-                        _buildCombinedRecapRow(
-                            'Garantie Prévoyance',
-                    _formatMontant(_parseDouble(_capitalPrevoyanceController.text)),
-                            '',
-                            ''),
-                      if (!_garantiePrevoyance && _garantiePerteEmploi)
-                        _buildCombinedRecapRow(
-                            'Garantie Perte d\'emploi',
-                    _formatMontant(_parseDouble(_capitalPerteEmploiController.text)),
-                            '',
-                            ''),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  _buildRecapSection(
-                    'Bénéficiaire et Contact d\'urgence',
-                    Icons.contacts,
-                    orangeWarning,
-                    [
-                      _buildSubsectionTitle('Bénéficiaire'),
-                      _buildRecapRow(
-                          'Nom complet',
-                          _beneficiaireNomController.text.isEmpty
-                              ? 'Non renseigné'
-                              : _beneficiaireNomController.text),
-                      _buildRecapRow('Contact',
-                          '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-                      _buildRecapRow('Lien de parenté', _selectedLienParente),
-                      SizedBox(height: 12),
-                      _buildSubsectionTitle('Contact d\'urgence'),
-                      _buildRecapRow(
-                          'Nom complet',
-                          _personneContactNomController.text.isEmpty
-                              ? 'Non renseigné'
-                              : _personneContactNomController.text),
-                      _buildRecapRow('Contact',
-                          '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-              _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  _buildRecapSection(
-                    'Documents',
-                    Icons.description,
-                    bleuSecondaire,
-                    [
-                      _buildRecapRow(
-                          'Pièce d\'identité',
-                  _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color.fromRGBO(245, 158, 11, 0.1),
-                      borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Color.fromRGBO(245, 158, 11, 0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                Icon(Icons.info_outline, color: orangeWarning, size: 28),
-                        SizedBox(height: 10),
-                        Text(
-                          'Vérification Importante',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: orangeWarning,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                ],
+            ],
           ),
+          SizedBox(height: 20),
+          _buildRecapSection(
+            'Produit Souscrit',
+            Icons.account_balance,
+            vertSucces,
+            [
+              _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR',
+                  'Type de prêt', _selectedTypePret),
+              _buildCombinedRecapRow(
+                  'Capital à garantir',
+                  _formatMontant(_calculatedCapital),
+                  'Durée',
+                  '${_dureeController.text} $_selectedDureeType'),
+              if (_dateEffetContrat != null && _dateEcheanceContrat != null)
+                _buildCombinedRecapRow(
+                    'Date d\'effet',
+                    _formatDate(_dateEffetContrat!.toString()),
+                    'Date d\'échéance',
+                    _formatDate(_dateEcheanceContrat!.toString())),
+              if (_dateEffetContrat != null && _dateEcheanceContrat == null)
+                _buildCombinedRecapRow('Date d\'effet',
+                    _formatDate(_dateEffetContrat!.toString()), '', ''),
+              if (_dateEffetContrat == null && _dateEcheanceContrat != null)
+                _buildCombinedRecapRow('Date d\'échéance',
+                    _formatDate(_dateEcheanceContrat!.toString()), '', ''),
+              _buildCombinedRecapRow('Prime annuelle estimée',
+                  _formatMontant(_calculatedPrime), '', ''),
+              if (_garantiePrevoyance && _garantiePerteEmploi)
+                _buildCombinedRecapRow(
+                    'Garantie Prévoyance',
+                    _formatMontant(
+                        _parseDouble(_capitalPrevoyanceController.text)),
+                    'Garantie Perte d\'emploi',
+                    _formatMontant(
+                        _parseDouble(_capitalPerteEmploiController.text))),
+              if (_garantiePrevoyance && !_garantiePerteEmploi)
+                _buildCombinedRecapRow(
+                    'Garantie Prévoyance',
+                    _formatMontant(
+                        _parseDouble(_capitalPrevoyanceController.text)),
+                    '',
+                    ''),
+              if (!_garantiePrevoyance && _garantiePerteEmploi)
+                _buildCombinedRecapRow(
+                    'Garantie Perte d\'emploi',
+                    _formatMontant(
+                        _parseDouble(_capitalPerteEmploiController.text)),
+                    '',
+                    ''),
+            ],
+          ),
+          SizedBox(height: 20),
+          _buildRecapSection(
+            'Bénéficiaire et Contact d\'urgence',
+            Icons.contacts,
+            orangeWarning,
+            [
+              _buildSubsectionTitle('Bénéficiaire'),
+              _buildRecapRow(
+                  'Nom complet',
+                  _beneficiaireNomController.text.isEmpty
+                      ? 'Non renseigné'
+                      : _beneficiaireNomController.text),
+              _buildRecapRow('Contact',
+                  '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
+              _buildRecapRow('Lien de parenté', _selectedLienParente),
+              SizedBox(height: 12),
+              _buildSubsectionTitle('Contact d\'urgence'),
+              _buildRecapRow(
+                  'Nom complet',
+                  _personneContactNomController.text.isEmpty
+                      ? 'Non renseigné'
+                      : _personneContactNomController.text),
+              _buildRecapRow('Contact',
+                  '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
+              _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
+            ],
+          ),
+          SizedBox(height: 20),
+          _buildRecapSection(
+            'Documents',
+            Icons.description,
+            bleuSecondaire,
+            [
+              _buildRecapRow('Pièce d\'identité',
+                  _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
+            ],
+          ),
+          SizedBox(height: 20),
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Color.fromRGBO(245, 158, 11, 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Color.fromRGBO(245, 158, 11, 0.3)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.info_outline, color: orangeWarning, size: 28),
+                SizedBox(height: 10),
+                Text(
+                  'Vérification Importante',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: orangeWarning,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: grisTexte,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
@@ -4091,7 +4153,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 3 : 2)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -4105,7 +4169,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == (_isCommercial ? 3 : 2) ? 'Payer maintenant' : 'Suivant',
+                      _currentStep == (_isCommercial ? 3 : 2)
+                          ? 'Payer maintenant'
+                          : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4114,7 +4180,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      _currentStep == (_isCommercial ? 3 : 2) ? Icons.check : Icons.arrow_forward,
+                      _currentStep == (_isCommercial ? 3 : 2)
+                          ? Icons.check
+                          : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
                     ),

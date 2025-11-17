@@ -215,14 +215,15 @@ class HomeSouscriptionPage extends StatelessWidget {
             onTap: () async {
               // Vérifier le rôle de l'utilisateur
               final userRole = await AuthService.getUserRole();
-              
+
               // Si c'est un commercial, rediriger vers la sélection de client
               if (userRole == 'commercial') {
                 // Extraire le type de produit depuis la route
                 String productType = produit['route']
                     .replaceAll('/souscription_', '')
-                    .replaceAll('/sousription_', ''); // Gérer la typo dans solidarite
-                
+                    .replaceAll(
+                        '/sousription_', ''); // Gérer la typo dans solidarite
+
                 Navigator.pushNamed(
                   context,
                   '/commercial/select_client',
@@ -257,7 +258,8 @@ class HomeSouscriptionPage extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.image_not_supported, size: 32, color: bleuCoris);
+                      return const Icon(Icons.image_not_supported,
+                          size: 32, color: bleuCoris);
                     },
                   ),
                   const SizedBox(width: 10),

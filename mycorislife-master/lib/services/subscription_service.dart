@@ -5,38 +5,36 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/models/subscription.dart';
 
 class SubscriptionService {
-  static const String baseUrl = AppConfig.baseUrl;
+  static String get baseUrl => AppConfig.baseUrl;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   /// Crée une nouvelle souscription
-  /// 
+  ///
   /// [subscriptionData] : Données de la souscription (product_type, capital, prime, etc.)
   /// Si client_id est présent dans subscriptionData, la souscription sera créée pour ce client
   /// (cas d'une souscription commerciale)
-  Future<http.Response> createSubscription(Map<String, dynamic> subscriptionData) async {
+  Future<http.Response> createSubscription(
+      Map<String, dynamic> subscriptionData) async {
     final token = await storage.read(key: 'token');
-    
+
     final response = await http.post(
-      Uri.parse('$baseUrl/subscriptions/create'), 
+      Uri.parse('$baseUrl/subscriptions/create'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(subscriptionData),
     );
-    
+
     return response;
   }
 
   // Mettre à jour le statut après paiement
   Future<http.Response> updatePaymentStatus(
-    int subscriptionId, 
-    bool paymentSuccess, {
-    String? paymentMethod, 
-    String? transactionId
-  }) async {
+      int subscriptionId, bool paymentSuccess,
+      {String? paymentMethod, String? transactionId}) async {
     final token = await storage.read(key: 'token');
-    
+
     final response = await http.put(
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/payment-status'),
       headers: {
@@ -46,17 +44,19 @@ class SubscriptionService {
       body: jsonEncode({
         'payment_success': paymentSuccess,
         'payment_method': paymentMethod ?? 'simulation',
-        'transaction_id': transactionId ?? 'simulated_${DateTime.now().millisecondsSinceEpoch}',
+        'transaction_id': transactionId ??
+            'simulated_${DateTime.now().millisecondsSinceEpoch}',
       }),
     );
-    
+
     return response;
   }
 
   // Mettre à jour le statut d'une souscription
-  Future<http.Response> updateSubscriptionStatus(int subscriptionId, String status) async {
+  Future<http.Response> updateSubscriptionStatus(
+      int subscriptionId, String status) async {
     final token = await storage.read(key: 'token');
-    
+
     final response = await http.put(
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/status'),
       headers: {
@@ -65,7 +65,7 @@ class SubscriptionService {
       },
       body: jsonEncode({'status': status}),
     );
-    
+
     return response;
   }
 
@@ -120,20 +120,21 @@ class SubscriptionService {
   }
 
   // Uploader un document
-  Future<http.Response> uploadDocument(int subscriptionId, String filePath) async {
+  Future<http.Response> uploadDocument(
+      int subscriptionId, String filePath) async {
     final token = await storage.read(key: 'token');
-    
+
     var request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/upload-document'),
     );
-    
+
     request.headers['Authorization'] = 'Bearer $token';
     request.files.add(await http.MultipartFile.fromPath(
       'document',
       filePath,
     ));
-    
+
     var response = await http.Response.fromStream(await request.send());
     return response;
   }
