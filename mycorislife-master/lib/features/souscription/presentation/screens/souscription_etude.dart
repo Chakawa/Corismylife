@@ -57,7 +57,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Map<String, dynamic> _userData = {};
 
   // Form controllers
-  final _formKey = GlobalKey<FormState>();
+  // Clés de formulaire séparées pour chaque étape afin d'éviter
+  // la réutilisation d'un même GlobalKey dans l'arbre de widgets.
+  final _formKeyClientInfo = GlobalKey<FormState>();
+  final _formKeyStep1 = GlobalKey<FormState>();
+  final _formKeyStep2 = GlobalKey<FormState>();
 
   // Step 1 controllers
   final _dureeController = TextEditingController();
@@ -85,8 +89,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   // Mode de souscription
   String _selectedMode = 'Mode Prime'; // 'Prime' ou 'Rente'
   // Variables pour les calculs
-  double? _primeCalculee;
-  double? _renteCalculee;
+  double _primeCalculee = 0.0;
+  double _renteCalculee = 0.0;
   File? _pieceIdentite;
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -1041,19 +1045,32 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Future<Map<String, dynamic>> _loadUserData() async {
     try {
       final token = await storage.read(key: 'token');
-      if (token == null) throw Exception('Token non trouvé');
+      if (token == null) {
+        debugPrint('❌ Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
+      }
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {'Authorization': 'Bearer $token'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success']) return data['user'];
-        throw Exception(data['message'] ?? 'Erreur');
+        if (data != null && data is Map) {
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            return Map<String, dynamic>.from(data['user']);
+          }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            return Map<String, dynamic>.from(data);
+          }
+        }
+        return {};
       }
-      throw Exception('Erreur serveur: ${response.statusCode}');
+      debugPrint('Erreur serveur: ${response.statusCode}');
+      return {};
     } catch (e) {
-      rethrow; // Correction: utiliser rethrow au lieu de throw
+      debugPrint('Erreur lors du chargement du profil: $e');
+      return {};
     }
   }
 
@@ -1257,7 +1274,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -1268,36 +1286,85 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(Duration(seconds: 10), onTimeout: () {
+        debugPrint('⏱️ Timeout lors de la requête API profil');
+        throw Exception('Timeout API');
+      });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          debugPrint(
-              '✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // Aucune correspondance
+          debugPrint('⚠️ Réponse API inattendue (200): ${response.body}');
         } else {
-          debugPrint(
-              '⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
+      } else if (response.statusCode == 401) {
+        debugPrint('❌ Non authentifié (401): Token expiré ou invalide');
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
       }
 
-      // Fallback vers _userData si la requête échoue
-      return _userData.isNotEmpty ? _userData : {};
+      // Fallback vers _userData si la requête échoue - GARANTIR non-null
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     } catch (e) {
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
-      // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      // Fallback vers _userData en cas d'erreur - GARANTIR non-null
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -1350,12 +1417,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 3 : 2;
+    // maxStep est maintenant 4 pour inclure l'étape de paiement
+    // Clients: 0 (params), 1 (bénéficiaire), 2 (recap), 3 (paiement)
+    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (recap), 4 (paiement)
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -1363,14 +1433,20 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
           _recalculerValeurs(); // Call here before moving to recap (step 3)
+        } else if (_currentStep == 3) {
+          // Recap pour commerciaux - aller au paiement
+          canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire
+        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
-          _recalculerValeurs(); // Call here before moving to recap (step 3)
+          _recalculerValeurs(); // Call here before moving to recap (step 2)
+        } else if (_currentStep == 2) {
+          // Recap pour clients - aller au paiement
+          canProceed = true;
         }
       }
       if (canProceed) {
@@ -1608,8 +1684,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'periodicite': _selectedPeriodicite?.toLowerCase(),
         'mode_souscription':
             _selectedMode.toLowerCase().replaceAll('mode ', ''),
-        'prime_calculee': _primeCalculee?.toInt() ?? 0,
-        'rente_calculee': _renteCalculee?.toInt() ?? 0,
+        'prime_calculee': _primeCalculee.toInt(),
+        'rente_calculee': _renteCalculee.toInt(),
         'beneficiaire': {
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
@@ -1997,11 +2073,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         _buildStep1(), // Page 1: Paramètres de souscription
                         _buildStep2(), // Page 2: Bénéficiaire/Contact
                         _buildStep3(), // Page 3: Récapitulatif
+                        _buildStep4(), // Page 4: Paiement
                       ]
                     : [
                         _buildStep1(), // Page 0: Paramètres de souscription
                         _buildStep2(), // Page 1: Bénéficiaire/Contact
                         _buildStep3(), // Page 2: Récapitulatif
+                        _buildStep4(), // Page 3: Paiement
                       ],
               ),
             ),
@@ -2028,7 +2106,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < (_isCommercial ? 4 : 3); i++) ...[
+          for (int i = 0; i < (_isCommercial ? 5 : 4); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -2057,12 +2135,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                   ? Icons.account_balance_wallet
                                   : i == 2
                                       ? Icons.person_add
-                                      : Icons.check_circle)
+                                      : i == 3
+                                          ? Icons.check_circle
+                                          : Icons.payment)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
                                   ? Icons.person_add
-                                  : Icons.check_circle),
+                                  : i == 2
+                                      ? Icons.check_circle
+                                      : Icons.payment),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 16,
                     ),
@@ -2076,12 +2158,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                 ? 'Prime'
                                 : i == 2
                                     ? 'Infos'
-                                    : 'Valid')
+                                    : i == 3
+                                        ? 'Recap'
+                                        : 'Paie')
                         : (i == 0
                             ? 'Prime'
                             : i == 1
                                 ? 'Infos'
-                                : 'Valid'),
+                                : i == 2
+                                    ? 'Recap'
+                                    : 'Paie'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight:
@@ -2092,7 +2178,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 ],
               ),
             ),
-            if (i < (_isCommercial ? 3 : 2))
+            if (i < (_isCommercial ? 4 : 3))
               Expanded(
                 child: Container(
                   height: 2,
@@ -2121,7 +2207,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Form(
-                key: _formKey,
+                key: _formKeyClientInfo,
                 child: ListView(
                   children: [
                     _buildFormSection(
@@ -2233,7 +2319,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Form(
-                key: _formKey,
+                key: _formKeyStep1,
                 child: ListView(
                   children: [
                     Container(
@@ -2279,9 +2365,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           const SizedBox(height: 16),
                           _buildDateEffetField(),
                           SizedBox(height: 16),
-                          if (_calculatedAgeParent != null &&
-                              _primeCalculee != null &&
-                              _renteCalculee != null)
+                          if (_calculatedAgeParent != null)
                             Container(
                               padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -2298,9 +2382,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                           color: vertSucces)),
                                   SizedBox(height: 8),
                                   Text(
-                                      'Prime : ${_formatMontant(_primeCalculee!)}'),
+                                      'Prime : ${_formatMontant(_primeCalculee)}'),
                                   Text(
-                                      'Rente : ${_formatMontant(_renteCalculee!)}'),
+                                      'Rente : ${_formatMontant(_renteCalculee)}'),
                                 ],
                               ),
                             ),
@@ -2592,7 +2676,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Form(
-                key: _formKey,
+                key: _formKeyStep2,
                 child: ListView(
                   children: [
                     _buildFormSection(
@@ -3104,65 +3188,60 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             opacity: _fadeAnimation.value,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _isCommercial ? null : _loadUserDataForRecap(),
-                builder: (context, snapshot) {
-                  // Pour les commerciaux, utiliser directement les données des contrôleurs
-                  if (_isCommercial) {
-                    return _buildRecapContent();
-                  }
+              child: _isCommercial
+                  ? _buildRecapContent()
+                  : FutureBuilder<Map<String, dynamic>>(
+                      future: _loadUserDataForRecap(),
+                      builder: (context, snapshot) {
+                        // Pour les clients, attendre le chargement des données
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(
+                            child: CircularProgressIndicator(color: bleuCoris),
+                          );
+                        }
 
-                  // Pour les clients, attendre le chargement des données
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(color: bleuCoris),
-                    );
-                  }
+                        if (snapshot.hasError) {
+                          debugPrint(
+                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                          // En cas d'erreur, essayer d'utiliser _userData si disponible
+                          if (_userData.isNotEmpty) {
+                            return _buildRecapContent(userData: _userData);
+                          }
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, size: 48, color: rougeCoris),
+                                SizedBox(height: 16),
+                                Text('Erreur lors du chargement des données'),
+                                TextButton(
+                                  onPressed: () => setState(() {}),
+                                  child: Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                  if (snapshot.hasError) {
-                    debugPrint(
-                        'Erreur chargement données récapitulatif: ${snapshot.error}');
-                    // En cas d'erreur, essayer d'utiliser _userData si disponible
-                    if (_userData.isNotEmpty) {
-                      return _buildRecapContent(userData: _userData);
-                    }
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 48, color: rougeCoris),
-                          SizedBox(height: 16),
-                          Text('Erreur lors du chargement des données'),
-                          TextButton(
-                            onPressed: () => setState(() {}),
-                            child: Text('Réessayer'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        final userData = snapshot.data ?? _userData;
 
-                  // Pour les clients, utiliser les données chargées depuis la base de données
-                  // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
-                  final userData = snapshot.data ?? _userData;
+                        // Si userData est vide, recharger les données
+                        if (userData.isEmpty && !_isCommercial) {
+                          _loadUserDataForRecap().then((data) {
+                            if (mounted && data.isNotEmpty) {
+                              setState(() {
+                                _userData = data;
+                              });
+                            }
+                          });
+                          return Center(
+                              child: CircularProgressIndicator(color: bleuCoris));
+                        }
 
-                  // Si userData est vide, recharger les données
-                  if (userData.isEmpty && !_isCommercial) {
-                    // Recharger les données utilisateur
-                    _loadUserDataForRecap().then((data) {
-                      if (mounted && data.isNotEmpty) {
-                        setState(() {
-                          _userData = data;
-                        });
-                      }
-                    });
-                    return Center(
-                        child: CircularProgressIndicator(color: bleuCoris));
-                  }
-
-                  return _buildRecapContent(userData: userData);
-                },
-              ),
+                        return _buildRecapContent(userData: userData);
+                      },
+                    ),
             ),
           ),
         );
@@ -3171,8 +3250,28 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    final primeDisplay = _primeCalculee ?? 0;
-    final renteDisplay = _renteCalculee ?? 0;
+    // Pour les clients, charger et calculer automatiquement si pas déjà fait
+    if (!_isCommercial && (_primeCalculee == 0 || _renteCalculee == 0)) {
+      // Remplir les contrôleurs avec des valeurs par défaut si vides
+      if (_dureeController.text.isEmpty && _calculatedAgeParent != null) {
+        _dureeController.text = '0'; // Enfant nouveau-né par défaut
+      }
+      if (_montantController.text.isEmpty) {
+        _montantController.text = '100000'; // Montant par défaut
+      }
+      if ((_selectedPeriodicite ?? '').isEmpty) {
+        _selectedPeriodicite = 'Mensuelle';
+      }
+      if ((_selectedMode ?? '').isEmpty) {
+        _selectedMode = 'Mode Prime';
+      }
+      
+      // Déclencher le calcul IMMÉDIATEMENT (synchronique) pour affichage correct
+      _recalculerValeurs();
+    }
+
+    final primeDisplay = _primeCalculee;
+    final renteDisplay = _renteCalculee;
     final duree = int.tryParse(_dureeController.text) ?? 0;
 
     /**
@@ -3194,35 +3293,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             'adresse': _clientAdresseController.text,
           }
         : (userData ?? {});
-
-    if (primeDisplay == 0 || renteDisplay == 0) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: rougeCoris),
-            SizedBox(height: 16),
-            Text(
-              'Calcul en cours...',
-              style: TextStyle(
-                color: bleuCoris,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Veuillez patienter pendant le calcul des valeurs',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: grisTexte,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
     return ListView(
       children: [
@@ -3289,6 +3359,27 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 'Date d\'échéance',
                 _dateEcheanceContrat != null
                     ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
+                    : 'Non définie'),
+          ],
+        ),
+
+        SizedBox(height: 20),
+
+        // SECTION PARAMÈTRES DE SOUSCRIPTION
+        _buildRecapSection(
+          'Paramètres de Souscription',
+          Icons.calculate,
+          bleuSecondaire,
+          [
+            _buildCombinedRecapRow(
+                'Mode',
+                _selectedMode,
+                'Périodicité',
+                _selectedPeriodicite ?? 'Non sélectionnée'),
+            _buildRecapRow(
+                'Date d\'effet',
+                _dateEffetContrat != null
+                    ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
                     : 'Non définie'),
           ],
         ),
@@ -3575,7 +3666,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == 2 ? _showPaymentOptions : _nextStep,
+                onPressed: () {
+                  // Déterminer l'étape finale selon si commercial ou pas
+                  int finalStep = _isCommercial ? 3 : 2;
+
+                  if (_currentStep == finalStep) {
+                    // Depuis le récapitulatif: ouvrir directement les options de paiement
+                    _showPaymentOptions();
+                  } else if (_currentStep == finalStep + 1) {
+                    // Étape paiement - ouvrir aussi les options de paiement
+                    _showPaymentOptions();
+                  } else {
+                    // Autres étapes - avancer
+                    _nextStep();
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -3590,7 +3695,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == 2 ? 'Payer maintenant' : 'Suivant',
+                      () {
+                        int finalStep = _isCommercial ? 3 : 2;
+                        if (_currentStep == finalStep) {
+                          return 'Finaliser';
+                        } else if (_currentStep == finalStep + 1) {
+                          return 'Payer maintenant';
+                        } else {
+                          return 'Suivant';
+                        }
+                      }(),
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -3599,7 +3713,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      _currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                      () {
+                        int finalStep = _isCommercial ? 3 : 2;
+                        if (_currentStep == finalStep + 1) {
+                          return Icons.payment;
+                        } else {
+                          return Icons.arrow_forward;
+                        }
+                      }(),
                       color: blanc,
                       size: 20,
                     ),
@@ -3608,6 +3729,296 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Page étape 4: Paiement
+  Widget _buildStep4() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: ListView(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: bleuCoris,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(26),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.payment, color: blanc, size: 48),
+                        SizedBox(height: 16),
+                        Text(
+                          'Finalisation du Paiement',
+                          style: TextStyle(
+                            color: blanc,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Choisissez votre méthode de paiement',
+                          style: TextStyle(
+                            color: blanc.withAlpha(204),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Montant à payer
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: blanc,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: vertSucces,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: vertSucces.withAlpha(26),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Montant à payer',
+                          style: TextStyle(
+                            color: grisTexte,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _formatMontant(_primeCalculee),
+                          style: TextStyle(
+                            color: vertSucces,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Méthodes de paiement
+                  Text(
+                    'Méthodes de paiement disponibles',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: bleuCoris,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  // Wave
+                  _buildPaymentMethodCard(
+                    icon: Icons.phone_android,
+                    title: 'Wave',
+                    description: 'Paiement par SMS',
+                    onTap: () => _processPayment('Wave'),
+                  ),
+                  SizedBox(height: 12),
+                  // Orange Money
+                  _buildPaymentMethodCard(
+                    icon: Icons.monetization_on,
+                    title: 'Orange Money',
+                    description: 'Portefeuille Orange Money',
+                    onTap: () => _processPayment('Orange Money'),
+                  ),
+                  SizedBox(height: 12),
+                  // Payer plus tard
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: orangeWarning.withAlpha(26),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: orangeWarning.withAlpha(128),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.schedule, color: orangeWarning, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Payer plus tard',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: orangeWarning,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Enregistrez la proposition et payez ultérieurement',
+                                style: TextStyle(
+                                  color: grisTexte,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            _processPayment('later');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: orangeWarning,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                              color: blanc,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Avertissement de sécurité
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withAlpha(26),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info, color: Colors.blue, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: grisTexte,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Widget pour afficher les méthodes de paiement
+  Widget _buildPaymentMethodCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: blanc,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: grisLeger,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(8),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: bleuCoris.withAlpha(26),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: bleuCoris, size: 24),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: grisTexte,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: grisTexte, size: 20),
+            ],
+          ),
         ),
       ),
     );

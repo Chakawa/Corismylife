@@ -76,7 +76,7 @@ class _SouscriptionSolidaritePageState
   int nbConjoints = 1;
   int nbEnfants = 1;
   int nbAscendants = 0;
-  double? primeTotaleResult;
+  double primeTotaleResult = 0.0;
 
   // Données des membres
   List<Membre> conjoints = [];
@@ -291,16 +291,63 @@ class _SouscriptionSolidaritePageState
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (mounted) {
-          setState(() {
-            _userData = data;
-            _isLoading = false;
-          });
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+                _isLoading = false;
+              });
+            }
+            return;
+          }
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                  _isLoading = false;
+                });
+              }
+              return;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+                _isLoading = false;
+              });
+            }
+            return;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+                _isLoading = false;
+              });
+            }
+            return;
+          }
         }
-      } else {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+      }
+
+      // Fallback : Erreur ou format inattendu
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       debugPrint('Erreur chargement données utilisateur: $e');
@@ -1833,7 +1880,8 @@ class _SouscriptionSolidaritePageState
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return <String, dynamic>{};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -1843,33 +1891,80 @@ class _SouscriptionSolidaritePageState
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(Duration(seconds: 10), onTimeout: () {
+        throw Exception('Timeout lors de la requête API');
+      });
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          debugPrint('✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint('⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
       
-      // Fallback vers _userData si la requête échoue
-      return _userData.isNotEmpty ? _userData : {};
+      // Fallback vers _userData si la requête échoue - GARANTIR non-null
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     } catch (e) {
       debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
-      // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      // Fallback vers _userData en cas d'erreur - GARANTIR non-null
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -1885,63 +1980,60 @@ class _SouscriptionSolidaritePageState
      * - Le commercial saisit les informations du client dans les champs du formulaire
      * - On utilise les valeurs des contrôleurs (_clientNomController, etc.)
      */
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _isCommercial ? null : _loadUserDataForRecap(),
-      builder: (context, snapshot) {
-        // Pour les commerciaux, utiliser directement les données des contrôleurs
-        if (_isCommercial) {
-          return _buildRecapContent();
-        }
+    return _isCommercial
+        ? _buildRecapContent()
+        : FutureBuilder<Map<String, dynamic>>(
+            future: _loadUserDataForRecap(),
+            builder: (context, snapshot) {
+              // Pour les clients, attendre le chargement des données
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(color: bleuCoris),
+                );
+              }
 
-        // Pour les clients, attendre le chargement des données
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: bleuCoris),
+              if (snapshot.hasError) {
+                debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                // En cas d'erreur, essayer d'utiliser _userData si disponible
+                if (_userData.isNotEmpty) {
+                  return _buildRecapContent(userData: _userData);
+                }
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error, size: 48, color: rougeCoris),
+                      SizedBox(height: 16),
+                      Text('Erreur lors du chargement des données'),
+                      TextButton(
+                        onPressed: () => setState(() {}),
+                        child: Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Utiliser les données chargées ou _userData en fallback
+              final userData = snapshot.data ?? _userData;
+              
+              // Si userData est vide, recharger les données
+              if (userData.isEmpty && !_isCommercial) {
+                // Recharger les données utilisateur
+                _loadUserDataForRecap().then((data) {
+                  if (mounted && data.isNotEmpty) {
+                    setState(() {
+                      _userData = data;
+                    });
+                  }
+                });
+                return Center(
+                    child: CircularProgressIndicator(color: bleuCoris));
+              }
+              
+              return _buildRecapContent(userData: userData);
+            },
           );
-        }
-
-        if (snapshot.hasError) {
-          debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
-          // En cas d'erreur, essayer d'utiliser _userData si disponible
-          if (_userData.isNotEmpty) {
-            return _buildRecapContent(userData: _userData);
-          }
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, size: 48, color: rougeCoris),
-                SizedBox(height: 16),
-                Text('Erreur lors du chargement des données'),
-                TextButton(
-                  onPressed: () => setState(() {}),
-                  child: Text('Réessayer'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // Utiliser les données chargées ou _userData en fallback
-        final userData = snapshot.data ?? _userData;
-        
-        // Si userData est vide, recharger les données
-        if (userData.isEmpty && !_isCommercial) {
-          // Recharger les données utilisateur
-          _loadUserDataForRecap().then((data) {
-            if (mounted && data.isNotEmpty) {
-              setState(() {
-                _userData = data;
-              });
-            }
-          });
-          return Center(
-              child: CircularProgressIndicator(color: bleuCoris));
-        }
-        
-        return _buildRecapContent(userData: userData);
-      },
-    );
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
@@ -1951,19 +2043,48 @@ class _SouscriptionSolidaritePageState
      * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
      * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
      */
+    Map<String, dynamic>? raw = _isCommercial ? null : (userData ?? _userData);
+
+    String pick(List<String> keys) {
+      if (raw == null) return '';
+      for (final k in keys) {
+        if (raw.containsKey(k) && raw[k] != null) {
+          final v = raw[k];
+          if (v is String && v.trim().isNotEmpty) return v;
+          if (v is int || v is double) return v.toString();
+          if (v is DateTime) return v.toIso8601String();
+        }
+      }
+      return '';
+    }
+
+    // Ajout de variantes pour chaque champ afin de couvrir tous les cas
     final displayData = _isCommercial
         ? {
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
             'email': _clientEmailController.text,
-            'telephone':
-                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'telephone': '$_selectedClientIndicatif ${_clientTelephoneController.text}',
             'date_naissance': _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? _userData);
+        : {
+            'civilite': pick(['civilite', 'title', 'gender', 'genre']),
+            'nom': pick(['nom', 'last_name', 'name', 'full_name', 'surname', 'family_name']),
+            'prenom': pick(['prenom', 'first_name', 'given_name', 'middle_name']),
+            'email': pick(['email', 'mail', 'email_address']),
+            'telephone': pick(['telephone', 'phone', 'phone_number', 'tel', 'mobile']),
+            'date_naissance': pick(['date_naissance', 'birth_date', 'dob', 'dateDeNaissance']),
+            'lieu_naissance': pick(['lieu_naissance', 'place_of_birth', 'birth_place', 'lieuDeNaissance']),
+            'adresse': pick(['adresse', 'address', 'adresse_postale']),
+          };
+
+    // S'assurer que la prime est bien calculée avant affichage
+    if (primeTotaleResult == 0) {
+      _calculerPrime();
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1987,9 +2108,7 @@ class _SouscriptionSolidaritePageState
                 'Téléphone',
                 displayData['telephone'] ?? 'Non renseigné',
                 'Date de naissance',
-                displayData['date_naissance'] != null
-                    ? _formatDate(displayData['date_naissance'].toString())
-                    : 'Non renseigné'),
+                displayData['date_naissance'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
                 displayData['lieu_naissance'] ?? 'Non renseigné',
@@ -2007,7 +2126,7 @@ class _SouscriptionSolidaritePageState
                 'Capital garanti',
                 '${_formatNumber(selectedCapital!)} FCFA',
                 'Prime totale',
-                '${_formatNumber(primeTotaleResult!.toInt())} FCFA'),
+                '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
           ]),
           const SizedBox(height: 12),
 
@@ -2102,15 +2221,6 @@ class _SouscriptionSolidaritePageState
         ],
       ),
     );
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-    } catch (e) {
-      return dateString;
-    }
   }
 
   Widget _buildRecapRow(String label, String value,

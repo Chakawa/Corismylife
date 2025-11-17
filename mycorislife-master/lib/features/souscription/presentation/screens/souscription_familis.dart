@@ -2575,7 +2575,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -2585,43 +2586,134 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(Duration(seconds: 10), onTimeout: () {
+        debugPrint('⏱️ Timeout lors de la requête API profil');
+        throw Exception('Timeout API');
+      });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          // Calculer l'âge si la date de naissance est disponible
-          if (userData['date_naissance'] != null) {
-            try {
-              final dateNaissance = DateTime.parse(userData['date_naissance']);
-              final maintenant = DateTime.now();
-              int age = maintenant.year - dateNaissance.year;
-              if (maintenant.month < dateNaissance.month ||
-                  (maintenant.month == dateNaissance.month &&
-                      maintenant.day < dateNaissance.day)) {
-                age--;
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            // Calculer l'âge si la date de naissance est disponible
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
               }
-              userData['age'] = age;
-            } catch (e) {
-              debugPrint('Erreur parsing date de naissance: $e');
+            }
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              if (userData['date_naissance'] != null) {
+                try {
+                  final dateNaissance = DateTime.parse(userData['date_naissance']);
+                  final maintenant = DateTime.now();
+                  int age = maintenant.year - dateNaissance.year;
+                  if (maintenant.month < dateNaissance.month ||
+                      (maintenant.month == dateNaissance.month &&
+                          maintenant.day < dateNaissance.day)) {
+                    age--;
+                  }
+                  userData['age'] = age;
+                } catch (e) {
+                  debugPrint('Erreur parsing date: $e');
+                }
+              }
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
             }
           }
-          debugPrint(
-              '✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
+              }
+            }
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
+              }
+            }
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint('⚠️ Réponse API inattendue (200): ${response.body}');
         } else {
-          debugPrint(
-              '⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
+      } else if (response.statusCode == 401) {
+        debugPrint('❌ Non authentifié (401): Token expiré ou invalide');
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue
@@ -2630,29 +2722,39 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 3 : 2;
+    // Include payment step: clients 0..3, commercials 0..4
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations, step 3 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
+          _calculatePrime();
+        } else if (_currentStep == 3) {
+          // Recap pour commercial -> allow moving to payment
+          canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = informations
+        // Pour les clients: step 0 = paramètres, step 1 = informations, step 2 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
+          canProceed = true;
+          _calculatePrime();
+        } else if (_currentStep == 2) {
+          // Recap pour client -> allow moving to payment
           canProceed = true;
         }
       }
@@ -3061,11 +3163,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                         _buildStep1(), // Page 1: Paramètres
                         _buildStep2(), // Page 2: Informations
                         _buildStep3(), // Page 3: Récapitulatif
+                        _buildStep4(), // Page 4: Paiement
                       ]
                     : [
                         _buildStep1(), // Page 0: Paramètres
                         _buildStep2(), // Page 1: Informations
                         _buildStep3(), // Page 2: Récapitulatif
+                        _buildStep4(), // Page 3: Paiement
                       ],
               ),
             ),
@@ -3092,7 +3196,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < (_isCommercial ? 4 : 3); i++) ...[
+          for (int i = 0; i < (_isCommercial ? 5 : 4); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -3120,12 +3224,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                   ? Icons.account_balance_wallet
                                   : i == 2
                                       ? Icons.person_add
-                                      : Icons.check_circle)
+                                      : i == 3
+                                          ? Icons.check_circle
+                                          : Icons.payment)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
                                   ? Icons.person_add
-                                  : Icons.check_circle),
+                                  : i == 2
+                                      ? Icons.check_circle
+                                      : Icons.payment),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
                     ),
@@ -3139,12 +3247,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                 ? 'Paramètres'
                                 : i == 2
                                     ? 'Informations'
-                                    : 'Validation')
+                                    : i == 3
+                                        ? 'Récap'
+                                        : 'Paie')
                         : (i == 0
                             ? 'Paramètres'
                             : i == 1
                                 ? 'Informations'
-                                : 'Validation'),
+                                : i == 2
+                                    ? 'Récap'
+                                    : 'Paie'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -3155,7 +3267,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 ],
               ),
             ),
-            if (i < (_isCommercial ? 3 : 2))
+            if (i < (_isCommercial ? 4 : 3))
               Expanded(
                 child: Container(
                   height: 2,
@@ -4066,65 +4178,48 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             opacity: _fadeAnimation.value,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _isCommercial ? null : _loadUserDataForRecap(),
-                builder: (context, snapshot) {
-                  // Pour les commerciaux, utiliser directement les données des contrôleurs
-                  if (_isCommercial) {
-                    return _buildRecapContent();
-                  }
+              child: _isCommercial
+                  ? _buildRecapContent()
+                  : FutureBuilder<Map<String, dynamic>>(
+                      future: _loadUserDataForRecap(),
+                      builder: (context, snapshot) {
+                        // Pour les clients, attendre le chargement des données
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(
+                            child: CircularProgressIndicator(color: bleuCoris),
+                          );
+                        }
 
-                  // Pour les clients, attendre le chargement des données
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(color: bleuCoris),
-                    );
-                  }
+                        if (snapshot.hasError) {
+                          // En cas d'erreur de chargement, ne pas bloquer l'UI :
+                          // utiliser les données déjà en cache si disponibles,
+                          // sinon afficher le récap (champs non renseignés) sans écran d'erreur.
+                          debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                          final fallback = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+                          return _buildRecapContent(userData: fallback);
+                        }
 
-                  if (snapshot.hasError) {
-                    debugPrint(
-                        'Erreur chargement données récapitulatif: ${snapshot.error}');
-                    // En cas d'erreur, essayer d'utiliser _userData si disponible
-                    if (_userData.isNotEmpty) {
-                      return _buildRecapContent(userData: _userData);
-                    }
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 48, color: rougeCoris),
-                          const SizedBox(height: 16),
-                          const Text('Erreur lors du chargement des données'),
-                          TextButton(
-                            onPressed: () => setState(() {}),
-                            child: const Text('Réessayer'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
+                        final userData = snapshot.data ?? _userData;
 
-                  // Pour les clients, utiliser les données chargées depuis la base de données
-                  // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
-                  final userData = snapshot.data ?? _userData;
+                        // Si userData est vide, recharger les données
+                        if (userData.isEmpty && !_isCommercial) {
+                          // Recharger les données utilisateur
+                          _loadUserDataForRecap().then((data) {
+                            if (mounted && data.isNotEmpty) {
+                              setState(() {
+                                _userData = data;
+                              });
+                            }
+                          });
+                          return Center(
+                              child: CircularProgressIndicator(color: bleuCoris));
+                        }
 
-                  // Si userData est vide, recharger les données
-                  if (userData.isEmpty && !_isCommercial) {
-                    // Recharger les données utilisateur
-                    _loadUserDataForRecap().then((data) {
-                      if (mounted && data.isNotEmpty) {
-                        setState(() {
-                          _userData = data;
-                        });
-                      }
-                    });
-                    return Center(
-                        child: CircularProgressIndicator(color: bleuCoris));
-                  }
-
-                  return _buildRecapContent(userData: userData);
-                },
-              ),
+                        return _buildRecapContent(userData: userData);
+                      },
+                    ),
             ),
           ),
         );
@@ -4473,7 +4568,21 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             if (_currentStep > 0) const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == 2 ? _showPaymentOptions : _nextStep,
+                onPressed: () {
+                  // Déterminer l'étape finale selon si commercial ou pas
+                  int finalStep = _isCommercial ? 3 : 2;
+
+                  if (_currentStep == finalStep) {
+                    // Depuis le récapitulatif: ouvrir directement les options de paiement
+                    _showPaymentOptions();
+                  } else if (_currentStep == finalStep + 1) {
+                    // Étape paiement (si présente): ouvrir aussi les options de paiement
+                    _showPaymentOptions();
+                  } else {
+                    // Autres étapes - avancer
+                    _nextStep();
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -4487,7 +4596,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == 2 ? 'Payer maintenant' : 'Suivant',
+                      () {
+                        int finalStep = _isCommercial ? 3 : 2;
+                        if (_currentStep == finalStep) {
+                          return 'Finaliser';
+                        } else if (_currentStep == finalStep + 1) {
+                          return 'Payer maintenant';
+                        } else {
+                          return 'Suivant';
+                        }
+                      }(),
                       style: const TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4496,7 +4614,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                     const SizedBox(width: 8),
                     Icon(
-                      _currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                      () {
+                        int finalStep = _isCommercial ? 3 : 2;
+                        if (_currentStep == finalStep + 1) {
+                          return Icons.payment;
+                        } else {
+                          return Icons.arrow_forward;
+                        }
+                      }(),
                       color: blanc,
                       size: 20,
                     ),
@@ -4531,6 +4656,298 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
     super.dispose();
+  }
+
+  /// Page étape 4: Paiement
+  Widget _buildStep4() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: ListView(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF002B6B),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.payment, color: Colors.white, size: 48),
+                        SizedBox(height: 16),
+                        Text(
+                          'Finalisation du Paiement',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Choisissez votre méthode de paiement',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Montant à payer
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Color(0xFF10B981),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF10B981).withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Montant à payer',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _calculatedPrime != null
+                              ? '${_calculatedPrime!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA'
+                              : '0 FCFA',
+                          style: TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Méthodes de paiement
+                  Text(
+                    'Méthodes de paiement disponibles',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF002B6B),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  // Wave
+                  _buildPaymentMethodCard(
+                    icon: Icons.phone_android,
+                    title: 'Wave',
+                    description: 'Paiement par SMS',
+                    onTap: () => _processPayment('Wave'),
+                  ),
+                  SizedBox(height: 12),
+                  // Orange Money
+                  _buildPaymentMethodCard(
+                    icon: Icons.monetization_on,
+                    title: 'Orange Money',
+                    description: 'Portefeuille Orange Money',
+                    onTap: () => _processPayment('Orange Money'),
+                  ),
+                  SizedBox(height: 12),
+                  // Payer plus tard
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF59E0B).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Color(0xFFF59E0B).withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.schedule, color: Color(0xFFF59E0B), size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Payer plus tard',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFF59E0B),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Enregistrez la proposition et payez ultérieurement',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            _processPayment('later');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFF59E0B),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Avertissement de sécurité
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info, color: Colors.blue, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Widget pour afficher les méthodes de paiement
+  Widget _buildPaymentMethodCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Color(0xFFF1F5F9),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Color(0xFF002B6B).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: Color(0xFF002B6B), size: 24),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF002B6B),
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Color(0xFF64748B), size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

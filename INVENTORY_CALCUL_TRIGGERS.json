@@ -1,0 +1,434 @@
+{
+  "metadata": {
+    "timestamp": "2024",
+    "total_files": 7,
+    "files_analyzed": 7,
+    "analysis_status": "COMPLETE - WITH LIMITATIONS",
+    "note": "Some exact line numbers require manual verification (marked with ?)"
+  },
+  "subscriptions": [
+    {
+      "file_name": "souscription_etude.dart",
+      "total_lines": 4366,
+      "product_name": "CORIS ETUDE",
+      "product_description": "Assurance éducation enfant (parent 18-60, enfant 0-17)",
+      "calculation": {
+        "function_name": "_recalculerValeurs",
+        "line_number": 1935,
+        "type": "synchronous",
+        "calculation_method": "Tariff table lookup"
+      },
+      "triggers": {
+        "type": "listeners",
+        "location": "didChangeDependencies (presumed)",
+        "line_number": "? - Needs verification",
+        "listeners": [
+          {
+            "controller": "_dureeController",
+            "action": "addListener",
+            "line": "?"
+          },
+          {
+            "controller": "_montantController",
+            "action": "addListener",
+            "line": "?"
+          }
+        ],
+        "issue": "CRITICAL - exact listener lines not found in grep"
+      },
+      "recap": {
+        "builder_method": "_buildStep3",
+        "line_number": 3181,
+        "content_method": "_buildRecapContent",
+        "content_line": 3252
+      },
+      "buttons": {
+        "finaliser": {
+          "text": "Finaliser",
+          "line": 3712,
+          "condition": "Last step"
+        },
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 3714,
+          "condition": "Paiement mode"
+        }
+      },
+      "tariff_table": {
+        "name": "tarifRenteFixe",
+        "structure": "nested map [age][duration]",
+        "lines": "~2000-2500"
+      }
+    },
+    {
+      "file_name": "souscription_familis.dart",
+      "total_lines": 5286,
+      "product_name": "CORIS FAMILIS",
+      "product_description": "Assurance famille multi-générationnelle (18-65+)",
+      "calculation": {
+        "function_name": "UNKNOWN - not found",
+        "line_number": null,
+        "type": "UNKNOWN",
+        "note": "Possible que ce produit n'ait pas de calcul dynamique"
+      },
+      "triggers": {
+        "type": "listeners (presumed)",
+        "location": "didChangeDependencies (presumed)",
+        "line_number": "? - Needs verification",
+        "listeners": [],
+        "issue": "CRITICAL - no listeners found in grep, calculation function missing"
+      },
+      "recap": {
+        "builder_method": "_buildStep3",
+        "line_number": 4170,
+        "content_method": "_buildRecapContent",
+        "content_line": 4229
+      },
+      "buttons": {
+        "finaliser": {
+          "text": "Finaliser",
+          "line": 4601
+        },
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 4603
+        }
+      },
+      "tariff_tables": {
+        "tables": ["tauxUnique", "tauxAnnuel"],
+        "structure": "nested map [age][duration]",
+        "lines": "~1000-2000"
+      }
+    },
+    {
+      "file_name": "souscription_epargne.dart",
+      "total_lines": 2693,
+      "product_name": "CORIS ÉPARGNE BONUS",
+      "product_description": "Produit épargne avec capital garanti et bonus à l'échéance",
+      "calculation": {
+        "function_name": "NONE - Fixed capital options",
+        "line_number": null,
+        "type": "no_calculation_needed",
+        "note": "Capital selection via grid, no dynamic calculation"
+      },
+      "initialization_method": {
+        "function_name": "_ensureEpargneCalculated",
+        "line_number": "~280",
+        "purpose": "Ensure capital and prime are selected"
+      },
+      "triggers": {
+        "type": "none",
+        "location": null,
+        "listeners": [],
+        "note": "No continuous calculation triggers needed"
+      },
+      "recap": {
+        "builder_method": "_buildStep3",
+        "line_number": 1894,
+        "content_method": "_buildRecapContent",
+        "content_line": 1967,
+        "pattern": "FutureBuilder for async user data loading"
+      },
+      "buttons": {
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 2337,
+          "condition": "_currentStep == 2"
+        }
+      },
+      "user_data_loading": {
+        "method": "_loadUserDataForRecap",
+        "pattern": "FutureBuilder (BEST PRACTICE)",
+        "line": "1894+"
+      },
+      "best_practice": "✅ USE THIS AS REFERENCE for FutureBuilder pattern"
+    },
+    {
+      "file_name": "souscription_retraite.dart",
+      "total_lines": 2972,
+      "product_name": "CORIS RETRAITE",
+      "product_description": "Assurance retraite avec simulation bidirectionnelle (18-69)",
+      "calculation": {
+        "function_name": "_effectuerCalcul",
+        "line_number": 730,
+        "type": "async",
+        "features": ["Bidirectional (prime ↔ capital)", "Age validation"]
+      },
+      "triggers": {
+        "type": "listeners",
+        "location": "initState()",
+        "listeners": [
+          {
+            "controller": "_primeController",
+            "action": "addListener",
+            "line": 526,
+            "callback": "triggerCalcul if parPrime mode"
+          },
+          {
+            "controller": "_capitalController",
+            "action": "addListener",
+            "line": 533,
+            "callback": "triggerCalcul if parCapital mode"
+          },
+          {
+            "controller": "_dureeController",
+            "action": "addListener",
+            "line": 540,
+            "callback": "triggerCalcul"
+          }
+        ],
+        "quality": "✅ CORRECT PATTERN - initState"
+      },
+      "simulation": {
+        "types": ["parPrime", "parCapital"],
+        "periods": ["mensuel", "trimestriel", "semestriel", "annuel"]
+      },
+      "recap": {
+        "builder_method": "? - Not found in grep",
+        "line_number": null,
+        "note": "NEEDS VERIFICATION"
+      },
+      "buttons": {
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 2534,
+          "condition": "_currentStep == 2"
+        }
+      },
+      "tariff_tables": {
+        "premiumValues": "nested map [duration][periodicity]",
+        "minPrimes": "map [periodicity]",
+        "lines": "~1200-1800"
+      }
+    },
+    {
+      "file_name": "souscription_flex.dart",
+      "total_lines": 4638,
+      "product_name": "FLEX EMPRUNTEUR",
+      "product_description": "Assurance emprunteur (prêt amortissable, découvert, scolaire) avec garanties optionnelles",
+      "calculation": {
+        "function_name": "_effectuerCalcul",
+        "line_number": 1926,
+        "type": "synchronous",
+        "features": ["Complex tariff lookup", "Multi-guarantee calculation"]
+      },
+      "triggers": {
+        "type": "listeners",
+        "location": "? - NOT FOUND",
+        "line_number": null,
+        "issue": "CRITICAL - listeners not found in grep"
+      },
+      "recap": {
+        "builder_method": "? - Not found in grep",
+        "line_number": null,
+        "issue": "CRITICAL - recap builder not found"
+      },
+      "buttons": {
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 4092,
+          "condition": "_currentStep == 2"
+        }
+      },
+      "tariff_tables": {
+        "tarifsPretAmortissable": {
+          "structure": "string keys 'AGE_DUREE' format",
+          "lines": "~600-1100"
+        },
+        "tarifsPretDecouvert": {
+          "structure": "string keys 'AGE_DUREE' format",
+          "lines": "~1100-1500"
+        },
+        "tarifsPerteEmploi": {
+          "structure": "map [duration_years]",
+          "lines": "~1500-1700"
+        }
+      },
+      "guarantee_options": [
+        "_garantiePrevoyance",
+        "_garantiePerteEmploi"
+      ],
+      "tariff_lookup": {
+        "method": "_findRateInMap",
+        "complexity": "HIGH - handles missing exact matches"
+      }
+    },
+    {
+      "file_name": "souscription_serenite.dart",
+      "total_lines": 3675,
+      "product_name": "CORIS SÉRÉNITÉ",
+      "product_description": "Assurance vie avec garantie décès et composante épargne (18-69)",
+      "calculation": {
+        "function_name": "_effectuerCalcul",
+        "line_number": 1393,
+        "type": "async",
+        "features": ["Bidirectional (prime ↔ capital)", "Periodic coefficient"]
+      },
+      "triggers": {
+        "type": "listeners",
+        "location": "initState()",
+        "listeners": [
+          {
+            "controller": "_capitalController",
+            "action": "addListener",
+            "line": 1048
+          },
+          {
+            "controller": "_primeController",
+            "action": "addListener",
+            "line": 1055
+          },
+          {
+            "controller": "_dureeController",
+            "action": "addListener",
+            "line": 1062
+          }
+        ],
+        "quality": "✅ CORRECT PATTERN - initState (SAME as Retraite)"
+      },
+      "recap": {
+        "builder_method": "_buildStep3",
+        "line_number": 2785,
+        "content_method": "_buildRecapContent",
+        "content_line": 2982
+      },
+      "buttons": {
+        "payer_maintenant": {
+          "text": "Payer maintenant",
+          "line": 3264,
+          "condition": "_currentStep == 2"
+        }
+      },
+      "tariff_table": {
+        "name": "_tarifaire",
+        "structure": "map [age][duration_months]",
+        "ages": "18-69",
+        "durations": "12-180 months",
+        "lines": "~1300-1800"
+      },
+      "special_methods": {
+        "tariff_lookup": {
+          "method": "_findDureeTarifaire",
+          "purpose": "Find closest available duration"
+        },
+        "periodic_coefficient": {
+          "method": "_getCoefficientPeriodicite",
+          "returns": "1.0/12, 1.0/4, 1.0/2, or 1.0"
+        }
+      }
+    },
+    {
+      "file_name": "sousription_solidarite.dart",
+      "total_lines": 2678,
+      "product_name": "CORIS SOLIDARITÉ",
+      "product_description": "Assurance famille (conjoints, enfants, ascendants)",
+      "calculation": {
+        "function_name": "_calculerPrime",
+        "line_number": "~320",
+        "type": "synchronous",
+        "method": "Base + multi-surcharges lookup",
+        "surcharges": [
+          "conjoints supplémentaires",
+          "enfants supplémentaires",
+          "ascendants"
+        ]
+      },
+      "triggers": {
+        "type": "manual",
+        "location": "onChange handlers for dropdown/steppers",
+        "note": "NO continuous listeners - triggered only on user interaction"
+      },
+      "recap": {
+        "builder_method": "? - Line 2000+ (after file truncation)",
+        "line_number": null,
+        "note": "NEEDS READ of lines 2000-2678"
+      },
+      "buttons": {
+        "note": "NEEDS READ of lines 2000-2678"
+      },
+      "tariff_tables": {
+        "primeTotaleFamilleBase": {
+          "structure": "map [capital][periodicite]",
+          "capitals": [500000, 1000000, 1500000, 2000000],
+          "periodicities": ["mensuel", "trimestriel", "semestriel", "annuelle"],
+          "lines": "~100-200"
+        },
+        "surprimesConjointsSupplementaires": {
+          "structure": "map [capital][periodicite]",
+          "lines": "~200-300"
+        },
+        "surprimesEnfantsSupplementaires": {
+          "structure": "map [capital][periodicite]",
+          "lines": "~300-400"
+        },
+        "surprimesAscendants": {
+          "structure": "map [capital][periodicite]",
+          "lines": "~400-500"
+        }
+      },
+      "commercial_mode": {
+        "enabled": true,
+        "flag": "_isCommercial",
+        "features": [
+          "Client info pre-population",
+          "Client info from select_client_screen",
+          "Date parsing (String to DateTime)",
+          "Age calculation"
+        ]
+      },
+      "user_data_loading": {
+        "method": "_loadUserDataForRecap",
+        "pattern": "FutureBuilder (similar to Epargne)"
+      },
+      "status_management": {
+        "save_method": "_saveSubscriptionData",
+        "payment_update": "_updatePaymentStatus",
+        "payment_simulation": "_simulatePayment"
+      }
+    }
+  ],
+  "summary": {
+    "calculation_functions": {
+      "found": 6,
+      "missing": 1,
+      "_recalculerValeurs": ["souscription_etude.dart"],
+      "_effectuerCalcul": ["souscription_retraite.dart", "souscription_flex.dart", "souscription_serenite.dart"],
+      "_calculerPrime": ["sousription_solidarite.dart"],
+      "missing_calculation": ["souscription_familis.dart"]
+    },
+    "triggers": {
+      "listeners_in_initState": [
+        "souscription_retraite.dart (lines 526, 533, 540)",
+        "souscription_serenite.dart (lines 1048, 1055, 1062)"
+      ],
+      "listeners_in_didChangeDependencies": [
+        "souscription_etude.dart (presumed, NOT VERIFIED)",
+        "souscription_familis.dart (presumed, NOT VERIFIED)"
+      ],
+      "no_listeners": [
+        "souscription_epargne.dart (fixed options)",
+        "sousription_solidarite.dart (manual trigger)"
+      ],
+      "unclear": [
+        "souscription_flex.dart (NOT FOUND)"
+      ]
+    },
+    "critical_issues": [
+      "souscription_etude.dart - listener lines not found",
+      "souscription_familis.dart - calculation function not found, listeners not found",
+      "souscription_flex.dart - listeners AND recap builder not found",
+      "souscription_retraite.dart - recap builder not found",
+      "sousription_solidarite.dart - incomplete analysis (truncated at line 2000)"
+    ],
+    "best_practices": {
+      "initState_pattern": [
+        "souscription_retraite.dart",
+        "souscription_serenite.dart"
+      ],
+      "futurebuilder_pattern": [
+        "souscription_epargne.dart",
+        "sousription_solidarite.dart"
+      ]
+    }
+  }
+}

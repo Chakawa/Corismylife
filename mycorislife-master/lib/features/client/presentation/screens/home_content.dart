@@ -47,29 +47,52 @@ class _HomeContentState extends State<HomeContent> {
 
   final List<Map<String, dynamic>> _services = [
     {
+      'image': 'assets/images/etudee.png',
+      'title': 'CORIS ETUDE',
+      'route': '/etude',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/retraitee.png',
+      'title': 'CORIS RETRAITE',
+      'route': '/retraite',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/epargnee.png',
+      'title': 'CORIS EPARGNE',
+      'route': '/epargne',
+      'isIcon': false,
+    },
+    {
       'image': 'assets/images/serenite.png',
       'title': 'CORIS SERENITE PLUS',
       'route': '/serenite',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/solidarite.png',
       'title': 'CORIS SOLIDARITE',
       'route': '/solidarite',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/emprunteur.png',
       'title': 'FLEX EMPRUNTEUR',
       'route': '/flex',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/prets.png',
       'title': 'PRETS SCOLAIRES',
       'route': '/prets',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
       'route': '/familis',
+      'isIcon': false,
     },
   ];
 
@@ -429,14 +452,22 @@ class _HomeContentState extends State<HomeContent> {
                             children: [
                               Image.asset(
                                 _services[index]['image'],
-                                width: 32,
-                                height: 32,
+                                width: 40,
+                                height: 40,
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.image_not_supported,
-                                    size: 32,
-                                    color: bleuCoris,
+                                  return Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      size: 24,
+                                      color: bleuCoris,
+                                    ),
                                   );
                                 },
                               ),

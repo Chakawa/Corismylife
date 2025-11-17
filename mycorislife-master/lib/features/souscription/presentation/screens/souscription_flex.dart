@@ -154,7 +154,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   // CONTRÔLEURS POUR LA SOUSCRIPTION
   // ============================================
   // Informations complémentaires nécessaires pour finaliser la souscription
-  final _formKey = GlobalKey<FormState>(); // Clé pour valider le formulaire
+  // Utiliser des clés séparées pour chaque étape afin d'éviter
+  // la réutilisation d'un même GlobalKey dans plusieurs Form widgets.
+  final _formKeyClientInfo = GlobalKey<FormState>();
+  final _formKeyStep2 = GlobalKey<FormState>(); // Clé pour valider le formulaire
   final _beneficiaireNomController = TextEditingController(); // Nom du bénéficiaire en cas de décès
   final _beneficiaireContactController = TextEditingController(); // Contact du bénéficiaire
   String _selectedLienParente = 'Enfant'; // Lien de parenté avec le bénéficiaire
@@ -1805,10 +1808,25 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true) {
+        Map<String, dynamic>? userData;
+
+        // 1) Cas standard: { success: true, user: { ... } }
+        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          userData = Map<String, dynamic>.from(data['user']);
+        }
+        // 2) Cas nested: { success: true, data: { ... } }
+        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          userData = Map<String, dynamic>.from(data['data']);
+        }
+        // 3) Direct user object
+        else if (data is Map && data.containsKey('id')) {
+          userData = Map<String, dynamic>.from(data);
+        }
+
+        if (userData != null && userData.isNotEmpty) {
           if (mounted) {
             setState(() {
-              _userData = data['user'];
+              _userData = userData!;
               if (_userData['date_naissance'] != null) {
                 _dateNaissance = DateTime.parse(_userData['date_naissance']);
                 final maintenant = DateTime.now();
@@ -2096,6 +2114,14 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       }
 
       if (canProceed) {
+        // If we're about to show the recap, ensure the calculation runs
+        if (_currentStep + 1 == maxStep) {
+          try {
+            _effectuerCalcul();
+          } catch (e) {
+            debugPrint('Erreur lors du calcul avant récapitulatif: $e');
+          }
+        }
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -2874,7 +2900,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Form(
-                key: _formKey,
+                key: _formKeyClientInfo,
                 child: ListView(
                   children: [
                     _buildFormSection(
@@ -2986,7 +3012,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Form(
-                key: _formKey,
+                key: _formKeyStep2,
                 child: ListView(
                   children: [
                     _buildFormSection(
@@ -3491,63 +3517,60 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: _isCommercial ? null : _loadUserDataForRecap(),
-              builder: (context, snapshot) {
-                // Pour les commerciaux, utiliser directement les données des contrôleurs
-                if (_isCommercial) {
-                  return _buildRecapContent();
-                }
-                
-                // Pour les clients, attendre le chargement des données
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(color: bleuCoris),
-                  );
-                }
-                
-                if (snapshot.hasError) {
-                  debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
-                  // En cas d'erreur, essayer d'utiliser _userData si disponible
-                  if (_userData.isNotEmpty) {
-                    return _buildRecapContent(userData: _userData);
-                  }
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error, size: 48, color: rougeCoris),
-                        SizedBox(height: 16),
-                        Text('Erreur lors du chargement des données'),
-                        TextButton(
-                          onPressed: () => setState(() {}),
-                          child: Text('Réessayer'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                // Utiliser les données chargées ou _userData en fallback
-                final userData = snapshot.data ?? _userData;
-                
-                // Si userData est vide, recharger les données
-                if (userData.isEmpty && !_isCommercial) {
-                  // Recharger les données utilisateur
-                  _loadUserDataForRecap().then((data) {
-                    if (mounted && data.isNotEmpty) {
-                      setState(() {
-                        _userData = data;
-                      });
-                    }
-                  });
-                  return Center(
-                      child: CircularProgressIndicator(color: bleuCoris));
-                }
-                
-                return _buildRecapContent(userData: userData);
-              },
-            ),
+            child: _isCommercial
+                ? _buildRecapContent()
+                : FutureBuilder<Map<String, dynamic>>(
+                    future: _loadUserDataForRecap(),
+                    builder: (context, snapshot) {
+                      // Pour les clients, attendre le chargement des données
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(color: bleuCoris),
+                        );
+                      }
+                      
+                      if (snapshot.hasError) {
+                        debugPrint('Erreur chargement données récapitulatif: ${snapshot.error}');
+                        // En cas d'erreur, essayer d'utiliser _userData si disponible
+                        if (_userData.isNotEmpty) {
+                          return _buildRecapContent(userData: _userData);
+                        }
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error, size: 48, color: rougeCoris),
+                              SizedBox(height: 16),
+                              Text('Erreur lors du chargement des données'),
+                              TextButton(
+                                onPressed: () => setState(() {}),
+                                child: Text('Réessayer'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      // Utiliser les données chargées ou _userData en fallback
+                      final userData = snapshot.data ?? _userData;
+                      
+                      // Si userData est vide, recharger les données
+                      if (userData.isEmpty && !_isCommercial) {
+                        // Recharger les données utilisateur
+                        _loadUserDataForRecap().then((data) {
+                          if (mounted && data.isNotEmpty) {
+                            setState(() {
+                              _userData = data;
+                            });
+                          }
+                        });
+                        return Center(
+                            child: CircularProgressIndicator(color: bleuCoris));
+                      }
+                      
+                      return _buildRecapContent(userData: userData);
+                    },
+                  ),
           ),
         );
       },
@@ -3568,7 +3591,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -3582,18 +3606,61 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          debugPrint('✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint('⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
@@ -3604,7 +3671,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     } catch (e) {
       debugPrint('❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -3615,6 +3683,21 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
      * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
      * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
      */
+    Map<String, dynamic>? raw = _isCommercial ? null : (userData ?? _userData);
+
+    String pick(List<String> keys) {
+      if (raw == null) return '';
+      for (final k in keys) {
+        if (raw.containsKey(k) && raw[k] != null) {
+          final v = raw[k];
+          if (v is String && v.trim().isNotEmpty) return v;
+          if (v is int || v is double) return v.toString();
+          if (v is DateTime) return v.toIso8601String();
+        }
+      }
+      return '';
+    }
+
     final displayData = _isCommercial
         ? {
             'civilite': _selectedClientCivilite,
@@ -3626,7 +3709,16 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? _userData);
+        : {
+            'civilite': pick(['civilite', 'title', 'gender']),
+            'nom': pick(['nom', 'last_name', 'name', 'full_name', 'prenom']),
+            'prenom': pick(['prenom', 'first_name', 'given_name']),
+            'email': pick(['email', 'mail']),
+            'telephone': pick(['telephone', 'phone', 'phone_number', 'tel']),
+            'date_naissance': pick(['date_naissance', 'birth_date', 'dob']),
+            'lieu_naissance': pick(['lieu_naissance', 'place_of_birth', 'birth_place']),
+            'adresse': pick(['adresse', 'address']),
+          };
 
     return Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
@@ -3837,9 +3929,6 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   Widget _buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
-    final int r = ((color.r * 255.0).round()).toInt();
-    final int g = ((color.g * 255.0).round()).toInt();
-    final int b = ((color.b * 255.0).round()).toInt();
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3861,7 +3950,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               Container(
                 padding: EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Color.fromRGBO(r, g, b, 25), // 0.1 alpha = 25/255
+                  color: color.withOpacity(0.10),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -4002,7 +4091,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == 2 ? _showPaymentOptions : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -4016,7 +4105,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == 2 ? 'Payer maintenant' : 'Suivant',
+                      _currentStep == (_isCommercial ? 3 : 2) ? 'Payer maintenant' : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4025,7 +4114,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      _currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                      _currentStep == (_isCommercial ? 3 : 2) ? Icons.check : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
                     ),
@@ -4432,7 +4521,7 @@ class PaymentBottomSheet extends StatelessWidget {
               _buildPaymentOption(
                 'Wave',
                 Icons.waves,
-                Colors.blue,
+                const Color(0xFF1976D2),
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
@@ -4440,7 +4529,7 @@ class PaymentBottomSheet extends StatelessWidget {
               _buildPaymentOption(
                 'Orange Money',
                 Icons.phone_android,
-                Colors.orange,
+                const Color(0xFFE65100),
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
               ),
@@ -4502,12 +4591,8 @@ class PaymentBottomSheet extends StatelessWidget {
 
   Widget _buildPaymentOption(String title, IconData icon, Color color,
       String subtitle, VoidCallback onTap) {
-    final int r = ((color.r * 255.0).round()).toInt();
-    final int g = ((color.g * 255.0).round()).toInt();
-    final int b = ((color.b * 255.0).round()).toInt();
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.all(20),
@@ -4522,10 +4607,10 @@ class PaymentBottomSheet extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Color.fromRGBO(r, g, b, 25), // 0.1 alpha
+                color: color, // Couleur pleine pour meilleure visibilité
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
             SizedBox(width: 16),
             Expanded(

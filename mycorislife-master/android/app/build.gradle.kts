@@ -29,6 +29,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Limiter à x86_64 pour éviter les problèmes CMake avec d'autres architectures
+        ndk {
+            abiFilters.add("x86_64")
+        }
     }
 
     buildTypes {

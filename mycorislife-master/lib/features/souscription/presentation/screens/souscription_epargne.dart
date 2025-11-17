@@ -224,10 +224,35 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
+        if (data == null || data is! Map) {
+          debugPrint('⚠️ Profil: réponse API vide ou non-Map: ${response.body}');
           if (mounted) {
             setState(() {
-              _userData = data['user'];
+              _userData = _userData.isNotEmpty ? _userData : {};
+            });
+          }
+          return;
+        }
+
+        Map<String, dynamic>? userData;
+
+        // 1) Cas standard: { success: true, user: { ... } }
+        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          userData = Map<String, dynamic>.from(data['user']);
+        }
+        // 2) Cas nested: { success: true, data: { ... } }
+        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          userData = Map<String, dynamic>.from(data['data']);
+        }
+        // 3) Direct user object
+        else if (data.containsKey('id') && data.containsKey('email')) {
+          userData = Map<String, dynamic>.from(data);
+        }
+
+        if (userData != null && userData.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _userData = userData!;
             });
           }
         }
@@ -333,7 +358,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -347,36 +373,122 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          // Calculer l'âge si la date de naissance est disponible
-          if (userData['date_naissance'] != null) {
-            try {
-              final dateNaissance = DateTime.parse(userData['date_naissance']);
-              final maintenant = DateTime.now();
-              int age = maintenant.year - dateNaissance.year;
-              if (maintenant.month < dateNaissance.month ||
-                  (maintenant.month == dateNaissance.month &&
-                      maintenant.day < dateNaissance.day)) {
-                age--;
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            // Calculer l'âge si la date de naissance est disponible
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
               }
-              userData['age'] = age;
-            } catch (e) {
-              debugPrint('Erreur parsing date de naissance: $e');
+            }
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              if (userData['date_naissance'] != null) {
+                try {
+                  final dateNaissance = DateTime.parse(userData['date_naissance']);
+                  final maintenant = DateTime.now();
+                  int age = maintenant.year - dateNaissance.year;
+                  if (maintenant.month < dateNaissance.month ||
+                      (maintenant.month == dateNaissance.month &&
+                          maintenant.day < dateNaissance.day)) {
+                    age--;
+                  }
+                  userData['age'] = age;
+                } catch (e) {
+                  debugPrint('Erreur parsing date: $e');
+                }
+              }
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
             }
           }
-          debugPrint(
-              '✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
+              }
+            }
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            if (userData['date_naissance'] != null) {
+              try {
+                final dateNaissance = DateTime.parse(userData['date_naissance']);
+                final maintenant = DateTime.now();
+                int age = maintenant.year - dateNaissance.year;
+                if (maintenant.month < dateNaissance.month ||
+                    (maintenant.month == dateNaissance.month &&
+                        maintenant.day < dateNaissance.day)) {
+                  age--;
+                }
+                userData['age'] = age;
+              } catch (e) {
+                debugPrint('Erreur parsing date: $e');
+              }
+            }
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint(
-              '⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
@@ -388,7 +500,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -437,6 +550,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       }
 
       if (canProceed) {
+        // Si on avance vers le récapitulatif, s'assurer que les valeurs sont calculées
+        if (_currentStep + 1 == maxStep) {
+          try {
+            _ensureEpargneCalculated();
+          } catch (e) {
+            debugPrint('Erreur lors du calcul Epargne avant récap: $e');
+          }
+        }
+
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -446,6 +568,28 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           duration: Duration(milliseconds: 400),
           curve: Curves.easeInOutCubic,
         );
+      }
+    }
+  }
+
+  /// Ensure selected capital/prime are set before showing recap
+  void _ensureEpargneCalculated() {
+    if (_selectedCapital == null && _capitalOptions.isNotEmpty) {
+      setState(() {
+        _selectedCapital = _capitalOptions.first['capital'] as int?;
+        _selectedPrime = _capitalOptions.first['prime'] as int?;
+      });
+      return;
+    }
+
+    if (_selectedPrime == null && _selectedCapital != null) {
+      final opt = _capitalOptions.firstWhere(
+          (opt) => opt['capital'] == _selectedCapital,
+          orElse: () => {});
+      if (opt.isNotEmpty) {
+        setState(() {
+          _selectedPrime = opt['prime'] as int?;
+        });
       }
     }
   }
@@ -1773,65 +1917,62 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             opacity: _fadeAnimation.value,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _isCommercial ? null : _loadUserDataForRecap(),
-                builder: (context, snapshot) {
-                  // Pour les commerciaux, utiliser directement les données des contrôleurs
-                  if (_isCommercial) {
-                    return _buildRecapContent();
-                  }
+              child: _isCommercial
+                  ? _buildRecapContent()
+                  : FutureBuilder<Map<String, dynamic>>(
+                      future: _loadUserDataForRecap(),
+                      builder: (context, snapshot) {
+                        // Pour les clients, attendre le chargement des données
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(
+                            child: CircularProgressIndicator(color: bleuCoris),
+                          );
+                        }
 
-                  // Pour les clients, attendre le chargement des données
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(color: bleuCoris),
-                    );
-                  }
+                        if (snapshot.hasError) {
+                          debugPrint(
+                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                          // En cas d'erreur, essayer d'utiliser _userData si disponible
+                          if (_userData.isNotEmpty) {
+                            return _buildRecapContent(userData: _userData);
+                          }
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, size: 48, color: rougeCoris),
+                                SizedBox(height: 16),
+                                Text('Erreur lors du chargement des données'),
+                                TextButton(
+                                  onPressed: () => setState(() {}),
+                                  child: Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                  if (snapshot.hasError) {
-                    debugPrint(
-                        'Erreur chargement données récapitulatif: ${snapshot.error}');
-                    // En cas d'erreur, essayer d'utiliser _userData si disponible
-                    if (_userData.isNotEmpty) {
-                      return _buildRecapContent(userData: _userData);
-                    }
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 48, color: rougeCoris),
-                          SizedBox(height: 16),
-                          Text('Erreur lors du chargement des données'),
-                          TextButton(
-                            onPressed: () => setState(() {}),
-                            child: Text('Réessayer'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
+                        final userData = snapshot.data ?? _userData;
 
-                  // Pour les clients, utiliser les données chargées depuis la base de données
-                  // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
-                  final userData = snapshot.data ?? _userData;
+                        // Si userData est vide, recharger les données
+                        if (userData.isEmpty && !_isCommercial) {
+                          // Recharger les données utilisateur
+                          _loadUserDataForRecap().then((data) {
+                            if (mounted && data.isNotEmpty) {
+                              setState(() {
+                                _userData = data;
+                              });
+                            }
+                          });
+                          return Center(
+                              child: CircularProgressIndicator(color: bleuCoris));
+                        }
 
-                  // Si userData est vide, recharger les données
-                  if (userData.isEmpty && !_isCommercial) {
-                    // Recharger les données utilisateur
-                    _loadUserDataForRecap().then((data) {
-                      if (mounted && data.isNotEmpty) {
-                        setState(() {
-                          _userData = data;
-                        });
-                      }
-                    });
-                    return Center(
-                        child: CircularProgressIndicator(color: bleuCoris));
-                  }
-
-                  return _buildRecapContent(userData: userData);
-                },
-              ),
+                        return _buildRecapContent(userData: userData);
+                      },
+                    ),
             ),
           ),
         );
@@ -2195,7 +2336,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == 2 ? _showPaymentOptions : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),

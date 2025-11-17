@@ -614,10 +614,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true) {
+        Map<String, dynamic>? userData;
+
+        // 1) Cas standard: { success: true, user: { ... } }
+        if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+          userData = Map<String, dynamic>.from(data['user']);
+        }
+        // 2) Cas nested: { success: true, data: { ... } }
+        else if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+          userData = Map<String, dynamic>.from(data['data']);
+        }
+        // 3) Direct user object
+        else if (data is Map && data.containsKey('id')) {
+          userData = Map<String, dynamic>.from(data);
+        }
+
+        if (userData != null && userData.isNotEmpty) {
           if (mounted) {
             setState(() {
-              _userData = data['user'];
+              _userData = userData!;
               // Extraire la date de naissance et calculer l'âge
               if (_userData['date_naissance'] != null) {
                 _dateNaissance = DateTime.parse(_userData['date_naissance']);
@@ -907,6 +922,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
 
       if (canProceed) {
+        // If the next step is the recap, ensure calculations are performed
+        if (_currentStep + 1 == maxStep) {
+          try {
+            _effectuerCalcul();
+          } catch (e) {
+            debugPrint('Erreur lors du calcul avant récapitulatif: $e');
+          }
+        }
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -2066,7 +2089,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       final token = await storage.read(key: 'token');
       if (token == null) {
         debugPrint('❌ Token non trouvé');
-        throw Exception('Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
       }
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
@@ -2080,20 +2104,61 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['user'] != null) {
-          final userData = data['user'] as Map<String, dynamic>;
-          debugPrint(
-              '✅ Données utilisateur chargées avec succès: ${userData['nom']} ${userData['prenom']}');
-          // Mettre à jour _userData pour éviter de recharger
-          if (mounted) {
-            setState(() {
-              _userData = userData;
-            });
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true && data['user'] != null && data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint('✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
           }
-          return userData;
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint('✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint('✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint('✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint('⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint(
-              '⚠️ Réponse API invalide: ${data['message'] ?? 'Aucun message'}');
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
       } else {
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
@@ -2105,7 +2170,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
-      return _userData.isNotEmpty ? _userData : {};
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -2117,73 +2183,70 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             offset: Offset(0, _slideAnimation.value),
             child: Opacity(
               opacity: _fadeAnimation.value,
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _isCommercial ? null : _loadUserDataForRecap(),
-                builder: (context, snapshot) {
-                  // Pour les commerciaux, utiliser directement les données des contrôleurs
-                  if (_isCommercial) {
-                    return Padding(
+              child: _isCommercial
+                  ? Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: _buildRecapContent(),
-                    );
-                  }
+                    )
+                  : FutureBuilder<Map<String, dynamic>>(
+                      future: _loadUserDataForRecap(),
+                      builder: (context, snapshot) {
+                        // Pour les clients, attendre le chargement des données
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(
+                              child: CircularProgressIndicator(color: bleuCoris));
+                        }
 
-                  // Pour les clients, attendre le chargement des données
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                        child: CircularProgressIndicator(color: bleuCoris));
-                  }
+                        if (snapshot.hasError) {
+                          debugPrint(
+                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                          // En cas d'erreur, essayer d'utiliser _userData si disponible
+                          if (_userData.isNotEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: _buildRecapContent(userData: _userData),
+                            );
+                          }
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, size: 48, color: rougeCoris),
+                                SizedBox(height: 16),
+                                Text('Erreur lors du chargement des données'),
+                                TextButton(
+                                  onPressed: () => setState(() {}),
+                                  child: Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                  if (snapshot.hasError) {
-                    debugPrint(
-                        'Erreur chargement données récapitulatif: ${snapshot.error}');
-                    // En cas d'erreur, essayer d'utiliser _userData si disponible
-                    if (_userData.isNotEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildRecapContent(userData: _userData),
-                      );
-                    }
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 48, color: rougeCoris),
-                          SizedBox(height: 16),
-                          Text('Erreur lors du chargement des données'),
-                          TextButton(
-                            onPressed: () => setState(() {}),
-                            child: Text('Réessayer'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
+                        final userData = snapshot.data ?? _userData;
 
-                  // Pour les clients, utiliser les données chargées depuis la base de données
-                  // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
-                  final userData = snapshot.data ?? _userData;
+                        // Si userData est vide, recharger les données
+                        if (userData.isEmpty && !_isCommercial) {
+                          // Recharger les données utilisateur
+                          _loadUserDataForRecap().then((data) {
+                            if (mounted && data.isNotEmpty) {
+                              setState(() {
+                                _userData = data;
+                              });
+                            }
+                          });
+                          return Center(
+                              child: CircularProgressIndicator(color: bleuCoris));
+                        }
 
-                  // Si userData est vide, recharger les données
-                  if (userData.isEmpty && !_isCommercial) {
-                    // Recharger les données utilisateur
-                    _loadUserDataForRecap().then((data) {
-                      if (mounted && data.isNotEmpty) {
-                        setState(() {
-                          _userData = data;
-                        });
-                      }
-                    });
-                    return Center(
-                        child: CircularProgressIndicator(color: bleuCoris));
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildRecapContent(userData: userData),
-                  );
-                },
-              ),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildRecapContent(userData: userData),
+                        );
+                      },
+                    ),
             ));
       },
     );
@@ -2474,7 +2537,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: _currentStep == 2 ? _showPaymentOptions : _nextStep,
+              onPressed: _currentStep == (_isCommercial ? 3 : 2) ? _showPaymentOptions : _nextStep,
               style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -2484,13 +2547,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   shadowColor: bleuCoris.withValues(alpha: 0.3)),
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(_currentStep == 2 ? 'Payer maintenant' : 'Suivant',
+                Text(_currentStep == (_isCommercial ? 3 : 2) ? 'Payer maintenant' : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
                         fontSize: 16)),
                 const SizedBox(width: 8),
-                Icon(_currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                Icon(_currentStep == (_isCommercial ? 3 : 2) ? Icons.check : Icons.arrow_forward,
                     color: blanc, size: 20),
               ]),
             ),

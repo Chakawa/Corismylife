@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mycorislife/config/app_config.dart';
 
 /// ============================================
@@ -32,67 +33,83 @@ class UserService {
   ///   - Erreur serveur
   static Future<Map<String, dynamic>> getProfile() async {
     try {
-      // Vérifier que l'utilisateur est authentifié
       final token = await _storage.read(key: 'token');
       if (token == null) {
         throw Exception('Vous devez être connecté pour voir votre profil.');
       }
 
-      // Vérifier la connexion Internet avant de faire la requête
+      // Vérifier la connexion Internet rapidement
       try {
         final result = await InternetAddress.lookup('google.com')
             .timeout(const Duration(seconds: 2));
         if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw Exception(
-              'Aucune connexion Internet. La récupération du profil nécessite une connexion Internet.');
+          throw Exception('Aucune connexion Internet.');
         }
+      } catch (_) {
+        throw Exception('Impossible de récupérer le profil. Vérifiez votre connexion Internet.');
+      }
+
+      final response = await http
+          .get(Uri.parse('$baseUrl/profile'), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      }).timeout(const Duration(seconds: 8), onTimeout: () {
+        throw Exception('Le serveur met trop de temps à répondre.');
+      });
+
+  // response.body is always a String; avoid dead null-aware expression
+  final bodyText = response.body;
+      Map<String, dynamic> data = {};
+      try {
+        final parsed = json.decode(bodyText);
+        if (parsed is Map<String, dynamic>) data = parsed;
       } catch (e) {
-        throw Exception(
-            'Impossible de récupérer le profil. Vérifiez votre connexion Internet et réessayez.');
+        debugPrint('⚠️ getProfile: réponse non JSON: $bodyText');
+        throw Exception('Réponse invalide du serveur lors de la récupération du profil.');
       }
 
-      // Faire la requête GET avec timeout réduit à 5 secondes
-      final response = await http.get(
-        Uri.parse('$baseUrl/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw Exception(
-              'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet.');
-        },
-      );
-
-      final data = json.decode(response.body);
-
-      // Vérifier si la requête a réussi
-      if (response.statusCode == 200 && data['success'] == true) {
-        // Sauvegarder les données utilisateur en local pour consultation offline
-        await _storage.write(key: 'user', value: json.encode(data['data']));
-        return data['data'];
-      } else {
-        // Gérer les erreurs selon le code de statut
-        if (response.statusCode == 401) {
-          throw Exception('Session expirée. Veuillez vous reconnecter.');
-        } else {
-          throw Exception(data['message'] ?? 
-              'Erreur lors de la récupération du profil. Veuillez réessayer.');
+      // Extraire l'objet utilisateur en acceptant plusieurs schémas
+      Map<String, dynamic>? user;
+      
+      // 1) Cas: { success: true, data: { id, civilite, nom, prenom, ... } }
+      if (data['success'] == true && data['data'] != null && data['data'] is Map) {
+        final dataObj = data['data'] as Map<String, dynamic>;
+        if (dataObj.containsKey('id') || dataObj.containsKey('email')) {
+          user = dataObj;
         }
       }
-    } on SocketException {
-      throw Exception(
-          'Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
-    } on HttpException {
-      throw Exception(
-          'Erreur de communication avec le serveur. Veuillez réessayer.');
-    } catch (e) {
-      // Si c'est déjà une Exception avec message clair, la relancer
-      if (e is Exception) {
-        rethrow;
+      
+      // 2) Cas: { success: true, data: { user: { id, ... } } }
+      if (user == null && data['success'] == true && data['data'] != null && data['data'] is Map && data['data']['user'] != null && data['data']['user'] is Map) {
+        user = Map<String, dynamic>.from(data['data']['user']);
       }
+      
+      // 3) Cas: { success: true, user: { id, ... } }
+      if (user == null && data['success'] == true && data['user'] != null && data['user'] is Map) {
+        user = Map<String, dynamic>.from(data['user']);
+      }
+      
+      // 4) Cas: { id, civilite, nom, prenom, ... } (objet utilisateur direct)
+      if (user == null && data.containsKey('id') && data.containsKey('email')) {
+        user = Map<String, dynamic>.from(data);
+      }
+
+      if (response.statusCode == 200 && user != null) {
+        await _storage.write(key: 'user', value: json.encode(user));
+        return user;
+      }
+
+      debugPrint('⚠️ getProfile: réponse inattendue (${response.statusCode}): $bodyText');
+
+      if (response.statusCode == 401) {
+        throw Exception('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      throw Exception(data['message'] ?? 'Erreur lors de la récupération du profil.');
+    } on SocketException {
+      throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
+    } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Erreur lors de la récupération du profil: ${e.toString()}');
     }
   }
@@ -309,7 +326,7 @@ class UserService {
             data['message'] ?? 'Erreur lors de l\'upload de la photo');
       }
     } catch (e) {
-      print('❌ Erreur uploadPhoto: $e');
+      debugPrint('❌ Erreur uploadPhoto: $e');
       rethrow;
     }
   }
@@ -323,7 +340,7 @@ class UserService {
       }
       return null;
     } catch (e) {
-      print('❌ Erreur getUserFromStorage: $e');
+      debugPrint('❌ Erreur getUserFromStorage: $e');
       return null;
     }
   }

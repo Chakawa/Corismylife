@@ -38,7 +38,7 @@ class HomeSouscriptionPage extends StatelessWidget {
     {
       'image': 'assets/images/solidarite.png',
       'title': 'CORIS SOLIDARITE',
-      'route': '/sousription_solidarite', // Page de souscription directe
+      'route': '/souscription_solidarite', // Page de souscription directe
     },
     {
       'image': 'assets/images/emprunteur.png',
