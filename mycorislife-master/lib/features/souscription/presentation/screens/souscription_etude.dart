@@ -921,10 +921,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       _loadUserData().then((data) {
         _calculatedAgeParent =
             _calculateAgeFromBirthDate(data['date_naissance']);
-        // FORCER le recalcul après chargement des données
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _recalculerValeurs();
-        });
+        _recalculerValeurs(); // Recalculer après chargement
         if (mounted) {
           setState(() {}); // Rafraîchir l'UI
         }
@@ -943,11 +940,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
-
-    // FORCER le recalcul initial
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _recalculerValeurs();
-    });
   }
 
   @override
@@ -1150,14 +1142,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     // Mettre à jour la date d'échéance
     _updateEcheanceDate();
 
-    // FORCER le recalcul immédiat avec un délai pour s'assurer que tout est initialisé
+    // Forcer le recalcul immédiat des valeurs
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        _recalculerValeurs();
-        if (mounted) {
-          setState(() {});
-        }
-      });
+      _recalculerValeurs();
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -1959,99 +1949,55 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _recalculerValeurs() {
-    debugPrint('🔁 [_recalculerValeurs] start');
-
-    final periodicite = _selectedPeriodicite ?? '';
-    final mode = _selectedMode ?? '';
-
-    if (periodicite.isEmpty || mode.isEmpty) {
-      debugPrint(
-          '❌ [_recalculerValeurs] periodicite or mode missing: periodicite="$periodicite", mode="$mode"');
-      if (mounted)
-        setState(() {
-          _primeCalculee = 0.0;
-          _renteCalculee = 0.0;
-        });
+    // Vérifier que toutes les données nécessaires sont disponibles
+    if (_calculatedAgeParent == null ||
+        _dureeController.text.isEmpty ||
+        _montantController.text.isEmpty ||
+        _selectedPeriodicite == null) {
+      _primeCalculee = 0;
+      _renteCalculee = 0;
       return;
     }
-
-    // Parse montant safely (accepts spaces, commas)
-    final montantRaw = _montantController.text
-        .replaceAll(RegExp('[^0-9.,-]'), '')
-        .replaceAll(',', '.');
-    final montant = double.tryParse(montantRaw) ?? 0.0;
-    if (montant <= 0) {
-      debugPrint(
-          '❌ [_recalculerValeurs] invalid montant: "$montantRaw" -> $montant');
-      if (mounted)
-        setState(() {
-          _primeCalculee = 0.0;
-          _renteCalculee = 0.0;
-        });
-      return;
-    }
-
-    if (_calculatedAgeParent == null) {
-      debugPrint('❌ [_recalculerValeurs] _calculatedAgeParent is null');
-      if (mounted)
-        setState(() {
-          _primeCalculee = 0.0;
-          _renteCalculee = 0.0;
-        });
-      return;
-    }
-
-    // Parse enfant age
-    final ageEnfant = int.tryParse(_dureeController.text) ?? -1;
-    if (ageEnfant < 0 || ageEnfant > 17) {
-      debugPrint(
-          '❌ [_recalculerValeurs] invalid ageEnfant: ${_dureeController.text}');
-      if (mounted)
-        setState(() {
-          _primeCalculee = 0.0;
-          _renteCalculee = 0.0;
-        });
-      return;
-    }
-
-    final dureeMois = ((17 - ageEnfant) * 12).round();
-    final dureeEffective = _closestDuree(dureeMois);
-
     try {
-      final modeLower = mode.toLowerCase();
+      // Nettoyer le montant (supprimer les espaces)
+      final montantText = _montantController.text.replaceAll(' ', '');
+      final montant = double.parse(montantText);
 
-      if (modeLower.contains('prime')) {
-        // Mode Prime: montant is a prime
-        final primeMensuelle = _convertToMensuel(montant, periodicite);
-        final rente = _calculateRente(
+      // Calculer la durée en mois (jusqu'à 17 ans)
+      final ageEnfant = int.parse(_dureeController.text);
+      final dureeMois = ((17 - ageEnfant) * 12).round();
+      final dureeEffective = _closestDuree(dureeMois);
+
+      // Déterminer le mode de calcul en fonction de _selectedMode
+      if (_selectedMode == 'Mode Prime') {
+        // Mode Prime: calculer la rente correspondante
+        double primeMensuelle =
+            _convertToMensuel(montant, _selectedPeriodicite!);
+
+        _renteCalculee = _calculateRente(
             _calculatedAgeParent!, dureeEffective, primeMensuelle);
-        debugPrint(
-            '✅ [_recalculerValeurs] mode=prime primeMensuelle=$primeMensuelle rente=$rente');
-        if (mounted)
-          setState(() {
-            _primeCalculee = montant;
-            _renteCalculee = rente;
-          });
+        _primeCalculee = montant;
       } else {
-        // Mode Rente: montant is a rente
-        final primeMensuelle =
+        // Mode Rente: calculer la prime correspondante
+        double primeMensuelle =
             _calculatePrime(_calculatedAgeParent!, dureeEffective, montant);
-        final primeAffiche = _convertFromMensuel(primeMensuelle, periodicite);
-        debugPrint(
-            '✅ [_recalculerValeurs] mode=rente primeMensuelle=$primeMensuelle primeAffiche=$primeAffiche');
-        if (mounted)
-          setState(() {
-            _primeCalculee = primeAffiche;
-            _renteCalculee = montant;
-          });
+
+        _primeCalculee =
+            _convertFromMensuel(primeMensuelle, _selectedPeriodicite!);
+        _renteCalculee = montant;
       }
-    } catch (e, st) {
-      debugPrint('❌ [_recalculerValeurs] error: $e\n$st');
-      if (mounted)
-        setState(() {
-          _primeCalculee = 0.0;
-          _renteCalculee = 0.0;
-        });
+
+      // Forcer la mise à jour de l'interface
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // En cas d'erreur, mettre les valeurs à 0
+      _primeCalculee = 0;
+      _renteCalculee = 0;
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -3320,18 +3266,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    // Ensure recalculation happens after the frame when needed to avoid build-time side effects
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_primeCalculee == 0 || _renteCalculee == 0) {
-        debugPrint(
-            '🧩 [_buildRecapContent] detected zero values, calling _recalculerValeurs post-frame');
-        _recalculerValeurs();
-      }
-    });
+    // S'assurer que les calculs sont effectués avant d'afficher
+    if (_primeCalculee == 0 || _renteCalculee == 0) {
+      _recalculerValeurs();
+    }
 
-    // Fallback local values to avoid flashing zeros
-    double primeDisplay = _primeCalculee > 0 ? _primeCalculee : 0.0;
-    double renteDisplay = _renteCalculee > 0 ? _renteCalculee : 0.0;
+    final primeDisplay = _primeCalculee;
+    final renteDisplay = _renteCalculee;
     final duree = int.tryParse(_dureeController.text) ?? 0;
 
     /**
@@ -3353,15 +3294,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             'adresse': _clientAdresseController.text,
           }
         : (userData ?? {});
-
-    // If still zero, attempt a synchronous recalculation as last resort
-    if (primeDisplay == 0.0 && renteDisplay == 0.0) {
-      debugPrint(
-          '⚠️ [_buildRecapContent] values still zero, attempting immediate recalculation');
-      _recalculerValeurs();
-      primeDisplay = _primeCalculee > 0 ? _primeCalculee : 0.0;
-      renteDisplay = _renteCalculee > 0 ? _renteCalculee : 0.0;
-    }
 
     return ListView(
       children: [

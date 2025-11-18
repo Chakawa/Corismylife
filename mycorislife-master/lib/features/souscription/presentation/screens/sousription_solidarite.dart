@@ -78,6 +78,10 @@ class _SouscriptionSolidaritePageState
   int nbAscendants = 0;
   double primeTotaleResult = 0.0;
 
+  // Date d'effet du contrat
+  DateTime? _dateEffetContrat;
+  final TextEditingController _dateEffetController = TextEditingController();
+
   // Données des membres
   List<Membre> conjoints = [];
   List<Membre> enfants = [];
@@ -383,6 +387,10 @@ class _SouscriptionSolidaritePageState
     ascendants = List.generate(nbAscendants,
         (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
 
+    // Initialiser la date d'effet (aujourd'hui par défaut)
+    _dateEffetContrat = DateTime.now();
+    _dateEffetController.text = _formatDate(_dateEffetContrat);
+
     // Calculer la prime initiale
     _calculerPrime();
 
@@ -581,11 +589,55 @@ class _SouscriptionSolidaritePageState
     });
   }
 
+  String _formatDate(DateTime? dateTime) {
+    if (dateTime == null) return 'Sélectionner une date';
+    return "${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}";
+  }
+
   String _formatNumber(int number) {
     return number.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
+  }
+
+  /// Valide les âges des membres de la famille
+  /// - Enfants: 12 à 21 ans
+  /// - Parents/Ascendants: 18 ans et plus
+  bool _validateMembresAges() {
+    final now = DateTime.now();
+
+    // Valider les enfants (12-21 ans)
+    for (var enfant in enfants) {
+      final age = now.year - enfant.dateNaissance.year;
+      if (age < 12 || age > 21) {
+        _showErrorSnackBar(
+            'L\'âge des enfants doit être compris entre 12 et 21 ans. ${enfant.nomPrenom} a $age ans.');
+        return false;
+      }
+    }
+
+    // Valider les ascendants (18 ans et plus)
+    for (var ascendant in ascendants) {
+      final age = now.year - ascendant.dateNaissance.year;
+      if (age < 18) {
+        _showErrorSnackBar(
+            'L\'âge des parents doit être d\'au moins 18 ans. ${ascendant.nomPrenom} a $age ans.');
+        return false;
+      }
+    }
+
+    // Valider les conjoints (18 ans et plus)
+    for (var conjoint in conjoints) {
+      final age = now.year - conjoint.dateNaissance.year;
+      if (age < 18) {
+        _showErrorSnackBar(
+            'L\'âge du conjoint doit être d\'au moins 18 ans. ${conjoint.nomPrenom} a $age ans.');
+        return false;
+      }
+    }
+
+    return true;
   }
 
   // MÉTHODES CRITIQUES POUR LE STATUT DE PAIEMENT
@@ -619,7 +671,9 @@ class _SouscriptionSolidaritePageState
         'product_type': 'coris_solidarite',
         'capital': selectedCapital,
         'periodicite': selectedPeriodicite.toLowerCase(),
+        'prime': primeTotaleResult, // Prime pour PDF
         'prime_totale': primeTotaleResult,
+        'date_effet': _dateEffetContrat?.toIso8601String(),
         'nombre_conjoints': nbConjoints,
         'nombre_enfants': nbEnfants,
         'nombre_ascendants': nbAscendants,
@@ -694,6 +748,7 @@ class _SouscriptionSolidaritePageState
 
   void _processPayment(String paymentMethod) async {
     if (!mounted) return;
+
     showDialog(
         context: context,
         barrierDismissible: false,
@@ -960,6 +1015,10 @@ class _SouscriptionSolidaritePageState
 
           // Sélecteur de périodicité
           _buildPeriodiciteDropdown(),
+          const SizedBox(height: 16),
+
+          // Date d'effet du contrat
+          _buildDateEffetField(),
           const SizedBox(height: 25),
 
           // Séparateur
@@ -1087,6 +1146,60 @@ class _SouscriptionSolidaritePageState
           onChanged: (val) {
             setState(() => selectedPeriodicite = val!);
             _calculerPrime();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateEffetField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: TextFormField(
+          controller: _dateEffetController,
+          readOnly: true,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            prefixIcon: Icon(Icons.event, color: Color(0xFF002B6B)),
+            labelText: 'Date d\'effet du contrat',
+          ),
+          onTap: () async {
+            final DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: _dateEffetContrat ?? DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xFF002B6B),
+                      onPrimary: Colors.white,
+                      onSurface: Color(0xFF002B6B),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (pickedDate != null) {
+              setState(() {
+                _dateEffetContrat = pickedDate;
+                _dateEffetController.text = _formatDate(pickedDate);
+              });
+            }
           },
         ),
       ),
@@ -1316,6 +1429,41 @@ class _SouscriptionSolidaritePageState
                 },
               );
               if (picked != null && picked != membre.dateNaissance) {
+                // Validation en temps réel de l'âge selon le type de membre
+                final now = DateTime.now();
+                final age = now.year - picked.year;
+                
+                // Déterminer le type de membre basé sur le titre de la section
+                bool isValid = true;
+                String errorMessage = '';
+                
+                if (titre.contains('enfant') || titre.contains('Enfant')) {
+                  if (age < 12 || age > 21) {
+                    isValid = false;
+                    errorMessage = "L'âge des enfants doit être compris entre 12 et 21 ans. Âge sélectionné: $age ans.";
+                  }
+                } else if (titre.contains('conjoint') || titre.contains('Conjoint') || 
+                           titre.contains('ascendant') || titre.contains('Ascendant') ||
+                           titre.contains('parent') || titre.contains('Parent')) {
+                  if (age < 18) {
+                    isValid = false;
+                    errorMessage = "L'âge doit être d'au moins 18 ans. Âge sélectionné: $age ans.";
+                  }
+                }
+                
+                if (!isValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.all(16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                  return; // Ne pas changer la date si invalide
+                }
+                
                 onChanged(
                     Membre(nomPrenom: membre.nomPrenom, dateNaissance: picked));
               }
@@ -1812,7 +1960,7 @@ class _SouscriptionSolidaritePageState
         content: Row(children: [
           const Icon(Icons.error_outline, color: blanc),
           const SizedBox(width: 12),
-          Text(message)
+          Expanded(child: Text(message))
         ]),
         backgroundColor: rougeCoris,
       ),
@@ -1826,7 +1974,7 @@ class _SouscriptionSolidaritePageState
         content: Row(children: [
           const Icon(Icons.check_circle, color: blanc),
           const SizedBox(width: 12),
-          Text(message)
+          Expanded(child: Text(message))
         ]),
         backgroundColor: vertSucces,
       ),
@@ -2163,6 +2311,11 @@ class _SouscriptionSolidaritePageState
                 'Capital garanti',
                 '${_formatNumber(selectedCapital!)} FCFA',
                 'Prime totale',
+                '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
+            _buildCombinedRecapRow(
+                'Date d\'effet',
+                _formatDate(_dateEffetContrat),
+                'Prime',
                 '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
           ]),
           const SizedBox(height: 12),

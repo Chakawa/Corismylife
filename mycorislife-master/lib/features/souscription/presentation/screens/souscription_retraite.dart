@@ -2273,6 +2273,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
+    // S'assurer que les calculs sont effectués avant d'afficher
+    if (_calculatedCapital == 0 || _calculatedPrime == 0) {
+      _effectuerCalcul();
+    }
+    
     final duree = _dureeController.text.isNotEmpty
         ? int.tryParse(_dureeController.text) ?? 0
         : 0;

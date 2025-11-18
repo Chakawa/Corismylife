@@ -175,9 +175,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       false; // Indique si la garantie perte d'emploi est activée
   DateTime? _dateEffetContrat; // Date de début du contrat
   DateTime? _dateEcheanceContrat; // Date de fin du contrat
-  double _calculatedPrime = 0.0; // Prime calculée (en FCFA)
+  double _calculatedPrime = 0.0; // Prime totale calculée (en FCFA)
   double _calculatedCapital =
       0.0; // Capital total calculé (somme des garanties)
+  double _primeBase = 0.0; // Prime de base (sans options)
+  double _primePrevoyance = 0.0; // Prime pour garantie prévoyance
+  double _primePerteEmploi = 0.0; // Prime pour garantie perte d'emploi
 
   // ============================================
   // CONTRÔLEURS POUR LA SOUSCRIPTION
@@ -2074,6 +2077,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     setState(() {
       _calculatedPrime = primeTotal;
       _calculatedCapital = capital;
+      _primeBase = primeBase.toDouble();
+      _primePrevoyance = primePrevoyance;
+      _primePerteEmploi = primePerteEmploi;
     });
   }
 
@@ -2811,7 +2817,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           SizedBox(height: 16),
           _buildModernTextField(
             controller: _capitalPerteEmploiController,
-            label: 'Capital Perte d\'emploi',
+            label: 'Montant d\'échéance',
             hint: 'Montant de la traite',
             icon: Icons.savings,
             suffix: 'FCFA',
@@ -3125,6 +3131,20 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           onChanged: (value) {
                             setState(() {
                               _selectedLienParenteUrgence = value!;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        _buildDateField(
+                          controller: TextEditingController(
+                            text: _dateEffetContrat != null
+                                ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
+                                : ''),
+                          label: 'Date d\'effet du contrat',
+                          icon: Icons.event,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _dateEffetContrat = date;
                             });
                           },
                         ),
@@ -3844,30 +3864,23 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               if (_dateEffetContrat == null && _dateEcheanceContrat != null)
                 _buildCombinedRecapRow('Date d\'échéance',
                     _formatDate(_dateEcheanceContrat!.toString()), '', ''),
-              _buildCombinedRecapRow('Prime annuelle estimée',
+              _buildCombinedRecapRow('Prime annuelle totale',
                   _formatMontant(_calculatedPrime), '', ''),
-              if (_garantiePrevoyance && _garantiePerteEmploi)
+              // Afficher les garanties optionnelles avec capital ET prime
+              if (_garantiePrevoyance)
                 _buildCombinedRecapRow(
-                    'Garantie Prévoyance',
+                    'Capital Prévoyance',
                     _formatMontant(
                         _parseDouble(_capitalPrevoyanceController.text)),
-                    'Garantie Perte d\'emploi',
-                    _formatMontant(
-                        _parseDouble(_capitalPerteEmploiController.text))),
-              if (_garantiePrevoyance && !_garantiePerteEmploi)
+                    'Prime Prévoyance',
+                    _formatMontant(_primePrevoyance)),
+              if (_garantiePerteEmploi)
                 _buildCombinedRecapRow(
-                    'Garantie Prévoyance',
-                    _formatMontant(
-                        _parseDouble(_capitalPrevoyanceController.text)),
-                    '',
-                    ''),
-              if (!_garantiePrevoyance && _garantiePerteEmploi)
-                _buildCombinedRecapRow(
-                    'Garantie Perte d\'emploi',
+                    'Capital Perte d\'emploi',
                     _formatMontant(
                         _parseDouble(_capitalPerteEmploiController.text)),
-                    '',
-                    ''),
+                    'Prime Perte d\'emploi',
+                    _formatMontant(_primePerteEmploi)),
             ],
           ),
           SizedBox(height: 20),
@@ -4223,6 +4236,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         'capital_perte_emploi': _garantiePerteEmploi
             ? _parseDouble(_capitalPerteEmploiController.text)
             : 0,
+        'prime_prevoyance': _primePrevoyance,
+        'prime_perte_emploi': _primePerteEmploi,
         'beneficiaire': {
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
@@ -4470,8 +4485,9 @@ class SuccessDialog extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: isPaid
-                    ? Color.fromRGBO(16, 185, 129, 25)
-                    : Color.fromRGBO(245, 158, 11, 25),
+                    ? Color(0xFF10B981).withAlpha(26)
+                    : Color(0xFFF59E0B)
+                        .withAlpha(26), // .withOpacity(0.1) remplacé
                 shape: BoxShape.circle,
               ),
               child: Icon(

@@ -1455,7 +1455,8 @@ exports.getSubscriptionPDF = async (req, res) => {
     // Déterminer le nombre de lignes nécessaires
     let caracteristiquesLignes = 1;
     if (isEtude && d.rente_calculee) caracteristiquesLignes++;
-    else if ((isRetraite || isSerenite) && d.rente_calculee) caracteristiquesLignes++;
+    else if (isRetraite && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
+    else if (isSerenite && d.rente_calculee) caracteristiquesLignes++;
     else if ((isSolidarite || isFamilis || isEmprunteur) && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
     else if (isEpargne && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
     
@@ -1469,11 +1470,11 @@ exports.getSubscriptionPDF = async (req, res) => {
     
     // Ligne 2: Rente ou Capital (selon le produit)
     if (caracteristiquesLignes > 1) {
-      if ((isEtude || isRetraite || isSerenite) && d.rente_calculee) {
+      if ((isEtude || isSerenite) && d.rente_calculee) {
         write('Valeur de la Rente', startX + 5, curY + 3 + 13, 9, '#666', 130);
         write(money(d.rente_calculee || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
-      } else if ((isSolidarite || isFamilis || isEmprunteur || isEpargne) && (d.capital || d.capital_garanti)) {
-        write('Valeur du Capital', startX + 5, curY + 3 + 13, 9, '#666', 130);
+      } else if ((isRetraite || isSolidarite || isFamilis || isEmprunteur || isEpargne) && (d.capital || d.capital_garanti)) {
+        write('Capital au terme', startX + 5, curY + 3 + 13, 9, '#666', 130);
         write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
       }
     }
@@ -1491,7 +1492,7 @@ exports.getSubscriptionPDF = async (req, res) => {
       if (capitalDeces > 0) garantiesLignes++;
       if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
     } else if (isRetraite) {
-      if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
+      if (capitalVie > 0) garantiesLignes++;
     } else if (isEpargne) {
       // Pas de garanties affichées
     } else if (isSerenite) {
@@ -1500,8 +1501,8 @@ exports.getSubscriptionPDF = async (req, res) => {
       if (capitalDeces > 0) garantiesLignes++;
     } else if (isEmprunteur) {
       if (capitalDeces > 0) garantiesLignes++;
-      if (d.prevoyance && d.capital_prevoyance) garantiesLignes++;
-      if (d.perte_emploi) garantiesLignes++;
+      if (d.garantie_prevoyance && d.capital_prevoyance) garantiesLignes++;
+      if (d.garantie_perte_emploi && d.capital_perte_emploi) garantiesLignes++;
     } else {
       if (capitalDeces > 0) garantiesLignes++;
       if (capitalVie > 0 && (isFamilis || d.capital_garanti)) garantiesLignes++;
@@ -1536,11 +1537,11 @@ exports.getSubscriptionPDF = async (req, res) => {
           garantiesLignes++;
         }
       }
-      // Coris Retraite : Pas de décès, seulement Vie à terme (si renseigné)
+      // Coris Retraite : Pas de décès, seulement Capital au terme
       else if (isRetraite) {
-        if (capitalVie > 0 && d.rente_calculee) {
+        if (capitalVie > 0) {
           drawRow(startX, curY, fullW, rowH);
-          write('En Cas de Vie à Terme', startX + 5, curY + 4, 9, '#000', 185);
+          write('Capital au terme', startX + 5, curY + 4, 9, '#000', 185);
           writeCentered(money(capitalVie), startX + 200, curY + 4, 165, 9);
           writeCentered('', startX + 365, curY + 4, 170, 9);
           curY += rowH;
@@ -1584,20 +1585,20 @@ exports.getSubscriptionPDF = async (req, res) => {
           garantiesLignes++;
         }
         // Prévoyance
-        if (d.prevoyance && d.capital_prevoyance) {
+        if (d.garantie_prevoyance && d.capital_prevoyance) {
           drawRow(startX, curY, fullW, rowH);
           write('Prévoyance', startX + 5, curY + 4, 9, '#000', 185);
           writeCentered(money(d.capital_prevoyance || 0), startX + 200, curY + 4, 165, 9);
-          writeCentered('', startX + 365, curY + 4, 170, 9);
+          writeCentered(money(d.prime_prevoyance || 0), startX + 365, curY + 4, 170, 9);
           curY += rowH;
           garantiesLignes++;
         }
-        // Perte d'emploi (pas de capital, juste l'option)
-        if (d.perte_emploi) {
+        // Perte d'emploi
+        if (d.garantie_perte_emploi && d.capital_perte_emploi) {
           drawRow(startX, curY, fullW, rowH);
           write('Perte d\'emploi', startX + 5, curY + 4, 9, '#000', 185);
-          writeCentered('-', startX + 200, curY + 4, 165, 9);
-          writeCentered('', startX + 365, curY + 4, 170, 9);
+          writeCentered(money(d.capital_perte_emploi || 0), startX + 200, curY + 4, 165, 9);
+          writeCentered(money(d.prime_perte_emploi || 0), startX + 365, curY + 4, 170, 9);
           curY += rowH;
           garantiesLignes++;
         }

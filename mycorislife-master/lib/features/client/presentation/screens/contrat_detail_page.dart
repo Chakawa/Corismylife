@@ -796,7 +796,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
         ),
         child: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/client_home');
+            }
+          },
         ),
       ),
       actions: [

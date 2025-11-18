@@ -2888,33 +2888,26 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   void _showPaymentOptions() async {
-    try {
-      await _saveSubscriptionData();
-      if (mounted) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => PaymentBottomSheet(
-            onPayNow: (paymentMethod) {
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              _processPayment(paymentMethod);
-            },
-            onPayLater: () {
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              _saveAsProposition();
-            },
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
-      }
+    if (mounted) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => PaymentBottomSheet(
+          onPayNow: (paymentMethod) {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+            _processPayment(paymentMethod);
+          },
+          onPayLater: () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+            _saveAsProposition();
+          },
+        ),
+      );
     }
   }
 
