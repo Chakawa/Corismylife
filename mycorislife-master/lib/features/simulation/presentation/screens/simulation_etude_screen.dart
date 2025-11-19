@@ -1017,8 +1017,8 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   }
 
   String _formatNumber(double number) {
-    return number.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+    return number.toStringAsFixed(2).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\.))'),
           (Match m) => '${m[1]} ',
         );
   }

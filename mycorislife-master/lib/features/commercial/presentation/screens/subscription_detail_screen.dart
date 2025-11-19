@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> subscription;
@@ -180,6 +180,111 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  void _viewDocument(String documentName) {
+    if (documentName.isEmpty || documentName == 'Non téléchargée') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucun document disponible'),
+          backgroundColor: orangeWarning,
+        ),
+      );
+      return;
+    }
+
+    final subscriptionId = widget.subscription['id'];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          documentName: documentName,
+          subscriptionId: subscriptionId,
+        ),
+      ),
+    );
+  }
+
+  void _modifyProposition() {
+    final subscriptionId = widget.subscription['id'];
+    final productType = (widget.subscription['produit_nom'] ?? '').toLowerCase();
+    final souscriptionData = _fullSubscriptionData?['souscriptiondata'];
+
+    // Naviguer vers la page de modification appropriée selon le produit
+    if (productType.contains('etude')) {
+      Navigator.pushNamed(
+        context,
+        '/etude',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) {
+        // Recharger les données après modification
+        _loadFullSubscriptionData();
+      });
+    } else if (productType.contains('serenite') || productType.contains('sérénité')) {
+      Navigator.pushNamed(
+        context,
+        '/serenite',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else if (productType.contains('retraite')) {
+      Navigator.pushNamed(
+        context,
+        '/retraite',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else if (productType.contains('solidarite') || productType.contains('solidarité')) {
+      Navigator.pushNamed(
+        context,
+        '/souscription_solidarite',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else if (productType.contains('familis')) {
+      Navigator.pushNamed(
+        context,
+        '/familis',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else if (productType.contains('flex') || productType.contains('emprunteur')) {
+      Navigator.pushNamed(
+        context,
+        '/flex',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else if (productType.contains('epargne') || productType.contains('épargne')) {
+      Navigator.pushNamed(
+        context,
+        '/epargne',
+        arguments: {
+          'subscriptionId': subscriptionId,
+          'existingData': souscriptionData,
+        },
+      ).then((_) => _loadFullSubscriptionData());
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La modification de ce type de produit n\'est pas encore disponible'),
+          backgroundColor: orangeWarning,
+        ),
+      );
     }
   }
 
@@ -540,9 +645,61 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             Icons.description,
             bleuSecondaire,
             [
-              _buildRecapRow(
-                'Pièce d\'identité',
-                souscriptionData['piece_identite'] ?? 'Non téléchargée',
+              GestureDetector(
+                onTap: () {
+                  final pieceIdentite = souscriptionData['piece_identite'];
+                  if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
+                    _viewDocument(pieceIdentite);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: bleuCoris.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: bleuCoris.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Row(
+                          children: [
+                            Icon(Icons.badge_outlined, size: 20, color: bleuCoris),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Pièce d\'identité',
+                              style: TextStyle(
+                                color: grisTexte,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            souscriptionData['piece_identite'] ?? 'Non téléchargée',
+                            style: const TextStyle(
+                              color: bleuCoris,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.visibility, size: 20, color: bleuCoris),
+                          const SizedBox(width: 12),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -609,16 +766,27 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PdfViewerPage(
-                    subscriptionId: subscription['id'],
+              final pieceIdentite = _fullSubscriptionData?['souscriptiondata']?['piece_identite'];
+              if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DocumentViewerPage(
+                      subscriptionId: subscription['id'],
+                      documentName: pieceIdentite,
+                    ),
                   ),
-                ),
-              );
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Aucun document disponible'),
+                    backgroundColor: orangeWarning,
+                  ),
+                );
+              }
             },
-            tooltip: 'Voir le PDF',
+            tooltip: 'Voir le document',
           ),
         ],
       ),
@@ -662,35 +830,71 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                       ],
                     ),
                     child: SafeArea(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _showPaymentOptions,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: bleuCoris,
-                            foregroundColor: blanc,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            shadowColor: const Color.fromRGBO(0, 43, 107, 0.3),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Payer maintenant',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                      child: Column(
+                        children: [
+                          // Bouton Modifier
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _modifyProposition,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: bleuCoris,
+                                side: const BorderSide(color: bleuCoris, width: 2),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
+                                backgroundColor: bleuCoris.withOpacity(0.05),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.check, size: 20),
-                            ],
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.edit_outlined, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Modifier la proposition',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          // Bouton Payer maintenant
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _showPaymentOptions,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: bleuCoris,
+                                foregroundColor: blanc,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                                shadowColor: const Color.fromRGBO(0, 43, 107, 0.3),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Payer maintenant',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.check, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )

@@ -518,7 +518,7 @@ class _HomeContentState extends State<HomeContent> {
                                     child: const Icon(
                                       Icons.image_not_supported,
                                       size: 24,
-                                      color: bleuCoris,
+                                      color: Colors.grey,
                                     ),
                                   );
                                 },

@@ -38,6 +38,8 @@ class Membre {
 /// [nbAscendants] : Nombre d'ascendants
 /// [clientId] : ID du client si souscription par commercial (optionnel)
 /// [clientData] : Données du client si souscription par commercial (optionnel)
+/// [subscriptionId] : ID de la souscription si modification (optionnel)
+/// [existingData] : Données existantes si modification (optionnel)
 class SouscriptionSolidaritePage extends StatefulWidget {
   final int? capital;
   final String? periodicite;
@@ -47,6 +49,8 @@ class SouscriptionSolidaritePage extends StatefulWidget {
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
+  final int? subscriptionId; // ID de la souscription si modification
+  final Map<String, dynamic>? existingData; // Données existantes si modification
 
   const SouscriptionSolidaritePage({
     super.key,
@@ -57,6 +61,8 @@ class SouscriptionSolidaritePage extends StatefulWidget {
     this.nbAscendants,
     this.clientId,
     this.clientData,
+    this.subscriptionId,
+    this.existingData,
   });
 
   @override
@@ -91,6 +97,9 @@ class _SouscriptionSolidaritePageState
   Map<String, dynamic> _userData = {};
   final storage = FlutterSecureStorage();
   bool _isLoading = true;
+
+  // Variables pour le mode modification
+  bool _isModification = false; // Indique si on est en mode modification
 
   /**
    * ============================================
@@ -372,27 +381,35 @@ class _SouscriptionSolidaritePageState
   void initState() {
     super.initState();
 
-    // Préremplir avec les valeurs de simulation si fournies
-    selectedCapital = widget.capital ?? 500000;
-    selectedPeriodicite = widget.periodicite ?? 'Mensuel';
-    nbConjoints = widget.nbConjoints ?? 1;
-    nbEnfants = widget.nbEnfants ?? 1;
-    nbAscendants = widget.nbAscendants ?? 0;
+    // Vérifier si on est en mode modification
+    _isModification = widget.subscriptionId != null && widget.existingData != null;
 
-    // Initialiser les listes de membres
-    conjoints = List.generate(nbConjoints,
-        (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
-    enfants = List.generate(nbEnfants,
-        (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
-    ascendants = List.generate(nbAscendants,
-        (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
+    if (_isModification) {
+      // Mode modification : préremplir avec les données existantes
+      _prefillExistingData();
+    } else {
+      // Mode création : initialiser avec les valeurs par défaut
+      selectedCapital = widget.capital ?? 500000;
+      selectedPeriodicite = widget.periodicite ?? 'Mensuel';
+      nbConjoints = widget.nbConjoints ?? 1;
+      nbEnfants = widget.nbEnfants ?? 1;
+      nbAscendants = widget.nbAscendants ?? 0;
 
-    // Initialiser la date d'effet (aujourd'hui par défaut)
-    _dateEffetContrat = DateTime.now();
-    _dateEffetController.text = _formatDate(_dateEffetContrat);
+      // Initialiser les listes de membres
+      conjoints = List.generate(nbConjoints,
+          (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
+      enfants = List.generate(nbEnfants,
+          (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
+      ascendants = List.generate(nbAscendants,
+          (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
 
-    // Calculer la prime initiale
-    _calculerPrime();
+      // Initialiser la date d'effet (aujourd'hui par défaut)
+      _dateEffetContrat = DateTime.now();
+      _dateEffetController.text = _formatDate(_dateEffetContrat);
+
+      // Calculer la prime initiale
+      _calculerPrime();
+    }
 
     // Charger les données utilisateur seulement si ce n'est pas un commercial
     // Pour les commerciaux, on chargera les données dans didChangeDependencies
@@ -565,6 +582,100 @@ class _SouscriptionSolidaritePageState
     }
   }
 
+  /// Préremplir les champs avec les données existantes pour la modification
+  void _prefillExistingData() {
+    if (widget.existingData == null) return;
+
+    final data = widget.existingData!;
+    
+    // Préremplir les données de base
+    selectedCapital = data['capital'] ?? 500000;
+    selectedPeriodicite = data['periodicite'] ?? 'Mensuel';
+    
+    // Préremplir la date d'effet
+    if (data['date_effet'] != null) {
+      try {
+        _dateEffetContrat = DateTime.parse(data['date_effet']);
+        _dateEffetController.text = _formatDate(_dateEffetContrat);
+      } catch (e) {
+        _dateEffetContrat = DateTime.now();
+        _dateEffetController.text = _formatDate(_dateEffetContrat);
+      }
+    }
+
+    // Préremplir les membres - Conjoints
+    if (data['conjoints'] != null && data['conjoints'] is List) {
+      final conjointsData = List<Map<String, dynamic>>.from(data['conjoints']);
+      nbConjoints = conjointsData.length;
+      conjoints = conjointsData.map((c) {
+        DateTime dateNaissance = DateTime.now();
+        try {
+          dateNaissance = DateTime.parse(c['date_naissance'] ?? '');
+        } catch (e) {
+          // Garder la date par défaut
+        }
+        return Membre(
+          nomPrenom: c['nom_prenom'] ?? '',
+          dateNaissance: dateNaissance,
+        );
+      }).toList();
+    } else {
+      nbConjoints = 1;
+      conjoints = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
+    }
+
+    // Préremplir les membres - Enfants
+    if (data['enfants'] != null && data['enfants'] is List) {
+      final enfantsData = List<Map<String, dynamic>>.from(data['enfants']);
+      nbEnfants = enfantsData.length;
+      enfants = enfantsData.map((e) {
+        DateTime dateNaissance = DateTime.now();
+        try {
+          dateNaissance = DateTime.parse(e['date_naissance'] ?? '');
+        } catch (e) {
+          // Garder la date par défaut
+        }
+        return Membre(
+          nomPrenom: e['nom_prenom'] ?? '',
+          dateNaissance: dateNaissance,
+        );
+      }).toList();
+    } else {
+      nbEnfants = 1;
+      enfants = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
+    }
+
+    // Préremplir les membres - Ascendants
+    if (data['ascendants'] != null && data['ascendants'] is List) {
+      final ascendantsData = List<Map<String, dynamic>>.from(data['ascendants']);
+      nbAscendants = ascendantsData.length;
+      ascendants = ascendantsData.map((a) {
+        DateTime dateNaissance = DateTime.now();
+        try {
+          dateNaissance = DateTime.parse(a['date_naissance'] ?? '');
+        } catch (e) {
+          // Garder la date par défaut
+        }
+        return Membre(
+          nomPrenom: a['nom_prenom'] ?? '',
+          dateNaissance: dateNaissance,
+        );
+      }).toList();
+    } else {
+      nbAscendants = 0;
+      ascendants = [];
+    }
+
+    // Préremplir bénéficiaire et contact d'urgence
+    _beneficiaireNomController.text = data['beneficiaire_nom'] ?? '';
+    _beneficiaireContactController.text = data['beneficiaire_contact'] ?? '';
+    _personneContactNomController.text = data['contact_urgence_nom'] ?? '';
+    _personneContactTelController.text = data['contact_urgence_tel'] ?? '';
+
+    // Calculer la prime avec les données préremplies
+    _calculerPrime();
+  }
+
   void _calculerPrime() {
     if (selectedCapital == null) return;
 
@@ -599,45 +710,6 @@ class _SouscriptionSolidaritePageState
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-  }
-
-  /// Valide les âges des membres de la famille
-  /// - Enfants: 12 à 21 ans
-  /// - Parents/Ascendants: 18 ans et plus
-  bool _validateMembresAges() {
-    final now = DateTime.now();
-
-    // Valider les enfants (12-21 ans)
-    for (var enfant in enfants) {
-      final age = now.year - enfant.dateNaissance.year;
-      if (age < 12 || age > 21) {
-        _showErrorSnackBar(
-            'L\'âge des enfants doit être compris entre 12 et 21 ans. ${enfant.nomPrenom} a $age ans.');
-        return false;
-      }
-    }
-
-    // Valider les ascendants (18 ans et plus)
-    for (var ascendant in ascendants) {
-      final age = now.year - ascendant.dateNaissance.year;
-      if (age < 18) {
-        _showErrorSnackBar(
-            'L\'âge des parents doit être d\'au moins 18 ans. ${ascendant.nomPrenom} a $age ans.');
-        return false;
-      }
-    }
-
-    // Valider les conjoints (18 ans et plus)
-    for (var conjoint in conjoints) {
-      final age = now.year - conjoint.dateNaissance.year;
-      if (age < 18) {
-        _showErrorSnackBar(
-            'L\'âge du conjoint doit être d\'au moins 18 ans. ${conjoint.nomPrenom} a $age ans.');
-        return false;
-      }
-    }
-
-    return true;
   }
 
   // MÉTHODES CRITIQUES POUR LE STATUT DE PAIEMENT
@@ -696,17 +768,39 @@ class _SouscriptionSolidaritePageState
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
 
-      final response =
-          await subscriptionService.createSubscription(subscriptionData);
-      final responseData = jsonDecode(response.body);
+      http.Response response;
+      Map<String, dynamic> responseData;
 
-      if (response.statusCode != 201 || !responseData['success']) {
-        throw Exception(
-            responseData['message'] ?? 'Erreur lors de la sauvegarde');
+      if (_isModification && widget.subscriptionId != null) {
+        // Mode modification : UPDATE
+        debugPrint('🔄 Mode MODIFICATION - ID: ${widget.subscriptionId}');
+        response = await subscriptionService.updateSubscription(
+          widget.subscriptionId!,
+          subscriptionData,
+        );
+        responseData = jsonDecode(response.body);
+
+        if (response.statusCode != 200 || !responseData['success']) {
+          throw Exception(
+              responseData['message'] ?? 'Erreur lors de la modification');
+        }
+
+        // Retourner l'ID existant
+        return widget.subscriptionId!;
+      } else {
+        // Mode création : INSERT
+        debugPrint('➕ Mode CRÉATION');
+        response = await subscriptionService.createSubscription(subscriptionData);
+        responseData = jsonDecode(response.body);
+
+        if (response.statusCode != 201 || !responseData['success']) {
+          throw Exception(
+              responseData['message'] ?? 'Erreur lors de la sauvegarde');
+        }
+
+        // RETOURNER l'ID de la souscription créée
+        return responseData['data']['id'];
       }
-
-      // RETOURNER l'ID de la souscription créée
-      return responseData['data']['id'];
     } catch (e) {
       debugPrint('Erreur sauvegarde souscription: $e');
       rethrow;
@@ -828,10 +922,12 @@ class _SouscriptionSolidaritePageState
               const SizedBox(width: 12),
               const Icon(Icons.group, color: Colors.white, size: 32),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "SOUSCRIPTION CORIS SOLIDARITÉ",
-                  style: TextStyle(
+                  _isModification 
+                      ? "MODIFICATION CORIS SOLIDARITÉ"
+                      : "SOUSCRIPTION CORIS SOLIDARITÉ",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -2573,6 +2669,67 @@ class _SouscriptionSolidaritePageState
     return true;
   }
 
+  /// Valide les âges de tous les membres de la famille
+  /// Enfants: 12-21 ans
+  /// Conjoints: 18+ ans
+  /// Ascendants: 18+ ans
+  bool _validateMembresAges() {
+    final maintenant = DateTime.now();
+
+    // Vérifier les enfants (12-21 ans)
+    for (var i = 0; i < enfants.length; i++) {
+      final enfant = enfants[i];
+      int age = maintenant.year - enfant.dateNaissance.year;
+      if (maintenant.month < enfant.dateNaissance.month ||
+          (maintenant.month == enfant.dateNaissance.month &&
+              maintenant.day < enfant.dateNaissance.day)) {
+        age--;
+      }
+      
+      if (age < 12 || age > 21) {
+        _showErrorSnackBar(
+            'Enfant ${i + 1}: Âge non valide (12-21 ans requis). Âge calculé: $age ans');
+        return false;
+      }
+    }
+
+    // Vérifier les conjoints (18+ ans)
+    for (var i = 0; i < conjoints.length; i++) {
+      final conjoint = conjoints[i];
+      int age = maintenant.year - conjoint.dateNaissance.year;
+      if (maintenant.month < conjoint.dateNaissance.month ||
+          (maintenant.month == conjoint.dateNaissance.month &&
+              maintenant.day < conjoint.dateNaissance.day)) {
+        age--;
+      }
+      
+      if (age < 18) {
+        _showErrorSnackBar(
+            'Conjoint ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
+        return false;
+      }
+    }
+
+    // Vérifier les ascendants (18+ ans)
+    for (var i = 0; i < ascendants.length; i++) {
+      final ascendant = ascendants[i];
+      int age = maintenant.year - ascendant.dateNaissance.year;
+      if (maintenant.month < ascendant.dateNaissance.month ||
+          (maintenant.month == ascendant.dateNaissance.month &&
+              maintenant.day < ascendant.dateNaissance.day)) {
+        age--;
+      }
+      
+      if (age < 18) {
+        _showErrorSnackBar(
+            'Ascendant ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   void _nextStep() {
     // Valider la page client si c'est un commercial et qu'on est à l'étape 0
     if (_isCommercial && _currentStep == 0) {
@@ -2586,6 +2743,10 @@ class _SouscriptionSolidaritePageState
       _pageController.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
+      // Valider les âges des membres avant d'afficher les options de paiement
+      if (!_validateMembresAges()) {
+        return; // Ne pas continuer si les âges ne sont pas valides
+      }
       _showPaymentOptions();
     }
   }

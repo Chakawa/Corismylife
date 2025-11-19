@@ -39,7 +39,6 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
   // ÉTAT DE LA PAGE
   // ============================================
   List<Map<String, dynamic>> _bordereaux = [];
-  double _totalCommissions = 0.0;
   String _totalFormate = '0 FCFA';
   bool _isLoading = true;
   String? _errorMessage;
@@ -65,7 +64,6 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
       if (mounted) {
         setState(() {
           _bordereaux = List<Map<String, dynamic>>.from(result['data'] ?? []);
-          _totalCommissions = (result['total'] ?? 0.0).toDouble();
           _totalFormate = result['totalFormate'] ?? '0 FCFA';
           _isLoading = false;
         });

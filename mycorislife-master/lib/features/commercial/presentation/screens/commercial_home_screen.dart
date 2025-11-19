@@ -345,8 +345,6 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
               itemBuilder: (context, index) {
                 return InkWell(
                   onTap: () {
-                    // Pour les commerciaux, naviguer vers la page de description du produit
-                    // qui contiendra le bouton "Souscrire maintenant"
                     Navigator.pushNamed(context, _services[index]['route']);
                   },
                   child: Container(
@@ -365,7 +363,6 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        
                         Image.asset(
                           _services[index]['image'],
                           width: 32,

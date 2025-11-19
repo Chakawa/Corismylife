@@ -66,16 +66,27 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   Future<void> _downloadDocument() async {
     try {
       const storage = FlutterSecureStorage();
-      final token = await storage.read(key: 'auth_token');
+      final token = await storage.read(key: 'token');
+      
+      print('=== TÉLÉCHARGEMENT DOCUMENT ===');
+      print('subscriptionId: ${widget.subscriptionId}');
+      print('documentName: ${widget.documentName}');
+      print('Token présent: ${token != null}');
+      print('Token: $token');
       
       final url = '${AppConfig.baseUrl}/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
+      print('URL: $url');
       
       final response = await http.get(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
         },
       );
+
+      print('Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
@@ -87,13 +98,29 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
           _fileExtension = widget.documentName!.split('.').last.toLowerCase();
           _isLoading = false;
         });
+      } else if (response.statusCode == 401) {
+        setState(() {
+          _errorMessage = 'Session expirée. Veuillez vous reconnecter.\nCode: ${response.statusCode}';
+          _isLoading = false;
+        });
+      } else if (response.statusCode == 404) {
+        setState(() {
+          _errorMessage = 'Document non trouvé sur le serveur\nCode: ${response.statusCode}';
+          _isLoading = false;
+        });
+      } else if (response.statusCode == 403) {
+        setState(() {
+          _errorMessage = 'Accès refusé au document\nCode: ${response.statusCode}';
+          _isLoading = false;
+        });
       } else {
         setState(() {
-          _errorMessage = 'Impossible de télécharger le document';
+          _errorMessage = 'Erreur de téléchargement\nCode: ${response.statusCode}\nMessage: ${response.body}';
           _isLoading = false;
         });
       }
     } catch (e) {
+      print('Exception: $e');
       setState(() {
         _errorMessage = 'Erreur réseau: $e';
         _isLoading = false;
@@ -146,32 +173,105 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     if (_errorMessage != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: grisTexte,
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 56,
+                  color: Colors.red,
                 ),
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: bleuCoris,
-                  foregroundColor: Colors.white,
+              const Text(
+                'Erreur de chargement',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: bleuCoris,
                 ),
-                child: const Text('Fermer'),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: grisTexte,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [bleuCoris, Color(0xFF003D8F)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: bleuCoris.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Center(
+                      child: Text(
+                        'Fermer',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isLoading = true;
+                    _errorMessage = null;
+                  });
+                  _loadDocument();
+                },
+                icon: const Icon(Icons.refresh, size: 20),
+                label: const Text('Réessayer'),
+                style: TextButton.styleFrom(
+                  foregroundColor: bleuCoris,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
               ),
             ],
           ),

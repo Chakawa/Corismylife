@@ -126,6 +126,8 @@ final Map<String, WidgetBuilder> appRoutes = {
       nbAscendants: args?['simulationData']?['nbAscendants'],
       clientId: args?['client_id'],
       clientData: args?['client'],
+      subscriptionId: args?['subscriptionId'],
+      existingData: args?['existingData'],
     );
   },
 

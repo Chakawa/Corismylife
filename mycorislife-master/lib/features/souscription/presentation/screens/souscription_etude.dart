@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -1351,7 +1352,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   String _formatMontant(double montant) {
-    return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
+    return "${montant.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\.))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   void _formatMontantInput() {
@@ -1368,8 +1369,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   String _formatNumber(double number) {
-    return number.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+    return number.toStringAsFixed(2).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\.))'),
           (Match m) => '${m[1]} ',
         );
   }
@@ -1398,15 +1399,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _showErrorSnackBar(
             'Une erreur s\'est produite lors de la sélection du fichier. Veuillez réessayer.');
       }
-    }
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-    } catch (e) {
-      return dateString;
     }
   }
 
@@ -2636,17 +2628,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  Widget _buildSubsectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontWeight: FontWeight.w600,
-        color: bleuCoris,
-        fontSize: 14,
-      ),
-    );
-  }
-
   Widget _buildDateNaissanceParentField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2852,8 +2833,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           controller: _montantController,
           keyboardType: TextInputType.number,
           onChanged: (value) {
-            _formatMontantInput();
+            // Recalculer uniquement quand l'utilisateur arrête de taper
             _recalculerValeurs();
+          },
+          onEditingComplete: () {
+            // Formater seulement après la saisie
+            _formatMontantInput();
           },
           decoration: InputDecoration(
             isDense: true,
@@ -3552,61 +3537,33 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     return ListView(
       children: [
         // Afficher les informations du client (toujours dans "Informations Personnelles")
-        _buildRecapSection(
-          'Informations Personnelles',
-          Icons.person,
-          bleuCoris,
-          [
-            _buildCombinedRecapRow(
-                'Civilité',
-                displayData['civilite'] ?? 'Non renseigné',
-                'Nom',
-                displayData['nom'] ?? 'Non renseigné'),
-            _buildCombinedRecapRow(
-                'Prénom',
-                displayData['prenom'] ?? 'Non renseigné',
-                'Email',
-                displayData['email'] ?? 'Non renseigné'),
-            _buildCombinedRecapRow(
-                'Téléphone',
-                displayData['telephone'] ?? 'Non renseigné',
-                'Date de naissance',
-                displayData['date_naissance'] != null
-                    ? _formatDate(displayData['date_naissance'].toString())
-                    : 'Non renseigné'),
-            _buildCombinedRecapRow(
-                'Lieu de naissance',
-                displayData['lieu_naissance'] ?? 'Non renseigné',
-                'Adresse',
-                displayData['adresse'] ?? 'Non renseigné'),
-          ],
-        ),
+        SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-        _buildRecapSection(
+        SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit',
           Icons.school,
           vertSucces,
           [
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Produit', 'CORIS ÉTUDE', 'Mode', _selectedMode),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Âge du parent',
                 _calculatedAgeParent != null ? '$_calculatedAgeParent ans' : 'Non renseigné',
                 'Âge de l\'enfant',
                 '$duree ans'),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Prime $_selectedPeriodicite',
                 _formatMontant(primeDisplay),
                 'Rente au terme',
                 _formatMontant(renteDisplay)),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Durée du contrat',
                 '${18 - duree} ans (jusqu\'à 18 ans)',
                 'Périodicité choisie',
                 _selectedPeriodicite ?? 'Non définie'),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
@@ -3618,17 +3575,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           ],
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
         // SECTION PARAMÈTRES DE SOUSCRIPTION
-        _buildRecapSection(
+        SubscriptionRecapWidgets.buildRecapSection(
           'Paramètres de Souscription',
           Icons.calculate,
           bleuSecondaire,
           [
-            _buildCombinedRecapRow('Mode', _selectedMode, 'Périodicité',
+            SubscriptionRecapWidgets.buildCombinedRecapRow('Mode', _selectedMode, 'Périodicité',
                 _selectedPeriodicite ?? 'Non sélectionnée'),
-            _buildRecapRow(
+            SubscriptionRecapWidgets.buildRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
@@ -3636,43 +3593,43 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           ],
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
         // SECTION UNIQUE POUR BÉNÉFICIAIRE ET CONTACT D'URGENCE
-        _buildRecapSection(
+        SubscriptionRecapWidgets.buildRecapSection(
           'Contacts',
           Icons.contacts,
           bleuSecondaire,
           [
             // Bénéficiaire
-            _buildSubsectionTitle('Bénéficiaire en cas de décès'),
-            SizedBox(height: 8),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildSubsectionTitle('Bénéficiaire en cas de décès'),
+            const SizedBox(height: 8),
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Nom complet',
                 _beneficiaireNomController.text.isNotEmpty
                     ? _beneficiaireNomController.text
                     : 'Non renseigné',
                 'Lien de parenté',
                 _selectedLienParente),
-            _buildRecapRow(
+            SubscriptionRecapWidgets.buildRecapRow(
                 'Téléphone',
                 _beneficiaireContactController.text.isNotEmpty
                     ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
                     : 'Non renseigné'),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Contact d'urgence
-            _buildSubsectionTitle('Contact d\'urgence'),
-            SizedBox(height: 8),
-            _buildCombinedRecapRow(
+            SubscriptionRecapWidgets.buildSubsectionTitle('Contact d\'urgence'),
+            const SizedBox(height: 8),
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Nom complet',
                 _personneContactNomController.text.isNotEmpty
                     ? _personneContactNomController.text
                     : 'Non renseigné',
                 'Lien de parenté',
                 _selectedLienParenteUrgence),
-            _buildRecapRow(
+            SubscriptionRecapWidgets.buildRecapRow(
                 'Téléphone',
                 _personneContactTelController.text.isNotEmpty
                     ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
@@ -3680,148 +3637,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           ],
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-        _buildRecapSection(
-          'Documents',
-          Icons.description,
-          Colors.purple,
-          [
-            _buildDocumentRow(
-              'Pièce d\'identité',
-              _pieceIdentite?.path.split('/').last ?? 'Non téléchargée',
-              _pieceIdentite,
-            ),
-          ],
+        SubscriptionRecapWidgets.buildDocumentsSection(
+          pieceIdentite: _pieceIdentite?.path.split('/').last,
+          onDocumentTap: _pieceIdentite != null ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentite!.path.split('/').last) : null,
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-        Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: orangeWarning.withAlpha(26), // .withOpacity(0.1) remplacé
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-                color:
-                    orangeWarning.withAlpha(77)), // .withOpacity(0.3) remplacé
-          ),
-          child: Column(
-            children: [
-              Icon(Icons.info_outline, color: orangeWarning, size: 28),
-              SizedBox(height: 10),
-              Text(
-                'Vérification Importante',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: orangeWarning,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Veuillez vérifier attentivement toutes les informations ci-dessus avant de finaliser votre souscription. Une fois validée, certaines modifications ne seront plus possibles.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: grisTexte,
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 20),
+        SubscriptionRecapWidgets.buildVerificationWarning(),
+        
+        const SizedBox(height: 20),
       ],
-    );
-  }
-
-  Widget _buildRecapRow(String label, String value,
-      {bool isHighlighted = false}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              '$label :',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: grisTexte,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isHighlighted ? vertSucces : bleuCoris,
-                fontSize: isHighlighted ? 13 : 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentRow(String label, String value, File? documentFile) {
-    final hasDocument = documentFile != null && value != 'Non téléchargée';
-    
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              '$label :',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: grisTexte,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          Expanded(
-            child: hasDocument
-                ? GestureDetector(
-                    onTap: () => _viewLocalDocument(documentFile, value),
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            value,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: bleuCoris,
-                              fontSize: 12,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(Icons.visibility, size: 16, color: bleuCoris),
-                      ],
-                    ),
-                  )
-                : Text(
-                    value,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                      fontSize: 12,
-                    ),
-                  ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -3857,110 +3685,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           localFile: documentFile,
           documentName: fileName,
         ),
-      ),
-    );
-  }
-
-  Widget _buildRecapSection(
-      String title, IconData icon, Color color, List<Widget> children) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: blanc,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacé
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: color.withAlpha(26), // .withOpacity(0.1) remplacé
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, color: color, size: 18),
-              ),
-              SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCombinedRecapRow(
-      String label1, String value1, String label2, String value2) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$label1 :',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: grisTexte,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  value1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: bleuCoris,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$label2 :',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: grisTexte,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  value2,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: bleuCoris,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

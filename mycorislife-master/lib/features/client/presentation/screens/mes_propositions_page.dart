@@ -109,35 +109,6 @@ class _PropositionsPageState extends State<PropositionsPage>
     return "2025-13-CA${(index + 7075).toString().padLeft(3, '0')}";
   }
 
-  Color _getBadgeColor(String produit) {
-    if (produit.toLowerCase().contains('solidarite')) {
-      return const Color(0xFF002B6B);
-    } else if (produit.toLowerCase().contains('emprunteur')) {
-      return const Color(0xFFEF4444);
-    } else if (produit.toLowerCase().contains('etude')) {
-      return const Color(0xFF8B5CF6);
-    } else if (produit.toLowerCase().contains('retraite')) {
-      return const Color(0xFF10B981);
-    } else if (produit.toLowerCase().contains('serenite')) {
-      return const Color(0xFFF59E0B);
-    } else if (produit.toLowerCase().contains('familis')) {
-      return const Color(0xFFEC4899);
-    } else {
-      return const Color(0xFF002B6B);
-    }
-  }
-
-  LinearGradient _getBadgeGradient(String produit) {
-    final Color primary = _getBadgeColor(produit);
-    final Color secondary = Color.lerp(primary, Colors.white, 0.1)!;
-
-    return LinearGradient(
-      colors: [primary, secondary],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-  }
-
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
       return 'CORIS SOLIDARITÉ';
@@ -171,6 +142,24 @@ class _PropositionsPageState extends State<PropositionsPage>
       return Icons.family_restroom_outlined;
     } else {
       return Icons.security_outlined;
+    }
+  }
+
+  Color _getProductIconColor(String produit) {
+    if (produit.toLowerCase().contains('solidarite')) {
+      return const Color(0xFF002B6B); // Bleu
+    } else if (produit.toLowerCase().contains('emprunteur')) {
+      return const Color(0xFFEF4444); // Rouge
+    } else if (produit.toLowerCase().contains('etude')) {
+      return const Color(0xFF8B5CF6); // Violet
+    } else if (produit.toLowerCase().contains('retraite')) {
+      return const Color(0xFF10B981); // Vert
+    } else if (produit.toLowerCase().contains('serenite')) {
+      return const Color(0xFFF59E0B); // Orange
+    } else if (produit.toLowerCase().contains('familis')) {
+      return const Color(0xFFEC4899); // Rose
+    } else {
+      return const Color(0xFF002B6B); // Bleu par défaut
     }
   }
 
@@ -302,39 +291,75 @@ class _PropositionsPageState extends State<PropositionsPage>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Illustration avec cercles concentriques
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF002B6B).withAlpha(15),
+                    ),
+                  ),
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF002B6B).withAlpha(30),
+                    ),
+                  ),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF002B6B),
+                          Color(0xFF003D8F),
+                        ],
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.description_outlined,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              child: const Icon(
-                Icons.description_outlined,
-                size: 64,
-                color: Color(0xFF64748B),
+              const SizedBox(height: 32),
+              const Text(
+                "Aucune proposition",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "Aucune proposition",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF334155),
+              const SizedBox(height: 12),
+              Text(
+                "Vos propositions d'assurance\napparaîtront ici",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: const Color(0xFF64748B),
+                  height: 1.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Vos propositions d'assurance apparaîtront ici",
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -414,162 +439,376 @@ class _PropositionsPageState extends State<PropositionsPage>
 
   Widget _buildModernPropositionCard(Subscription subscription, int index) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            const Color(0xFFFAFBFC),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withAlpha(8),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
+            color: const Color(0xFF002B6B).withAlpha(20),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF002B6B).withAlpha(10),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+            spreadRadius: 0,
           ),
         ],
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 0.5,
+          color: const Color(0xFF002B6B).withAlpha(50),
+          width: 2,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _handlePropositionTap(subscription),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header avec icône et numéro
+                // Header avec icône, numéro et badge statut
                 Row(
                   children: [
+                    // Icône avec effet glassmorphism et couleur selon produit
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        gradient: _getBadgeGradient(subscription.produitNom),
-                        borderRadius: BorderRadius.circular(8),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            _getProductIconColor(subscription.produitNom),
+                            Color.lerp(_getProductIconColor(subscription.produitNom), Colors.black, 0.2)!,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getProductIconColor(subscription.produitNom).withAlpha(40),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Icon(
                         _getProductIcon(subscription.produitNom),
                         color: Colors.white,
-                        size: 20,
+                        size: 26,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
+                    // Informations principales
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            _getPropositionNumber(index),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _getPropositionNumber(index),
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                              ),
+                              // Badge statut
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFFED7AA),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFF59E0B),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'En attente',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFB45309),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 6),
+                          // Badge produit redesigné
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 10,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: _getBadgeColor(subscription.produitNom)
-                                  .withAlpha(26),
-                              borderRadius: BorderRadius.circular(4),
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF002B6B).withAlpha(20),
+                                  const Color(0xFF002B6B).withAlpha(10),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF002B6B).withAlpha(30),
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               _getBadgeText(subscription.produitNom),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: _getBadgeColor(subscription.produitNom),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF002B6B),
+                                letterSpacing: 0.3,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(6),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // Divider élégant
+                Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFE2E8F0).withAlpha(0),
+                        const Color(0xFFE2E8F0),
+                        const Color(0xFFE2E8F0).withAlpha(0),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // Section informations et actions
+                Row(
+                  children: [
+                    // Date de création avec icône
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE8EEF4),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF002B6B).withAlpha(15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_today_rounded,
+                                size: 14,
+                                color: Color(0xFF002B6B),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Créée le',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    _formatDate(subscription.dateCreation),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF0F172A),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14,
-                        color: Color(0xFF64748B),
+                    ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // Bouton PDF avec design élégant
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFFF8FAFC),
+                            Colors.white,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFE8EEF4),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF002B6B).withAlpha(8),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PdfViewerPage(
+                                    subscriptionId: subscription.id),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: const Icon(
+                              Icons.picture_as_pdf_rounded,
+                              size: 22,
+                              color: Color(0xFF002B6B),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-                // Footer avec informations
+                // Bouton "Payer maintenant" redesigné en vert
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  width: double.infinity,
+                  height: 52,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 14,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "Créé le ${_formatDate(subscription.dateCreation)}",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Bouton Imprimer
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PdfViewerPage(subscriptionId: subscription.id),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.print, size: 18, color: Color(0xFF002B6B)),
-                        tooltip: 'Imprimer',
-                      ),
-                      // Bouton "Payer maintenant" simplifié
-                      ElevatedButton(
-                        onPressed: () => _handlePayment(subscription),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF002B6B),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          minimumSize: const Size(0, 28),
-                        ),
-                        child: const Text(
-                          'Payer maintenant',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF10B981),
+                        Color(0xFF059669),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withAlpha(40),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _handlePayment(subscription),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(30),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.payment_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Payer maintenant',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(30),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -609,61 +848,108 @@ class _PropositionsPageState extends State<PropositionsPage>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
           )
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Handle bar
               Container(
-                width: 40,
-                height: 4,
+                width: 48,
+                height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
               const SizedBox(height: 24),
+              
+              // Header avec icône et titre
               Row(
                 children: [
-                  Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Options de Paiement',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF002B6B),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF002B6B),
+                          Color(0xFF003D8F),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF002B6B).withAlpha(40),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.payment_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Options de Paiement',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Choisissez votre méthode',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
+              
+              // Options de paiement
               _buildPaymentOption(
                 'Wave',
-                Icons.waves,
-                Colors.blue,
+                Icons.waves_rounded,
+                const Color(0xFF0066FF),
                 'Paiement mobile sécurisé',
                 () => _processPayment(subscription, 'Wave'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               _buildPaymentOption(
                 'Orange Money',
-                Icons.phone_android,
-                Colors.orange,
+                Icons.phone_android_rounded,
+                const Color(0xFFFF6600),
                 'Paiement mobile Orange',
                 () => _processPayment(subscription, 'Orange Money'),
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 8),
             ],
           ),
         ),
@@ -678,53 +964,105 @@ class _PropositionsPageState extends State<PropositionsPage>
     String subtitle,
     VoidCallback onTap,
   ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF002B6B),
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            const Color(0xFFFAFBFC),
           ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE8EEF4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withAlpha(15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                // Icône avec gradient
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color,
+                        Color.lerp(color, Colors.white, 0.2)!,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withAlpha(40),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 16),
+                // Texte
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                          fontSize: 16,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Flèche
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Color(0xFF002B6B),
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -758,69 +1096,83 @@ class _PropositionsPageState extends State<PropositionsPage>
       'CORIS ÉTUDE',
       'CORIS RETRAITE',
       'CORIS SÉRÉNITÉ',
-      'CORIS FAMILIS'
+      'CORIS FAMILIS',
+      'ÉPARGNE BONUS'
     ];
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                "Filtrer par type",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            ...filters.map((filter) => ListTile(
-                  leading: filter == 'Tous'
-                      ? const Icon(Icons.list_alt, color: Color(0xFF64748B))
-                      : Icon(
-                          filter == selectedFilter
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
-                          color: filter == selectedFilter
-                              ? const Color(0xFF002B6B)
-                              : const Color(0xFF64748B),
-                        ),
-                  title: Text(
-                    filter,
-                    style: TextStyle(
-                      color: filter == selectedFilter
-                          ? const Color(0xFF002B6B)
-                          : const Color(0xFF0F172A),
-                      fontWeight: filter == selectedFilter
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                    ),
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  "Filtrer par type",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
                   ),
-                  onTap: () {
-                    setState(() => selectedFilter = filter);
-                    Navigator.pop(context);
-                  },
-                )),
-            const SizedBox(height: 20),
-          ],
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: filters.map((filter) => ListTile(
+                          leading: filter == 'Tous'
+                              ? const Icon(Icons.list_alt, color: Color(0xFF64748B))
+                              : Icon(
+                                  filter == selectedFilter
+                                      ? Icons.radio_button_checked
+                                      : Icons.radio_button_unchecked,
+                                  color: filter == selectedFilter
+                                      ? const Color(0xFF002B6B)
+                                      : const Color(0xFF64748B),
+                                ),
+                          title: Text(
+                            filter,
+                            style: TextStyle(
+                              color: filter == selectedFilter
+                                  ? const Color(0xFF002B6B)
+                                  : const Color(0xFF0F172A),
+                              fontWeight: filter == selectedFilter
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() => selectedFilter = filter);
+                            Navigator.pop(context);
+                          },
+                        )).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

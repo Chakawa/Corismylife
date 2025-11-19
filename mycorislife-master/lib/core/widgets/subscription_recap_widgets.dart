@@ -62,16 +62,21 @@ class SubscriptionRecapWidgets {
   static Widget buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: blanc,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -80,20 +85,22 @@ class SubscriptionRecapWidgets {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 18),
+                child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
               ),
             ],
@@ -110,28 +117,24 @@ class SubscriptionRecapWidgets {
       {bool isHighlighted = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              '$label :',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: grisTexte,
-                fontSize: 12,
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: grisTexte,
+              fontSize: 12,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isHighlighted ? vertSucces : bleuCoris,
-                fontSize: isHighlighted ? 13 : 12,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isHighlighted ? vertSucces : bleuCoris,
+              fontSize: 13,
             ),
           ),
         ],
@@ -145,50 +148,57 @@ class SubscriptionRecapWidgets {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$label1 :',
+                  label1,
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
                     fontSize: 12,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   value1,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: bleuCoris,
-                    fontSize: 12,
+                    fontSize: 13,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$label2 :',
+                  label2,
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
                     fontSize: 12,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   value2,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: bleuCoris,
-                    fontSize: 12,
+                    fontSize: 13,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -200,12 +210,15 @@ class SubscriptionRecapWidgets {
 
   /// Construit un sous-titre de section
   static Widget buildSubsectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontWeight: FontWeight.w600,
-        color: bleuCoris,
-        fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: bleuCoris,
+          fontSize: 14,
+        ),
       ),
     );
   }
@@ -522,12 +535,11 @@ class SubscriptionRecapWidgets {
       orangeWarning,
       [
         buildSubsectionTitle('Bénéficiaire'),
-        buildRecapRow(
+        buildCombinedRecapRow(
             'Nom complet',
             beneficiaireNom?.isEmpty ?? true
                 ? 'Non renseigné'
-                : beneficiaireNom!),
-        buildRecapRow(
+                : beneficiaireNom!,
             'Contact',
             beneficiaireContact?.isEmpty ?? true
                 ? 'Non renseigné'
@@ -536,12 +548,11 @@ class SubscriptionRecapWidgets {
             'Lien de parenté', beneficiaireLienParente ?? 'Non renseigné'),
         const SizedBox(height: 12),
         buildSubsectionTitle('Contact d\'urgence'),
-        buildRecapRow(
+        buildCombinedRecapRow(
             'Nom complet',
             contactUrgenceNom?.isEmpty ?? true
                 ? 'Non renseigné'
-                : contactUrgenceNom!),
-        buildRecapRow(
+                : contactUrgenceNom!,
             'Contact',
             contactUrgenceContact?.isEmpty ?? true
                 ? 'Non renseigné'
@@ -562,44 +573,67 @@ class SubscriptionRecapWidgets {
       Icons.description,
       bleuSecondaire,
       [
-        onDocumentTap != null
-            ? GestureDetector(
-                onTap: onDocumentTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Pièce d\'identité',
-                        style: TextStyle(
-                          color: grisTexte,
-                          fontSize: 13,
+        GestureDetector(
+          onTap: pieceIdentite != null ? onDocumentTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 20,
+                      color: pieceIdentite != null ? bleuCoris : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pièce d\'identité',
+                          style: TextStyle(
+                            color: grisTexte,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Row(
-                        children: [
+                        if (pieceIdentite != null) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            pieceIdentite ?? 'Non téléchargée',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
+                            pieceIdentite,
+                            style: TextStyle(
+                              color: bleuCoris,
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.visibility,
-                            size: 18,
-                            color: bleuCoris,
+                        ] else ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Non téléchargée',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-              )
-            : buildRecapRow(
-                'Pièce d\'identité', pieceIdentite ?? 'Non téléchargée'),
+                if (pieceIdentite != null)
+                  Icon(
+                    Icons.visibility,
+                    size: 20,
+                    color: bleuCoris,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -611,32 +645,187 @@ class SubscriptionRecapWidgets {
       decoration: BoxDecoration(
         color: orangeWarning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: orangeWarning.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: orangeWarning.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(Icons.info_outline, color: orangeWarning, size: 28),
-          const SizedBox(height: 10),
-          Text(
-            'Vérification Importante',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: orangeWarning,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
+          Icon(
+            Icons.info_outline,
+            color: orangeWarning,
+            size: 24,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: grisTexte,
-              fontSize: 12,
-              height: 1.4,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Vérification Importante',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: orangeWarning,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Vérifiez attentivement toutes les informations. Une fois validée, certaines modifications ne seront plus possibles.',
+                  style: TextStyle(
+                    color: grisTexte,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Construit un bouton de validation professionnel
+  static Widget buildValidationButton({
+    required String text,
+    required VoidCallback onPressed,
+    required bool isLoading,
+    Color? backgroundColor,
+    IconData? icon,
+  }) {
+    final bgColor = backgroundColor ?? vertSucces;
+    
+    return Container(
+      width: double.infinity,
+      height: 56,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            bgColor,
+            Color.lerp(bgColor, Colors.black, 0.15)!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: bgColor.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: bgColor.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(blanc),
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          color: blanc,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Text(
+                        text,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: blanc,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Construit un bouton secondaire (pour annuler, retour, etc.)
+  static Widget buildSecondaryButton({
+    required String text,
+    required VoidCallback onPressed,
+    IconData? icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: blanc,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: bleuCoris.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: bleuCoris.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    color: bleuCoris,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: bleuCoris,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

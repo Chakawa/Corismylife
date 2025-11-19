@@ -95,6 +95,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
       developer.log('=== DONNÉES REÇUES ===');
       developer.log('Subscription: ${data['subscription']}');
+      developer.log('Subscription type: ${data['subscription'].runtimeType}');
+      developer.log('souscriptiondata: ${data['subscription']?['souscriptiondata']}');
+      developer.log('souscriptiondata type: ${data['subscription']?['souscriptiondata'].runtimeType}');
+      developer.log('piece_identite direct: ${data['subscription']?['souscriptiondata']?['piece_identite']}');
       developer.log('User: ${data['user']}');
 
       setState(() {
@@ -767,18 +771,74 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   }
 
   Widget _buildDocumentsSection() {
-    final details = _getSubscriptionDetails();
-    final pieceIdentite = details['piece_identite'];
+    // Chercher piece_identite dans tous les endroits possibles
+    String? pieceIdentite;
+    
+    // 1. Dans souscriptiondata directement (le plus commun)
+    final souscriptiondata = _subscriptionData?['souscriptiondata'];
+    if (souscriptiondata != null) {
+      // Essayer différentes clés possibles
+      pieceIdentite = souscriptiondata['piece_identite'] ?? 
+                      souscriptiondata['pieceIdentite'] ??
+                      souscriptiondata['document'];
+      
+      // Si c'est un Map avec des sous-clés
+      if (pieceIdentite == null && souscriptiondata['documents'] != null) {
+        final docs = souscriptiondata['documents'];
+        if (docs is Map) {
+          pieceIdentite = docs['piece_identite'] ?? docs['pieceIdentite'];
+        }
+      }
+    }
+    
+    // 2. Au niveau racine de _subscriptionData
+    pieceIdentite ??= _subscriptionData?['piece_identite'];
+    pieceIdentite ??= _subscriptionData?['document'];
+    
+    // 3. Dans les détails (via getSubscriptionDetails)
+    if (pieceIdentite == null) {
+      final details = _getSubscriptionDetails();
+      pieceIdentite = details['piece_identite'] ?? 
+                      details['pieceIdentite'] ??
+                      details['document'];
+      
+      // Si c'est dans un sous-objet documents
+      if (pieceIdentite == null && details['documents'] != null) {
+        final docs = details['documents'];
+        if (docs is Map) {
+          pieceIdentite = docs['piece_identite'] ?? docs['pieceIdentite'];
+        }
+      }
+    }
+
+    developer.log('=== DOCUMENT DEBUG COMPLET ===');
+    developer.log('_subscriptionData: ${_subscriptionData}');
+    developer.log('_subscriptionData keys: ${_subscriptionData?.keys.toList()}');
+    developer.log('souscriptiondata: $souscriptiondata');
+    developer.log('souscriptiondata type: ${souscriptiondata?.runtimeType}');
+    if (souscriptiondata is Map) {
+      developer.log('souscriptiondata keys: ${souscriptiondata.keys.toList()}');
+    }
+    developer.log('Final pieceIdentite trouvé: $pieceIdentite');
+
+    // Vérifier si le document existe et n'est pas vide
+    final hasDocument = pieceIdentite != null && 
+                       pieceIdentite.toString().isNotEmpty && 
+                       pieceIdentite != 'Non téléchargée' &&
+                       pieceIdentite != 'null' &&
+                       pieceIdentite.toString().toLowerCase() != 'null';
+
+    developer.log('hasDocument: $hasDocument');
 
     return SubscriptionRecapWidgets.buildDocumentsSection(
-      pieceIdentite: pieceIdentite,
-      onDocumentTap: pieceIdentite != null && pieceIdentite.toString().isNotEmpty && pieceIdentite != 'Non téléchargée'
-          ? () => _viewDocument(pieceIdentite)
-          : null,
+      pieceIdentite: hasDocument ? pieceIdentite : null,
+      onDocumentTap: hasDocument ? () => _viewDocument(pieceIdentite) : null,
     );
   }
 
   void _viewDocument(String? documentName) {
+    developer.log('_viewDocument called with: $documentName');
+    
     if (documentName == null || documentName.isEmpty || documentName == 'Non téléchargée') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -816,90 +876,145 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
   Widget _buildNavigationButtons() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: blanc,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
           )
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Imprimer / Télécharger PDF
-            IconButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PdfViewerPage(subscriptionId: widget.subscriptionId),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.print),
-              color: bleuCoris,
-              tooltip: 'Imprimer / Télécharger',
-            ),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _modifyProposition,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: orangeWarning, width: 2),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.edit, color: orangeWarning, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Modifier',
-                      style: TextStyle(
-                        color: orangeWarning,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+            Row(
+              children: [
+                // Bouton Imprimer
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PdfViewerPage(subscriptionId: widget.subscriptionId),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.print_outlined, color: bleuCoris, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Imprimer',
+                              style: TextStyle(
+                                color: bleuCoris,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Bouton Modifier
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: orangeWarning.withValues(alpha: 0.5), width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                      color: orangeWarning.withValues(alpha: 0.05),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _modifyProposition,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.edit_outlined, color: orangeWarning, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Modifier',
+                              style: TextStyle(
+                                color: orangeWarning,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Bouton Accepter et Payer (pleine largeur)
+            Container(
+              width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    const Color(0xFF10B981),
+                    const Color(0xFF059669),
                   ],
                 ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                onPressed: _acceptAndPay,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: bleuCoris,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                  shadowColor: bleuCoris.withValues(alpha: 0.3),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Accepter et Payer',
-                      style: TextStyle(
-                        color: blanc,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _acceptAndPay,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline, color: blanc, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Accepter et Payer',
+                        style: TextStyle(
+                          color: blanc,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: 0.3,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.payment, color: blanc, size: 20),
-                  ],
+                      const SizedBox(width: 8),
+                      Icon(Icons.arrow_forward, color: blanc, size: 20),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -928,11 +1043,83 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           ),
         ),
       ).then((_) {
-        // Recharger les données après modification
         _loadSubscriptionData();
       });
+    } else if (productType.contains('serenite') || productType.contains('sérénité')) {
+      Navigator.pushNamed(
+        context,
+        '/serenite',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else if (productType.contains('retraite')) {
+      Navigator.pushNamed(
+        context,
+        '/retraite',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else if (productType.contains('solidarite') || productType.contains('solidarité')) {
+      Navigator.pushNamed(
+        context,
+        '/souscription_solidarite',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else if (productType.contains('familis')) {
+      Navigator.pushNamed(
+        context,
+        '/familis',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else if (productType.contains('flex') || productType.contains('emprunteur')) {
+      Navigator.pushNamed(
+        context,
+        '/flex',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else if (productType.contains('epargne') || productType.contains('épargne')) {
+      Navigator.pushNamed(
+        context,
+        '/epargne',
+        arguments: {
+          'subscriptionId': widget.subscriptionId,
+          'existingData': details,
+        },
+      ).then((_) {
+        _loadSubscriptionData();
+      });
+    } else {
+      // Produit non reconnu
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('La modification de ce type de produit n\'est pas encore disponible'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
-    // TODO: Ajouter les autres produits (Familis, Flex, etc.)
   }
 
   void _acceptAndPay() {

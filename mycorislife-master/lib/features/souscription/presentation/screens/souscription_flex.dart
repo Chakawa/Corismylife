@@ -178,7 +178,6 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   double _calculatedPrime = 0.0; // Prime totale calculée (en FCFA)
   double _calculatedCapital =
       0.0; // Capital total calculé (somme des garanties)
-  double _primeBase = 0.0; // Prime de base (sans options)
   double _primePrevoyance = 0.0; // Prime pour garantie prévoyance
   double _primePerteEmploi = 0.0; // Prime pour garantie perte d'emploi
 
@@ -2077,7 +2076,6 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     setState(() {
       _calculatedPrime = primeTotal;
       _calculatedCapital = capital;
-      _primeBase = primeBase.toDouble();
       _primePrevoyance = primePrevoyance;
       _primePerteEmploi = primePerteEmploi;
     });

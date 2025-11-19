@@ -20,7 +20,6 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
   // CHARTE GRAPHIQUE CORIS
   // ============================================
   static const Color bleuCoris = Color(0xFF002B6B);
-  static const Color rougeCoris = Color(0xFFE30613);
   static const Color vertSucces = Color(0xFF10B981);
   static const Color orangeWarning = Color(0xFFF59E0B);
   static const Color blanc = Colors.white;
