@@ -37,7 +37,7 @@ class _HomeContentState extends State<HomeContent> {
       'route': '/retraite',
     },
     {
-      'title': 'CORIS EPARGNE',
+      'title': 'CORIS ÉPARGNE BONUS',
       'subtitle': 'Épargnez intelligemment',
       'description': 'Solutions d\'épargne adaptées à vos besoins',
       'image': 'assets/images/epargne.png',
@@ -60,7 +60,7 @@ class _HomeContentState extends State<HomeContent> {
     },
     {
       'image': 'assets/images/epargnee.png',
-      'title': 'CORIS EPARGNE',
+      'title': 'CORIS ÉPARGNE BONUS',
       'route': '/epargne',
       'isIcon': false,
     },
@@ -307,6 +307,21 @@ class _HomeContentState extends State<HomeContent> {
                                   height: double.infinity,
                                   fit: BoxFit.cover,
                                 ),
+                                // Gradient overlay pour améliorer la lisibilité
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.45),
+                                        Colors.black.withOpacity(0.25),
+                                        Colors.black.withOpacity(0.1),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 Positioned(
                                   top: screenHeight * 0.05,
                                   left: screenWidth * 0.05,
@@ -318,25 +333,62 @@ class _HomeContentState extends State<HomeContent> {
                                       Text(
                                         _carouselData[index]['title']!,
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: const Color(0xFFE30613), // Rouge Coris
                                           fontSize: screenWidth * 0.06,
                                           fontWeight: FontWeight.bold,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.9),
+                                              offset: const Offset(2, 2),
+                                              blurRadius: 6,
+                                            ),
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.5),
+                                              offset: const Offset(0, 0),
+                                              blurRadius: 15,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       const SizedBox(height: 5),
                                       Text(
                                         _carouselData[index]['subtitle']!,
                                         style: TextStyle(
-                                          color: Colors.white70,
+                                          color: const Color(0xFFFFFFFF), // Blanc pur
                                           fontSize: screenWidth * 0.035,
+                                          fontWeight: FontWeight.w600,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.8),
+                                              offset: const Offset(1, 1),
+                                              blurRadius: 4,
+                                            ),
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.4),
+                                              offset: const Offset(0, 0),
+                                              blurRadius: 10,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
                                         _carouselData[index]['description']!,
                                         style: TextStyle(
-                                          color: Colors.white60,
+                                          color: const Color(0xFFF0F0F0), // Blanc cassé
                                           fontSize: screenWidth * 0.03,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.8),
+                                              offset: const Offset(1, 1),
+                                              blurRadius: 3,
+                                            ),
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.4),
+                                              offset: const Offset(0, 0),
+                                              blurRadius: 8,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:developer' as developer;
 
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 
 class ContratDetailPage extends StatefulWidget {
   final int subscriptionId;
@@ -470,6 +471,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final mode = data['mode_souscription'] ?? 'Mode Prime';
     final prime = data['prime_calculee'] ?? data['prime'];
     final rente = data['rente_calculee'] ?? data['rente'];
+    final ageParent = data['age_parent'] ?? 'Non renseigné';
+    final dateNaissanceParent = data['date_naissance_parent'];
 
     return _buildRecapSection(
       'Détails du Contrat',
@@ -478,14 +481,25 @@ class ContratDetailPageState extends State<ContratDetailPage>
       [
         _buildCombinedRecapRow('Produit', 'CORIS ÉTUDE', 'Mode', mode),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
+        _buildCombinedRecapRow(
+          'Âge du parent',
+          '$ageParent ans',
+          'Date de naissance',
+          dateNaissanceParent != null ? _formatDate(dateNaissanceParent) : 'Non renseignée',
+        ),
+        _buildCombinedRecapRow(
+          'Prime ${data['periodicite']}',
+          _formatMontant(prime),
+          'Rente au terme',
+          _formatMontant(rente),
+        ),
         
-        if (mode == 'Mode Rente') ...[
-          _buildCombinedRecapRow('Rente au terme', _formatMontant(rente), 'Prime ${data['periodicite']}', _formatMontant(prime)),
-        ] else ...[
-          _buildCombinedRecapRow('Prime ${data['periodicite']}', _formatMontant(prime), 'Rente au terme', _formatMontant(rente)),
-        ],
-        
-        _buildCombinedRecapRow('Durée', '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : data['age_enfant']} ans', 'Périodicité', data['periodicite'] ?? 'Non définie'),
+        _buildCombinedRecapRow(
+          'Durée du contrat',
+          '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : (18 - (data['age_enfant'] ?? 0))} ans (jusqu\'à 18 ans)',
+          'Périodicité',
+          data['periodicite'] ?? 'Non définie'
+        ),
         _buildCombinedRecapRow(
           'Date d\'effet', 
           _formatDate(data['date_effet']),
@@ -838,6 +852,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
           const SizedBox(height: 16),
           _buildBeneficiariesCard(),
           const SizedBox(height: 16),
+          _buildDocumentsCard(),
+          const SizedBox(height: 16),
           const SizedBox(height: 100),
         ],
       ),
@@ -1158,6 +1174,157 @@ class ContratDetailPageState extends State<ContratDetailPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentsCard() {
+    final subscriptionData = _getSubscriptionDetails();
+    final pieceIdentite = subscriptionData['piece_identite'];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Documents",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildDocumentRow(
+              'Pièce d\'identité',
+              pieceIdentite,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentRow(String label, String? documentName) {
+    final hasDocument = documentName != null && 
+                        documentName.isNotEmpty && 
+                        documentName != 'Non téléchargée';
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF002B6B).withAlpha(25),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.credit_card,
+              color: const Color(0xFF002B6B),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  documentName ?? 'Non téléchargée',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasDocument) ...[
+            const SizedBox(width: 12),
+            InkWell(
+              onTap: () => _viewDocument(documentName),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF002B6B).withAlpha(25),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.visibility,
+                  color: Color(0xFF002B6B),
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _viewDocument(String? documentName) {
+    if (documentName == null || documentName.isEmpty || documentName == 'Non téléchargée') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text('Aucun document disponible'),
+              ),
+            ],
+          ),
+          backgroundColor: Color(0xFFF59E0B),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Ouvrir le viewer de documents
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          documentName: documentName,
+          subscriptionId: widget.subscriptionId,
+        ),
       ),
     );
   }

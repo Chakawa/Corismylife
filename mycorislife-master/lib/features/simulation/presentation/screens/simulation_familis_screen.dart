@@ -2369,13 +2369,16 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     required int age,
     required int dureeAnnees,
   }) async {
-    print('\n╔═══════════════════════════════════════════════════════════════╗');
+    print(
+        '\n╔═══════════════════════════════════════════════════════════════╗');
     print('║ 🔍 [FAMILIS] Recherche tarif                                ║');
     print('╚═══════════════════════════════════════════════════════════════╝');
-    print('   📊 Paramètres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
+    print(
+        '   📊 Paramètres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
 
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
-    print('\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
+    print(
+        '\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS FAMILIS',
@@ -2387,15 +2390,19 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
-        print('\n╔═══════════════════════════════════════════════════════════════╗');
-        print('║ ✅ [FAMILIS] Données utilisées depuis SERVEUR                 ║');
-        print('╚═══════════════════════════════════════════════════════════════╝\n');
+        print(
+            '\n╔═══════════════════════════════════════════════════════════════╗');
+        print(
+            '║ ✅ [FAMILIS] Données utilisées depuis SERVEUR                 ║');
+        print(
+            '╚═══════════════════════════════════════════════════════════════╝\n');
         return tarifFromDB.prime!;
       } else {
         print('   ⚠️  Tarif non trouvé dans la DB, utilisation du fallback');
       }
     } catch (e) {
-      print('   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
+      print(
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
     // Étape 2: Fallback - Utiliser les données codées en dur
@@ -2433,9 +2440,11 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     final rate = selectedTable[age]![dureeAnnees]!;
     print('   ✅ Tarif depuis FALLBACK (données hardcodées): $rate');
-    print('\n╔═══════════════════════════════════════════════════════════════╗');
+    print(
+        '\n╔═══════════════════════════════════════════════════════════════╗');
     print('║ ⚠️  [FAMILIS] Données utilisées depuis FALLBACK               ║');
-    print('╚═══════════════════════════════════════════════════════════════╝\n');
+    print(
+        '╚═══════════════════════════════════════════════════════════════╝\n');
     return rate;
   }
 
@@ -2931,7 +2940,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     'duree': int.parse(_dureeController.text),
                     'periodicite': periodicite,
                   };
-                  
+
                   // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {

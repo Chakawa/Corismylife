@@ -213,6 +213,89 @@ exports.updateSubscriptionStatus = async (req, res) => {
 
 /**
  * ===============================================
+ * METTRE À JOUR UNE SOUSCRIPTION (PROPOSITION)
+ * ===============================================
+ * 
+ * Permet de modifier les données d'une proposition existante.
+ * Utilisé quand un client clique sur "Modifier" depuis la page de détails.
+ * 
+ * @route PUT /subscriptions/:id/update
+ * @requires verifyToken
+ * 
+ * @param {number} req.params.id - ID de la souscription à modifier
+ * @param {object} req.body - Nouvelles données de la souscription
+ * 
+ * @returns {object} La souscription mise à jour
+ */
+exports.updateSubscription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      product_type,
+      client_info,
+      ...subscriptionData
+    } = req.body;
+
+    // Récupérer l'ID de l'utilisateur connecté
+    const currentUserId = req.user.id;
+    const userRole = req.user.role;
+
+    // Si c'est un commercial et qu'il y a des infos client, les ajouter
+    if (userRole === 'commercial' && client_info) {
+      subscriptionData.client_info = {
+        nom: client_info.nom,
+        prenom: client_info.prenom,
+        date_naissance: client_info.date_naissance,
+        lieu_naissance: client_info.lieu_naissance,
+        telephone: client_info.telephone,
+        email: client_info.email,
+        adresse: client_info.adresse,
+        civilite: client_info.civilite || client_info.genre,
+        numero_piece_identite: client_info.numero_piece_identite || client_info.numero
+      };
+    }
+
+    // Requête SQL pour mettre à jour la souscription
+    const query = `
+      UPDATE subscriptions 
+      SET produit_nom = $1, souscriptiondata = $2
+      WHERE id = $3 AND user_id = $4
+      RETURNING *;
+    `;
+
+    const values = [
+      product_type || null,
+      subscriptionData,
+      id,
+      currentUserId
+    ];
+
+    const result = await pool.query(query, values);
+
+    // Vérifier que la souscription existe et appartient à l'utilisateur
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée ou vous n\'avez pas les droits pour la modifier'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Souscription mise à jour avec succès',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur mise à jour souscription:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour de la souscription'
+    });
+  }
+};
+
+/**
+ * ===============================================
  * METTRE À JOUR LE STATUT DE PAIEMENT
  * ===============================================
  * 
@@ -1291,13 +1374,20 @@ exports.getSubscriptionPDF = async (req, res) => {
     }
 
     // Afficher les informations disponibles, avec "Non renseigné" pour ce qui manque
+    // Pour Coris Étude, calculer la durée réelle du contrat (jusqu'à 18 ans)
+    let dureeContratAffichee = dureeAffichee;
+    if (isEtude && d.age_enfant) {
+      const dureeReelle = 18 - parseInt(d.age_enfant);
+      dureeContratAffichee = `${dureeReelle} ans (jusqu'à 18 ans)`;
+    }
+    
     drawRow(startX, curY, fullW, rowH);
     write('Du', startX + 5, curY + 4, 9, '#666', 20);
     write(formatDate(dateEffet) || 'Non renseigné', startX + 30, curY + 4, 9, '#000', 90);
     write('Au', startX + 130, curY + 4, 9, '#666', 20);
     write(formatDate(dateEcheance) || 'Non renseigné', startX + 155, curY + 4, 9, '#000', 90);
     write('Durée', startX + 255, curY + 4, 9, '#666', 35);
-    write(dureeAffichee, startX + 295, curY + 4, 9, '#000', 60, true);
+    write(dureeContratAffichee, startX + 295, curY + 4, 9, '#000', 60, true);
     write('Périodicité', startX + 365, curY + 4, 9, '#666', 60);
     write(periodiciteFormatee, startX + 430, curY + 4, 9, '#000', 105);
     curY += rowH + 5;
@@ -1307,7 +1397,11 @@ exports.getSubscriptionPDF = async (req, res) => {
     writeCentered('Assuré(e)', startX, curY + 4, fullW, 10, '#000000', true);
     curY += boxH + 5;
     
-    drawRow(startX, curY, fullW, rowH * 1.8);
+    // Pour Coris Étude, afficher aussi la date de naissance du parent si disponible
+    const hasParentInfo = isEtude && (d.date_naissance_parent || d.age_parent);
+    const rowsNeeded = hasParentInfo ? 2.5 : 1.8;
+    
+    drawRow(startX, curY, fullW, rowH * rowsNeeded);
     write('Nom et Prénom', startX + 5, curY + 3, 9, '#666', 100);
     write(`${safe(usr.nom)} ${safe(usr.prenom)}`, startX + 115, curY + 3, 9, '#000', 200);
     write('Informations pers.', startX + 5, curY + 3 + 13, 9, '#666', 100);
@@ -1316,7 +1410,17 @@ exports.getSubscriptionPDF = async (req, res) => {
     const sexe = usr.civilite === 'M.' || usr.civilite === 'Monsieur' ? 'M' : (usr.civilite === 'Mme' || usr.civilite === 'Madame' ? 'F' : '');
     const infoPers = `Né(e) le : ${dateNaissanceAssure || 'Non renseigné'} à : ${lieuNaissanceAssure || 'Non renseigné'} - sexe : ${sexe || 'Non renseigné'}`;
     write(infoPers, startX + 115, curY + 3 + 13, 9, '#000', 420);
-    curY += rowH * 1.8 + 5;
+    
+    // Ajouter la date de naissance du parent pour Coris Étude
+    if (hasParentInfo) {
+      write('Parent (Coris Étude)', startX + 5, curY + 3 + 26, 9, '#666', 100);
+      const dateNaissanceParent = formatDate(d.date_naissance_parent);
+      const ageParent = d.age_parent || '';
+      const parentInfo = `Date de naissance : ${dateNaissanceParent || 'Non renseignée'} - Âge : ${ageParent || 'Non renseigné'} ans`;
+      write(parentInfo, startX + 115, curY + 3 + 26, 9, '#000', 420);
+    }
+    
+    curY += rowH * rowsNeeded + 5;
 
     // Bénéficiaires - Case grise avec tableau
     drawRow(startX, curY, fullW, boxH, grisNormal);
@@ -1450,7 +1554,8 @@ exports.getSubscriptionPDF = async (req, res) => {
     curY += boxH + 5;
     
     // Calculer Prime Nette (Cotisation Périodique)
-    const primeNette = d.prime || d.prime_mensuelle || d.prime_annuelle || 0;
+    // Utiliser prime_calculee en priorité, sinon prime, sinon montant
+    const primeNette = d.prime_calculee || d.prime || d.montant || d.prime_mensuelle || d.prime_annuelle || 0;
     
     // Déterminer le nombre de lignes nécessaires
     let caracteristiquesLignes = 1;
@@ -1463,7 +1568,9 @@ exports.getSubscriptionPDF = async (req, res) => {
     drawRow(startX, curY, fullW, rowH * caracteristiquesLignes);
     
     // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
-    write('Cotisation Périodique', startX + 5, curY + 3, 9, '#666', 130);
+    // Afficher la périodicité pour Coris Étude
+    const cotisationLabel = isEtude && periodiciteFormatee ? `Prime ${periodiciteFormatee}` : 'Cotisation Périodique';
+    write(cotisationLabel, startX + 5, curY + 3, 9, '#666', 130);
     write(money(primeNette), startX + 145, curY + 3, 9, '#000', 150);
     write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
     write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
@@ -1853,5 +1960,80 @@ exports.getSubscriptionPDF = async (req, res) => {
   } catch (error) {
     console.error('Erreur génération PDF:', error);
     res.status(500).json({ success: false, message: 'Erreur lors de la génération du PDF' });
+  }
+};
+
+/**
+ * ===============================================
+ * RÉCUPÉRER UN DOCUMENT (PIÈCE D'IDENTITÉ)
+ * ===============================================
+ * 
+ * Permet de télécharger le document téléchargé lors de la souscription.
+ * 
+ * @route GET /subscriptions/:id/document/:filename
+ * @requires verifyToken
+ */
+exports.getDocument = async (req, res) => {
+  try {
+    const { id, filename } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Vérifier que la souscription existe et appartient à l'utilisateur
+    const checkQuery = `
+      SELECT s.id, s.user_id, s.souscriptiondata->>'piece_identite' as piece_identite
+      FROM subscriptions s
+      WHERE s.id = $1
+    `;
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Souscription non trouvée' 
+      });
+    }
+
+    const subscription = checkResult.rows[0];
+
+    // Vérifier les permissions
+    if (userRole !== 'admin' && userRole !== 'commercial' && subscription.user_id !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Accès non autorisé' 
+      });
+    }
+
+    // Vérifier que le nom de fichier correspond
+    if (subscription.piece_identite !== filename) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Document non trouvé' 
+      });
+    }
+
+    // Construire le chemin du fichier
+    const path = require('path');
+    const filePath = path.join(__dirname, '../uploads/kyc', filename);
+
+    // Vérifier que le fichier existe
+    const fs = require('fs');
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Fichier non trouvé sur le serveur' 
+      });
+    }
+
+    // Envoyer le fichier
+    res.sendFile(filePath);
+
+  } catch (error) {
+    console.error('Erreur récupération document:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération du document',
+      error: error.message 
+    });
   }
 };

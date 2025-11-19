@@ -553,13 +553,53 @@ class SubscriptionRecapWidgets {
   }
 
   /// Construit le récapitulatif des documents
-  static Widget buildDocumentsSection({String? pieceIdentite}) {
+  static Widget buildDocumentsSection({
+    String? pieceIdentite,
+    VoidCallback? onDocumentTap,
+  }) {
     return buildRecapSection(
       'Documents',
       Icons.description,
       bleuSecondaire,
       [
-        buildRecapRow('Pièce d\'identité', pieceIdentite ?? 'Non téléchargée'),
+        onDocumentTap != null
+            ? GestureDetector(
+                onTap: onDocumentTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Pièce d\'identité',
+                        style: TextStyle(
+                          color: grisTexte,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            pieceIdentite ?? 'Non téléchargée',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.visibility,
+                            size: 18,
+                            color: bleuCoris,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : buildRecapRow(
+                'Pièce d\'identité', pieceIdentite ?? 'Non téléchargée'),
       ],
     );
   }

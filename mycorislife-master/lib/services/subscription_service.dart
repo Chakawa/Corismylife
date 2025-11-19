@@ -29,6 +29,26 @@ class SubscriptionService {
     return response;
   }
 
+  /// Met à jour une souscription existante (proposition)
+  ///
+  /// [subscriptionId] : ID de la souscription à modifier
+  /// [subscriptionData] : Nouvelles données de la souscription
+  Future<http.Response> updateSubscription(
+      int subscriptionId, Map<String, dynamic> subscriptionData) async {
+    final token = await storage.read(key: 'token');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/subscriptions/$subscriptionId/update'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(subscriptionData),
+    );
+
+    return response;
+  }
+
   // Mettre à jour le statut après paiement
   Future<http.Response> updatePaymentStatus(
       int subscriptionId, bool paymentSuccess,

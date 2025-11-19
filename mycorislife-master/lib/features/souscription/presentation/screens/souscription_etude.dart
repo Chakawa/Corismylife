@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -15,9 +16,12 @@ class SouscriptionEtudePage extends StatefulWidget {
   final double? rente;
   final String? periodicite;
   final String? mode; // 'prime' ou 'rente'
+  final DateTime? dateNaissanceParent; // Date de naissance du parent depuis la simulation
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
+  final int? subscriptionId; // ID de la souscription à modifier (si mode édition)
+  final Map<String, dynamic>? existingData; // Données existantes à préremplir
   const SouscriptionEtudePage({
     super.key,
     this.ageParent,
@@ -26,8 +30,11 @@ class SouscriptionEtudePage extends StatefulWidget {
     this.rente,
     this.periodicite,
     this.mode,
+    this.dateNaissanceParent,
     this.clientId,
     this.clientData,
+    this.subscriptionId,
+    this.existingData,
   });
   @override
   SouscriptionEtudePageState createState() => SouscriptionEtudePageState();
@@ -67,6 +74,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final _dureeController = TextEditingController();
   final _montantController = TextEditingController();
   final _dateEffetController = TextEditingController();
+  final _dateNaissanceParentController = TextEditingController();
   String? _selectedPeriodicite;
   final _professionController = TextEditingController();
   DateTime? _dateEffetContrat;
@@ -92,6 +100,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   double _primeCalculee = 0.0;
   double _renteCalculee = 0.0;
   File? _pieceIdentite;
+  // Variable pour éviter les soumissions multiples
+  bool _isProcessing = false;
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
     'Enfant',
@@ -916,27 +926,34 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   @override
   void initState() {
     super.initState();
-    // Chargez les données utilisateur dès l'initialisation si pas de simulation
-    if (widget.ageParent == null) {
-      _loadUserData().then((data) {
-        _calculatedAgeParent =
-            _calculateAgeFromBirthDate(data['date_naissance']);
-        _recalculerValeurs(); // Recalculer après chargement
-        if (mounted) {
-          setState(() {}); // Rafraîchir l'UI
-        }
-      }).catchError((e) {
-        if (mounted) {
-          _showErrorSnackBar(
-              'Erreur lors du chargement des données utilisateur: $e');
-        }
-      });
+    
+    // Si on modifie une proposition existante, préremplir avec les données
+    if (widget.existingData != null) {
+      _prefillFromExistingData();
     } else {
-      _calculatedAgeParent =
-          widget.ageParent; // Utiliser la valeur de simulation si disponible
-    }
+      // Chargez les données utilisateur dès l'initialisation si pas de simulation
+      if (widget.ageParent == null) {
+        _loadUserData().then((data) {
+          _calculatedAgeParent =
+              _calculateAgeFromBirthDate(data['date_naissance']);
+          _recalculerValeurs(); // Recalculer après chargement
+          if (mounted) {
+            setState(() {}); // Rafraîchir l'UI
+          }
+        }).catchError((e) {
+          if (mounted) {
+            _showErrorSnackBar(
+                'Erreur lors du chargement des données utilisateur: $e');
+          }
+        });
+      } else {
+        _calculatedAgeParent =
+            widget.ageParent; // Utiliser la valeur de simulation si disponible
+      }
 
-    _prefillFromSimulation();
+      _prefillFromSimulation();
+    }
+    
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
@@ -1092,6 +1109,129 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     }
   }
 
+  void _prefillFromExistingData() {
+    if (widget.existingData == null) return;
+    
+    final data = widget.existingData!;
+    
+    // Mode de souscription
+    if (data['mode_souscription'] != null) {
+      _selectedMode = data['mode_souscription'] == 'prime' ? 'Mode Prime' : 'Mode Rente';
+    }
+    
+    // Date de naissance du parent
+    if (data['date_naissance_parent'] != null) {
+      try {
+        _dateNaissanceParent = DateTime.parse(data['date_naissance_parent']);
+        _dateNaissanceParentController.text = DateFormat('dd/MM/yyyy').format(_dateNaissanceParent!);
+      } catch (e) {
+        debugPrint('Erreur parsing date_naissance_parent: $e');
+      }
+    }
+    
+    // Âge parent
+    if (data['age_parent'] != null) {
+      _calculatedAgeParent = data['age_parent'] is int ? data['age_parent'] : int.tryParse(data['age_parent'].toString());
+    }
+    
+    // Âge enfant
+    if (data['age_enfant'] != null) {
+      _dureeController.text = data['age_enfant'].toString();
+    }
+    
+    // Prime et montant
+    if (data['prime_calculee'] != null) {
+      _primeCalculee = (data['prime_calculee'] is int) ? data['prime_calculee'].toDouble() : data['prime_calculee'];
+      if (_selectedMode == 'Mode Prime') {
+        _montantController.text = _primeCalculee.toStringAsFixed(0);
+      }
+    }
+    
+    // Rente
+    if (data['rente_calculee'] != null) {
+      _renteCalculee = (data['rente_calculee'] is int) ? data['rente_calculee'].toDouble() : data['rente_calculee'];
+      if (_selectedMode == 'Mode Rente') {
+        _montantController.text = _renteCalculee.toStringAsFixed(0);
+      }
+    }
+    
+    // Périodicité
+    if (data['periodicite'] != null) {
+      String periodicite = data['periodicite'].toString().toLowerCase();
+      _selectedPeriodicite = periodicite[0].toUpperCase() + periodicite.substring(1);
+    }
+    
+    // Bénéficiaire
+    if (data['beneficiaire'] != null) {
+      final benef = data['beneficiaire'];
+      _beneficiaireNomController.text = benef['nom'] ?? '';
+      if (benef['contact'] != null) {
+        final contact = benef['contact'].toString();
+        // Extraire l'indicatif et le numéro
+        if (contact.startsWith('+')) {
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedBeneficiaireIndicatif = parts[0];
+            _beneficiaireContactController.text = parts.sublist(1).join(' ');
+          }
+        } else {
+          _beneficiaireContactController.text = contact;
+        }
+      }
+      _selectedLienParente = benef['lien_parente'] ?? 'Enfant';
+    }
+    
+    // Contact d'urgence
+    if (data['contact_urgence'] != null) {
+      final contact = data['contact_urgence'];
+      _personneContactNomController.text = contact['nom'] ?? '';
+      if (contact['contact'] != null) {
+        final tel = contact['contact'].toString();
+        if (tel.startsWith('+')) {
+          final parts = tel.split(' ');
+          if (parts.length >= 2) {
+            _selectedContactIndicatif = parts[0];
+            _personneContactTelController.text = parts.sublist(1).join(' ');
+          }
+        } else {
+          _personneContactTelController.text = tel;
+        }
+      }
+      _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
+    }
+    
+    // Profession
+    if (data['profession'] != null) {
+      _professionController.text = data['profession'];
+    }
+    
+    // Dates
+    if (data['date_effet'] != null) {
+      try {
+        _dateEffetContrat = DateTime.parse(data['date_effet']);
+        _dateEffetController.text = DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
+      } catch (e) {
+        debugPrint('Erreur parsing date_effet: $e');
+      }
+    }
+    
+    if (data['date_echeance'] != null) {
+      try {
+        _dateEcheanceContrat = DateTime.parse(data['date_echeance']);
+      } catch (e) {
+        debugPrint('Erreur parsing date_echeance: $e');
+      }
+    }
+    
+    // Forcer le recalcul
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _recalculerValeurs();
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   void _prefillFromSimulation() {
     // Déterminer le mode de souscription
     if (widget.mode != null) {
@@ -1099,6 +1239,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     } else {
       _selectedMode = 'Mode Prime'; // Valeur par défaut
     }
+    
+    // Initialiser la date de naissance du parent depuis la simulation
+    if (widget.dateNaissanceParent != null) {
+      _dateNaissanceParent = widget.dateNaissanceParent;
+      // Pré-remplir le champ texte avec la date formatée
+      _dateNaissanceParentController.text = DateFormat('dd/MM/yyyy').format(widget.dateNaissanceParent!);
+    }
+    
     // Pré-remplir l'âge de l'enfant si disponible
     if (widget.ageEnfant != null) {
       _dureeController.text = widget.ageEnfant!.toString();
@@ -1681,6 +1829,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   /// Sauvegarde les données de souscription
   /// Si c'est une souscription commerciale, utilise le client_id du client
   /// Sinon, utilise l'ID de l'utilisateur connecté
+  /// Si subscriptionId existe, met à jour la souscription existante
   Future<int> _saveSubscriptionData() async {
     try {
       final subscriptionService = SubscriptionService();
@@ -1718,6 +1867,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         'age_enfant': ageEnfant,
         'age_souscripteur': _calculatedAgeParent,
+        'age_parent': _calculatedAgeParent,
+        'date_naissance_parent': _dateNaissanceParent?.toIso8601String().split('T').first,
       };
 
       // Si c'est un commercial, ajouter les infos client
@@ -1737,17 +1888,28 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         };
       }
 
-      final response =
-          await subscriptionService.createSubscription(subscriptionData);
+      // Si on modifie une proposition existante, mettre à jour au lieu de créer
+      final http.Response response;
+      if (widget.subscriptionId != null) {
+        response = await subscriptionService.updateSubscription(
+          widget.subscriptionId!,
+          subscriptionData,
+        );
+      } else {
+        response = await subscriptionService.createSubscription(subscriptionData);
+      }
+      
       final responseData = jsonDecode(response.body);
 
-      if (response.statusCode != 201 || !responseData['success']) {
+      if ((widget.subscriptionId != null && response.statusCode != 200) ||
+          (widget.subscriptionId == null && response.statusCode != 201) ||
+          !responseData['success']) {
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNEZ l'ID de la souscription créée
-      return responseData['data']['id'];
+      // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
+      return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       rethrow; // Correction: utiliser rethrow au lieu de throw
     }
@@ -1787,6 +1949,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // Éviter les soumissions multiples
+    if (_isProcessing) return;
+    
+    setState(() {
+      _isProcessing = true;
+    });
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1819,6 +1988,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         Navigator.pop(context);
       }
       _showErrorSnackBar('Erreur lors du traitement: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -2169,14 +2344,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ? (i == 0
                             ? 'Client'
                             : i == 1
-                                ? 'Prime'
+                                ? 'Souscription'
                                 : i == 2
                                     ? 'Infos'
                                     : i == 3
                                         ? 'Recap'
                                         : 'Paie')
                         : (i == 0
-                            ? 'Prime'
+                            ? 'Souscription'
                             : i == 1
                                 ? 'Infos'
                                 : i == 2
@@ -2371,6 +2546,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           const SizedBox(height: 20),
                           _buildModeDropdown(),
                           const SizedBox(height: 16),
+                          _buildDateNaissanceParentField(),
+                          const SizedBox(height: 16),
                           _buildAgeEnfantField(),
                           const SizedBox(height: 16),
                           _buildPeriodiciteDropdown(),
@@ -2467,6 +2644,83 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         color: bleuCoris,
         fontSize: 14,
       ),
+    );
+  }
+
+  Widget _buildDateNaissanceParentField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(26),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: TextFormField(
+              controller: _dateNaissanceParentController,
+              readOnly: true,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                labelText: 'Date de naissance du parent *',
+                labelStyle: TextStyle(color: grisTexte),
+                prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+              ),
+              onTap: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime(1980),
+                  firstDate: DateTime(1940),
+                  lastDate: DateTime.now(),
+                  locale: const Locale('fr', 'FR'),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: bleuCoris,
+                          onPrimary: Colors.white,
+                          onSurface: bleuCoris,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) {
+                  setState(() {
+                    _dateNaissanceParent = picked;
+                    _dateNaissanceParentController.text =
+                        DateFormat('dd/MM/yyyy').format(picked);
+                    // Calculer l'âge du parent
+                    final now = DateTime.now();
+                    int age = now.year - picked.year;
+                    if (now.month < picked.month ||
+                        (now.month == picked.month && now.day < picked.day)) {
+                      age--;
+                    }
+                    _calculatedAgeParent = age;
+                    _recalculerValeurs();
+                  });
+                }
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'La date de naissance du parent est obligatoire';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3337,20 +3591,20 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           [
             _buildCombinedRecapRow(
                 'Produit', 'CORIS ÉTUDE', 'Mode', _selectedMode),
-            if (_selectedMode == 'Mode Rente') ...[
-              _buildCombinedRecapRow(
-                  'Rente au terme',
-                  _formatMontant(renteDisplay),
-                  'Prime $_selectedPeriodicite',
-                  _formatMontant(primeDisplay)),
-            ] else ...[
-              _buildCombinedRecapRow(
-                  'Prime $_selectedPeriodicite',
-                  _formatMontant(primeDisplay),
-                  'Rente au terme',
-                  _formatMontant(renteDisplay)),
-            ],
-            _buildCombinedRecapRow('Durée', '$duree ans', 'Périodicité',
+            _buildCombinedRecapRow(
+                'Âge du parent',
+                _calculatedAgeParent != null ? '$_calculatedAgeParent ans' : 'Non renseigné',
+                'Âge de l\'enfant',
+                '$duree ans'),
+            _buildCombinedRecapRow(
+                'Prime $_selectedPeriodicite',
+                _formatMontant(primeDisplay),
+                'Rente au terme',
+                _formatMontant(renteDisplay)),
+            _buildCombinedRecapRow(
+                'Durée du contrat',
+                '${18 - duree} ans (jusqu\'à 18 ans)',
+                'Périodicité choisie',
                 _selectedPeriodicite ?? 'Non définie'),
             _buildCombinedRecapRow(
                 'Date d\'effet',
@@ -3433,8 +3687,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Icons.description,
           Colors.purple,
           [
-            _buildRecapRow('Pièce d\'identité',
-                _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
+            _buildDocumentRow(
+              'Pièce d\'identité',
+              _pieceIdentite?.path.split('/').last ?? 'Non téléchargée',
+              _pieceIdentite,
+            ),
           ],
         ),
 
@@ -3509,6 +3766,97 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentRow(String label, String value, File? documentFile) {
+    final hasDocument = documentFile != null && value != 'Non téléchargée';
+    
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              '$label :',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: grisTexte,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: hasDocument
+                ? GestureDetector(
+                    onTap: () => _viewLocalDocument(documentFile, value),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            value,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: bleuCoris,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.visibility, size: 16, color: bleuCoris),
+                      ],
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: bleuCoris,
+                      fontSize: 12,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _viewLocalDocument(File? documentFile, String fileName) {
+    if (documentFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.info_outline, color: blanc, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Document non disponible'),
+              ),
+            ],
+          ),
+          backgroundColor: orangeWarning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Ouvrir le viewer de documents avec le fichier local
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          localFile: documentFile,
+          documentName: fileName,
+        ),
       ),
     );
   }

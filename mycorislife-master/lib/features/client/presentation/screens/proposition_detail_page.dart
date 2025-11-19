@@ -5,6 +5,8 @@ import 'dart:developer' as developer;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_etude.dart';
 
 /// ============================================
 /// PAGE DE DÉTAILS D'UNE PROPOSITION
@@ -117,23 +119,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   }
 
   Color _getBadgeColor(String produit) {
-    if (produit.toLowerCase().contains('solidarite')) {
-      return const Color(0xFF002B6B);
-    } else if (produit.toLowerCase().contains('emprunteur')) {
-      return const Color(0xFFEF4444);
-    } else if (produit.toLowerCase().contains('etude')) {
-      return const Color(0xFF8B5CF6);
-    } else if (produit.toLowerCase().contains('retraite')) {
-      return const Color(0xFF10B981);
-    } else if (produit.toLowerCase().contains('serenite')) {
-      return const Color(0xFF002B6B);
-    } else if (produit.toLowerCase().contains('familis')) {
-      return const Color(0xFFF59E0B);
-    } else if (produit.toLowerCase().contains('epargne')) {
-      return const Color(0xFF8B5CF6);
-    } else {
-      return const Color(0xFF002B6B);
-    }
+    // Toujours retourner le bleu Coris pour uniformiser
+    return const Color(0xFF002B6B);
   }
 
   String _getBadgeText(String produit) {
@@ -163,7 +150,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   }
 
   Map<String, dynamic> _getSubscriptionDetails() {
-    return _subscriptionData?['souscriptiondata'] ?? {};
+    final details = _subscriptionData?['souscriptiondata'] ?? {};
+    // Debug: Afficher les données pour vérifier prime_calculee
+    developer.log('=== DÉTAILS SOUSCRIPTION ===');
+    developer.log('prime_calculee: ${details['prime_calculee']}');
+    developer.log('prime: ${details['prime']}');
+    developer.log('montant: ${details['montant']}');
+    developer.log('periodicite: ${details['periodicite']}');
+    return details;
   }
 
   @override
@@ -427,13 +421,21 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     // Pour CORIS ÉTUDE
     if (productType.contains('etude')) {
-      final prime = details['prime'] ?? 0;
+      final prime = details['prime_calculee'] ?? details['prime'] ?? details['montant'] ?? 0;
       final periodicite = details['periodicite'] ?? 'mensuel';
       final rente = details['rente_calculee'] ?? details['rente'] ?? 0;
       final duree = details['duree'] ?? details['duree_mois'] != null ? '${(details['duree_mois'] as int) ~/ 12}' : 'Non définie';
       final mode = details['mode_souscription'] ?? 'Mode Capital';
       final dateEffet = details['date_effet'];
       final dateEcheance = details['date_echeance'];
+      final ageParent = details['age_parent'] ?? 'Non renseigné';
+      final dateNaissanceParent = details['date_naissance_parent'];
+
+      // Formater la périodicité avec majuscule
+      String periodiciteFormatee = periodicite;
+      if (periodicite != null && periodicite.isNotEmpty) {
+        periodiciteFormatee = periodicite[0].toUpperCase() + periodicite.substring(1).toLowerCase();
+      }
 
       return SubscriptionRecapWidgets.buildRecapSection(
         'Produit Souscrit',
@@ -441,12 +443,24 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         vertSucces,
         [
           SubscriptionRecapWidgets.buildCombinedRecapRow('Produit', 'CORIS ÉTUDE', 'Mode', mode),
-          if (mode == 'Mode Rente') ...[
-            SubscriptionRecapWidgets.buildCombinedRecapRow('Rente au terme', SubscriptionRecapWidgets.formatMontant(rente), 'Prime $periodicite', SubscriptionRecapWidgets.formatMontant(prime)),
-          ] else ...[
-            SubscriptionRecapWidgets.buildCombinedRecapRow('Prime $periodicite', SubscriptionRecapWidgets.formatMontant(prime), 'Rente au terme', SubscriptionRecapWidgets.formatMontant(rente)),
-          ],
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Durée', '$duree ans', 'Périodicité', periodicite),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Âge du parent',
+            ageParent.toString() + ' ans',
+            'Date de naissance',
+            dateNaissanceParent != null ? SubscriptionRecapWidgets.formatDate(dateNaissanceParent) : 'Non renseignée',
+          ),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Cotisation $periodiciteFormatee',
+            SubscriptionRecapWidgets.formatMontant(prime),
+            'Rente au terme',
+            SubscriptionRecapWidgets.formatMontant(rente),
+          ),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Durée du contrat',
+            duree != 'Non définie' ? '$duree ans (jusqu\'à 18 ans)' : 'Non définie',
+            'Périodicité',
+            periodiciteFormatee
+          ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             dateEffet != null ? SubscriptionRecapWidgets.formatDate(dateEffet) : 'Non définie',
@@ -758,6 +772,45 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     return SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: pieceIdentite,
+      onDocumentTap: pieceIdentite != null && pieceIdentite.toString().isNotEmpty && pieceIdentite != 'Non téléchargée'
+          ? () => _viewDocument(pieceIdentite)
+          : null,
+    );
+  }
+
+  void _viewDocument(String? documentName) {
+    if (documentName == null || documentName.isEmpty || documentName == 'Non téléchargée') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.info_outline, color: blanc, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Aucun document disponible'),
+              ),
+            ],
+          ),
+          backgroundColor: orangeWarning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Ouvrir le viewer de documents
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          documentName: documentName,
+          subscriptionId: widget.subscriptionId,
+        ),
+      ),
     );
   }
 
@@ -859,28 +912,27 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   void _modifyProposition() {
     HapticFeedback.lightImpact();
 
-    // TODO: Implémenter la modification de la proposition
-    // Pour l'instant, afficher un message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.info_outline, color: blanc, size: 20),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                  'Fonctionnalité de modification en cours de développement'),
-            ),
-          ],
+    if (_subscriptionData == null) return;
+
+    final productType = _getProductType().toLowerCase();
+    final details = _getSubscriptionDetails();
+
+    // Rediriger vers la page de souscription appropriée avec les données
+    if (productType.contains('etude')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SouscriptionEtudePage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+          ),
         ),
-        backgroundColor: orangeWarning,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      ).then((_) {
+        // Recharger les données après modification
+        _loadSubscriptionData();
+      });
+    }
+    // TODO: Ajouter les autres produits (Familis, Flex, etc.)
   }
 
   void _acceptAndPay() {

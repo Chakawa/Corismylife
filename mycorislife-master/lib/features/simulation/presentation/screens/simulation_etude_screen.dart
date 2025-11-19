@@ -1849,7 +1849,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                         : result!,
                     'periodicite': selectedPeriodicite,
                   };
-                  
+
                   // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
@@ -1864,6 +1864,18 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                     );
                   } else {
                     // Pour les clients, rediriger directement vers la souscription
+                    // Parser la date de naissance du parent
+                    DateTime? dateNaissanceParent;
+                    if (_dateNaissanceParentController.text.trim().isNotEmpty) {
+                      try {
+                        dateNaissanceParent = DateFormat('dd/MM/yyyy').parse(
+                          _dateNaissanceParentController.text.trim()
+                        );
+                      } catch (e) {
+                        // Ignorer si la date est invalide
+                      }
+                    }
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1879,6 +1891,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                                   _valeurController.text.replaceAll(' ', ''))
                               : result!,
                           periodicite: selectedPeriodicite,
+                          dateNaissanceParent: dateNaissanceParent,
                         ),
                       ),
                     );
