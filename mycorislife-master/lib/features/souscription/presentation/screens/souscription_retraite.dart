@@ -2715,6 +2715,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
+      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       // ÉTAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
@@ -2743,7 +2748,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   void _saveAsProposition() async {
     try {
       // Sauvegarde avec statut 'proposition' par défaut
-      await _saveSubscriptionData();
+      final subscriptionId = await _saveSubscriptionData();
+      
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+      
       if (mounted) {
         _showSuccessDialog(false);
       }
@@ -2751,6 +2762,28 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
       }
+    }
+  }
+
+  /// Upload le document pièce d'identité vers le serveur
+  Future<void> _uploadDocument(int subscriptionId) async {
+    try {
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      final subscriptionService = SubscriptionService();
+      final response = await subscriptionService.uploadDocument(
+        subscriptionId,
+        _pieceIdentite!.path,
+      );
+      
+      final responseData = jsonDecode(response.body);
+      
+      if (response.statusCode != 200 || !responseData['success']) {
+        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      }
+      
+      debugPrint('✅ Document uploadé avec succès');
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
     }
   }
 

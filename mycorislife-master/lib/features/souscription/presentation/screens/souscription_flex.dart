@@ -1992,8 +1992,22 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       return;
     }
 
-    final capital = _parseDouble(_capitalController.text);
+    double capital = _parseDouble(_capitalController.text);
     if (capital <= 0) return;
+
+    // Vérification du montant maximum (30 000 000 FCFA)
+    if (capital > 30000000) {
+      _showProfessionalDialog(
+        title: 'Limite de capital dépassée',
+        message:
+            'Le montant maximum du prêt à couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA. Le montant a été ajusté automatiquement.',
+        icon: Icons.monetization_on_outlined,
+        iconColor: orangeWarning,
+        backgroundColor: orangeWarning,
+      );
+      capital = 30000000;
+      _capitalController.text = _formatNumber(capital);
+    }
 
     int duree = _parseInt(_dureeController.text);
     int dureeMois = _selectedDureeType == 'années' ? duree * 12 : duree;
@@ -2137,6 +2151,98 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.all(16),
       ),
+    );
+  }
+
+  void _showProfessionalDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 16,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                        backgroundColor.withAlpha(25), Colors.white),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: bleuCoris,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Compris',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2583,6 +2689,29 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                             suffix: 'FCFA',
                             onChanged: (value) {
                               _formatTextField(_capitalController);
+
+                              // Vérification du montant maximum (30 000 000 FCFA)
+                              String cleanValue =
+                                  _capitalController.text.replaceAll(' ', '');
+                              double? montant = double.tryParse(cleanValue);
+                              if (montant != null && montant > 30000000) {
+                                _showProfessionalDialog(
+                                  title: 'Limite de capital dépassée',
+                                  message:
+                                      'Le montant maximum du prêt à couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA.',
+                                  icon: Icons.monetization_on_outlined,
+                                  iconColor: orangeWarning,
+                                  backgroundColor: orangeWarning,
+                                );
+                                _capitalController.text =
+                                    _formatNumber(30000000);
+                                _capitalController.selection =
+                                    TextSelection.fromPosition(
+                                  TextPosition(
+                                      offset: _capitalController.text.length),
+                                );
+                              }
+
                               _effectuerCalcul();
                             },
                           ),
@@ -3135,9 +3264,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                         SizedBox(height: 16),
                         _buildDateField(
                           controller: TextEditingController(
-                            text: _dateEffetContrat != null
-                                ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                                : ''),
+                              text: _dateEffetContrat != null
+                                  ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
+                                  : ''),
                           label: 'Date d\'effet du contrat',
                           icon: Icons.event,
                           onDateSelected: (date) {
@@ -4328,6 +4457,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
     try {
       final subscriptionId = await _saveSubscriptionData();
+
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       final paymentSuccess = await _simulatePayment(paymentMethod);
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
@@ -4351,7 +4486,13 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   void _saveAsProposition() async {
     try {
-      await _saveSubscriptionData();
+      final subscriptionId = await _saveSubscriptionData();
+
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       if (mounted) {
         _showSuccessDialog(false);
       }
@@ -4359,6 +4500,25 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
       }
+    }
+  }
+
+  /// Upload le document pièce d'identité vers le serveur
+  Future<void> _uploadDocument(int subscriptionId) async {
+    try {
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      final subscriptionService = SubscriptionService();
+      final response = await subscriptionService.uploadDocument(
+        subscriptionId,
+        _pieceIdentite!.path,
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode != 200 || !responseData['success']) {
+        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      }
+      debugPrint('✅ Document uploadé avec succès');
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
     }
   }
 

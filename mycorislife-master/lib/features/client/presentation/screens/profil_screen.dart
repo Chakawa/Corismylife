@@ -3,12 +3,12 @@ import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/features/auth/presentation/screens/two_fa_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/kyc_documents_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/attach_proposal_screen.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/settings_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/edit_profile_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
 import 'package:mycorislife/services/user_service.dart';
+import 'package:mycorislife/services/auth_service.dart';
 
 // Couleurs partagées
 const Color bleuCoris = Color(0xFF002B6B);
@@ -684,9 +684,8 @@ class _ProfilPageState extends State<ProfilPage> {
   /// Supprime toutes les données sauvegardées et redirige vers la page de connexion
   Future<void> _performLogout(BuildContext context) async {
     try {
-      // Supprimer toutes les données sauvegardées dans secure storage
-      final storage = const FlutterSecureStorage();
-      await storage.deleteAll();
+      // Déconnexion via AuthService
+      await AuthService.logout();
 
       if (!mounted) return;
 

@@ -17,11 +17,13 @@ class SouscriptionEtudePage extends StatefulWidget {
   final double? rente;
   final String? periodicite;
   final String? mode; // 'prime' ou 'rente'
-  final DateTime? dateNaissanceParent; // Date de naissance du parent depuis la simulation
+  final DateTime?
+      dateNaissanceParent; // Date de naissance du parent depuis la simulation
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
-  final int? subscriptionId; // ID de la souscription à modifier (si mode édition)
+  final int?
+      subscriptionId; // ID de la souscription à modifier (si mode édition)
   final Map<String, dynamic>? existingData; // Données existantes à préremplir
   const SouscriptionEtudePage({
     super.key,
@@ -80,7 +82,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final _professionController = TextEditingController();
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
-  final String _selectedDureeType = 'années';
   String _selectedBeneficiaireIndicatif = '+225'; // Côte d'Ivoire par défaut
   String _selectedContactIndicatif = '+225'; // Côte d'Ivoire par défaut
   final List<Map<String, String>> _indicatifOptions = [
@@ -927,7 +928,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   @override
   void initState() {
     super.initState();
-    
+
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
       _prefillFromExistingData();
@@ -954,7 +955,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       _prefillFromSimulation();
     }
-    
+
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
@@ -1112,56 +1113,65 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   void _prefillFromExistingData() {
     if (widget.existingData == null) return;
-    
+
     final data = widget.existingData!;
-    
+
     // Mode de souscription
     if (data['mode_souscription'] != null) {
-      _selectedMode = data['mode_souscription'] == 'prime' ? 'Mode Prime' : 'Mode Rente';
+      _selectedMode =
+          data['mode_souscription'] == 'prime' ? 'Mode Prime' : 'Mode Rente';
     }
-    
+
     // Date de naissance du parent
     if (data['date_naissance_parent'] != null) {
       try {
         _dateNaissanceParent = DateTime.parse(data['date_naissance_parent']);
-        _dateNaissanceParentController.text = DateFormat('dd/MM/yyyy').format(_dateNaissanceParent!);
+        _dateNaissanceParentController.text =
+            DateFormat('dd/MM/yyyy').format(_dateNaissanceParent!);
       } catch (e) {
         debugPrint('Erreur parsing date_naissance_parent: $e');
       }
     }
-    
+
     // Âge parent
     if (data['age_parent'] != null) {
-      _calculatedAgeParent = data['age_parent'] is int ? data['age_parent'] : int.tryParse(data['age_parent'].toString());
+      _calculatedAgeParent = data['age_parent'] is int
+          ? data['age_parent']
+          : int.tryParse(data['age_parent'].toString());
     }
-    
+
     // Âge enfant
     if (data['age_enfant'] != null) {
       _dureeController.text = data['age_enfant'].toString();
     }
-    
+
     // Prime et montant
     if (data['prime_calculee'] != null) {
-      _primeCalculee = (data['prime_calculee'] is int) ? data['prime_calculee'].toDouble() : data['prime_calculee'];
+      _primeCalculee = (data['prime_calculee'] is int)
+          ? data['prime_calculee'].toDouble()
+          : data['prime_calculee'];
       if (_selectedMode == 'Mode Prime') {
         _montantController.text = _primeCalculee.toStringAsFixed(0);
       }
     }
-    
+
     // Rente
     if (data['rente_calculee'] != null) {
-      _renteCalculee = (data['rente_calculee'] is int) ? data['rente_calculee'].toDouble() : data['rente_calculee'];
+      _renteCalculee = (data['rente_calculee'] is int)
+          ? data['rente_calculee'].toDouble()
+          : data['rente_calculee'];
       if (_selectedMode == 'Mode Rente') {
         _montantController.text = _renteCalculee.toStringAsFixed(0);
       }
     }
-    
+
     // Périodicité
     if (data['periodicite'] != null) {
       String periodicite = data['periodicite'].toString().toLowerCase();
-      _selectedPeriodicite = periodicite[0].toUpperCase() + periodicite.substring(1);
+      _selectedPeriodicite =
+          periodicite[0].toUpperCase() + periodicite.substring(1);
     }
-    
+
     // Bénéficiaire
     if (data['beneficiaire'] != null) {
       final benef = data['beneficiaire'];
@@ -1181,7 +1191,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
       _selectedLienParente = benef['lien_parente'] ?? 'Enfant';
     }
-    
+
     // Contact d'urgence
     if (data['contact_urgence'] != null) {
       final contact = data['contact_urgence'];
@@ -1200,22 +1210,23 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
     }
-    
+
     // Profession
     if (data['profession'] != null) {
       _professionController.text = data['profession'];
     }
-    
+
     // Dates
     if (data['date_effet'] != null) {
       try {
         _dateEffetContrat = DateTime.parse(data['date_effet']);
-        _dateEffetController.text = DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
+        _dateEffetController.text =
+            DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
       } catch (e) {
         debugPrint('Erreur parsing date_effet: $e');
       }
     }
-    
+
     if (data['date_echeance'] != null) {
       try {
         _dateEcheanceContrat = DateTime.parse(data['date_echeance']);
@@ -1223,7 +1234,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         debugPrint('Erreur parsing date_echeance: $e');
       }
     }
-    
+
     // Forcer le recalcul
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _recalculerValeurs();
@@ -1240,14 +1251,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     } else {
       _selectedMode = 'Mode Prime'; // Valeur par défaut
     }
-    
+
     // Initialiser la date de naissance du parent depuis la simulation
     if (widget.dateNaissanceParent != null) {
       _dateNaissanceParent = widget.dateNaissanceParent;
       // Pré-remplir le champ texte avec la date formatée
-      _dateNaissanceParentController.text = DateFormat('dd/MM/yyyy').format(widget.dateNaissanceParent!);
+      _dateNaissanceParentController.text =
+          DateFormat('dd/MM/yyyy').format(widget.dateNaissanceParent!);
     }
-    
+
     // Pré-remplir l'âge de l'enfant si disponible
     if (widget.ageEnfant != null) {
       _dureeController.text = widget.ageEnfant!.toString();
@@ -1860,7 +1872,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'age_enfant': ageEnfant,
         'age_souscripteur': _calculatedAgeParent,
         'age_parent': _calculatedAgeParent,
-        'date_naissance_parent': _dateNaissanceParent?.toIso8601String().split('T').first,
+        'date_naissance_parent':
+            _dateNaissanceParent?.toIso8601String().split('T').first,
       };
 
       // Si c'est un commercial, ajouter les infos client
@@ -1888,9 +1901,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           subscriptionData,
         );
       } else {
-        response = await subscriptionService.createSubscription(subscriptionData);
+        response =
+            await subscriptionService.createSubscription(subscriptionData);
       }
-      
+
       final responseData = jsonDecode(response.body);
 
       if ((widget.subscriptionId != null && response.statusCode != 200) ||
@@ -1943,11 +1957,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void _processPayment(String paymentMethod) async {
     // Éviter les soumissions multiples
     if (_isProcessing) return;
-    
+
     setState(() {
       _isProcessing = true;
     });
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1957,6 +1971,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     try {
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
+
+      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
 
       // ÉTAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
@@ -1992,10 +2011,41 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void _saveAsProposition() async {
     try {
       // Sauvegarde avec statut 'proposition' par défaut
-      await _saveSubscriptionData();
+      final subscriptionId = await _saveSubscriptionData();
+
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       _showSuccessDialog(false);
     } catch (e) {
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
+    }
+  }
+
+  /// Upload le document pièce d'identité vers le serveur
+  Future<void> _uploadDocument(int subscriptionId) async {
+    try {
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      final subscriptionService = SubscriptionService();
+      final response = await subscriptionService.uploadDocument(
+        subscriptionId,
+        _pieceIdentite!.path,
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode != 200 || !responseData['success']) {
+        debugPrint('❌ Erreur upload: ${responseData['message']}');
+        throw Exception(
+            responseData['message'] ?? 'Erreur lors de l\'upload du document');
+      }
+
+      debugPrint('✅ Document uploadé avec succès');
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
+      // Ne pas bloquer la souscription si l'upload échoue
     }
   }
 
@@ -2027,14 +2077,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   void _updateEcheanceDate() {
     if (_dureeController.text.isNotEmpty && _dateEffetContrat != null) {
-      final duree = int.tryParse(_dureeController.text) ?? 0;
-      final dureeMois = _selectedDureeType == 'années' ? duree * 12 : duree;
+      final ageEnfant = int.tryParse(_dureeController.text) ?? 0;
+      // La durée du contrat est de 17 - âge de l'enfant
+      final dureeContratAnnees = 17 - ageEnfant;
       setState(() {
         _dateEcheanceContrat = DateTime(
-          _dateEffetContrat!.year,
+          _dateEffetContrat!.year + dureeContratAnnees,
           _dateEffetContrat!.month,
           _dateEffetContrat!.day,
-        ).add(Duration(days: dureeMois * 30));
+        );
       });
     }
   }
@@ -2645,7 +2696,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextFormField(
               controller: _dateNaissanceParentController,
               readOnly: true,
@@ -2759,7 +2811,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Padding(
             padding: EdgeInsets.only(top: 4),
             child: Text(
-              'Durée du contrat: ${(17 - (int.tryParse(_dureeController.text) ?? 0))} ans (${(17 - (int.tryParse(_dureeController.text) ?? 0)) * 12} mois)',
+              'Durée du contrat: ${(18 - (int.tryParse(_dureeController.text) ?? 0))} ans (jusqu\'\u00e0 18 ans)',
               style: TextStyle(
                 color: bleuCoris,
                 fontSize: 12,
@@ -3550,19 +3602,23 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 'Produit', 'CORIS ÉTUDE', 'Mode', _selectedMode),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Âge du parent',
-                _calculatedAgeParent != null ? '$_calculatedAgeParent ans' : 'Non renseigné',
-                'Âge de l\'enfant',
-                '$duree ans'),
+                _calculatedAgeParent != null
+                    ? '$_calculatedAgeParent ans'
+                    : 'Non renseigné',
+                'Date de naissance',
+                _dateNaissanceParent != null
+                    ? '${_dateNaissanceParent!.day.toString().padLeft(2, '0')}/${_dateNaissanceParent!.month.toString().padLeft(2, '0')}/${_dateNaissanceParent!.year}'
+                    : 'Non renseigné'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Prime $_selectedPeriodicite',
+                'Cotisation ${_selectedPeriodicite ?? "Mensuel"}',
                 _formatMontant(primeDisplay),
                 'Rente au terme',
                 _formatMontant(renteDisplay)),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Durée du contrat',
-                '${18 - duree} ans (jusqu\'à 18 ans)',
-                'Périodicité choisie',
-                _selectedPeriodicite ?? 'Non définie'),
+                '${17 - duree} ans (jusqu\'à 17 ans)',
+                'Périodicité',
+                _selectedPeriodicite ?? 'Mensuel'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
@@ -3583,7 +3639,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Icons.calculate,
           bleuSecondaire,
           [
-            SubscriptionRecapWidgets.buildCombinedRecapRow('Mode', _selectedMode, 'Périodicité',
+            SubscriptionRecapWidgets.buildCombinedRecapRow(
+                'Mode',
+                _selectedMode,
+                'Périodicité',
                 _selectedPeriodicite ?? 'Non sélectionnée'),
             SubscriptionRecapWidgets.buildRecapRow(
                 'Date d\'effet',
@@ -3597,12 +3656,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         // SECTION UNIQUE POUR BÉNÉFICIAIRE ET CONTACT D'URGENCE
         SubscriptionRecapWidgets.buildRecapSection(
-          'Contacts',
+          'Bénéficiaire et Contact d\'urgence',
           Icons.contacts,
-          bleuSecondaire,
+          Colors.amber,
           [
             // Bénéficiaire
-            SubscriptionRecapWidgets.buildSubsectionTitle('Bénéficiaire en cas de décès'),
+            SubscriptionRecapWidgets.buildSubsectionTitle(
+                'Bénéficiaire en cas de décès'),
             const SizedBox(height: 8),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Nom complet',
@@ -3641,13 +3701,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         SubscriptionRecapWidgets.buildDocumentsSection(
           pieceIdentite: _pieceIdentite?.path.split('/').last,
-          onDocumentTap: _pieceIdentite != null ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentite!.path.split('/').last) : null,
+          onDocumentTap: _pieceIdentite != null
+              ? () => _viewLocalDocument(
+                  _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+              : null,
         ),
 
         const SizedBox(height: 20),
 
         SubscriptionRecapWidgets.buildVerificationWarning(),
-        
+
         const SizedBox(height: 20),
       ],
     );

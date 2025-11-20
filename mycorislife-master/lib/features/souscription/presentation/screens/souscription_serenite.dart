@@ -1413,6 +1413,22 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     if (_age < 18 || _age > 69) {
       return;
     }
+
+    // Vérification de la durée maximale (15 ans = 180 mois)
+    if (_dureeController.text.isNotEmpty) {
+      int duree = int.tryParse(_dureeController.text) ?? 0;
+      if (_selectedUnite == 'années' && duree > 15) {
+        _showErrorSnackBar('La durée du contrat ne peut pas dépasser 15 ans');
+        _dureeController.text = '15';
+        _dureeEnMois = 15 * 12;
+      } else if (_selectedUnite == 'mois' && duree > 180) {
+        _showErrorSnackBar(
+            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
+        _dureeController.text = '180';
+        _dureeEnMois = 180;
+      }
+    }
+
     double primePour1000 = _getPrimePour1000();
     if (primePour1000 == 0.0) {
       return;
@@ -1430,6 +1446,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           String capitalText = _capitalController.text.replaceAll(' ', '');
           double capital = double.tryParse(capitalText) ?? 0;
           if (capital <= 0) return;
+
+          // Vérification du capital maximum (40 000 000 FCFA)
+          if (capital > 40000000) {
+            _showProfessionalDialog(
+              title: 'Limite de capital dépassée',
+              message:
+                  'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant a été ajusté automatiquement.',
+              icon: Icons.monetization_on_outlined,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            capital = 40000000;
+            _capitalController.text = _formatNumber(capital);
+          }
 
           // Calcul de la prime annuelle
           double primeAnnuelle = (capital / 1000) * primePour1000;
@@ -1463,6 +1493,27 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
           // Calcul du capital garanti
           _calculatedCapital = (prime / primePeriodiquePour1000) * 1000;
+
+          // Vérification du capital maximum (40 000 000 FCFA)
+          if (_calculatedCapital > 40000000) {
+            _showProfessionalDialog(
+              title: 'Limite de capital dépassée',
+              message:
+                  'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant et la prime ont été ajustés automatiquement.',
+              icon: Icons.monetization_on_outlined,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            _calculatedCapital = 40000000;
+            // Recalculer la prime correspondante
+            double primeAnnuelle = (_calculatedCapital / 1000) * primePour1000;
+            if (_selectedPeriode == Periode.annuel) {
+              prime = primeAnnuelle;
+            } else {
+              prime = primeAnnuelle * coefficient;
+            }
+            _primeController.text = _formatNumber(prime);
+          }
 
           // La prime reste celle saisie par l'utilisateur
           _calculatedPrime = prime;
@@ -1518,6 +1569,32 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         _selectedUnite = newValue;
         if (_dureeController.text.isNotEmpty) {
           int duree = int.tryParse(_dureeController.text) ?? 0;
+
+          // Vérification de la durée maximale (15 ans = 180 mois)
+          if (_selectedUnite == 'années' && duree > 15) {
+            _showProfessionalDialog(
+              title: 'Limite de durée dépassée',
+              message:
+                  'La durée maximale du contrat CORIS SÉRÉNITÉ est de 15 ans. La durée a été ajustée automatiquement.',
+              icon: Icons.schedule_outlined,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            _dureeController.text = '15';
+            duree = 15;
+          } else if (_selectedUnite == 'mois' && duree > 180) {
+            _showProfessionalDialog(
+              title: 'Limite de durée dépassée',
+              message:
+                  'La durée maximale du contrat CORIS SÉRÉNITÉ est de 180 mois (15 ans). La durée a été ajustée automatiquement.',
+              icon: Icons.schedule_outlined,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            _dureeController.text = '180';
+            duree = 180;
+          }
+
           _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
           _effectuerCalcul();
         }
@@ -1587,6 +1664,98 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         ]),
         backgroundColor: vertSucces,
       ),
+    );
+  }
+
+  void _showProfessionalDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 16,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                        backgroundColor.withAlpha(25), Colors.white),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: bleuCoris,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Compris',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2322,6 +2491,28 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               ? _capitalController
               : _primeController,
           keyboardType: TextInputType.number,
+          onChanged: (value) {
+            // Validation en temps réel pour le capital
+            if (_currentSimulation == SimulationType.parCapital &&
+                value.isNotEmpty) {
+              String cleanValue = value.replaceAll(' ', '');
+              double? montant = double.tryParse(cleanValue);
+              if (montant != null && montant > 40000000) {
+                _showProfessionalDialog(
+                  title: 'Limite de capital dépassée',
+                  message:
+                      'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA.',
+                  icon: Icons.monetization_on_outlined,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                _capitalController.text = _formatNumber(40000000);
+                _capitalController.selection = TextSelection.fromPosition(
+                  TextPosition(offset: _capitalController.text.length),
+                );
+              }
+            }
+          },
           decoration: InputDecoration(
             isDense: true,
             contentPadding:
@@ -2360,6 +2551,27 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 child: TextField(
                   controller: _dureeController,
                   keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    // Validation en temps réel pour la durée
+                    if (value.isNotEmpty) {
+                      int duree = int.tryParse(value) ?? 0;
+                      if (_selectedUnite == 'années' && duree > 15) {
+                        _showErrorSnackBar(
+                            'La durée du contrat ne peut pas dépasser 15 ans');
+                        _dureeController.text = '15';
+                        _dureeController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: _dureeController.text.length),
+                        );
+                      } else if (_selectedUnite == 'mois' && duree > 180) {
+                        _showErrorSnackBar(
+                            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
+                        _dureeController.text = '180';
+                        _dureeController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: _dureeController.text.length),
+                        );
+                      }
+                    }
+                  },
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -3440,6 +3652,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
+      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       // ÉTAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
@@ -3468,7 +3685,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   void _saveAsProposition() async {
     try {
       // Sauvegarde avec statut 'proposition' par défaut
-      await _saveSubscriptionData();
+      final subscriptionId = await _saveSubscriptionData();
+
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+
       if (mounted) {
         _showSuccessDialog(false);
       }
@@ -3476,6 +3699,28 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
       }
+    }
+  }
+
+  /// Upload le document pièce d'identité vers le serveur
+  Future<void> _uploadDocument(int subscriptionId) async {
+    try {
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      final subscriptionService = SubscriptionService();
+      final response = await subscriptionService.uploadDocument(
+        subscriptionId,
+        _pieceIdentite!.path,
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode != 200 || !responseData['success']) {
+        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      }
+
+      debugPrint('✅ Document uploadé avec succès');
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
     }
   }
 

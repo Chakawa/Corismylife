@@ -998,13 +998,15 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     int age = _calculateAge();
     int duree = _findDureeTarifaire(_dureeEnMois);
 
-    print('\n╔═══════════════════════════════════════════════════════════════╗');
+    print(
+        '\n╔═══════════════════════════════════════════════════════════════╗');
     print('║ 🔍 [SÉRÉNITÉ] Recherche tarif                                ║');
     print('╚═══════════════════════════════════════════════════════════════╝');
     print('   📊 Paramètres: age=$age, duree=$duree mois');
 
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
-    print('\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
+    print(
+        '\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS SÉRÉNITÉ',
@@ -1017,25 +1019,32 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
         print('   💡 Cache local IGNORÉ - Données du serveur uniquement');
-        print('\n╔═══════════════════════════════════════════════════════════════╗');
-        print('║ ✅ [SÉRÉNITÉ] Données utilisées depuis SERVEUR               ║');
-        print('╚═══════════════════════════════════════════════════════════════╝\n');
+        print(
+            '\n╔═══════════════════════════════════════════════════════════════╗');
+        print(
+            '║ ✅ [SÉRÉNITÉ] Données utilisées depuis SERVEUR               ║');
+        print(
+            '╚═══════════════════════════════════════════════════════════════╝\n');
         return tarifFromDB.prime!;
       } else {
-        print('   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print(
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
         print('   💡 Passage au fallback (données hardcodées)');
       }
     } catch (e) {
-      print('   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
+      print(
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
     // Étape 2: Fallback - Utiliser les données codées en dur
     print('\n   📍 ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
     if (_tarifaire.isEmpty) {
       print('   ❌ Aucune donnée disponible (ni DB, ni fallback)');
-      print('\n╔═══════════════════════════════════════════════════════════════╗');
+      print(
+          '\n╔═══════════════════════════════════════════════════════════════╗');
       print('║ ❌ [SÉRÉNITÉ] ERREUR: Aucune donnée disponible                ║');
-      print('╚═══════════════════════════════════════════════════════════════╝\n');
+      print(
+          '╚═══════════════════════════════════════════════════════════════╝\n');
       return 0.0;
     }
 
@@ -1053,9 +1062,11 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
     final prime = _tarifaire[selectedAge]?[duree] ?? 0.0;
     print('   ✅ Tarif depuis FALLBACK (données hardcodées): $prime');
-    print('\n╔═══════════════════════════════════════════════════════════════╗');
+    print(
+        '\n╔═══════════════════════════════════════════════════════════════╗');
     print('║ ⚠️  [SÉRÉNITÉ] Données utilisées depuis FALLBACK             ║');
-    print('╚═══════════════════════════════════════════════════════════════╝\n');
+    print(
+        '╚═══════════════════════════════════════════════════════════════╝\n');
     return prime;
   }
 
@@ -1136,6 +1147,34 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       return;
     }
 
+    // Vérification de la durée maximale (15 ans = 180 mois)
+    if (_dureeController.text.isNotEmpty) {
+      int duree = int.tryParse(_dureeController.text) ?? 0;
+      if (_selectedUnite == 'années' && duree > 15) {
+        _showProfessionalDialog(
+          title: 'Limite de durée dépassée',
+          message:
+              'La durée maximale du contrat CORIS SÉRÉNITÉ est de 15 ans. La durée a été ajustée automatiquement.',
+          icon: Icons.schedule_outlined,
+          iconColor: Colors.orange,
+          backgroundColor: Colors.orange,
+        );
+        _dureeController.text = '15';
+        _dureeEnMois = 15 * 12;
+      } else if (_selectedUnite == 'mois' && duree > 180) {
+        _showProfessionalDialog(
+          title: 'Limite de durée dépassée',
+          message:
+              'La durée maximale du contrat CORIS SÉRÉNITÉ est de 180 mois (15 ans). La durée a été ajustée automatiquement.',
+          icon: Icons.schedule_outlined,
+          iconColor: Colors.orange,
+          backgroundColor: Colors.orange,
+        );
+        _dureeController.text = '180';
+        _dureeEnMois = 180;
+      }
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -1165,6 +1204,20 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           return;
         }
 
+        // Vérification du capital maximum (40 000 000 FCFA)
+        if (capital > 40000000) {
+          _showProfessionalDialog(
+            title: 'Limite de capital dépassée',
+            message:
+                'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant a été ajusté automatiquement.',
+            icon: Icons.monetization_on_outlined,
+            iconColor: Colors.orange,
+            backgroundColor: Colors.orange,
+          );
+          capital = 40000000;
+          _capitalController.text = _formatNumber(capital);
+        }
+
         double primeAnnuelle = (capital / 1000) * primePour1000;
 
         if (_selectedPeriode == Periode.annuel) {
@@ -1191,6 +1244,27 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         }
 
         _resultatCalcul = (prime / primePeriodiquePour1000) * 1000;
+
+        // Vérification du capital maximum (40 000 000 FCFA)
+        if (_resultatCalcul > 40000000) {
+          _showProfessionalDialog(
+            title: 'Limite de capital dépassée',
+            message:
+                'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant et la prime ont été ajustés automatiquement.',
+            icon: Icons.monetization_on_outlined,
+            iconColor: Colors.orange,
+            backgroundColor: Colors.orange,
+          );
+          _resultatCalcul = 40000000;
+          // Recalculer la prime correspondante
+          double primeAnnuelle = (_resultatCalcul / 1000) * primePour1000;
+          if (_selectedPeriode == Periode.annuel) {
+            prime = primeAnnuelle;
+          } else {
+            prime = primeAnnuelle * coefficient;
+          }
+          _primeController.text = _formatNumber(prime);
+        }
       }
     });
   }
@@ -1202,6 +1276,98 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         backgroundColor: rougeCoris,
         duration: const Duration(seconds: 3),
       ),
+    );
+  }
+
+  void _showProfessionalDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 16,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                        backgroundColor.withAlpha(25), Colors.white),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: bleuCoris,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Compris',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1518,6 +1684,28 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
               ? _capitalController
               : _primeController,
           keyboardType: TextInputType.number,
+          onChanged: (value) {
+            // Validation en temps réel pour le capital
+            if (_currentSimulation == SimulationType.parCapital &&
+                value.isNotEmpty) {
+              String cleanValue = value.replaceAll(' ', '');
+              double? montant = double.tryParse(cleanValue);
+              if (montant != null && montant > 40000000) {
+                _showProfessionalDialog(
+                  title: 'Limite de capital dépassée',
+                  message:
+                      'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA.',
+                  icon: Icons.monetization_on_outlined,
+                  iconColor: Colors.orange,
+                  backgroundColor: Colors.orange,
+                );
+                _capitalController.text = _formatNumber(40000000);
+                _capitalController.selection = TextSelection.fromPosition(
+                  TextPosition(offset: _capitalController.text.length),
+                );
+              }
+            }
+          },
           decoration: InputDecoration(
             isDense: true,
             contentPadding:
@@ -1645,8 +1833,27 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                   ),
                 ),
                 onChanged: (value) {
-                  int? duree = int.tryParse(value);
-                  if (duree != null) {
+                  // Validation en temps réel pour la durée
+                  if (value.isNotEmpty) {
+                    int duree = int.tryParse(value) ?? 0;
+                    if (_selectedUnite == 'années' && duree > 15) {
+                      _showMessage(
+                          'La durée du contrat ne peut pas dépasser 15 ans');
+                      _dureeController.text = '15';
+                      _dureeController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _dureeController.text.length),
+                      );
+                      duree = 15;
+                    } else if (_selectedUnite == 'mois' && duree > 180) {
+                      _showMessage(
+                          'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
+                      _dureeController.text = '180';
+                      _dureeController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _dureeController.text.length),
+                      );
+                      duree = 180;
+                    }
+
                     setState(() {
                       _dureeEnMois =
                           _selectedUnite == 'années' ? duree * 12 : duree;
@@ -1691,6 +1898,20 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     _selectedUnite = newValue!;
                     if (_dureeController.text.isNotEmpty) {
                       int duree = int.tryParse(_dureeController.text) ?? 0;
+
+                      // Vérification de la durée maximale (15 ans = 180 mois)
+                      if (_selectedUnite == 'années' && duree > 15) {
+                        _showMessage(
+                            'La durée du contrat ne peut pas dépasser 15 ans');
+                        _dureeController.text = '15';
+                        duree = 15;
+                      } else if (_selectedUnite == 'mois' && duree > 180) {
+                        _showMessage(
+                            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
+                        _dureeController.text = '180';
+                        duree = 180;
+                      }
+
                       _dureeEnMois =
                           _selectedUnite == 'années' ? duree * 12 : duree;
                     }

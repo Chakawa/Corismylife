@@ -67,16 +67,17 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     try {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'token');
-      
+
       print('=== TÉLÉCHARGEMENT DOCUMENT ===');
       print('subscriptionId: ${widget.subscriptionId}');
       print('documentName: ${widget.documentName}');
       print('Token présent: ${token != null}');
       print('Token: $token');
-      
-      final url = '${AppConfig.baseUrl}/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
+
+      final url =
+          '${AppConfig.baseUrl}/api/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
       print('URL: $url');
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -100,22 +101,26 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         });
       } else if (response.statusCode == 401) {
         setState(() {
-          _errorMessage = 'Session expirée. Veuillez vous reconnecter.\nCode: ${response.statusCode}';
+          _errorMessage =
+              'Session expirée. Veuillez vous reconnecter.\nCode: ${response.statusCode}';
           _isLoading = false;
         });
       } else if (response.statusCode == 404) {
         setState(() {
-          _errorMessage = 'Document non trouvé sur le serveur\nCode: ${response.statusCode}';
+          _errorMessage =
+              'Document non trouvé sur le serveur\nCode: ${response.statusCode}';
           _isLoading = false;
         });
       } else if (response.statusCode == 403) {
         setState(() {
-          _errorMessage = 'Accès refusé au document\nCode: ${response.statusCode}';
+          _errorMessage =
+              'Accès refusé au document\nCode: ${response.statusCode}';
           _isLoading = false;
         });
       } else {
         setState(() {
-          _errorMessage = 'Erreur de téléchargement\nCode: ${response.statusCode}\nMessage: ${response.body}';
+          _errorMessage =
+              'Erreur de téléchargement\nCode: ${response.statusCode}\nMessage: ${response.body}';
           _isLoading = false;
         });
       }
@@ -270,7 +275,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                 label: const Text('Réessayer'),
                 style: TextButton.styleFrom(
                   foregroundColor: bleuCoris,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ],

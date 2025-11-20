@@ -406,11 +406,12 @@ exports.uploadDocument = async (req, res) => {
     
     // Requête SQL pour ajouter le chemin du fichier dans souscriptiondata
     // On utilise jsonb_set pour ajouter une propriété dans le JSONB
+    // Utiliser 'piece_identite' pour correspondre avec le code Flutter
     const query = `
       UPDATE subscriptions 
       SET souscriptiondata = jsonb_set(
         souscriptiondata, 
-        '{piece_identite_path}', 
+        '{piece_identite}', 
         $1
       )
       WHERE id = $2 AND user_id = $3
@@ -418,7 +419,9 @@ exports.uploadDocument = async (req, res) => {
     `;
     
     // Le chemin du fichier est stocké par multer dans req.file.path
-    const values = [`"${req.file.path}"`, id, req.user.id];
+    // On ne stocke que le nom du fichier, pas le chemin complet
+    const fileName = req.file.filename || req.file.path.split('/').pop().split('\\').pop();
+    const values = [`"${fileName}"`, id, req.user.id];
     const result = await pool.query(query, values);
     
     if (result.rows.length === 0) {
@@ -1374,11 +1377,11 @@ exports.getSubscriptionPDF = async (req, res) => {
     }
 
     // Afficher les informations disponibles, avec "Non renseigné" pour ce qui manque
-    // Pour Coris Étude, calculer la durée réelle du contrat (jusqu'à 18 ans)
+    // Pour Coris Étude, calculer la durée réelle du contrat (jusqu'à 17 ans)
     let dureeContratAffichee = dureeAffichee;
     if (isEtude && d.age_enfant) {
-      const dureeReelle = 18 - parseInt(d.age_enfant);
-      dureeContratAffichee = `${dureeReelle} ans (jusqu'à 18 ans)`;
+      const dureeReelle = 17 - parseInt(d.age_enfant);
+      dureeContratAffichee = `${dureeReelle} ans (jusqu'à 17 ans)`;
     }
     
     drawRow(startX, curY, fullW, rowH);

@@ -45,29 +45,15 @@ class AuthService {
   ///   - Timeout de la requête
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
-    // Vérifier d'abord la connexion Internet avant de faire la requête
-    try {
-      // Timeout augmenté à 5s pour réseaux lents / instables
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        throw Exception(
-            'Aucune connexion Internet détectée. Veuillez vérifier votre connexion réseau.');
-      }
-    } catch (e) {
-      throw Exception(
-          'Impossible de se connecter. Vérifiez votre connexion Internet et réessayez.');
-    }
-
     try {
       // Faire la requête POST vers l'endpoint de connexion
-      // Timeout porté à 10 secondes pour mieux tolérer les réseaux lents
+      // Timeout porté à 15 secondes pour mieux tolérer les réseaux lents
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/auth/login'),
         body: jsonEncode({'email': email, 'password': password}),
         headers: {'Content-Type': 'application/json'},
       ).timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 15),
         onTimeout: () {
           throw Exception(
               'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet ou réessayez plus tard.');

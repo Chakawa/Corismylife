@@ -225,13 +225,13 @@ class SubscriptionRecapWidgets {
 
   static Widget buildPersonalInfoSection(Map<String, dynamic> userData) {
     // Gérer les différentes variantes de clés pour date_naissance et lieu_naissance
-    final dateNaissance = userData['date_naissance'] ?? 
-                         userData['dateNaissance'] ?? 
-                         userData['date_de_naissance'];
-    final lieuNaissance = userData['lieu_naissance'] ?? 
-                         userData['lieuNaissance'] ?? 
-                         userData['lieu_de_naissance'];
-    
+    final dateNaissance = userData['date_naissance'] ??
+        userData['dateNaissance'] ??
+        userData['date_de_naissance'];
+    final lieuNaissance = userData['lieu_naissance'] ??
+        userData['lieuNaissance'] ??
+        userData['lieu_de_naissance'];
+
     return buildRecapSection(
       'Informations Personnelles',
       Icons.person,
@@ -372,8 +372,12 @@ class SubscriptionRecapWidgets {
       for (int i = 0; i < conjoints.length; i++) {
         final conjoint = conjoints[i];
         final nom = conjoint['nom'] ?? 'Conjoint ${i + 1}';
-        final dateNaissance = conjoint['date_naissance'] ?? conjoint['dateNaissance'] ?? conjoint['date_de_naissance'];
-        final lieuNaissance = conjoint['lieu_naissance'] ?? conjoint['lieuNaissance'] ?? conjoint['lieu_de_naissance'];
+        final dateNaissance = conjoint['date_naissance'] ??
+            conjoint['dateNaissance'] ??
+            conjoint['date_de_naissance'];
+        final lieuNaissance = conjoint['lieu_naissance'] ??
+            conjoint['lieuNaissance'] ??
+            conjoint['lieu_de_naissance'];
 
         widgets.add(Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -421,8 +425,12 @@ class SubscriptionRecapWidgets {
       for (int i = 0; i < enfants.length; i++) {
         final enfant = enfants[i];
         final nom = enfant['nom'] ?? 'Enfant ${i + 1}';
-        final dateNaissance = enfant['date_naissance'] ?? enfant['dateNaissance'] ?? enfant['date_de_naissance'];
-        final lieuNaissance = enfant['lieu_naissance'] ?? enfant['lieuNaissance'] ?? enfant['lieu_de_naissance'];
+        final dateNaissance = enfant['date_naissance'] ??
+            enfant['dateNaissance'] ??
+            enfant['date_de_naissance'];
+        final lieuNaissance = enfant['lieu_naissance'] ??
+            enfant['lieuNaissance'] ??
+            enfant['lieu_de_naissance'];
 
         widgets.add(Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -470,8 +478,12 @@ class SubscriptionRecapWidgets {
       for (int i = 0; i < ascendants.length; i++) {
         final ascendant = ascendants[i];
         final nom = ascendant['nom'] ?? 'Ascendant ${i + 1}';
-        final dateNaissance = ascendant['date_naissance'] ?? ascendant['dateNaissance'] ?? ascendant['date_de_naissance'];
-        final lieuNaissance = ascendant['lieu_naissance'] ?? ascendant['lieuNaissance'] ?? ascendant['lieu_de_naissance'];
+        final dateNaissance = ascendant['date_naissance'] ??
+            ascendant['dateNaissance'] ??
+            ascendant['date_de_naissance'];
+        final lieuNaissance = ascendant['lieu_naissance'] ??
+            ascendant['lieuNaissance'] ??
+            ascendant['lieu_de_naissance'];
 
         widgets.add(Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -532,20 +544,21 @@ class SubscriptionRecapWidgets {
     return buildRecapSection(
       'Bénéficiaire et Contact d\'urgence',
       Icons.contacts,
-      orangeWarning,
+      Colors.amber,
       [
-        buildSubsectionTitle('Bénéficiaire'),
+        buildSubsectionTitle('Bénéficiaire en cas de décès'),
         buildCombinedRecapRow(
             'Nom complet',
             beneficiaireNom?.isEmpty ?? true
                 ? 'Non renseigné'
                 : beneficiaireNom!,
-            'Contact',
+            'Lien de parenté',
+            beneficiaireLienParente ?? 'Non renseigné'),
+        buildRecapRow(
+            'Téléphone',
             beneficiaireContact?.isEmpty ?? true
                 ? 'Non renseigné'
                 : beneficiaireContact!),
-        buildRecapRow(
-            'Lien de parenté', beneficiaireLienParente ?? 'Non renseigné'),
         const SizedBox(height: 12),
         buildSubsectionTitle('Contact d\'urgence'),
         buildCombinedRecapRow(
@@ -553,12 +566,13 @@ class SubscriptionRecapWidgets {
             contactUrgenceNom?.isEmpty ?? true
                 ? 'Non renseigné'
                 : contactUrgenceNom!,
-            'Contact',
+            'Lien de parenté',
+            contactUrgenceLienParente ?? 'Non renseigné'),
+        buildRecapRow(
+            'Téléphone',
             contactUrgenceContact?.isEmpty ?? true
                 ? 'Non renseigné'
                 : contactUrgenceContact!),
-        buildRecapRow(
-            'Lien de parenté', contactUrgenceLienParente ?? 'Non renseigné'),
       ],
     );
   }
@@ -696,7 +710,7 @@ class SubscriptionRecapWidgets {
     IconData? icon,
   }) {
     final bgColor = backgroundColor ?? vertSucces;
-    
+
     return Container(
       width: double.infinity,
       height: 56,

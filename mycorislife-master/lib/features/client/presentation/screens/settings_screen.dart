@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/user_service.dart';
+import 'package:mycorislife/services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/features/auth/presentation/screens/login_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
@@ -79,8 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirm == true) {
-      // Supprimer toutes les données sauvegardées
-      await _storage.deleteAll();
+      // Déconnexion via AuthService
+      await AuthService.logout();
 
       if (!mounted) return;
 

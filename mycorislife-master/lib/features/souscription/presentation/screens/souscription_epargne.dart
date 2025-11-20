@@ -776,6 +776,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
     try {
       final subscriptionId = await _saveSubscriptionData();
+      
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+      
       final paymentSuccess = await _simulatePayment(paymentMethod);
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
@@ -799,10 +805,35 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   void _saveAsProposition() async {
     try {
-      await _saveSubscriptionData();
+      final subscriptionId = await _saveSubscriptionData();
+      
+      // Upload du document pièce d'identité si présent
+      if (_pieceIdentite != null) {
+        await _uploadDocument(subscriptionId);
+      }
+      
       _showSuccessDialog(false);
     } catch (e) {
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
+    }
+  }
+
+  /// Upload le document pièce d'identité vers le serveur
+  Future<void> _uploadDocument(int subscriptionId) async {
+    try {
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      final subscriptionService = SubscriptionService();
+      final response = await subscriptionService.uploadDocument(
+        subscriptionId,
+        _pieceIdentite!.path,
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode != 200 || !responseData['success']) {
+        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      }
+      debugPrint('✅ Document uploadé avec succès');
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
     }
   }
 

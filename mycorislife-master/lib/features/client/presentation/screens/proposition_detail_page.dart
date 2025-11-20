@@ -96,9 +96,12 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       developer.log('=== DONNÉES REÇUES ===');
       developer.log('Subscription: ${data['subscription']}');
       developer.log('Subscription type: ${data['subscription'].runtimeType}');
-      developer.log('souscriptiondata: ${data['subscription']?['souscriptiondata']}');
-      developer.log('souscriptiondata type: ${data['subscription']?['souscriptiondata'].runtimeType}');
-      developer.log('piece_identite direct: ${data['subscription']?['souscriptiondata']?['piece_identite']}');
+      developer.log(
+          'souscriptiondata: ${data['subscription']?['souscriptiondata']}');
+      developer.log(
+          'souscriptiondata type: ${data['subscription']?['souscriptiondata'].runtimeType}');
+      developer.log(
+          'piece_identite direct: ${data['subscription']?['souscriptiondata']?['piece_identite']}');
       developer.log('User: ${data['user']}');
 
       setState(() {
@@ -425,10 +428,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     // Pour CORIS ÉTUDE
     if (productType.contains('etude')) {
-      final prime = details['prime_calculee'] ?? details['prime'] ?? details['montant'] ?? 0;
+      final prime = details['prime_calculee'] ??
+          details['prime'] ??
+          details['montant'] ??
+          0;
       final periodicite = details['periodicite'] ?? 'mensuel';
       final rente = details['rente_calculee'] ?? details['rente'] ?? 0;
-      final duree = details['duree'] ?? details['duree_mois'] != null ? '${(details['duree_mois'] as int) ~/ 12}' : 'Non définie';
+      final duree = details['duree'] ?? details['duree_mois'] != null
+          ? '${(details['duree_mois'] as int) ~/ 12}'
+          : 'Non définie';
       final mode = details['mode_souscription'] ?? 'Mode Capital';
       final dateEffet = details['date_effet'];
       final dateEcheance = details['date_echeance'];
@@ -438,7 +446,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       // Formater la périodicité avec majuscule
       String periodiciteFormatee = periodicite;
       if (periodicite != null && periodicite.isNotEmpty) {
-        periodiciteFormatee = periodicite[0].toUpperCase() + periodicite.substring(1).toLowerCase();
+        periodiciteFormatee = periodicite[0].toUpperCase() +
+            periodicite.substring(1).toLowerCase();
       }
 
       return SubscriptionRecapWidgets.buildRecapSection(
@@ -446,12 +455,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         Icons.school,
         vertSucces,
         [
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Produit', 'CORIS ÉTUDE', 'Mode', mode),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Produit', 'CORIS ÉTUDE', 'Mode', mode),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Âge du parent',
             ageParent.toString() + ' ans',
             'Date de naissance',
-            dateNaissanceParent != null ? SubscriptionRecapWidgets.formatDate(dateNaissanceParent) : 'Non renseignée',
+            dateNaissanceParent != null
+                ? SubscriptionRecapWidgets.formatDate(dateNaissanceParent)
+                : 'Non renseignée',
           ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Cotisation $periodiciteFormatee',
@@ -460,16 +472,21 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             SubscriptionRecapWidgets.formatMontant(rente),
           ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-            'Durée du contrat',
-            duree != 'Non définie' ? '$duree ans (jusqu\'à 18 ans)' : 'Non définie',
-            'Périodicité',
-            periodiciteFormatee
-          ),
+              'Durée du contrat',
+              duree != 'Non définie'
+                  ? '$duree ans (jusqu\'à 17 ans)'
+                  : 'Non définie',
+              'Périodicité',
+              periodiciteFormatee),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
-            dateEffet != null ? SubscriptionRecapWidgets.formatDate(dateEffet) : 'Non définie',
+            dateEffet != null
+                ? SubscriptionRecapWidgets.formatDate(dateEffet)
+                : 'Non définie',
             'Date d\'échéance',
-            dateEcheance != null ? SubscriptionRecapWidgets.formatDate(dateEcheance) : 'Non définie',
+            dateEcheance != null
+                ? SubscriptionRecapWidgets.formatDate(dateEcheance)
+                : 'Non définie',
           ),
         ],
       );
@@ -488,13 +505,25 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         Icons.family_restroom,
         vertSucces,
         [
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Produit', 'CORIS FAMILIS', 'Capital', SubscriptionRecapWidgets.formatMontant(capital)),
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Prime mensuelle', SubscriptionRecapWidgets.formatMontant(prime), 'Durée', '$duree mois'),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Produit',
+              'CORIS FAMILIS',
+              'Capital',
+              SubscriptionRecapWidgets.formatMontant(capital)),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Prime mensuelle',
+              SubscriptionRecapWidgets.formatMontant(prime),
+              'Durée',
+              '$duree mois'),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
-            dateEffet != null ? SubscriptionRecapWidgets.formatDate(dateEffet) : 'Non définie',
+            dateEffet != null
+                ? SubscriptionRecapWidgets.formatDate(dateEffet)
+                : 'Non définie',
             'Date d\'échéance',
-            dateEcheance != null ? SubscriptionRecapWidgets.formatDate(dateEcheance) : 'Non définie',
+            dateEcheance != null
+                ? SubscriptionRecapWidgets.formatDate(dateEcheance)
+                : 'Non définie',
           ),
         ],
       );
@@ -536,14 +565,19 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         Icons.savings,
         vertSucces,
         [
-          SubscriptionRecapWidgets.buildRecapRow('Produit', 'CORIS ÉPARGNE BONUS'),
-          SubscriptionRecapWidgets.buildRecapRow('Capital au terme', SubscriptionRecapWidgets.formatMontant(capital)),
-          SubscriptionRecapWidgets.buildRecapRow('Prime mensuelle', SubscriptionRecapWidgets.formatMontant(prime)),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Produit', 'CORIS ÉPARGNE BONUS'),
+          SubscriptionRecapWidgets.buildRecapRow('Capital au terme',
+              SubscriptionRecapWidgets.formatMontant(capital)),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Prime mensuelle', SubscriptionRecapWidgets.formatMontant(prime)),
           SubscriptionRecapWidgets.buildRecapRow('Durée', '15 ans (180 mois)'),
           if (dateEffet != null)
-            SubscriptionRecapWidgets.buildRecapRow('Date d\'effet', SubscriptionRecapWidgets.formatDate(dateEffet)),
+            SubscriptionRecapWidgets.buildRecapRow('Date d\'effet',
+                SubscriptionRecapWidgets.formatDate(dateEffet)),
           if (dateFin != null)
-            SubscriptionRecapWidgets.buildRecapRow('Date de fin', SubscriptionRecapWidgets.formatDate(dateFin)),
+            SubscriptionRecapWidgets.buildRecapRow(
+                'Date de fin', SubscriptionRecapWidgets.formatDate(dateFin)),
           SubscriptionRecapWidgets.buildRecapRow('Bonus', bonus.toString()),
         ],
       );
@@ -568,7 +602,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         Icons.account_balance,
         vertSucces,
         [
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR', 'Type de prêt', typePret),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Produit', 'FLEX EMPRUNTEUR', 'Type de prêt', typePret),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Capital à garantir',
             SubscriptionRecapWidgets.formatMontant(capital),
@@ -596,7 +631,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               '',
               '',
             ),
-          SubscriptionRecapWidgets.buildCombinedRecapRow('Prime annuelle estimée', SubscriptionRecapWidgets.formatMontant(prime), '', ''),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Prime annuelle estimée',
+              SubscriptionRecapWidgets.formatMontant(prime),
+              '',
+              ''),
           if (garantiePrevoyance && garantiePerteEmploi)
             SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Garantie Prévoyance',
@@ -712,8 +751,12 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         membre['nom_prenom'] ??
         membre['prenom'] ??
         'Non renseigné';
-    final dateNaissance = membre['date_naissance'] ?? membre['dateNaissance'] ?? membre['date_de_naissance'];
-    final lieuNaissance = membre['lieu_naissance'] ?? membre['lieuNaissance'] ?? membre['lieu_de_naissance'];
+    final dateNaissance = membre['date_naissance'] ??
+        membre['dateNaissance'] ??
+        membre['date_de_naissance'];
+    final lieuNaissance = membre['lieu_naissance'] ??
+        membre['lieuNaissance'] ??
+        membre['lieu_de_naissance'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -773,15 +816,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   Widget _buildDocumentsSection() {
     // Chercher piece_identite dans tous les endroits possibles
     String? pieceIdentite;
-    
+
     // 1. Dans souscriptiondata directement (le plus commun)
     final souscriptiondata = _subscriptionData?['souscriptiondata'];
     if (souscriptiondata != null) {
       // Essayer différentes clés possibles
-      pieceIdentite = souscriptiondata['piece_identite'] ?? 
-                      souscriptiondata['pieceIdentite'] ??
-                      souscriptiondata['document'];
-      
+      pieceIdentite = souscriptiondata['piece_identite'] ??
+          souscriptiondata['pieceIdentite'] ??
+          souscriptiondata['document'];
+
       // Si c'est un Map avec des sous-clés
       if (pieceIdentite == null && souscriptiondata['documents'] != null) {
         final docs = souscriptiondata['documents'];
@@ -790,18 +833,18 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         }
       }
     }
-    
+
     // 2. Au niveau racine de _subscriptionData
     pieceIdentite ??= _subscriptionData?['piece_identite'];
     pieceIdentite ??= _subscriptionData?['document'];
-    
+
     // 3. Dans les détails (via getSubscriptionDetails)
     if (pieceIdentite == null) {
       final details = _getSubscriptionDetails();
-      pieceIdentite = details['piece_identite'] ?? 
-                      details['pieceIdentite'] ??
-                      details['document'];
-      
+      pieceIdentite = details['piece_identite'] ??
+          details['pieceIdentite'] ??
+          details['document'];
+
       // Si c'est dans un sous-objet documents
       if (pieceIdentite == null && details['documents'] != null) {
         final docs = details['documents'];
@@ -813,7 +856,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     developer.log('=== DOCUMENT DEBUG COMPLET ===');
     developer.log('_subscriptionData: ${_subscriptionData}');
-    developer.log('_subscriptionData keys: ${_subscriptionData?.keys.toList()}');
+    developer
+        .log('_subscriptionData keys: ${_subscriptionData?.keys.toList()}');
     developer.log('souscriptiondata: $souscriptiondata');
     developer.log('souscriptiondata type: ${souscriptiondata?.runtimeType}');
     if (souscriptiondata is Map) {
@@ -822,11 +866,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     developer.log('Final pieceIdentite trouvé: $pieceIdentite');
 
     // Vérifier si le document existe et n'est pas vide
-    final hasDocument = pieceIdentite != null && 
-                       pieceIdentite.toString().isNotEmpty && 
-                       pieceIdentite != 'Non téléchargée' &&
-                       pieceIdentite != 'null' &&
-                       pieceIdentite.toString().toLowerCase() != 'null';
+    final hasDocument = pieceIdentite != null &&
+        pieceIdentite.toString().isNotEmpty &&
+        pieceIdentite != 'Non téléchargée' &&
+        pieceIdentite != 'null' &&
+        pieceIdentite.toString().toLowerCase() != 'null';
 
     developer.log('hasDocument: $hasDocument');
 
@@ -838,8 +882,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
   void _viewDocument(String? documentName) {
     developer.log('_viewDocument called with: $documentName');
-    
-    if (documentName == null || documentName.isEmpty || documentName == 'Non téléchargée') {
+
+    if (documentName == null ||
+        documentName.isEmpty ||
+        documentName == 'Non téléchargée') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -898,7 +944,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      border: Border.all(color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
+                      border: Border.all(
+                          color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Material(
@@ -909,7 +956,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => PdfViewerPage(subscriptionId: widget.subscriptionId),
+                              builder: (_) => PdfViewerPage(
+                                  subscriptionId: widget.subscriptionId),
                             ),
                           );
                         },
@@ -917,7 +965,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.print_outlined, color: bleuCoris, size: 20),
+                            Icon(Icons.print_outlined,
+                                color: bleuCoris, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'Imprimer',
@@ -939,7 +988,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      border: Border.all(color: orangeWarning.withValues(alpha: 0.5), width: 1.5),
+                      border: Border.all(
+                          color: orangeWarning.withValues(alpha: 0.5),
+                          width: 1.5),
                       borderRadius: BorderRadius.circular(12),
                       color: orangeWarning.withValues(alpha: 0.05),
                     ),
@@ -951,7 +1002,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.edit_outlined, color: orangeWarning, size: 20),
+                            Icon(Icons.edit_outlined,
+                                color: orangeWarning, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'Modifier',
@@ -1045,7 +1097,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         _loadSubscriptionData();
       });
-    } else if (productType.contains('serenite') || productType.contains('sérénité')) {
+    } else if (productType.contains('serenite') ||
+        productType.contains('sérénité')) {
       Navigator.pushNamed(
         context,
         '/serenite',
@@ -1067,7 +1120,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         _loadSubscriptionData();
       });
-    } else if (productType.contains('solidarite') || productType.contains('solidarité')) {
+    } else if (productType.contains('solidarite') ||
+        productType.contains('solidarité')) {
       Navigator.pushNamed(
         context,
         '/souscription_solidarite',
@@ -1089,7 +1143,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         _loadSubscriptionData();
       });
-    } else if (productType.contains('flex') || productType.contains('emprunteur')) {
+    } else if (productType.contains('flex') ||
+        productType.contains('emprunteur')) {
       Navigator.pushNamed(
         context,
         '/flex',
@@ -1100,7 +1155,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         _loadSubscriptionData();
       });
-    } else if (productType.contains('epargne') || productType.contains('épargne')) {
+    } else if (productType.contains('epargne') ||
+        productType.contains('épargne')) {
       Navigator.pushNamed(
         context,
         '/epargne',
@@ -1115,7 +1171,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       // Produit non reconnu
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('La modification de ce type de produit n\'est pas encore disponible'),
+          content: Text(
+              'La modification de ce type de produit n\'est pas encore disponible'),
           backgroundColor: Colors.orange,
         ),
       );
