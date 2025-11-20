@@ -3054,12 +3054,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
-      
+
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
-      
+
       if (mounted) {
         _showSuccessDialog(false);
       }

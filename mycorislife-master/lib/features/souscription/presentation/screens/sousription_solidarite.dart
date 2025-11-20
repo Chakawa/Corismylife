@@ -50,7 +50,8 @@ class SouscriptionSolidaritePage extends StatefulWidget {
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
   final int? subscriptionId; // ID de la souscription si modification
-  final Map<String, dynamic>? existingData; // Données existantes si modification
+  final Map<String, dynamic>?
+      existingData; // Données existantes si modification
 
   const SouscriptionSolidaritePage({
     super.key,
@@ -382,7 +383,8 @@ class _SouscriptionSolidaritePageState
     super.initState();
 
     // Vérifier si on est en mode modification
-    _isModification = widget.subscriptionId != null && widget.existingData != null;
+    _isModification =
+        widget.subscriptionId != null && widget.existingData != null;
 
     if (_isModification) {
       // Mode modification : préremplir avec les données existantes
@@ -587,11 +589,11 @@ class _SouscriptionSolidaritePageState
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
-    
+
     // Préremplir les données de base
     selectedCapital = data['capital'] ?? 500000;
     selectedPeriodicite = data['periodicite'] ?? 'Mensuel';
-    
+
     // Préremplir la date d'effet
     if (data['date_effet'] != null) {
       try {
@@ -647,7 +649,8 @@ class _SouscriptionSolidaritePageState
 
     // Préremplir les membres - Ascendants
     if (data['ascendants'] != null && data['ascendants'] is List) {
-      final ascendantsData = List<Map<String, dynamic>>.from(data['ascendants']);
+      final ascendantsData =
+          List<Map<String, dynamic>>.from(data['ascendants']);
       nbAscendants = ascendantsData.length;
       ascendants = ascendantsData.map((a) {
         DateTime dateNaissance = DateTime.now();
@@ -790,7 +793,8 @@ class _SouscriptionSolidaritePageState
       } else {
         // Mode création : INSERT
         debugPrint('➕ Mode CRÉATION');
-        response = await subscriptionService.createSubscription(subscriptionData);
+        response =
+            await subscriptionService.createSubscription(subscriptionData);
         responseData = jsonDecode(response.body);
 
         if (response.statusCode != 201 || !responseData['success']) {
@@ -886,12 +890,12 @@ class _SouscriptionSolidaritePageState
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
-      
+
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
-      
+
       if (mounted) {
         _showSuccessDialog(false);
       }
@@ -911,14 +915,15 @@ class _SouscriptionSolidaritePageState
         subscriptionId,
         _pieceIdentite!.path,
       );
-      
+
       final responseData = jsonDecode(response.body);
-      
+
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
-        throw Exception(responseData['message'] ?? 'Erreur lors de l\'upload du document');
+        throw Exception(
+            responseData['message'] ?? 'Erreur lors de l\'upload du document');
       }
-      
+
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
@@ -960,7 +965,7 @@ class _SouscriptionSolidaritePageState
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _isModification 
+                  _isModification
                       ? "MODIFICATION CORIS SOLIDARITÉ"
                       : "SOUSCRIPTION CORIS SOLIDARITÉ",
                   style: const TextStyle(
@@ -1564,25 +1569,30 @@ class _SouscriptionSolidaritePageState
                 // Validation en temps réel de l'âge selon le type de membre
                 final now = DateTime.now();
                 final age = now.year - picked.year;
-                
+
                 // Déterminer le type de membre basé sur le titre de la section
                 bool isValid = true;
                 String errorMessage = '';
-                
+
                 if (titre.contains('enfant') || titre.contains('Enfant')) {
                   if (age < 12 || age > 21) {
                     isValid = false;
-                    errorMessage = "L'âge des enfants doit être compris entre 12 et 21 ans. Âge sélectionné: $age ans.";
+                    errorMessage =
+                        "L'âge des enfants doit être compris entre 12 et 21 ans. Âge sélectionné: $age ans.";
                   }
-                } else if (titre.contains('conjoint') || titre.contains('Conjoint') || 
-                           titre.contains('ascendant') || titre.contains('Ascendant') ||
-                           titre.contains('parent') || titre.contains('Parent')) {
+                } else if (titre.contains('conjoint') ||
+                    titre.contains('Conjoint') ||
+                    titre.contains('ascendant') ||
+                    titre.contains('Ascendant') ||
+                    titre.contains('parent') ||
+                    titre.contains('Parent')) {
                   if (age < 18) {
                     isValid = false;
-                    errorMessage = "L'âge doit être d'au moins 18 ans. Âge sélectionné: $age ans.";
+                    errorMessage =
+                        "L'âge doit être d'au moins 18 ans. Âge sélectionné: $age ans.";
                   }
                 }
-                
+
                 if (!isValid) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -1590,12 +1600,13 @@ class _SouscriptionSolidaritePageState
                       backgroundColor: Colors.red,
                       behavior: SnackBarBehavior.floating,
                       margin: const EdgeInsets.all(16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                   );
                   return; // Ne pas changer la date si invalide
                 }
-                
+
                 onChanged(
                     Membre(nomPrenom: membre.nomPrenom, dateNaissance: picked));
               }
@@ -2721,7 +2732,7 @@ class _SouscriptionSolidaritePageState
               maintenant.day < enfant.dateNaissance.day)) {
         age--;
       }
-      
+
       if (age < 12 || age > 21) {
         _showErrorSnackBar(
             'Enfant ${i + 1}: Âge non valide (12-21 ans requis). Âge calculé: $age ans');
@@ -2738,7 +2749,7 @@ class _SouscriptionSolidaritePageState
               maintenant.day < conjoint.dateNaissance.day)) {
         age--;
       }
-      
+
       if (age < 18) {
         _showErrorSnackBar(
             'Conjoint ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
@@ -2755,7 +2766,7 @@ class _SouscriptionSolidaritePageState
               maintenant.day < ascendant.dateNaissance.day)) {
         age--;
       }
-      
+
       if (age < 18) {
         _showErrorSnackBar(
             'Ascendant ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');

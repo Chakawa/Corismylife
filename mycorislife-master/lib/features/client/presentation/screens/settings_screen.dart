@@ -338,7 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-                color: rougeCoris.withValues(alpha: 0.1),
+            color: rougeCoris.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.logout, color: rougeCoris, size: 24),
@@ -590,5 +590,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
 }

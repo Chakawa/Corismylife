@@ -496,16 +496,21 @@ exports.uploadPhoto = (req, res) => {
       
       console.log('📸 Upload photo pour utilisateur:', userId);
       console.log('📁 Fichier:', req.file.filename);
+      console.log('📂 URL:', photoUrl);
       
       // Récupérer l'ancienne photo pour la supprimer
       const oldPhotoQuery = 'SELECT photo_url FROM users WHERE id = $1';
       const oldPhotoResult = await pool.query(oldPhotoQuery, [userId]);
       
       if (oldPhotoResult.rows.length > 0 && oldPhotoResult.rows[0].photo_url) {
-        const oldPhotoPath = '.' + oldPhotoResult.rows[0].photo_url;
+        const oldPhotoUrl = oldPhotoResult.rows[0].photo_url;
+        // Extraire le nom du fichier de l'URL
+        const oldFileName = oldPhotoUrl.split('/').pop();
+        const oldPhotoPath = path.join(__dirname, '../uploads/profiles', oldFileName);
+        
         if (fs.existsSync(oldPhotoPath)) {
           fs.unlinkSync(oldPhotoPath);
-          console.log('🗑️ Ancienne photo supprimée');
+          console.log('🗑️ Ancienne photo supprimée:', oldFileName);
         }
       }
       
@@ -514,7 +519,7 @@ exports.uploadPhoto = (req, res) => {
         UPDATE users 
         SET photo_url = $1, updated_at = CURRENT_TIMESTAMP 
         WHERE id = $2
-        RETURNING photo_url
+        RETURNING id, nom, prenom, email, photo_url
       `;
       
       const result = await pool.query(updateQuery, [photoUrl, userId]);
@@ -524,15 +529,13 @@ exports.uploadPhoto = (req, res) => {
       res.json({
         success: true,
         message: 'Photo uploadée avec succès',
-        data: {
-          photo_url: result.rows[0].photo_url
-        }
+        data: result.rows[0]
       });
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement de la photo:', error);
       
       // Supprimer le fichier uploadé en cas d'erreur
-      if (req.file) {
+      if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
       
@@ -543,4 +546,31 @@ exports.uploadPhoto = (req, res) => {
     }
   });
 };
+
+/**
+ * Récupérer la photo de profil d'un utilisateur
+ */
+exports.getPhoto = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, '../uploads/profiles', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Photo non trouvée'
+      });
+    }
+    
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('❌ Erreur récupération photo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération de la photo'
+    });
+  }
+};
+
+
 

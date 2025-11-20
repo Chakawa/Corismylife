@@ -38,8 +38,6 @@ import 'package:mycorislife/features/client/presentation/screens/notifications_s
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
 
-
-
 final Map<String, WidgetBuilder> appRoutes = {
   // publiccc
   '/': (context) => const LoginScreen(),
@@ -64,7 +62,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/souscription': (context) => HomeSouscriptionPage(),
   '/souscription_epargne': (context) => SouscriptionEpargnePage(),
   '/souscription_etude': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionEtudePage(
       clientId: args?['client_id'],
       clientData: args?['client'],
@@ -76,7 +75,8 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
   },
   '/souscription_familis': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionFamilisPage(
       simulationData: args?['simulationData'],
       clientId: args?['client_id'],
@@ -84,7 +84,8 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
   },
   '/souscription_emprunteur': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionFlexPage(
       simulationData: args?['simulationData'],
       clientId: args?['client_id'],
@@ -92,7 +93,8 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
   },
   '/souscription_flex': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionFlexPage(
       simulationData: args?['simulationData'],
       clientId: args?['client_id'],
@@ -101,7 +103,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   },
   '/souscription_prets': (context) => const SouscriptionPretsScolairePage(),
   '/souscription_retraite': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionRetraitePage(
       simulationData: args?['simulationData'],
       clientId: args?['client_id'],
@@ -109,7 +112,8 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
   },
   '/souscription_serenite': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionSerenitePage(
       simulationData: args?['simulationData'],
       clientId: args?['client_id'],
@@ -117,7 +121,8 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
   },
   '/souscription_solidarite': (context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     return SouscriptionSolidaritePage(
       capital: args?['simulationData']?['capital'],
       periodicite: args?['simulationData']?['periodicite'],
@@ -137,22 +142,23 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/profileCommercial': (context) => CommercialProfile(),
   '/commercial/create_client': (context) => const CreateClientScreen(),
   '/commercial/select_client': (context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     return SelectClientScreen(
       productType: args?['productType'] ?? '',
       simulationData: args?['simulationData'],
     );
   },
   '/commercial/register_client': (context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     return RegisterClientScreen(
       productType: args?['productType'],
       simulationData: args?['simulationData'],
     );
   },
-  
+
   // adminroute
- 
 
   // description
   '/produits': (context) => HomeSouscriptionPage(),
@@ -171,6 +177,4 @@ final Map<String, WidgetBuilder> appRoutes = {
 
   // notifications
   '/notifications': (context) => const NotificationsScreen(),
-
-  
 };

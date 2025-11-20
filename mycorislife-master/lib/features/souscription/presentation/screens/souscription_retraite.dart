@@ -2277,7 +2277,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (_calculatedCapital == 0 || _calculatedPrime == 0) {
       _effectuerCalcul();
     }
-    
+
     final duree = _dureeController.text.isNotEmpty
         ? int.tryParse(_dureeController.text) ?? 0
         : 0;
@@ -2749,12 +2749,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
-      
+
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
-      
+
       if (mounted) {
         _showSuccessDialog(false);
       }
@@ -2774,13 +2774,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         subscriptionId,
         _pieceIdentite!.path,
       );
-      
+
       final responseData = jsonDecode(response.body);
-      
+
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
       }
-      
+
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');

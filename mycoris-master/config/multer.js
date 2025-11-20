@@ -2,28 +2,71 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Créer le dossier uploads s'il n'existe pas
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Créer les dossiers uploads s'ils n'existent pas
+const baseUploadDir = path.join(__dirname, '../uploads');
+const uploadDirs = {
+  profiles: path.join(baseUploadDir, 'profiles'),
+  identityCards: path.join(baseUploadDir, 'identity-cards'),
+  kyc: path.join(baseUploadDir, 'kyc')
+};
 
+// Créer tous les dossiers nécessaires
+Object.values(uploadDirs).forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✅ Dossier créé: ${dir}`);
+  }
+});
+
+// Configuration du storage avec sous-dossiers dynamiques
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    // Déterminer le sous-dossier selon le type de fichier
+    let uploadPath = baseUploadDir;
+    
+    if (file.fieldname === 'profile_photo' || req.path.includes('upload-photo')) {
+      uploadPath = uploadDirs.profiles;
+    } else if (file.fieldname === 'piece_identite' || file.fieldname === 'identity_card' || file.fieldname === 'document' || req.path.includes('upload-document')) {
+      uploadPath = uploadDirs.identityCards;
+    } else if (file.fieldname.startsWith('kyc_')) {
+      uploadPath = uploadDirs.kyc;
+    }
+    
+    console.log('📂 Destination upload:', uploadPath);
+    console.log('📝 Field name:', file.fieldname);
+    
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    // Générer un nom unique avec préfixe selon le type
+    const userId = req.user?.id || 'unknown';
+    const timestamp = Date.now();
+    const random = Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    
+    let prefix = 'doc';
+    if (file.fieldname === 'profile_photo' || req.path.includes('upload-photo')) {
+      prefix = `profile_${userId}`;
+    } else if (file.fieldname === 'piece_identite' || file.fieldname === 'identity_card' || file.fieldname === 'document') {
+      prefix = `identity_${userId}`;
+    } else if (file.fieldname.startsWith('kyc_')) {
+      prefix = `kyc_${userId}`;
+    }
+    
+    const filename = `${prefix}_${timestamp}_${random}${ext}`;
+    console.log('✅ Nom de fichier généré:', filename);
+    cb(null, filename);
   }
 });
 
 const fileFilter = (req, file, cb) => {
   // Accepter seulement les images et PDF
-  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+  
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Seules les images et PDF sont autorisés'), false);
+    cb(new Error('Format non autorisé. Seuls les images (JPEG, PNG, GIF) et PDF sont acceptés.'), false);
   }
 };
 
@@ -31,7 +74,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max
+    fileSize: 10 * 1024 * 1024 // 10MB max
   }
 });
 

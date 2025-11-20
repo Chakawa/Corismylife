@@ -1868,14 +1868,13 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                     DateTime? dateNaissanceParent;
                     if (_dateNaissanceParentController.text.trim().isNotEmpty) {
                       try {
-                        dateNaissanceParent = DateFormat('dd/MM/yyyy').parse(
-                          _dateNaissanceParentController.text.trim()
-                        );
+                        dateNaissanceParent = DateFormat('dd/MM/yyyy')
+                            .parse(_dateNaissanceParentController.text.trim());
                       } catch (e) {
                         // Ignorer si la date est invalide
                       }
                     }
-                    
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(

@@ -776,12 +776,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
     try {
       final subscriptionId = await _saveSubscriptionData();
-      
+
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
-      
+
       final paymentSuccess = await _simulatePayment(paymentMethod);
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
@@ -806,12 +806,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   void _saveAsProposition() async {
     try {
       final subscriptionId = await _saveSubscriptionData();
-      
+
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
-      
+
       _showSuccessDialog(false);
     } catch (e) {
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');

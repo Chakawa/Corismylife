@@ -17,13 +17,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final newPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int currentStep = 0; // 0: Email, 1: Code, 2: Nouveau mot de passe
   String? devCode; // Pour le développement
-  
+
   static const String baseUrl = 'http://192.168.1.32:5000/api/password-reset';
 
   // Étape 1: Demander le code de vérification
@@ -43,7 +43,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           if (data['success']) {
             // Stocker le code de développement s'il est fourni
             devCode = data['devCode'];
-            
+
             setState(() => currentStep = 1);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -52,7 +52,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 duration: const Duration(seconds: 4),
               ),
             );
-            
+
             // Afficher le code en mode développement
             if (devCode != null) {
               Future.delayed(const Duration(milliseconds: 500), () {
@@ -249,9 +249,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         backgroundColor: bleuCoris,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: currentStep == 0 
-            ? () => Navigator.pop(context)
-            : () => setState(() => currentStep -= 1),
+          onPressed: currentStep == 0
+              ? () => Navigator.pop(context)
+              : () => setState(() => currentStep -= 1),
         ),
         title: const Text(
           "Réinitialiser le mot de passe",
@@ -279,7 +279,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   // Indicateur d'étapes
                   _buildStepIndicator(),
                   const SizedBox(height: 40),
-                  
+
                   // Contenu selon l'étape
                   if (currentStep == 0) _buildEmailStep(),
                   if (currentStep == 1) _buildCodeStep(),
@@ -297,9 +297,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Row(
       children: [
         _buildStepCircle(0, 'Email'),
-        Expanded(child: Container(height: 2, color: currentStep > 0 ? vertSucces : Colors.grey[300])),
+        Expanded(
+            child: Container(
+                height: 2,
+                color: currentStep > 0 ? vertSucces : Colors.grey[300])),
         _buildStepCircle(1, 'Code'),
-        Expanded(child: Container(height: 2, color: currentStep > 1 ? vertSucces : Colors.grey[300])),
+        Expanded(
+            child: Container(
+                height: 2,
+                color: currentStep > 1 ? vertSucces : Colors.grey[300])),
         _buildStepCircle(2, 'Mot de passe'),
       ],
     );
@@ -308,34 +314,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget _buildStepCircle(int step, String label) {
     bool isActive = currentStep >= step;
     bool isCurrent = currentStep == step;
-    
+
     return Column(
       children: [
         Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: isActive ? (isCurrent ? bleuCoris : vertSucces) : Colors.grey[300],
+            color: isActive
+                ? (isCurrent ? bleuCoris : vertSucces)
+                : Colors.grey[300],
             shape: BoxShape.circle,
-            boxShadow: isCurrent ? [
-              BoxShadow(
-                color: bleuCoris.withValues(alpha: 0.4),
-                blurRadius: 8,
-                spreadRadius: 2,
-              ),
-            ] : null,
+            boxShadow: isCurrent
+                ? [
+                    BoxShadow(
+                      color: bleuCoris.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
           ),
           child: Center(
             child: isActive && !isCurrent
-              ? const Icon(Icons.check, color: Colors.white)
-              : Text(
-                  '${step + 1}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                ? const Icon(Icons.check, color: Colors.white)
+                : Text(
+                    '${step + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
           ),
         ),
         const SizedBox(height: 8),
@@ -419,15 +429,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             ),
             child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  'Envoyer le code',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    'Envoyer le code',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
           ),
         ),
       ],
@@ -507,15 +517,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             ),
             child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  'Vérifier le code',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    'Vérifier le code',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
           ),
         ),
       ],
@@ -556,7 +566,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
                 color: Colors.grey[600],
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
             filled: true,
             fillColor: Colors.white,
@@ -591,10 +602,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             prefixIcon: const Icon(Icons.lock_outline, color: bleuCoris),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                _obscureConfirmPassword
+                    ? Icons.visibility_off
+                    : Icons.visibility,
                 color: Colors.grey[600],
               ),
-              onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              onPressed: () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword),
             ),
             filled: true,
             fillColor: Colors.white,
@@ -633,15 +647,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             ),
             child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  'Réinitialiser le mot de passe',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    'Réinitialiser le mot de passe',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
           ),
         ),
       ],

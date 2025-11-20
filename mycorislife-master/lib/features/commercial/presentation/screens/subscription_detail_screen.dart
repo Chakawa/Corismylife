@@ -4,14 +4,15 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 
 class SubscriptionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> subscription;
-  
+
   const SubscriptionDetailScreen({
     super.key,
     required this.subscription,
   });
 
   @override
-  State<SubscriptionDetailScreen> createState() => _SubscriptionDetailScreenState();
+  State<SubscriptionDetailScreen> createState() =>
+      _SubscriptionDetailScreenState();
 }
 
 class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
@@ -39,8 +40,9 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         _isLoading = true;
       });
 
-      final data = await _service.getSubscriptionDetail(widget.subscription['id']);
-      
+      final data =
+          await _service.getSubscriptionDetail(widget.subscription['id']);
+
       if (mounted) {
         setState(() {
           /**
@@ -49,7 +51,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
            * - On utilise Map<String, dynamic>.from() pour convertir explicitement
            * - Cela évite l'erreur "type '_Map<dynamic, dynamic>' is not a subtype of type 'Map<String, dynamic>?'"
            */
-          _fullSubscriptionData = data['subscription'] != null 
+          _fullSubscriptionData = data['subscription'] != null
               ? Map<String, dynamic>.from(data['subscription'] as Map)
               : null;
           _userData = data['user'] != null
@@ -113,12 +115,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
    * Output: "Coris Retraite"
    */
   String _formatProductName(String productName) {
-    if (productName.isEmpty || productName == 'Non renseigné') return productName;
+    if (productName.isEmpty || productName == 'Non renseigné')
+      return productName;
     // Diviser le nom par '_' et formater chaque mot
     return productName
         .split('_')
-        .map((word) => word.isEmpty 
-            ? '' 
+        .map((word) => word.isEmpty
+            ? ''
             : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' '); // Joindre les mots avec un espace
   }
@@ -130,7 +133,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 
   Future<void> _processPayment(String paymentMethod) async {
     if (_isProcessingPayment) return;
-    
+
     setState(() {
       _isProcessingPayment = true;
     });
@@ -138,7 +141,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     try {
       final subscriptionId = widget.subscription['id'];
       final paymentSuccess = await _simulatePayment(paymentMethod);
-      
+
       await _service.updatePaymentStatus(
         subscriptionId,
         paymentSuccess,
@@ -153,7 +156,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         if (paymentSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Paiement effectué avec succès. La proposition est devenue un contrat.'),
+              content: Text(
+                  'Paiement effectué avec succès. La proposition est devenue un contrat.'),
               backgroundColor: vertSucces,
             ),
           );
@@ -208,7 +212,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 
   void _modifyProposition() {
     final subscriptionId = widget.subscription['id'];
-    final productType = (widget.subscription['produit_nom'] ?? '').toLowerCase();
+    final productType =
+        (widget.subscription['produit_nom'] ?? '').toLowerCase();
     final souscriptionData = _fullSubscriptionData?['souscriptiondata'];
 
     // Naviguer vers la page de modification appropriée selon le produit
@@ -224,7 +229,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         // Recharger les données après modification
         _loadFullSubscriptionData();
       });
-    } else if (productType.contains('serenite') || productType.contains('sérénité')) {
+    } else if (productType.contains('serenite') ||
+        productType.contains('sérénité')) {
       Navigator.pushNamed(
         context,
         '/serenite',
@@ -242,7 +248,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           'existingData': souscriptionData,
         },
       ).then((_) => _loadFullSubscriptionData());
-    } else if (productType.contains('solidarite') || productType.contains('solidarité')) {
+    } else if (productType.contains('solidarite') ||
+        productType.contains('solidarité')) {
       Navigator.pushNamed(
         context,
         '/souscription_solidarite',
@@ -260,7 +267,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           'existingData': souscriptionData,
         },
       ).then((_) => _loadFullSubscriptionData());
-    } else if (productType.contains('flex') || productType.contains('emprunteur')) {
+    } else if (productType.contains('flex') ||
+        productType.contains('emprunteur')) {
       Navigator.pushNamed(
         context,
         '/flex',
@@ -269,7 +277,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           'existingData': souscriptionData,
         },
       ).then((_) => _loadFullSubscriptionData());
-    } else if (productType.contains('epargne') || productType.contains('épargne')) {
+    } else if (productType.contains('epargne') ||
+        productType.contains('épargne')) {
       Navigator.pushNamed(
         context,
         '/epargne',
@@ -281,7 +290,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('La modification de ce type de produit n\'est pas encore disponible'),
+          content: Text(
+              'La modification de ce type de produit n\'est pas encore disponible'),
           backgroundColor: orangeWarning,
         ),
       );
@@ -334,7 +344,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
    * - Bénéficiaire et Contact d'urgence (icône contacts, couleur orange)
    * - Documents (icône description, couleur bleue secondaire)
    */
-  Widget _buildRecapSection(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _buildRecapSection(
+      String title, IconData icon, Color color, List<Widget> children) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
@@ -359,10 +370,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1), // Fond coloré avec transparence
+                  color: color.withValues(
+                      alpha: 0.1), // Fond coloré avec transparence
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 20), // Icône visible avec la couleur spécifiée
+                child: Icon(icon,
+                    color: color,
+                    size: 20), // Icône visible avec la couleur spécifiée
               ),
               const SizedBox(width: 10),
               Text(
@@ -382,7 +396,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
-  Widget _buildRecapRow(String label, String value, {bool isHighlighted = false}) {
+  Widget _buildRecapRow(String label, String value,
+      {bool isHighlighted = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -414,7 +429,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
-  Widget _buildCombinedRecapRow(String label1, String value1, String label2, String value2) {
+  Widget _buildCombinedRecapRow(
+      String label1, String value1, String label2, String value2) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -476,7 +492,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   Widget _buildRecapContent() {
     final subscription = _fullSubscriptionData ?? widget.subscription;
     final user = _userData ?? {};
-    
+
     /**
      * EXTRACTION DES DONNÉES DE SOUSCRIPTION
      * - souscriptionData : Données JSONB de la souscription (capital, prime, bénéficiaire, etc.)
@@ -485,17 +501,18 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     final souscriptionData = subscription['souscriptiondata'] != null
         ? Map<String, dynamic>.from(subscription['souscriptiondata'] as Map)
         : <String, dynamic>{};
-    
+
     // Extraire client_info en s'assurant du bon type
     Map<String, dynamic> clientInfo = {};
     if (souscriptionData['client_info'] != null) {
       try {
-        clientInfo = Map<String, dynamic>.from(souscriptionData['client_info'] as Map);
+        clientInfo =
+            Map<String, dynamic>.from(souscriptionData['client_info'] as Map);
       } catch (e) {
         print('Erreur extraction client_info: $e');
       }
     }
-    
+
     final isPaid = subscription['statut'] == 'contrat';
 
     /**
@@ -506,7 +523,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
      * IMPORTANT: Pour les souscriptions créées par un commercial, on DOIT toujours afficher
      * les informations du client (depuis client_info) et non celles du commercial.
      */
-    final displayUser = (clientInfo.isNotEmpty && clientInfo.containsKey('nom') && clientInfo['nom'] != null && clientInfo['nom'].toString().isNotEmpty)
+    final displayUser = (clientInfo.isNotEmpty &&
+            clientInfo.containsKey('nom') &&
+            clientInfo['nom'] != null &&
+            clientInfo['nom'].toString().isNotEmpty)
         ? clientInfo
         : user;
 
@@ -554,7 +574,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           [
             _buildCombinedRecapRow(
               'Produit',
-              _formatProductName(subscription['produit_nom'] ?? 'Non renseigné'),
+              _formatProductName(
+                  subscription['produit_nom'] ?? 'Non renseigné'),
               'N° Police',
               subscription['numero_police'] ?? 'N/A',
             ),
@@ -582,7 +603,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         ),
 
         // Bénéficiaire et Contact d'urgence (si disponibles)
-        if (souscriptionData['beneficiaire'] != null || souscriptionData['contact_urgence'] != null)
+        if (souscriptionData['beneficiaire'] != null ||
+            souscriptionData['contact_urgence'] != null)
           _buildRecapSection(
             'Bénéficiaire et Contact d\'urgence',
             Icons.contacts,
@@ -604,11 +626,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                 ),
                 _buildRecapRow(
                   'Contact',
-                  souscriptionData['beneficiaire']['contact'] ?? 'Non renseigné',
+                  souscriptionData['beneficiaire']['contact'] ??
+                      'Non renseigné',
                 ),
                 _buildRecapRow(
                   'Lien de parenté',
-                  souscriptionData['beneficiaire']['lien_parente'] ?? 'Non renseigné',
+                  souscriptionData['beneficiaire']['lien_parente'] ??
+                      'Non renseigné',
                 ),
                 const SizedBox(height: 12),
               ],
@@ -628,11 +652,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                 ),
                 _buildRecapRow(
                   'Contact',
-                  souscriptionData['contact_urgence']['contact'] ?? 'Non renseigné',
+                  souscriptionData['contact_urgence']['contact'] ??
+                      'Non renseigné',
                 ),
                 _buildRecapRow(
                   'Lien de parenté',
-                  souscriptionData['contact_urgence']['lien_parente'] ?? 'Non renseigné',
+                  souscriptionData['contact_urgence']['lien_parente'] ??
+                      'Non renseigné',
                 ),
               ],
             ],
@@ -648,7 +674,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               GestureDetector(
                 onTap: () {
                   final pieceIdentite = souscriptionData['piece_identite'];
-                  if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
+                  if (pieceIdentite != null &&
+                      pieceIdentite != 'Non téléchargée') {
                     _viewDocument(pieceIdentite);
                   }
                 },
@@ -669,7 +696,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                         padding: const EdgeInsets.only(left: 12),
                         child: Row(
                           children: [
-                            Icon(Icons.badge_outlined, size: 20, color: bleuCoris),
+                            Icon(Icons.badge_outlined,
+                                size: 20, color: bleuCoris),
                             const SizedBox(width: 12),
                             Text(
                               'Pièce d\'identité',
@@ -685,7 +713,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            souscriptionData['piece_identite'] ?? 'Non téléchargée',
+                            souscriptionData['piece_identite'] ??
+                                'Non téléchargée',
                             style: const TextStyle(
                               color: bleuCoris,
                               fontSize: 13,
@@ -766,7 +795,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: () {
-              final pieceIdentite = _fullSubscriptionData?['souscriptiondata']?['piece_identite'];
+              final pieceIdentite =
+                  _fullSubscriptionData?['souscriptiondata']?['piece_identite'];
               if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
                 Navigator.push(
                   context,
@@ -839,8 +869,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                               onPressed: _modifyProposition,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: bleuCoris,
-                                side: const BorderSide(color: bleuCoris, width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                side: const BorderSide(
+                                    color: bleuCoris, width: 2),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -871,12 +903,14 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: bleuCoris,
                                 foregroundColor: blanc,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 0,
-                                shadowColor: const Color.fromRGBO(0, 43, 107, 0.3),
+                                shadowColor:
+                                    const Color.fromRGBO(0, 43, 107, 0.3),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -977,8 +1011,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
  * - SafeArea : Pour éviter que le contenu soit masqué par les encoches de l'écran
  */
 class _PaymentBottomSheet extends StatelessWidget {
-  final Function(String) onPayNow; // Callback appelé quand un moyen de paiement est sélectionné
-  final VoidCallback onPayLater; // Callback appelé quand l'utilisateur choisit "Payer plus tard"
+  final Function(String)
+      onPayNow; // Callback appelé quand un moyen de paiement est sélectionné
+  final VoidCallback
+      onPayLater; // Callback appelé quand l'utilisateur choisit "Payer plus tard"
   static const bleuCoris = Color(0xFF002B6B); // Couleur bleue CORIS
 
   const _PaymentBottomSheet({
@@ -1051,7 +1087,8 @@ class _PaymentBottomSheet extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                      child: Divider(color: const Color.fromRGBO(158, 158, 158, 77))),
+                      child: Divider(
+                          color: const Color.fromRGBO(158, 158, 158, 77))),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
@@ -1063,7 +1100,8 @@ class _PaymentBottomSheet extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                      child: Divider(color: const Color.fromRGBO(158, 158, 158, 77))),
+                      child: Divider(
+                          color: const Color.fromRGBO(158, 158, 158, 77))),
                 ],
               ),
               const SizedBox(height: 20),
@@ -1134,8 +1172,8 @@ class _PaymentBottomSheet extends StatelessWidget {
    * - Titre en gras, sous-titre en gris
    * - Flèche à droite pour indiquer que c'est cliquable
    */
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: () {
         Navigator.pop(context); // Fermer le bottom sheet
@@ -1146,7 +1184,8 @@ class _PaymentBottomSheet extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC), // fondCarte - identique au style client
+          color:
+              const Color(0xFFF8FAFC), // fondCarte - identique au style client
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
@@ -1156,7 +1195,8 @@ class _PaymentBottomSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1), // Fond coloré avec transparence
+                color: color.withValues(
+                    alpha: 0.1), // Fond coloré avec transparence
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24), // Icône visible
@@ -1186,7 +1226,8 @@ class _PaymentBottomSheet extends StatelessWidget {
               ),
             ),
             // Flèche à droite - identique au style client
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Color(0xFF64748B), size: 16),
           ],
         ),
       ),

@@ -11,7 +11,8 @@ class ContratsPage extends StatefulWidget {
   State<ContratsPage> createState() => _ContratsPageState();
 }
 
-class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMixin {
+class _ContratsPageState extends State<ContratsPage>
+    with TickerProviderStateMixin {
   final SubscriptionService _service = SubscriptionService();
   List<Subscription> contrats = [];
   bool isLoading = true;
@@ -46,7 +47,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
     try {
       final result = await _service.getContrats();
       if (!mounted) return;
-      
+
       setState(() {
         contrats = result;
         isLoading = false;
@@ -54,7 +55,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
       _animationController.forward();
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() => isLoading = false);
       _showErrorSnackBar();
     }
@@ -82,7 +83,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
   String _formatDate(dynamic dateValue) {
     try {
       DateTime date;
-      
+
       if (dateValue is DateTime) {
         date = dateValue;
       } else if (dateValue is String) {
@@ -90,7 +91,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
       } else {
         return 'Date inconnue';
       }
-      
+
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
       return "Date inconnue";
@@ -115,14 +116,14 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
     } else if (produit.toLowerCase().contains('familis')) {
       return const Color(0xFFEC4899);
     } else {
-      return const Color(0xFF002B6B); 
+      return const Color(0xFF002B6B);
     }
   }
 
   LinearGradient _getBadgeGradient(String produit) {
     final Color primary = _getBadgeColor(produit);
     final Color secondary = Color.lerp(primary, Colors.white, 0.1)!;
-    
+
     return LinearGradient(
       colors: [primary, secondary],
       begin: Alignment.topLeft,
@@ -201,9 +202,9 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
     if (selectedFilter == 'Tous') {
       return contrats;
     }
-    return contrats.where((contrat) => 
-      _getBadgeText(contrat.produitNom) == selectedFilter
-    ).toList();
+    return contrats
+        .where((contrat) => _getBadgeText(contrat.produitNom) == selectedFilter)
+        .toList();
   }
 
   @override
@@ -271,7 +272,8 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
           ),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 18),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
               Navigator.pop(context);
@@ -418,7 +420,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
 
   Widget _buildContratsList() {
     final filtered = filteredContrats;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.builder(
@@ -503,7 +505,8 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: _getBadgeColor(contrat.produitNom).withAlpha(26), // 0.1 opacity
+                              color: _getBadgeColor(contrat.produitNom)
+                                  .withAlpha(26), // 0.1 opacity
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -520,9 +523,11 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
                     ),
                     // Statut badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(status).withAlpha(26), // 0.1 opacity
+                        color: _getStatusColor(status)
+                            .withAlpha(26), // 0.1 opacity
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -536,9 +541,9 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Informations du contrat
                 Row(
                   children: [
@@ -563,12 +568,13 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Footer avec actions
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(8),
@@ -720,7 +726,7 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
 
   void _handleRenewal(Subscription contrat) {
     HapticFeedback.lightImpact();
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Row(
@@ -746,15 +752,15 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
 
   void _showFilterMenu() {
     final filters = [
-      'Tous', 
-      'CORIS SOLIDARITÉ', 
-      'FLEX EMPRUNTEUR', 
-      'CORIS ÉTUDE', 
+      'Tous',
+      'CORIS SOLIDARITÉ',
+      'FLEX EMPRUNTEUR',
+      'CORIS ÉTUDE',
       'CORIS RETRAITE',
       'CORIS SÉRÉNITÉ',
       'CORIS FAMILIS'
     ];
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -787,32 +793,32 @@ class _ContratsPageState extends State<ContratsPage> with TickerProviderStateMix
               ),
             ),
             ...filters.map((filter) => ListTile(
-              leading: filter == 'Tous' 
-                  ? const Icon(Icons.list_alt, color: Color(0xFF64748B))
-                  : Icon(
-                      filter == selectedFilter 
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: filter == selectedFilter 
+                  leading: filter == 'Tous'
+                      ? const Icon(Icons.list_alt, color: Color(0xFF64748B))
+                      : Icon(
+                          filter == selectedFilter
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          color: filter == selectedFilter
+                              ? const Color(0xFF002B6B)
+                              : const Color(0xFF64748B),
+                        ),
+                  title: Text(
+                    filter,
+                    style: TextStyle(
+                      color: filter == selectedFilter
                           ? const Color(0xFF002B6B)
-                          : const Color(0xFF64748B),
+                          : const Color(0xFF0F172A),
+                      fontWeight: filter == selectedFilter
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
-              title: Text(
-                filter,
-                style: TextStyle(
-                  color: filter == selectedFilter 
-                      ? const Color(0xFF002B6B)
-                      : const Color(0xFF0F172A),
-                  fontWeight: filter == selectedFilter 
-                      ? FontWeight.w600
-                      : FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                setState(() => selectedFilter = filter);
-                Navigator.pop(context);
-              },
-            )),
+                  ),
+                  onTap: () {
+                    setState(() => selectedFilter = filter);
+                    Navigator.pop(context);
+                  },
+                )),
             const SizedBox(height: 20),
           ],
         ),

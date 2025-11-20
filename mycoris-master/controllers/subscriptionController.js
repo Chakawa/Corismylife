@@ -404,43 +404,208 @@ exports.uploadDocument = async (req, res) => {
       });
     }
     
-    // Requête SQL pour ajouter le chemin du fichier dans souscriptiondata
-    // On utilise jsonb_set pour ajouter une propriété dans le JSONB
-    // Utiliser 'piece_identite' pour correspondre avec le code Flutter
+    console.log('=== UPLOAD DOCUMENT ===');
+    console.log('📄 Souscription ID:', id);
+    console.log('👤 User ID:', req.user.id);
+    console.log('📁 Nom fichier:', req.file.filename);
+    console.log('📂 Chemin complet:', req.file.path);
+    console.log('📊 Taille:', (req.file.size / 1024).toFixed(2), 'KB');
+    console.log('📝 Type MIME:', req.file.mimetype);
+    
+    // Vérifier que le fichier existe bien sur le disque
+    if (!fs.existsSync(req.file.path)) {
+      console.error('❌ ERREUR: Le fichier n\'a pas été créé sur le disque!');
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur: le fichier n\'a pas été sauvegardé'
+      });
+    }
+    console.log('✅ Fichier exist sur le disque');
+    
+    // Construire l'URL complète du document
+    const fileName = req.file.filename;
+    const documentUrl = `/uploads/identity-cards/${fileName}`;
+    console.log('🔗 URL du document:', documentUrl);
+    
+    // Récupérer l'ancien document pour le supprimer
+    const oldDocQuery = `
+      SELECT souscriptiondata->>'piece_identite' as old_doc,
+             souscriptiondata->>'piece_identite_url' as old_url
+      FROM subscriptions 
+      WHERE id = $1 AND user_id = $2
+    `;
+    const oldDocResult = await pool.query(oldDocQuery, [id, req.user.id]);
+    
+    // Supprimer l'ancien fichier s'il existe
+    if (oldDocResult.rows.length > 0 && oldDocResult.rows[0].old_doc) {
+      const oldFileName = oldDocResult.rows[0].old_doc;
+      const oldFilePath = path.join(__dirname, '../uploads/identity-cards', oldFileName);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+        console.log('🗑️ Ancien document supprimé:', oldFileName);
+      }
+    }
+    
+    // Mettre à jour avec le nom du fichier ET l'URL
     const query = `
       UPDATE subscriptions 
       SET souscriptiondata = jsonb_set(
-        souscriptiondata, 
-        '{piece_identite}', 
-        $1
-      )
-      WHERE id = $2 AND user_id = $3
+        jsonb_set(
+          souscriptiondata,
+          '{piece_identite}',
+          $1
+        ),
+        '{piece_identite_url}',
+        $2
+      ),
+      updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3 AND user_id = $4
       RETURNING *;
     `;
     
-    // Le chemin du fichier est stocké par multer dans req.file.path
-    // On ne stocke que le nom du fichier, pas le chemin complet
-    const fileName = req.file.filename || req.file.path.split('/').pop().split('\\').pop();
-    const values = [`"${fileName}"`, id, req.user.id];
+    const values = [
+      JSON.stringify(fileName),
+      JSON.stringify(documentUrl),
+      id,
+      req.user.id
+    ];
+    
     const result = await pool.query(query, values);
     
     if (result.rows.length === 0) {
+      // Supprimer le fichier uploadé si la souscription n'existe pas
+      fs.unlinkSync(req.file.path);
       return res.status(404).json({
         success: false,
         message: 'Souscription non trouvée'
       });
     }
     
+    console.log('✅ Document uploadé avec succès');
+    
     res.json({
       success: true,
       message: 'Document téléchargé avec succès',
-      data: result.rows[0]
+      data: {
+        subscription: result.rows[0],
+        document: {
+          filename: fileName,
+          url: documentUrl
+        }
+      }
     });
   } catch (error) {
-    console.error('Erreur upload document:', error);
+    console.error('❌ Erreur upload document:', error);
+    
+    // Supprimer le fichier en cas d'erreur
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Erreur lors du téléchargement du document'
+    });
+  }
+};
+
+/**
+ * Récupérer un document d'une souscription
+ */
+exports.getDocument = async (req, res) => {
+  try {
+    const { id, filename } = req.params;
+    
+    console.log('=== RÉCUPÉRATION DOCUMENT ===');
+    console.log('📄 Souscription ID:', id);
+    console.log('📁 Nom fichier:', filename);
+    console.log('👤 User ID:', req.user.id);
+    console.log('🎭 Role:', req.user.role);
+    
+    // Vérifier que l'utilisateur a accès à cette souscription
+    const checkQuery = `
+      SELECT 
+        s.id, 
+        s.user_id, 
+        s.souscriptiondata->>'piece_identite' as doc_name,
+        s.souscriptiondata->>'code_apporteur' as code_apporteur
+      FROM subscriptions s
+      WHERE s.id = $1
+    `;
+    
+    const checkResult = await pool.query(checkQuery, [id]);
+    
+    if (checkResult.rows.length === 0) {
+      console.error('❌ Souscription non trouvée');
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée'
+      });
+    }
+    
+    const subscription = checkResult.rows[0];
+    console.log('📋 Subscription user_id:', subscription.user_id);
+    console.log('📋 Code apporteur:', subscription.code_apporteur);
+    console.log('📋 Document name:', subscription.doc_name);
+    
+    // Vérifier les droits d'accès
+    let hasAccess = false;
+    
+    // 1. C'est le propriétaire de la souscription
+    if (subscription.user_id === req.user.id) {
+      hasAccess = true;
+      console.log('✅ Accès autorisé: propriétaire');
+    }
+    
+    // 2. C'est un admin
+    else if (req.user.role === 'admin') {
+      hasAccess = true;
+      console.log('✅ Accès autorisé: admin');
+    }
+    
+    // 3. C'est un commercial et c'est sa souscription (code_apporteur)
+    else if (req.user.role === 'commercial' && req.user.code_apporteur) {
+      if (subscription.code_apporteur === req.user.code_apporteur) {
+        hasAccess = true;
+        console.log('✅ Accès autorisé: commercial avec code_apporteur correspondant');
+      }
+    }
+    
+    if (!hasAccess) {
+      console.error('❌ Accès refusé');
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé à ce document'
+      });
+    }
+    
+    // Vérifier que le fichier demandé correspond au document de la souscription
+    if (subscription.doc_name !== filename) {
+      console.error('❌ Fichier non autorisé:', filename, '!==', subscription.doc_name);
+      return res.status(403).json({
+        success: false,
+        message: 'Fichier non autorisé'
+      });
+    }
+    
+    const filePath = path.join(__dirname, '../uploads/identity-cards', filename);
+    console.log('📂 Chemin fichier:', filePath);
+    
+    if (!fs.existsSync(filePath)) {
+      console.error('❌ Fichier non trouvé sur le disque');
+      return res.status(404).json({
+        success: false,
+        message: 'Fichier non trouvé sur le serveur'
+      });
+    }
+    
+    console.log('✅ Envoi du fichier');
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('❌ Erreur récupération document:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération du document'
     });
   }
 };

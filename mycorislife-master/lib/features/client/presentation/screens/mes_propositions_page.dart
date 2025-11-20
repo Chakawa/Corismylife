@@ -492,13 +492,17 @@ class _PropositionsPageState extends State<PropositionsPage>
                           end: Alignment.bottomRight,
                           colors: [
                             _getProductIconColor(subscription.produitNom),
-                            Color.lerp(_getProductIconColor(subscription.produitNom), Colors.black, 0.2)!,
+                            Color.lerp(
+                                _getProductIconColor(subscription.produitNom),
+                                Colors.black,
+                                0.2)!,
                           ],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: _getProductIconColor(subscription.produitNom).withAlpha(40),
+                            color: _getProductIconColor(subscription.produitNom)
+                                .withAlpha(40),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -682,9 +686,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(width: 12),
-                    
+
                     // Bouton PDF avec design élégant
                     Container(
                       decoration: BoxDecoration(
@@ -873,7 +877,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Header avec icône et titre
               Row(
                 children: [
@@ -932,7 +936,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                 ],
               ),
               const SizedBox(height: 28),
-              
+
               // Options de paiement
               _buildPaymentOption(
                 'Wave',
@@ -1140,33 +1144,36 @@ class _PropositionsPageState extends State<PropositionsPage>
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: filters.map((filter) => ListTile(
-                          leading: filter == 'Tous'
-                              ? const Icon(Icons.list_alt, color: Color(0xFF64748B))
-                              : Icon(
-                                  filter == selectedFilter
-                                      ? Icons.radio_button_checked
-                                      : Icons.radio_button_unchecked,
+                    children: filters
+                        .map((filter) => ListTile(
+                              leading: filter == 'Tous'
+                                  ? const Icon(Icons.list_alt,
+                                      color: Color(0xFF64748B))
+                                  : Icon(
+                                      filter == selectedFilter
+                                          ? Icons.radio_button_checked
+                                          : Icons.radio_button_unchecked,
+                                      color: filter == selectedFilter
+                                          ? const Color(0xFF002B6B)
+                                          : const Color(0xFF64748B),
+                                    ),
+                              title: Text(
+                                filter,
+                                style: TextStyle(
                                   color: filter == selectedFilter
                                       ? const Color(0xFF002B6B)
-                                      : const Color(0xFF64748B),
+                                      : const Color(0xFF0F172A),
+                                  fontWeight: filter == selectedFilter
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
                                 ),
-                          title: Text(
-                            filter,
-                            style: TextStyle(
-                              color: filter == selectedFilter
-                                  ? const Color(0xFF002B6B)
-                                  : const Color(0xFF0F172A),
-                              fontWeight: filter == selectedFilter
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                            ),
-                          ),
-                          onTap: () {
-                            setState(() => selectedFilter = filter);
-                            Navigator.pop(context);
-                          },
-                        )).toList(),
+                              ),
+                              onTap: () {
+                                setState(() => selectedFilter = filter);
+                                Navigator.pop(context);
+                              },
+                            ))
+                        .toList(),
                   ),
                 ),
               ),

@@ -15,26 +15,26 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
   int _selectedIndex = 0;
   static const bleuCoris = Color(0xFF002B6B);
   static const rougeCoris = Color(0xFFE30613);
-  
+
   // Statistiques
   int _nbClients = 0;
   int _nbContrats = 0;
   bool _isLoadingStats = true;
-  
+
   @override
   void initState() {
     super.initState();
     _loadStats();
   }
-  
+
   Future<void> _loadStats() async {
     try {
       setState(() {
         _isLoadingStats = true;
       });
-      
+
       final stats = await CommercialService.getStats();
-      
+
       if (mounted) {
         setState(() {
           _nbClients = stats['nbClients'] ?? 0;
@@ -57,31 +57,27 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
     }
   }
 
- 
   final List<Map<String, dynamic>> _services = [
-    
     {
       'image': 'assets/images/etudee.png',
       'title': 'CORIS ETUDE',
       'route': '/etude',
     },
-     {
+    {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS EPARGNE',
       'route': '/epargne',
     },
-     {
+    {
       'image': 'assets/images/serenite.png',
       'title': 'CORIS SERENITE PLUS',
       'route': '/serenite',
     },
-   
     {
       'image': 'assets/images/retraitee.png',
       'title': 'CORIS RETRAITE',
       'route': '/retraite',
     },
-    
     {
       'image': 'assets/images/solidarite.png',
       'title': 'CORIS SOLIDARITE',
@@ -136,86 +132,86 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
           backgroundColor: bleuCoris,
           elevation: 0,
           automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Container(
-              width: 35,
-              height: 35,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 35,
-                  height: 35,
-                  fit: BoxFit.contain,
+          title: Row(
+            children: [
+              Container(
+                width: 35,
+                height: 35,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 35,
+                    height: 35,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'MyCorisLife',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
+              const SizedBox(width: 10),
+              const Text(
+                'MyCorisLife',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
               ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none, color: Colors.white),
+              onPressed: () {
+                Navigator.pushNamed(context, '/notifications');
+              },
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
-          ),
-        ],
-      ),
-      body: _selectedIndex == 0 ? _buildHomePage() : _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: rougeCoris,
-        unselectedItemColor: Colors.grey[600],
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        selectedFontSize: 10,
-        unselectedFontSize: 11,
-        onTap: (int index) {
-          if (index == 2) {
-            Navigator.pushNamed(context, '/souscription');
-          } else if (index == 4) {
-            Navigator.pushNamed(context, '/profileCommercial');
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Accueil",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Mes Clients",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_add),
-            label: "Souscrire",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on),
-            label: "Mes Commissions",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profil",
-          ),
-        ],
-      ),
+        body: _selectedIndex == 0 ? _buildHomePage() : _pages[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          selectedItemColor: rougeCoris,
+          unselectedItemColor: Colors.grey[600],
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 10,
+          unselectedFontSize: 11,
+          onTap: (int index) {
+            if (index == 2) {
+              Navigator.pushNamed(context, '/souscription');
+            } else if (index == 4) {
+              Navigator.pushNamed(context, '/profileCommercial');
+            } else {
+              setState(() {
+                _selectedIndex = index;
+              });
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: "Accueil",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people),
+              label: "Mes Clients",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment_add),
+              label: "Souscrire",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.monetization_on),
+              label: "Mes Commissions",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: "Profil",
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -451,7 +447,6 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
               ),
             ),
           ),
-          
           Padding(
             padding: EdgeInsets.all(screenWidth * 0.05),
             child: Column(
@@ -504,8 +499,6 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
-                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

@@ -15,7 +15,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   bool _showSearchBar = false; // Contrôle l'affichage de la barre de recherche
-  
+
   // ============================================
   // CHARTE GRAPHIQUE CORIS
   // ============================================
@@ -73,9 +73,9 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
       final fullName = '$nom $prenom';
       final produit = (sub['produit_nom'] ?? '').toLowerCase();
       final numeroPolice = (sub['numero_police'] ?? '').toLowerCase();
-      return fullName.contains(query) || 
-             produit.contains(query) || 
-             numeroPolice.contains(query);
+      return fullName.contains(query) ||
+          produit.contains(query) ||
+          numeroPolice.contains(query);
     }).toList();
   }
 
@@ -90,12 +90,13 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
   }
 
   String _formatProductName(String productName) {
-    if (productName.isEmpty || productName == 'Non renseigné') return productName;
+    if (productName.isEmpty || productName == 'Non renseigné')
+      return productName;
     // Convertir coris_retraite -> Coris Retraite
     return productName
         .split('_')
-        .map((word) => word.isEmpty 
-            ? '' 
+        .map((word) => word.isEmpty
+            ? ''
             : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' ');
   }
@@ -126,13 +127,15 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SubscriptionDetailScreen(subscription: subscription),
+        builder: (context) =>
+            SubscriptionDetailScreen(subscription: subscription),
       ),
     );
   }
 
   /// Construit un chip d'information avec icône
-  Widget _buildInfoChip(IconData icon, String label, String value, Color color) {
+  Widget _buildInfoChip(
+      IconData icon, String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -226,7 +229,8 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
            * - La barre de recherche s'affiche conditionnellement dans le body
            */
           IconButton(
-            icon: Icon(_showSearchBar ? Icons.close : Icons.search, color: Colors.white),
+            icon: Icon(_showSearchBar ? Icons.close : Icons.search,
+                color: Colors.white),
             onPressed: () {
               setState(() {
                 _showSearchBar = !_showSearchBar;
@@ -266,7 +270,8 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText: 'Rechercher par nom de client, produit ou numéro de police...',
+                  hintText:
+                      'Rechercher par nom de client, produit ou numéro de police...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -286,302 +291,350 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                 ),
               ),
             ),
-          
+
           // Liste des propositions/contrats
           Expanded(
             child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : _filteredSubscriptions.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
                               Icons.description_outlined,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
                               _searchQuery.isEmpty
                                   ? 'Aucune proposition/contrat trouvé'
                                   : 'Aucun résultat ne correspond à votre recherche',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                            if (_searchQuery.isEmpty)
-                      Text(
-                                'Vos propositions et contrats apparaîtront ici',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                        onRefresh: _loadSubscriptions,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                          itemCount: _filteredSubscriptions.length,
-                    itemBuilder: (context, index) {
-                            final subscription = _filteredSubscriptions[index];
-                            final clientName = '${subscription['nom'] ?? ''} ${subscription['prenom'] ?? ''}'.trim();
-                            final clientNameDisplay = clientName.isEmpty ? 'Client non renseigné' : clientName;
-                            
-                      // Couleurs pour le design amélioré
-                      final statusColor = _getStatusColor(subscription['statut']);
-                      final isContrat = subscription['statut'] == 'contrat';
-                      
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: blanc,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
+                            const SizedBox(height: 8),
+                            if (_searchQuery.isEmpty)
+                              Text(
+                                'Vos propositions et contrats apparaîtront ici',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
                           ],
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => _viewSubscriptionDetail(subscription),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // En-tête avec avatar et nom
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 56,
-                                        height: 56,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              bleuCoris,
-                                              bleuCoris.withValues(alpha: 0.8),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(14),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: bleuCoris.withValues(alpha: 0.3),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            clientNameDisplay.isNotEmpty 
-                                                ? clientNameDisplay[0].toUpperCase()
-                                                : '?',
-                                            style: const TextStyle(
-                                              color: blanc,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 24,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadSubscriptions,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredSubscriptions.length,
+                          itemBuilder: (context, index) {
+                            final subscription = _filteredSubscriptions[index];
+                            final clientName =
+                                '${subscription['nom'] ?? ''} ${subscription['prenom'] ?? ''}'
+                                    .trim();
+                            final clientNameDisplay = clientName.isEmpty
+                                ? 'Client non renseigné'
+                                : clientName;
+
+                            // Couleurs pour le design amélioré
+                            final statusColor =
+                                _getStatusColor(subscription['statut']);
+                            final isContrat =
+                                subscription['statut'] == 'contrat';
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: blanc,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () =>
+                                      _viewSubscriptionDetail(subscription),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // En-tête avec avatar et nom
+                                        Row(
                                           children: [
-                                            Text(
-                                              clientNameDisplay,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                                color: bleuCoris,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            // Badge de statut
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 4,
-                                              ),
+                                              width: 56,
+                                              height: 56,
                                               decoration: BoxDecoration(
-                                                color: statusColor.withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: statusColor.withValues(alpha: 0.3),
-                                                  width: 1,
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    bleuCoris,
+                                                    bleuCoris.withValues(
+                                                        alpha: 0.8),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: bleuCoris.withValues(
+                                                        alpha: 0.3),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  clientNameDisplay.isNotEmpty
+                                                      ? clientNameDisplay[0]
+                                                          .toUpperCase()
+                                                      : '?',
+                                                  style: const TextStyle(
+                                                    color: blanc,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 24,
+                                                  ),
                                                 ),
                                               ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  Icon(
-                                                    isContrat ? Icons.check_circle : Icons.pending,
-                                                    size: 14,
-                                                    color: statusColor,
-                                                  ),
-                                                  const SizedBox(width: 6),
                                                   Text(
-                                                    _getStatusLabel(subscription['statut']),
-                                                    style: TextStyle(
-                                                      color: statusColor,
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
+                                                    clientNameDisplay,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                      color: bleuCoris,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  // Badge de statut
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: statusColor
+                                                          .withValues(
+                                                              alpha: 0.15),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      border: Border.all(
+                                                        color: statusColor
+                                                            .withValues(
+                                                                alpha: 0.3),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          isContrat
+                                                              ? Icons
+                                                                  .check_circle
+                                                              : Icons.pending,
+                                                          size: 14,
+                                                          color: statusColor,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 6),
+                                                        Text(
+                                                          _getStatusLabel(
+                                                              subscription[
+                                                                  'statut']),
+                                                          style: TextStyle(
+                                                            color: statusColor,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: bleuCoris.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.picture_as_pdf,
-                                            color: bleuCoris,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => PdfViewerPage(
-                                                subscriptionId: subscription['id'],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        tooltip: 'Voir le PDF',
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  // Informations du produit
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: fondCarte,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: bleuCoris.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.inventory_2_outlined,
-                                            color: bleuCoris,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Produit',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: grisTexte,
-                                                  fontWeight: FontWeight.w500,
+                                            IconButton(
+                                              icon: Container(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: bleuCoris.withValues(
+                                                      alpha: 0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.picture_as_pdf,
+                                                  color: bleuCoris,
+                                                  size: 20,
                                                 ),
                                               ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                _formatProductName(subscription['produit_nom'] ?? 'Non renseigné'),
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        PdfViewerPage(
+                                                      subscriptionId:
+                                                          subscription['id'],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              tooltip: 'Voir le PDF',
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Informations du produit
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: fondCarte,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: bleuCoris.withValues(
+                                                      alpha: 0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.inventory_2_outlined,
                                                   color: bleuCoris,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Produit',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: grisTexte,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      _formatProductName(
+                                                          subscription[
+                                                                  'produit_nom'] ??
+                                                              'Non renseigné'),
+                                                      style: const TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: bleuCoris,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
+                                        const SizedBox(height: 12),
+                                        // Informations complémentaires
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildInfoChip(
+                                                Icons.receipt_long,
+                                                'N° Police',
+                                                subscription['numero_police'] ??
+                                                    'N/A',
+                                                bleuCoris,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: _buildInfoChip(
+                                                Icons.calendar_today,
+                                                'Date',
+                                                _formatDate(subscription[
+                                                        'date_creation']
+                                                    ?.toString()),
+                                                orangeWarning,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        // Flèche de navigation
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              'Voir les détails',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: bleuCoris,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 16,
+                                              color: bleuCoris,
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  // Informations complémentaires
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildInfoChip(
-                                          Icons.receipt_long,
-                                          'N° Police',
-                                          subscription['numero_police'] ?? 'N/A',
-                                          bleuCoris,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildInfoChip(
-                                          Icons.calendar_today,
-                                          'Date',
-                                          _formatDate(subscription['date_creation']?.toString()),
-                                          orangeWarning,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Flèche de navigation
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'Voir les détails',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: bleuCoris,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.arrow_forward_ios,
-                                        size: 16,
-                                        color: bleuCoris,
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                       ),
           ),
         ],
-                ),
+      ),
     );
   }
 }
