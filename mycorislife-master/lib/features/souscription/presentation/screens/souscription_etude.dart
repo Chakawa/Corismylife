@@ -2063,6 +2063,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030, 12, 31),
+      locale: const Locale('fr', 'FR'),
       initialDatePickerMode: DatePickerMode.day,
     );
 

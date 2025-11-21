@@ -70,6 +70,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   // Step 1 controllers
   final _capitalController = TextEditingController();
   final _dureeController = TextEditingController();
+  final _dateEffetController = TextEditingController();
   String _selectedPeriodicite = 'annuel';
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
@@ -3109,6 +3110,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       if (mounted) {
         setState(() {
           _dateEffetContrat = picked;
+          _dateEffetController.text =
+              '${picked.day}/${picked.month}/${picked.year}';
           final duree = int.tryParse(_dureeController.text) ?? 0;
           _dateEcheanceContrat =
               DateTime(picked.year + duree, picked.month, picked.day);
@@ -3676,10 +3679,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           onTap: _selectDateEffet,
           child: AbsorbPointer(
             child: TextFormField(
-              controller: TextEditingController(
-                  text: _dateEffetContrat != null
-                      ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                      : ''),
+              controller: _dateEffetController,
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding:

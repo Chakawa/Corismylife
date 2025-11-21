@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -162,6 +164,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       TextEditingController(); // Capital pour la garantie prévoyance (optionnel)
   final TextEditingController _capitalPerteEmploiController =
       TextEditingController(); // Capital pour la garantie perte d'emploi (optionnel)
+  final TextEditingController _dateEffetController =
+      TextEditingController(); // Contrôleur pour la date d'effet
 
   // ============================================
   // VARIABLES POUR LA SIMULATION
@@ -1987,8 +1991,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }
 
   void _effectuerCalcul() {
-    // Ne pas calculer si l'âge n'est pas encore déterminé ou invalide
-    if (_age <= 0 || _age < 18 || _age > 65) {
+    // Ne pas calculer si l'âge n'est pas encore déterminé
+    if (_age <= 0) {
       return;
     }
 
@@ -2993,9 +2997,15 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           ),
           SizedBox(height: 10),
           _buildResultRow(
-              'Prime annuelle estimée', _formatMontant(_calculatedPrime)),
+              'Prime annuelle totale', _formatMontant(_calculatedPrime)),
           _buildResultRow(
-              'Capital garanti', _formatMontant(_calculatedCapital)),
+              'Capital à garantir', _formatMontant(_calculatedCapital)),
+          if (_garantiePrevoyance && _selectedTypePret != 'Prêt scolaire')
+            _buildResultRow(
+                'Prime Prévoyance', _formatMontant(_primePrevoyance)),
+          if (_garantiePerteEmploi && _selectedTypePret != 'Prêt scolaire')
+            _buildResultRow(
+                'Prime Perte d\'emploi', _formatMontant(_primePerteEmploi)),
         ],
       ),
     );
@@ -3262,11 +3272,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           },
                         ),
                         SizedBox(height: 16),
-                        _buildDateField(
-                          controller: TextEditingController(
-                              text: _dateEffetContrat != null
-                                  ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                                  : ''),
+                        _buildDateEffetField(
+                          controller: _dateEffetController,
                           label: 'Date d\'effet du contrat',
                           icon: Icons.event,
                           onDateSelected: (date) {
@@ -3447,8 +3454,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: DateTime.now().subtract(Duration(days: 365 * 30)),
-              firstDate: DateTime(1950),
+              firstDate: DateTime(1900),
               lastDate: DateTime.now(),
+              locale: const Locale('fr', 'FR'),
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
@@ -3506,6 +3514,80 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                 }
                 return null;
               },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateEffetField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ValueChanged<DateTime> onDateSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+          ),
+        ),
+        SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2100),
+              locale: const Locale('fr', 'FR'),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: bleuCoris,
+                      onPrimary: blanc,
+                    ),
+                    dialogTheme: DialogThemeData(
+                      backgroundColor: blanc,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              controller.text = '${picked.day}/${picked.month}/${picked.year}';
+              onDateSelected(picked);
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: label,
+                prefixIcon: Container(
+                  margin: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(0, 43, 107, 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: bleuCoris, size: 20),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: blanc,
+              ),
             ),
           ),
         ),
@@ -4038,14 +4120,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             ],
           ),
           SizedBox(height: 20),
-          _buildRecapSection(
-            'Documents',
-            Icons.description,
-            bleuSecondaire,
-            [
-              _buildRecapRow('Pièce d\'identité',
-                  _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-            ],
+          SubscriptionRecapWidgets.buildDocumentsSection(
+            pieceIdentite: _pieceIdentite?.path.split('/').last,
+            onDocumentTap: _pieceIdentite != null
+                ? () => _viewLocalDocument(
+                    _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+                : null,
           ),
           SizedBox(height: 20),
           Container(
@@ -4242,6 +4322,18 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _viewLocalDocument(File document, String filename) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          localFile: document,
+          documentName: filename,
+        ),
       ),
     );
   }
@@ -4553,6 +4645,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
+    _dateEffetController.dispose();
     super.dispose();
   }
 }

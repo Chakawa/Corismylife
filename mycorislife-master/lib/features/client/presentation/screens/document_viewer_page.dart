@@ -75,7 +75,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       print('Token: $token');
 
       final url =
-          '${AppConfig.baseUrl}/api/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
+          '${AppConfig.baseUrl}/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
       print('URL: $url');
 
       final response = await http.get(

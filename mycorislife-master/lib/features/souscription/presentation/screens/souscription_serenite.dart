@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -1411,6 +1413,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   void _effectuerCalcul() async {
     if (_age < 18 || _age > 69) {
+      _showProfessionalDialog(
+        title: 'Limite d\'âge dépassée',
+        message:
+            'Le Coris Sérénité est disponible pour les personnes âgées de 18 à 69 ans. L\'âge actuel (${_age} ans) n\'est pas éligible pour ce produit.',
+        icon: Icons.schedule_outlined,
+        iconColor: orangeWarning,
+        backgroundColor: orangeWarning,
+      );
       return;
     }
 
@@ -1445,7 +1455,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // Calcul à partir du capital saisi
           String capitalText = _capitalController.text.replaceAll(' ', '');
           double capital = double.tryParse(capitalText) ?? 0;
-          if (capital <= 0) return;
+          if (capital <= 0) {
+            _calculatedPrime = 0;
+            _calculatedCapital = 0;
+            return;
+          }
 
           // Vérification du capital maximum (40 000 000 FCFA)
           if (capital > 40000000) {
@@ -1478,7 +1492,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // Calcul à partir de la prime saisie
           String primeText = _primeController.text.replaceAll(' ', '');
           double prime = double.tryParse(primeText) ?? 0;
-          if (prime <= 0) return;
+          if (prime <= 0) {
+            _calculatedPrime = 0;
+            _calculatedCapital = 0;
+            return;
+          }
 
           // Prime annuelle pour 1000 FCFA de capital
           double primeAnnuellePour1000 = primePour1000;
@@ -1528,6 +1546,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
+      locale: const Locale('fr', 'FR'),
     );
     if (picked != null) {
       if (mounted) {
@@ -3334,10 +3353,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
       ]),
       const SizedBox(height: 20),
-      _buildRecapSection('Documents', Icons.description, bleuSecondaire, [
-        _buildRecapRow('Pièce d\'identité',
-            _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-      ]),
+      SubscriptionRecapWidgets.buildDocumentsSection(
+        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        onDocumentTap: _pieceIdentite != null
+            ? () => _viewLocalDocument(
+                _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+            : null,
+      ),
       const SizedBox(height: 20),
       Container(
         padding: const EdgeInsets.all(16),
@@ -3461,6 +3483,18 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
         ])),
       ]),
+    );
+  }
+
+  void _viewLocalDocument(File document, String filename) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          localFile: document,
+          documentName: filename,
+        ),
+      ),
     );
   }
 

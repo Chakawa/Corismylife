@@ -113,6 +113,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   String _selectedLienParente = 'Enfant';
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
+  final _dateEffetController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
@@ -794,6 +795,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (mounted) {
         setState(() {
           _dateEffetContrat = picked;
+          _dateEffetController.text =
+              '${picked.day}/${picked.month}/${picked.year}';
           // Calculer la date d'échéance
           final duree = int.tryParse(_dureeController.text) ?? 0;
           final dureeAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
@@ -1524,10 +1527,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           onTap: _selectDateEffet,
           child: AbsorbPointer(
             child: TextFormField(
-              controller: TextEditingController(
-                  text: _dateEffetContrat != null
-                      ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                      : ''),
+              controller: _dateEffetController,
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding:
