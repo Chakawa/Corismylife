@@ -67,7 +67,11 @@ const getTarifsByProduit = async (req, res) => {
     const cached = getFromCache(cacheKey);
     if (cached) return res.json({ success: true, data: cached, cached: true });
 
-    let query = 'SELECT * FROM tarif_produit';
+    // Forcer le formatage avec 5 décimales pour prime et capital
+    let query = `SELECT id, produit_id, duree_contrat, periodicite, 
+           to_char(prime, 'FM9999999990.00000') as prime, to_char(capital, 'FM9999999990.00000') as capital, 
+           age, categorie, created_at 
+           FROM tarif_produit`;
     const params = [];
     if (produit_id) {
       query += ' WHERE produit_id = $1 ORDER BY age, duree_contrat';
@@ -92,7 +96,11 @@ const searchTarifs = async (req, res) => {
     const cached = getFromCache(cacheKey);
     if (cached) return res.json({ success: true, data: cached, cached: true });
 
-    let query = 'SELECT * FROM tarif_produit WHERE 1=1';
+    // Forcer le formatage avec 5 décimales pour prime et capital
+    let query = `SELECT id, produit_id, duree_contrat, periodicite, 
+           to_char(prime, 'FM9999999990.00000') as prime, to_char(capital, 'FM9999999990.00000') as capital, 
+           age, categorie, created_at 
+           FROM tarif_produit WHERE 1=1`;
     const params = [];
     let i = 1;
     if (produit_id) { query += ` AND produit_id = $${i++}`; params.push(produit_id); }

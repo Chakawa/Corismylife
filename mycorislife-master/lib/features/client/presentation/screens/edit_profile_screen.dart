@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import 'package:mycorislife/config/app_config.dart';
+import 'photo_viewer_page.dart';
 
 /// Page de modification du profil utilisateur
 /// Permet à l'utilisateur de modifier ses informations personnelles
@@ -131,16 +133,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
-        maxWidth: 800,
+        maxWidth: 1200,
       );
       if (image == null) return;
 
+      // Essayer de recadrer l'image (optionnel)
+      CroppedFile? croppedFile;
+      try {
+        croppedFile = await ImageCropper().cropImage(
+          sourcePath: image.path,
+          compressQuality: 85,
+          maxWidth: 800,
+          maxHeight: 800,
+          compressFormat: ImageCompressFormat.jpg,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Recadrer la photo',
+              toolbarColor: bleuCoris,
+              toolbarWidgetColor: blanc,
+              backgroundColor: Colors.black,
+              activeControlsWidgetColor: bleuCoris,
+              lockAspectRatio: false,
+              hideBottomControls: false,
+            ),
+            IOSUiSettings(
+              title: 'Recadrer la photo',
+              aspectRatioLockEnabled: false,
+              resetAspectRatioEnabled: true,
+            ),
+          ],
+        );
+      } catch (cropError) {
+        debugPrint('⚠️ Erreur recadrage (utilisation image originale): $cropError');
+        // Si le recadrage échoue, utiliser l'image originale
+        croppedFile = null;
+      }
+
+      // Utiliser l'image recadrée si disponible, sinon l'originale
+      final imagePathToUpload = croppedFile?.path ?? image.path;
+
       setState(() {
-        _selectedPhoto = File(image.path);
+        _selectedPhoto = File(imagePathToUpload);
         _isUploadingPhoto = true;
       });
 
-      final photoUrl = await UserService.uploadPhoto(image.path);
+      final photoUrl = await UserService.uploadPhoto(imagePathToUpload);
       
       setState(() {
         _photoUrl = photoUrl;
@@ -218,6 +255,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           children: [
                             GestureDetector(
                               onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                              onLongPress: (_photoUrl != null || _selectedPhoto != null)
+                                  ? () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PhotoViewerPage(
+                                            photoUrl: _photoUrl,
+                                            localFile: _selectedPhoto,
+                                            title: 'Photo de profil',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  : null,
                               child: Container(
                                 width: 100,
                                 height: 100,
@@ -271,9 +322,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       const SizedBox(height: 8),
                       Center(
-                        child: Text(
-                          'Appuyez pour changer la photo',
-                          style: TextStyle(fontSize: 12, color: grisTexte),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Appuyez pour changer la photo',
+                              style: TextStyle(fontSize: 12, color: grisTexte),
+                            ),
+                            if (_photoUrl != null || _selectedPhoto != null)
+                              Text(
+                                'Maintenez appuyé pour voir',
+                                style: TextStyle(fontSize: 11, color: grisTexte.withOpacity(0.7)),
+                              ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 30),

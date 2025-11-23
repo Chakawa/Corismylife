@@ -4,6 +4,7 @@ import 'package:mycorislife/features/auth/presentation/screens/two_fa_screen.dar
 import 'package:mycorislife/features/client/presentation/screens/kyc_documents_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/attach_proposal_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
+import 'photo_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/settings_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/edit_profile_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
@@ -262,24 +263,39 @@ class _ProfilPageState extends State<ProfilPage> {
         children: [
           Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF002B6B), Color(0xFF003A85)],
+              GestureDetector(
+                onTap: _photoUrl != null
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PhotoViewerPage(
+                              photoUrl: _photoUrl,
+                              title: 'Photo de profil',
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF002B6B), Color(0xFF003A85)],
+                    ),
                   ),
-                ),
-                child: CircleAvatar(
-                  radius: 36,
-                  backgroundImage: _photoUrl != null
-                      ? NetworkImage(
-                          '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl')
-                      : null,
-                  backgroundColor: const Color(0xFFF0F4F8),
-                  child: _photoUrl == null
-                      ? const Icon(Icons.person, size: 40, color: bleuCoris)
-                      : null,
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundImage: _photoUrl != null
+                        ? NetworkImage(
+                            '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl')
+                        : null,
+                    backgroundColor: const Color(0xFFF0F4F8),
+                    child: _photoUrl == null
+                        ? const Icon(Icons.person, size: 40, color: bleuCoris)
+                        : null,
+                  ),
                 ),
               ),
               Positioned(

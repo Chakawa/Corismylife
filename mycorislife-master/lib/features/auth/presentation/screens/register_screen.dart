@@ -841,7 +841,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: isLoading
               ? null
               : (_currentPage == 2
-                  ? (isPasswordValid &&
+                  ? (passwordController.text.isNotEmpty &&
+                          confirmPasswordController.text.isNotEmpty &&
                           passwordController.text == confirmPasswordController.text
                       ? _register
                       : null)

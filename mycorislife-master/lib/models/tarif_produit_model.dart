@@ -58,7 +58,10 @@ class TarifProduit {
       if (value is int) return value.toDouble();
       if (value is String) {
         final parsed = double.tryParse(value);
-        if (parsed != null) return parsed;
+        if (parsed != null) {
+          // Round to 5 decimal places to preserve the expected precision for simulations
+          return double.parse(parsed.toStringAsFixed(5));
+        }
       }
       return null;
     }
