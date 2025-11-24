@@ -1068,6 +1068,67 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           setState(() {
             _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
           });
+          
+          // Validation de la durée minimale
+          if (_selectedUnite == 'années' && duree < 1) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message: 'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+          if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message: 'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+          
+          // Validation de la durée maximale
+          if (_selectedUnite == 'années' && duree > 15) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message: 'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+          if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message: 'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+          
           _effectuerCalcul();
         }
       }

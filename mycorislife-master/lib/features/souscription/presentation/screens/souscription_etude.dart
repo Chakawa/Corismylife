@@ -1978,7 +1978,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       // ÉTAPE 2: Simuler le paiement
@@ -2019,7 +2024,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       _showSuccessDialog(false);

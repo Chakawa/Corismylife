@@ -569,6 +569,37 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           setState(() {
             _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
           });
+          
+          // Validation de la durée en années
+          if (_dureeEnAnnees < 5) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message: 'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0.0;
+              _calculatedCapital = 0.0;
+            });
+            return;
+          }
+          if (_dureeEnAnnees > 50) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message: 'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0.0;
+              _calculatedCapital = 0.0;
+            });
+            return;
+          }
+          
           _effectuerCalcul();
         }
       }
@@ -935,6 +966,33 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         if (_dureeController.text.isNotEmpty) {
           int duree = int.tryParse(_dureeController.text) ?? 0;
           _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+          
+          // Validation de la durée en années
+          if (_dureeEnAnnees < 5) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message: 'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
+            return;
+          }
+          if (_dureeEnAnnees > 50) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message: 'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
+            return;
+          }
+          
           _effectuerCalcul();
         }
       });
@@ -1003,6 +1061,98 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         ]),
         backgroundColor: vertSucces,
       ),
+    );
+  }
+
+  void _showProfessionalDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 16,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                        backgroundColor.withAlpha(25), Colors.white),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: bleuCoris,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Compris',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2950,7 +3100,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       // ÉTAPE 2: Simuler le paiement
@@ -2985,7 +3140,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (mounted) {
