@@ -61,7 +61,10 @@ class _ProfilPageState extends State<ProfilPage> {
   String get _email => _userData?['email'] ?? 'email@exemple.com';
 
   /// Obtient l'URL de la photo de profil
-  String? get _photoUrl => _userData?['photo_url'];
+  String? get _photoUrl {
+    final url = _userData?['photo_url'];
+    return url != null ? url.toString().trim() : null;
+  }
 
   /// Obtient le numéro de téléphone
   String get _telephone => _userData?['telephone'] ?? 'Non renseigné';

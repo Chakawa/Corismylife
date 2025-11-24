@@ -342,7 +342,7 @@ class UserService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        final photoUrl = data['data']['photo_url'];
+        final photoUrl = data['data']['photo_url']?.toString().trim() ?? '';
 
         // Mettre à jour les données utilisateur en local
         final userJson = await _storage.read(key: 'user');

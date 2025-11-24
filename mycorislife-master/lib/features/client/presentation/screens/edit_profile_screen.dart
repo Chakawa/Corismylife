@@ -66,7 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _telephoneController.text = user['telephone'] ?? '';
         _adresseController.text = user['adresse'] ?? '';
         _civilite = user['civilite'];
-        _photoUrl = user['photo_url'];
+        _photoUrl = user['photo_url'] != null ? user['photo_url'].toString().trim() : null;
         _isLoading = false;
       });
     } catch (e) {

@@ -493,7 +493,7 @@ exports.uploadPhoto = (req, res) => {
     
     try {
       const userId = req.user.id;
-      const photoUrl = '/uploads/profiles/' + req.file.filename;
+      const photoUrl = ('/uploads/profiles/' + req.file.filename).trim();
       
       console.log('📸 Upload photo pour utilisateur:', userId);
       console.log('📁 Fichier:', req.file.filename);
