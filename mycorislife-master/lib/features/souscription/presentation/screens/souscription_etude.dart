@@ -1364,7 +1364,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   String _formatMontant(double montant) {
-    return "${montant.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\.))'), (Match m) => '${m[1]} ')} FCFA";
+    // Enlever les décimales - affichage sans virgule
+    final rounded = montant.round();
+    return "${rounded.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   void _formatMontantInput() {
@@ -1381,8 +1383,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   String _formatNumber(double number) {
-    return number.toStringAsFixed(2).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\.))'),
+    // Enlever les décimales - affichage sans virgule
+    final rounded = number.round();
+    return rounded.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
   }

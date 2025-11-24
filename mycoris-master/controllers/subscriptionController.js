@@ -496,15 +496,29 @@ exports.uploadDocument = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Erreur upload document:', error);
+    console.error('❌ Stack trace:', error.stack);
     
     // Supprimer le fichier en cas d'erreur
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('🗑️ Fichier uploadé supprimé suite à l\'erreur');
+      } catch (unlinkError) {
+        console.error('❌ Impossible de supprimer le fichier:', unlinkError);
+      }
     }
+    
+    // Retourner un message d'erreur plus détaillé
+    const errorMessage = error.code === '23505' 
+      ? 'Un document avec ce nom existe déjà'
+      : error.code === '23503'
+        ? 'Souscription non trouvée'
+        : error.message || 'Erreur lors du téléchargement du document';
     
     res.status(500).json({
       success: false,
-      message: 'Erreur lors du téléchargement du document'
+      message: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

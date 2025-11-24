@@ -116,7 +116,7 @@ class SubscriptionRecapWidgets {
   static Widget buildRecapRow(String label, String value,
       {bool isHighlighted = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -136,6 +136,8 @@ class SubscriptionRecapWidgets {
               color: isHighlighted ? vertSucces : bleuCoris,
               fontSize: 13,
             ),
+            overflow: TextOverflow.visible,
+            softWrap: true,
           ),
         ],
       ),
@@ -146,64 +148,128 @@ class SubscriptionRecapWidgets {
   static Widget buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          // Sur petits écrans, afficher en colonne pour meilleure lisibilité
+          if (screenWidth < 380) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: grisTexte,
-                    fontSize: 12,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: grisTexte,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: bleuCoris,
-                    fontSize: 13,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label2,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: grisTexte,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value2,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label2,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: grisTexte,
-                    fontSize: 12,
-                  ),
+            );
+          }
+          
+          // Sur écrans normaux, afficher en deux colonnes côte à côte
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: grisTexte,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value2,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: bleuCoris,
-                    fontSize: 13,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label2,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: grisTexte,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value2,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

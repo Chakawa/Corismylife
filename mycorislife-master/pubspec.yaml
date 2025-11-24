@@ -35,6 +35,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0  # Linting pour un code propre
+  flutter_launcher_icons: ^0.10.0
+
+# Configuration pour générer les icônes d'application à partir du logo
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#002B6B"
+  remove_alpha: true
 
 flutter:
   uses-material-design: true

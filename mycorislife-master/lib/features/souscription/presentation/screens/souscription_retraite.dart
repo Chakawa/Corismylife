@@ -453,6 +453,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _animationController.forward();
     // Pré-remplir les données de simulation si fournies
     _prefillSimulationData();
+
+    // Après init, vérifier si le calcul doit être refait (si l'âge a été défini après)
+    Future.microtask(() {
+      if (_age > 0 && (_calculatedCapital == 0 || _calculatedPrime == 0)) {
+        _effectuerCalcul();
+      }
+    });
   }
 
   @override
@@ -509,10 +516,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 }
                 // Utiliser l'âge du client pour le calcul
                 _age = _clientAge;
+                debugPrint('👤 Âge client (commercial) calculé: $_age ans');
               });
+              // Déclencher le calcul après avoir défini l'âge
+              if (_age > 0) {
+                debugPrint('📢 Appel _effectuerCalcul depuis didChangeDependencies (commercial)');
+                _effectuerCalcul();
+              }
             }
           } catch (e) {
-            print('Erreur parsing date de naissance: $e');
+            debugPrint('Erreur parsing date de naissance: $e');
           }
         }
 
@@ -585,6 +598,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (data['duree'] != null) {
         _dureeController.text = data['duree'].toString();
         _dureeEnAnnees = data['duree'];
+        debugPrint('📅 Durée pré-remplie: $_dureeEnAnnees années (valeur: ${data['duree']})');
+      }
+      
+      // Pré-remplir l'unité si fournie
+      if (data['unite'] != null) {
+        _selectedUnite = data['unite'];
+        debugPrint('📏 Unité pré-remplie: $_selectedUnite');
       }
 
       // Pré-remplir la périodicité
@@ -607,7 +627,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Déclencher le calcul si l'âge est disponible
       if (_age > 0) {
+        debugPrint('📢 Appel _effectuerCalcul depuis _prefillSimulationData (âge: $_age)');
         _effectuerCalcul();
+      } else {
+        debugPrint('⚠️ _prefillSimulationData: âge non disponible ($_age), calcul différé');
+        // Si l'âge n'est pas encore disponible, attendre qu'il soit chargé
+        Future.delayed(Duration(milliseconds: 200), () {
+          if (mounted && _age > 0) {
+            debugPrint('📢 Appel _effectuerCalcul depuis _prefillSimulationData (retardé, âge: $_age)');
+            _effectuerCalcul();
+          } else if (mounted) {
+            debugPrint('❌ _prefillSimulationData: âge toujours non disponible après délai');
+          }
+        });
       }
     }
   }
@@ -659,10 +691,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         maintenant.day < _dateNaissance!.day)) {
                   _age--;
                 }
+                debugPrint('👤 Âge utilisateur calculé: $_age ans (date naissance: $_dateNaissance)');
+              } else {
+                debugPrint('⚠️ Date de naissance manquante dans userData');
               }
             });
             // Effectuer le calcul après le chargement des données
             if (_age > 0) {
+              debugPrint('📢 Appel _effectuerCalcul depuis _loadUserData');
               _effectuerCalcul();
             }
           }
@@ -779,7 +815,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _effectuerCalcul() async {
+    debugPrint('🔍 _effectuerCalcul appelé - âge: $_age, durée: $_dureeEnAnnees années, périodicité: ${_getPeriodiciteKey()}');
+    
     if (_age < 18 || _age > 69) {
+      debugPrint('⚠️ Âge invalide pour calcul: $_age (doit être entre 18 et 69)');
+      if (mounted) {
+        setState(() {
+          _calculatedPrime = 0.0;
+          _calculatedCapital = 0.0;
+        });
+      }
+      return;
+    }
+    
+    if (_dureeEnAnnees < 5 || _dureeEnAnnees > 50) {
+      debugPrint('⚠️ Durée invalide pour calcul: $_dureeEnAnnees (doit être entre 5 et 50 ans)');
       if (mounted) {
         setState(() {
           _calculatedPrime = 0.0;
@@ -806,7 +856,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           capital = calculateCapital(_dureeEnAnnees, periodiciteKey, prime);
+          debugPrint('💰 calculateCapital($_dureeEnAnnees, $periodiciteKey, $prime) = $capital');
           if (capital == -1) {
+            debugPrint('❌ calculateCapital a retourné -1 (erreur)');
             capital = 0;
           }
         } else {
@@ -819,12 +871,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           prime = calculatePremium(_dureeEnAnnees, periodiciteKey, capital);
+          debugPrint('💰 calculatePremium($_dureeEnAnnees, $periodiciteKey, $capital) = $prime');
           if (prime == -1) {
+            debugPrint('❌ calculatePremium a retourné -1 (erreur)');
             prime = 0;
           }
         }
         _calculatedPrime = prime;
         _calculatedCapital = capital;
+        
+        debugPrint('✅ Calcul effectué - Prime: ${_formatNumber(prime)} FCFA, Capital: ${_formatNumber(capital)} FCFA');
       });
     }
   }
@@ -2331,11 +2387,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    // S'assurer que les calculs sont effectués avant d'afficher
-    if (_calculatedCapital == 0 || _calculatedPrime == 0) {
-      _effectuerCalcul();
-    }
-
     final duree = _dureeController.text.isNotEmpty
         ? int.tryParse(_dureeController.text) ?? 0
         : 0;
@@ -2526,22 +2577,44 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   Widget _buildRecapRow(String label, String value,
       {bool isHighlighted = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-            width: 110,
-            child: Text('$label :',
-                style: TextStyle(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isSmallScreen = screenWidth < 360;
+          final labelWidth = isSmallScreen ? 100.0 : 120.0;
+          final fontSize = isSmallScreen ? 11.0 : 12.0;
+          
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: labelWidth,
+                child: Text(
+                  '$label :',
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
-                    fontSize: 12))),
-        Expanded(
-            child: Text(value,
-                style: TextStyle(
+                    fontSize: fontSize,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isHighlighted ? vertSucces : bleuCoris,
-                    fontSize: isHighlighted ? 13 : 12))),
-      ]),
+                    fontSize: isHighlighted ? fontSize + 1 : fontSize,
+                  ),
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -2586,47 +2659,103 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   Widget _buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Flexible(
-            flex: 1,
-            child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isSmallScreen = screenWidth < 360;
+          final fontSize = isSmallScreen ? 11.0 : 12.0;
+          
+          // Sur très petits écrans, afficher en colonne au lieu de côte à côte
+          if (screenWidth < 340) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$label1 :',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: grisTexte,
-                        fontSize: 12)),
-                Text(value1,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: bleuCoris,
-                        fontSize: 12)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label1 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value1,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label2 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value2,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$label2 :',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: grisTexte,
-                        fontSize: 12)),
-                Text(value2,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: bleuCoris,
-                        fontSize: 12)),
-              ],
-            ),
-          ),
-        ],
+            );
+          }
+          
+          return Row(
+            children: [
+              Flexible(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label1 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value1,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label2 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value2,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -2897,11 +3026,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
+        // Ne pas continuer si erreur
+        throw Exception(responseData['message'] ?? 'Erreur upload document');
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
+      // Rethrow pour que l'appelant puisse gérer l'erreur
+      rethrow;
     }
   }
 

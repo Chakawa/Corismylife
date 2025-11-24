@@ -30,14 +30,21 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         
-        // Limiter à x86_64 pour éviter les problèmes CMake avec d'autres architectures
-        ndk {
-            abiFilters.add("x86_64")
-        }
+        // Support pour toutes les architectures Android (pas de limitation)
+        // Supporte automatiquement: armeabi-v7a, arm64-v8a, x86, x86_64
     }
 
     buildTypes {
         release {
+            // Optimisation désactivée pour le développement
+            // TODO: Activer lors de la version finale de production
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // proguardFiles(
+            //     getDefaultProguardFile("proguard-android-optimize.txt"),
+            //     "proguard-rules.pro"
+            // )
+            
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")

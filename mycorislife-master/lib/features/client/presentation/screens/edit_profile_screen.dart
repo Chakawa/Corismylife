@@ -91,13 +91,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Appeler l'API pour mettre à jour le profil
+      // Récupérer l'utilisateur en cache pour préserver les champs
+      final existingUser = await UserService.getUserFromStorage();
+      final existingDate = existingUser != null ? existingUser['date_naissance'] : null;
+      final existingLieu = existingUser != null ? existingUser['lieu_naissance'] : null;
+
+      // Appeler l'API pour mettre à jour le profil. On inclut explicitement
+      // la date et le lieu de naissance si présents afin d'éviter de les
+      // écraser avec des valeurs nulles.
       await UserService.updateProfile(
         civilite: _civilite ?? 'M.',
         nom: _nomController.text.trim(),
         prenom: _prenomController.text.trim(),
         telephone: _telephoneController.text.trim(),
         adresse: _adresseController.text.trim(),
+        dateNaissance: existingDate,
+        lieuNaissance: existingLieu,
       );
 
       if (!mounted) return;

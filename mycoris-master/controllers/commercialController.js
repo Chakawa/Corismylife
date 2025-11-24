@@ -493,24 +493,31 @@ exports.getCommercialCommissions = async (req, res) => {
       });
     }
 
-    // URL de l'API externe des bordereaux de commissions
-    // Remplace {codeApporteur} par le code apporteur du commercial connecté
-    const apiUrl = `https://ecoris-assurances.com/api/bordereaux-commissions/${codeApporteur}`;
-
     console.log(`🔄 Récupération des bordereaux pour le code apporteur: ${codeApporteur}`);
 
-    // Faire la requête vers l'API externe
-    const response = await axios.get(apiUrl, {
-      timeout: 10000, // Timeout de 10 secondes
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    });
+    // Requête vers la table bordereau_commissions
+    const query = `
+      SELECT 
+        id,
+        exercice,
+        numefeui,
+        refefeui,
+        datedebut,
+        datefin,
+        etatfeuille,
+        montfeui,
+        typeappo,
+        codappin,
+        datefeui
+      FROM bordereau_commissions
+      WHERE codappin = $1
+      ORDER BY exercice DESC, numefeui DESC
+    `;
 
-    // Vérifier que la réponse contient des données
-    if (!response.data || !response.data.messge) {
-      console.log('⚠️ Aucune donnée trouvée dans la réponse de l\'API');
+    const result = await pool.query(query, [codeApporteur]);
+
+    if (result.rows.length === 0) {
+      console.log('⚠️ Aucun bordereau trouvé pour ce code apporteur');
       return res.json({
         success: true,
         data: [],
@@ -519,19 +526,16 @@ exports.getCommercialCommissions = async (req, res) => {
       });
     }
 
-    // Extraire les bordereaux depuis la réponse
-    // Note: L'API retourne "messge" au lieu de "message" (probablement une typo dans l'API)
-    const bordereaux = response.data.messge || [];
+    const bordereaux = result.rows;
 
     // Calculer le total de toutes les commissions
     let totalCommissions = 0;
     const bordereauxFormates = bordereaux.map(bordereau => {
-      // Convertir le montant en nombre (il est probablement en string)
+      // Convertir le montant en nombre
       const montant = parseFloat(bordereau.montfeui) || 0;
       totalCommissions += montant;
 
-      // Formater les dates pour un meilleur affichage
-      // Les dates sont au format DD/MM/YYYY
+      // Formater les dates (déjà au format texte dans la DB)
       const dateDebut = bordereau.datedebut || '';
       const dateFin = bordereau.datefin || '';
 
@@ -580,23 +584,6 @@ exports.getCommercialCommissions = async (req, res) => {
   } catch (error) {
     console.error('❌ Erreur récupération bordereaux de commissions:', error.message);
     
-    // Gérer les erreurs spécifiques
-    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      return res.status(503).json({
-        success: false,
-        message: 'Service de commissions temporairement indisponible. Veuillez réessayer plus tard.'
-      });
-    }
-
-    if (error.response && error.response.status === 404) {
-      return res.json({
-        success: true,
-        data: [],
-        total: 0,
-        message: 'Aucun bordereau de commission trouvé pour ce code apporteur'
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des bordereaux de commissions',

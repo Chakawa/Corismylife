@@ -115,20 +115,21 @@ exports.updateProfile = async (req, res) => {
     const query = `
       UPDATE users 
       SET civilite = $1,
-          nom = $2,
-          prenom = $3,
-          telephone = $4,
-          adresse = $5,
-          date_naissance = $6,
-          lieu_naissance = $7,
-          pays = $8,
-          updated_at = CURRENT_TIMESTAMP
+        nom = $2,
+        prenom = $3,
+        telephone = $4,
+        adresse = $5,
+        -- Préserver les valeurs existantes si le payload n'envoie pas de nouvelle valeur
+        date_naissance = COALESCE(NULLIF($6::text, '')::date, date_naissance),
+        lieu_naissance = COALESCE(NULLIF($7::text, ''), lieu_naissance),
+        pays = COALESCE(NULLIF($8::text, ''), pays),
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = $9
       RETURNING id, civilite, nom, prenom, email, telephone, 
-                date_naissance, lieu_naissance, adresse, pays,
-                photo_url, role, code_apporteur
+          date_naissance, lieu_naissance, adresse, pays,
+          photo_url, role, code_apporteur
     `;
-    
+
     const values = [civilite, nom, prenom, telephone, adresse, date_naissance, lieu_naissance, pays, userId];
     
     const result = await pool.query(query, values);
