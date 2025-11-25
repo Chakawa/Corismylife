@@ -209,7 +209,7 @@ class SubscriptionRecapWidgets {
               ],
             );
           }
-          
+
           // Sur écrans normaux, afficher en deux colonnes côte à côte
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,

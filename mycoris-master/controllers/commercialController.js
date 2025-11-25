@@ -374,8 +374,13 @@ exports.getCommercialSubscriptions = async (req, res) => {
 };
 
 /**
- * Récupère la liste unique des clients qui ont des souscriptions
+ * Récupère la liste unique de TOUS les clients qui ont des souscriptions
+ * (peu importe le commercial qui a créé la souscription)
  * GET /api/commercial/clients-with-subscriptions
+ * 
+ * MODIFICATION: Retourne TOUS les clients de TOUS les commerciaux
+ * pour permettre à n'importe quel commercial de réutiliser les données
+ * d'un client déjà enregistré par un autre commercial.
  */
 exports.getClientsWithSubscriptions = async (req, res) => {
   try {
@@ -388,7 +393,8 @@ exports.getClientsWithSubscriptions = async (req, res) => {
       });
     }
 
-    // Récupérer les clients uniques depuis les souscriptions
+    // Récupérer TOUS les clients uniques depuis TOUTES les souscriptions
+    // (suppression du filtre WHERE s.code_apporteur = $1)
     // Utiliser les infos depuis souscription_data.client_info
     const query = `
       SELECT DISTINCT ON (
@@ -403,6 +409,7 @@ exports.getClientsWithSubscriptions = async (req, res) => {
         s.souscriptiondata->'client_info'->>'adresse' as adresse,
         s.souscriptiondata->'client_info'->>'civilite' as civilite,
         s.souscriptiondata->'client_info'->>'numero_piece_identite' as numero_piece_identite,
+        s.code_apporteur as created_by_code,
         u.id as user_id,
         u.nom as user_nom,
         u.prenom as user_prenom,
@@ -414,15 +421,14 @@ exports.getClientsWithSubscriptions = async (req, res) => {
         u.civilite as user_civilite
       FROM subscriptions s
       LEFT JOIN users u ON s.user_id = u.id
-      WHERE s.code_apporteur = $1
-        AND (
-          s.souscriptiondata->'client_info'->>'nom' IS NOT NULL
-          OR u.nom IS NOT NULL
-        )
+      WHERE (
+        s.souscriptiondata->'client_info'->>'nom' IS NOT NULL
+        OR u.nom IS NOT NULL
+      )
       ORDER BY COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone), s.date_creation DESC
     `;
 
-    const result = await pool.query(query, [codeApporteur]);
+    const result = await pool.query(query);
 
     // Formater les résultats pour utiliser les infos client depuis souscription_data en priorité
     const formattedResults = result.rows
@@ -436,13 +442,16 @@ exports.getClientsWithSubscriptions = async (req, res) => {
         adresse: row.adresse || row.user_adresse || '',
         civilite: row.civilite || row.user_civilite || '',
         numero_piece_identite: row.numero_piece_identite || '',
-        user_id: row.user_id || null
+        user_id: row.user_id || null,
+        created_by_code: row.created_by_code || null, // Code du commercial qui a créé cette souscription
+        is_own_client: row.created_by_code === codeApporteur // Indique si c'est un client du commercial connecté
       }))
       .filter(client => (client.nom && client.nom.trim() !== '') || (client.prenom && client.prenom.trim() !== ''));
 
     res.json({
       success: true,
-      data: formattedResults
+      data: formattedResults,
+      message: `${formattedResults.length} client(s) trouvé(s) (tous commerciaux confondus)`
     });
   } catch (error) {
     console.error('Erreur récupération clients avec souscriptions:', error);
@@ -507,10 +516,10 @@ exports.getCommercialCommissions = async (req, res) => {
         etatfeuille,
         montfeui,
         typeappo,
-        codappin,
+        codeappin,
         datefeui
       FROM bordereau_commissions
-      WHERE codappin = $1
+      WHERE codeappin = $1
       ORDER BY exercice DESC, numefeui DESC
     `;
 
@@ -563,7 +572,7 @@ exports.getCommercialCommissions = async (req, res) => {
         }).format(montant).replace('XOF', 'FCFA'),
         typeApporteur: typeApporteur,
         typeApporteurLabel: typeApporteurLabel,
-        codeApporteur: bordereau.codappin || codeApporteur
+        codeApporteur: bordereau.codeappin || codeApporteur
       };
     });
 

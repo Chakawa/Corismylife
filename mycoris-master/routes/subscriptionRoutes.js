@@ -26,8 +26,10 @@ router.put('/:id/payment-status', verifyToken, updatePaymentStatus);
 router.post('/:id/upload-document', verifyToken, upload.single('document'), uploadDocument);
 router.get('/user/propositions', verifyToken, getUserPropositions);
 router.get('/user/contrats', verifyToken, getUserContracts);
-router.get('/:id', verifyToken, getSubscriptionWithUserDetails);
+// Routes spécifiques AVANT les routes génériques
 router.get('/:id/pdf', verifyToken, getSubscriptionPDF);
 router.get('/:id/document/:filename', verifyToken, getDocument);
+// Route générique /:id EN DERNIER
+router.get('/:id', verifyToken, getSubscriptionWithUserDetails);
 router.post('/attach', verifyToken, attachProposal);
 module.exports = router;

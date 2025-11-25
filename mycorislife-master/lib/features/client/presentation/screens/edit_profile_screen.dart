@@ -66,7 +66,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _telephoneController.text = user['telephone'] ?? '';
         _adresseController.text = user['adresse'] ?? '';
         _civilite = user['civilite'];
-        _photoUrl = user['photo_url'] != null ? user['photo_url'].toString().trim() : null;
+        _photoUrl = user['photo_url'] != null
+            ? user['photo_url'].toString().trim()
+            : null;
         _isLoading = false;
       });
     } catch (e) {
@@ -93,8 +95,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       // Récupérer l'utilisateur en cache pour préserver les champs
       final existingUser = await UserService.getUserFromStorage();
-      final existingDate = existingUser != null ? existingUser['date_naissance'] : null;
-      final existingLieu = existingUser != null ? existingUser['lieu_naissance'] : null;
+      final existingDate =
+          existingUser != null ? existingUser['date_naissance'] : null;
+      final existingLieu =
+          existingUser != null ? existingUser['lieu_naissance'] : null;
 
       // Appeler l'API pour mettre à jour le profil. On inclut explicitement
       // la date et le lieu de naissance si présents afin d'éviter de les
@@ -173,7 +177,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         );
       } catch (cropError) {
-        debugPrint('⚠️ Erreur recadrage (utilisation image originale): $cropError');
+        debugPrint(
+            '⚠️ Erreur recadrage (utilisation image originale): $cropError');
         // Si le recadrage échoue, utiliser l'image originale
         croppedFile = null;
       }
@@ -187,7 +192,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
 
       final photoUrl = await UserService.uploadPhoto(imagePathToUpload);
-      
+
       setState(() {
         _photoUrl = photoUrl;
         _selectedPhoto = null;
@@ -263,8 +268,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Stack(
                           children: [
                             GestureDetector(
-                              onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
-                              onLongPress: (_photoUrl != null || _selectedPhoto != null)
+                              onTap: _isUploadingPhoto
+                                  ? null
+                                  : _pickAndUploadPhoto,
+                              onLongPress: (_photoUrl != null ||
+                                      _selectedPhoto != null)
                                   ? () {
                                       Navigator.push(
                                         context,
@@ -283,20 +291,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 height: 100,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: bleuCoris, width: 3),
+                                  border:
+                                      Border.all(color: bleuCoris, width: 3),
                                 ),
                                 child: ClipOval(
                                   child: _selectedPhoto != null
-                                      ? Image.file(_selectedPhoto!, fit: BoxFit.cover)
+                                      ? Image.file(_selectedPhoto!,
+                                          fit: BoxFit.cover)
                                       : _photoUrl != null
                                           ? Image.network(
                                               '${AppConfig.baseUrl}$_photoUrl',
                                               fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 50, color: bleuCoris),
+                                              errorBuilder: (_, __, ___) =>
+                                                  const Icon(Icons.person,
+                                                      size: 50,
+                                                      color: bleuCoris),
                                             )
                                           : Container(
                                               color: bleuCoris.withOpacity(0.1),
-                                              child: const Icon(Icons.person, size: 50, color: bleuCoris),
+                                              child: const Icon(Icons.person,
+                                                  size: 50, color: bleuCoris),
                                             ),
                                 ),
                               ),
@@ -309,7 +323,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     color: Colors.black.withOpacity(0.5),
                                   ),
                                   child: const Center(
-                                    child: CircularProgressIndicator(color: blanc),
+                                    child:
+                                        CircularProgressIndicator(color: blanc),
                                   ),
                                 ),
                               )
@@ -323,7 +338,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     color: bleuCoris,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.camera_alt, size: 20, color: blanc),
+                                  child: const Icon(Icons.camera_alt,
+                                      size: 20, color: blanc),
                                 ),
                               ),
                           ],
@@ -340,7 +356,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             if (_photoUrl != null || _selectedPhoto != null)
                               Text(
                                 'Maintenez appuyé pour voir',
-                                style: TextStyle(fontSize: 11, color: grisTexte.withOpacity(0.7)),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: grisTexte.withOpacity(0.7)),
                               ),
                           ],
                         ),

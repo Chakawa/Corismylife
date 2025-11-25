@@ -48,6 +48,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   // client route
   '/client_home': (context) => const HomePage(),
   '/clientHome': (context) => HomePage(),
+  '/client/dashboard': (context) => const HomePage(),
 
   // Simulations Client
   '/simulation_etude': (context) => const SimulationEtudeScreen(),
@@ -147,6 +148,7 @@ final Map<String, WidgetBuilder> appRoutes = {
     return SelectClientScreen(
       productType: args?['productType'] ?? '',
       simulationData: args?['simulationData'],
+      subscriptionId: args?['subscriptionId'], // Support de la modification
     );
   },
   '/commercial/register_client': (context) {

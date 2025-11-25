@@ -7,6 +7,11 @@ import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_etude.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_serenite.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_retraite.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_epargne.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
 
 /// ============================================
 /// PAGE DE DÉTAILS D'UNE PROPOSITION
@@ -90,6 +95,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   }
 
   Future<void> _loadSubscriptionData() async {
+    if (!mounted) return;
+
     try {
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
 
@@ -104,14 +111,22 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           'piece_identite direct: ${data['subscription']?['souscriptiondata']?['piece_identite']}');
       developer.log('User: ${data['user']}');
 
+      if (!mounted) return;
+
       setState(() {
         _subscriptionData = data['subscription'];
         _userData = data['user'];
         _isLoading = false;
       });
-      _animationController.forward();
+
+      if (mounted) {
+        _animationController.forward();
+      }
     } catch (e) {
       developer.log('Erreur: $e', error: e);
+
+      if (!mounted) return;
+
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -1084,6 +1099,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     final productType = _getProductType().toLowerCase();
     final details = _getSubscriptionDetails();
 
+    // Extraire client_info si c'est une souscription par commercial
+    final clientInfo = details['client_info'];
+    final String? clientId =
+        clientInfo != null ? clientInfo['id']?.toString() : null;
+    final Map<String, dynamic>? clientData =
+        clientInfo != null ? Map<String, dynamic>.from(clientInfo) : null;
+
     // Rediriger vers la page de souscription appropriée avec les données
     if (productType.contains('etude')) {
       Navigator.push(
@@ -1092,80 +1114,92 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           builder: (context) => SouscriptionEtudePage(
             subscriptionId: widget.subscriptionId,
             existingData: details,
+            clientId: clientId,
+            clientData: clientData,
           ),
         ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('serenite') ||
         productType.contains('sérénité')) {
-      Navigator.pushNamed(
+      Navigator.push(
         context,
-        '/serenite',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
+        MaterialPageRoute(
+          builder: (context) => SouscriptionSerenitePage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('retraite')) {
-      Navigator.pushNamed(
+      Navigator.push(
         context,
-        '/retraite',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
+        MaterialPageRoute(
+          builder: (context) => SouscriptionRetraitePage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('solidarite') ||
         productType.contains('solidarité')) {
-      Navigator.pushNamed(
-        context,
-        '/souscription_solidarite',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
-      ).then((_) {
-        _loadSubscriptionData();
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'La modification de CORIS SOLIDARITÉ sera bientôt disponible'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     } else if (productType.contains('familis')) {
-      Navigator.pushNamed(
+      Navigator.push(
         context,
-        '/familis',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
+        MaterialPageRoute(
+          builder: (context) => SouscriptionFamilisPage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('flex') ||
         productType.contains('emprunteur')) {
-      Navigator.pushNamed(
+      Navigator.push(
         context,
-        '/flex',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
+        MaterialPageRoute(
+          builder: (context) => SouscriptionFlexPage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('epargne') ||
         productType.contains('épargne')) {
-      Navigator.pushNamed(
+      Navigator.push(
         context,
-        '/epargne',
-        arguments: {
-          'subscriptionId': widget.subscriptionId,
-          'existingData': details,
-        },
+        MaterialPageRoute(
+          builder: (context) => SouscriptionEpargnePage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+          ),
+        ),
       ).then((_) {
-        _loadSubscriptionData();
+        if (mounted) _loadSubscriptionData();
       });
     } else {
       // Produit non reconnu

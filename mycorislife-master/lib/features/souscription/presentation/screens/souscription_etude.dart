@@ -1116,6 +1116,66 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
     final data = widget.existingData!;
 
+    // Détecter si c'est une souscription par commercial (présence de client_info)
+    if (data['client_info'] != null) {
+      _isCommercial = true;
+      final clientInfo = data['client_info'] as Map<String, dynamic>;
+
+      // Pré-remplir les champs client
+      _clientNomController.text = clientInfo['nom'] ?? '';
+      _clientPrenomController.text = clientInfo['prenom'] ?? '';
+      _clientEmailController.text = clientInfo['email'] ?? '';
+      _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+      _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
+      _clientAdresseController.text = clientInfo['adresse'] ?? '';
+      _clientNumeroPieceController.text =
+          clientInfo['numero_piece_identite'] ?? '';
+
+      if (clientInfo['civilite'] != null) {
+        _selectedClientCivilite = clientInfo['civilite'];
+      }
+
+      // Date de naissance du client
+      if (clientInfo['date_naissance'] != null) {
+        try {
+          DateTime? dateNaissance;
+          if (clientInfo['date_naissance'] is String) {
+            dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+          } else if (clientInfo['date_naissance'] is DateTime) {
+            dateNaissance = clientInfo['date_naissance'];
+          }
+
+          if (dateNaissance != null) {
+            _dateNaissanceParent = dateNaissance;
+            _clientDateNaissanceController.text =
+                '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
+            final maintenant = DateTime.now();
+            _clientAgeParent = maintenant.year - dateNaissance.year;
+            if (maintenant.month < dateNaissance.month ||
+                (maintenant.month == dateNaissance.month &&
+                    maintenant.day < dateNaissance.day)) {
+              _clientAgeParent = (_clientAgeParent ?? 0) - 1;
+            }
+            _calculatedAgeParent = _clientAgeParent;
+          }
+        } catch (e) {
+          debugPrint('Erreur parsing date de naissance client: $e');
+        }
+      }
+
+      // Extraire l'indicatif du téléphone si présent
+      final telephone = clientInfo['telephone'] ?? '';
+      if (telephone.isNotEmpty && telephone.startsWith('+')) {
+        final parts = telephone.split(' ');
+        if (parts.isNotEmpty) {
+          _selectedClientIndicatif = parts[0];
+          if (parts.length > 1) {
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+          }
+        }
+      }
+    }
+
     // Mode de souscription
     if (data['mode_souscription'] != null) {
       _selectedMode =
@@ -1673,10 +1733,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           'Âge du souscripteur non valide (18-60 ans requis). Âge calculé: ${_clientAgeParent ?? 0} ans');
       return false;
     }
-    if (_clientEmailController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir l\'email du client');
-      return false;
-    }
+    // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;

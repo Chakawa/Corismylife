@@ -3,11 +3,14 @@ import '../../domain/commercial_service.dart';
 
 class SelectClientScreen extends StatefulWidget {
   final String productType; // Type de produit pour rediriger après sélection
-  final Map<String, dynamic>? simulationData; // Données de simulation
+  final Map<String, dynamic>?
+      simulationData; // Données de simulation ou données de souscription existante
+  final int? subscriptionId; // ID de la souscription pour modification
   const SelectClientScreen({
     super.key,
     required this.productType,
     this.simulationData,
+    this.subscriptionId,
   });
 
   @override
@@ -81,7 +84,10 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
         'isCommercial': true,
         'clientInfo':
             client, // Passer les informations du client pour pré-remplissage
-        'simulationData': widget.simulationData,
+        'simulationData':
+            widget.simulationData, // Données de souscription à pré-remplir
+        'existingData': widget.simulationData, // Alias pour compatibilité
+        'subscriptionId': widget.subscriptionId, // ID pour modification
       },
     );
   }
@@ -146,6 +152,10 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                     'isCommercial':
                         true, // Indique que c'est un commercial qui fait la souscription
                     'simulationData': widget.simulationData,
+                    'existingData':
+                        widget.simulationData, // Alias pour compatibilité
+                    'subscriptionId':
+                        widget.subscriptionId, // ID pour modification
                   },
                 );
               },
@@ -218,7 +228,10 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                               child: ListTile(
                                 contentPadding: const EdgeInsets.all(16),
                                 leading: CircleAvatar(
-                                  backgroundColor: bleuCoris,
+                                  backgroundColor:
+                                      client['is_own_client'] == true
+                                          ? bleuCoris
+                                          : Colors.orange,
                                   child: Text(
                                     '${client['nom']?[0] ?? ''}${client['prenom']?[0] ?? ''}'
                                         .toUpperCase(),
@@ -228,12 +241,53 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                                     ),
                                   ),
                                 ),
-                                title: Text(
-                                  '${client['nom'] ?? ''} ${client['prenom'] ?? ''}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${client['nom'] ?? ''} ${client['prenom'] ?? ''}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    if (client['is_own_client'] == false)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: Colors.orange,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.share,
+                                              size: 12,
+                                              color: Colors.orange,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Text(
+                                              'Autre commercial',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

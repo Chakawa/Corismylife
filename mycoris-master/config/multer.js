@@ -63,9 +63,15 @@ const fileFilter = (req, file, cb) => {
   // Accepter seulement les images et PDF
   const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
   
+  console.log('🔍 FileFilter - Fichier reçu:', file.originalname);
+  console.log('🔍 FileFilter - MIME type reçu:', file.mimetype);
+  console.log('🔍 FileFilter - MIME types autorisés:', allowedMimes);
+  
   if (allowedMimes.includes(file.mimetype)) {
+    console.log('✅ FileFilter - Fichier accepté');
     cb(null, true);
   } else {
+    console.log('❌ FileFilter - Fichier rejeté, MIME type non autorisé');
     cb(new Error('Format non autorisé. Seuls les images (JPEG, PNG, GIF) et PDF sont acceptés.'), false);
   }
 };

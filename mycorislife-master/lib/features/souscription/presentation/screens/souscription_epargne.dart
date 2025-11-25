@@ -8,7 +8,12 @@ import 'dart:convert';
 import 'dart:io';
 
 class SouscriptionEpargnePage extends StatefulWidget {
-  const SouscriptionEpargnePage({super.key});
+  final int? subscriptionId; // ID pour modification
+  final Map<String, dynamic>?
+      existingData; // Données existantes pour modification
+
+  const SouscriptionEpargnePage(
+      {super.key, this.subscriptionId, this.existingData});
 
   @override
   State<SouscriptionEpargnePage> createState() =>
@@ -142,6 +147,131 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
 
     _animationController.forward();
+
+    if (widget.existingData != null) {
+      _prefillFromExistingData();
+    }
+  }
+
+  /// Méthode pour pré-remplir les champs depuis une proposition existante
+  void _prefillFromExistingData() {
+    if (widget.existingData == null) return;
+
+    final data = widget.existingData!;
+    debugPrint('🔄 Pré-remplissage ÉPARGNE depuis données existantes');
+
+    // Détecter si c'est une souscription par commercial (présence de client_info)
+    if (data['client_info'] != null) {
+      _isCommercial = true;
+      final clientInfo = data['client_info'] as Map<String, dynamic>;
+      _clientNomController.text = clientInfo['nom'] ?? '';
+      _clientPrenomController.text = clientInfo['prenom'] ?? '';
+      _clientEmailController.text = clientInfo['email'] ?? '';
+      _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+      _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
+      _clientAdresseController.text = clientInfo['adresse'] ?? '';
+      // Note: souscription_epargne n'a pas de champ numéro de pièce
+      if (clientInfo['civilite'] != null)
+        _selectedClientCivilite = clientInfo['civilite'];
+      if (clientInfo['date_naissance'] != null) {
+        try {
+          DateTime? dateNaissance;
+          if (clientInfo['date_naissance'] is String) {
+            dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+          } else if (clientInfo['date_naissance'] is DateTime) {
+            dateNaissance = clientInfo['date_naissance'];
+          }
+          if (dateNaissance != null) {
+            _clientDateNaissance = dateNaissance;
+            _clientDateNaissanceController.text =
+                '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
+            final maintenant = DateTime.now();
+            _clientAge = maintenant.year - dateNaissance.year;
+            if (maintenant.month < dateNaissance.month ||
+                (maintenant.month == dateNaissance.month &&
+                    maintenant.day < dateNaissance.day)) {
+              _clientAge--;
+            }
+          }
+        } catch (e) {
+          debugPrint('Erreur parsing date de naissance client: $e');
+        }
+      }
+      final telephone = clientInfo['telephone'] ?? '';
+      if (telephone.isNotEmpty && telephone.startsWith('+')) {
+        final parts = telephone.split(' ');
+        if (parts.isNotEmpty) {
+          _selectedClientIndicatif = parts[0];
+          if (parts.length > 1)
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+        }
+      }
+    }
+
+    try {
+      setState(() {
+        if (data['capital'] != null)
+          _selectedCapital = data['capital'] is int
+              ? data['capital']
+              : int.parse(data['capital'].toString());
+        if (data['prime_mensuelle'] != null)
+          _selectedPrime = data['prime_mensuelle'] is int
+              ? data['prime_mensuelle']
+              : int.parse(data['prime_mensuelle'].toString());
+
+        if (data['date_effet'] != null) {
+          try {
+            _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_effet: $e');
+          }
+        }
+        if (data['date_fin'] != null) {
+          try {
+            _dateFinContrat = DateTime.parse(data['date_fin'].toString());
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_fin: $e');
+          }
+        }
+      });
+
+      if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
+        final beneficiaire = data['beneficiaire'];
+        if (beneficiaire['nom'] != null)
+          _beneficiaireNomController.text = beneficiaire['nom'].toString();
+        if (beneficiaire['contact'] != null) {
+          final contact = beneficiaire['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedBeneficiaireIndicatif = parts[0];
+            _beneficiaireContactController.text = parts.sublist(1).join(' ');
+          }
+        }
+        if (beneficiaire['lien_parente'] != null)
+          _selectedLienParente = beneficiaire['lien_parente'].toString();
+      }
+
+      if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
+        final contactUrgence = data['contact_urgence'];
+        if (contactUrgence['nom'] != null)
+          _personneContactNomController.text = contactUrgence['nom'].toString();
+        if (contactUrgence['contact'] != null) {
+          final contact = contactUrgence['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedContactIndicatif = parts[0];
+            _personneContactTelController.text = parts.sublist(1).join(' ');
+          }
+        }
+        if (contactUrgence['lien_parente'] != null)
+          _selectedLienParenteUrgence =
+              contactUrgence['lien_parente'].toString();
+      }
+
+      debugPrint('✅ Pré-remplissage ÉPARGNE terminé');
+    } catch (e) {
+      debugPrint('❌ Erreur pré-remplissage ÉPARGNE: $e');
+    }
   }
 
   @override
@@ -646,10 +776,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       _showErrorSnackBar('L\'âge du client doit être entre 18 et 65 ans');
       return false;
     }
-    if (_clientEmailController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir l\'email du client');
-      return false;
-    }
+    // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
@@ -722,11 +849,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
       };
 
-      final response =
-          await subscriptionService.createSubscription(subscriptionData);
+      final http.Response response;
+      if (widget.subscriptionId != null) {
+        response = await subscriptionService.updateSubscription(
+            widget.subscriptionId!, subscriptionData);
+      } else {
+        response =
+            await subscriptionService.createSubscription(subscriptionData);
+      }
+
       final responseData = jsonDecode(response.body);
 
-      if (response.statusCode != 201 || !responseData['success']) {
+      if ((response.statusCode != 201 && response.statusCode != 200) ||
+          !responseData['success']) {
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }

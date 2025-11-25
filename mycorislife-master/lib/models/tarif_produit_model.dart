@@ -2,7 +2,8 @@ class TarifProduit {
   final int? id;
   final int produitId;
   final int? dureeContrat; // Durée en mois ou années selon le produit
-  final String periodicite; // 'mensuel', 'trimestriel', 'semestriel', 'annuel', 'unique'
+  final String
+      periodicite; // 'mensuel', 'trimestriel', 'semestriel', 'annuel', 'unique'
   final double? prime;
   final double? capital;
   final int? age; // Nullable car RETRAITE et SOLIDARITÉ n'utilisent pas l'âge
@@ -75,20 +76,16 @@ class TarifProduit {
       capital: _toDouble(map['capital']),
       age: _toInt(map['age']),
       categorie: map['categorie']?.toString(),
-      createdAt: map['created_at'] != null 
-          ? DateTime.tryParse(map['created_at'].toString()) 
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString())
           : null,
-      updatedAt: map['updated_at'] != null 
-          ? DateTime.tryParse(map['updated_at'].toString()) 
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'].toString())
           : null,
     );
   }
 
   @override
-  String toString() => 
+  String toString() =>
       'TarifProduit(id: $id, produitId: $produitId, duree: $dureeContrat, periodicite: $periodicite, prime: $prime, capital: $capital, age: $age, categorie: $categorie)';
 }
-
-
-
-

@@ -44,12 +44,17 @@ class SouscriptionFlexPage extends StatefulWidget {
       clientId; // ID du client si souscription par commercial (DEPRECATED)
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial (nom, prénom, téléphone, etc.)
+  final int? subscriptionId; // ID pour modification
+  final Map<String, dynamic>?
+      existingData; // Données existantes pour modification
 
   const SouscriptionFlexPage({
     super.key,
     this.simulationData,
     this.clientId,
     this.clientData,
+    this.subscriptionId,
+    this.existingData,
   });
 
   @override
@@ -1730,7 +1735,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     );
     _animationController.forward();
 
-    _prefillSimulationData();
+    if (widget.existingData != null) {
+      _prefillFromExistingData();
+    } else {
+      _prefillSimulationData();
+    }
   }
 
   @override
@@ -1837,6 +1846,225 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               _formatNumber(data['capitalPerteEmploi'].toDouble());
         }
       });
+    }
+  }
+
+  /// Méthode pour pré-remplir les champs depuis une proposition existante
+  void _prefillFromExistingData() {
+    if (widget.existingData == null) return;
+
+    final data = widget.existingData!;
+    debugPrint('🔄 Pré-remplissage FLEX depuis données existantes');
+
+    // Détecter si c'est une souscription par commercial (présence de client_info)
+    if (data['client_info'] != null) {
+      _isCommercial = true;
+      final clientInfo = data['client_info'] as Map<String, dynamic>;
+      _clientNomController.text = clientInfo['nom'] ?? '';
+      _clientPrenomController.text = clientInfo['prenom'] ?? '';
+      _clientEmailController.text = clientInfo['email'] ?? '';
+      _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+      _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
+      _clientAdresseController.text = clientInfo['adresse'] ?? '';
+      _clientNumeroPieceController.text =
+          clientInfo['numero_piece_identite'] ?? '';
+      if (clientInfo['civilite'] != null)
+        _selectedClientCivilite = clientInfo['civilite'];
+      if (clientInfo['date_naissance'] != null) {
+        try {
+          DateTime? dateNaissance;
+          if (clientInfo['date_naissance'] is String) {
+            dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+          } else if (clientInfo['date_naissance'] is DateTime) {
+            dateNaissance = clientInfo['date_naissance'];
+          }
+          if (dateNaissance != null) {
+            _clientDateNaissance = dateNaissance;
+            _clientDateNaissanceController.text =
+                '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
+            final maintenant = DateTime.now();
+            _clientAge = maintenant.year - dateNaissance.year;
+            if (maintenant.month < dateNaissance.month ||
+                (maintenant.month == dateNaissance.month &&
+                    maintenant.day < dateNaissance.day)) {
+              _clientAge--;
+            }
+            _age = _clientAge;
+          }
+        } catch (e) {
+          debugPrint('Erreur parsing date de naissance client: $e');
+        }
+      }
+      final telephone = clientInfo['telephone'] ?? '';
+      if (telephone.isNotEmpty && telephone.startsWith('+')) {
+        final parts = telephone.split(' ');
+        if (parts.isNotEmpty) {
+          _selectedClientIndicatif = parts[0];
+          if (parts.length > 1)
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+        }
+      }
+    }
+
+    try {
+      setState(() {
+        // FLEX-specific fields
+        if (data['type_pret'] != null) _selectedTypePret = data['type_pret'];
+        if (data['capital'] != null) {
+          _capitalController.text = _formatNumber(data['capital'] is double
+              ? data['capital']
+              : double.parse(data['capital'].toString()));
+        }
+        if (data['duree'] != null)
+          _dureeController.text = data['duree'].toString();
+        if (data['duree_type'] != null) _selectedDureeType = data['duree_type'];
+        if (data['garantie_prevoyance'] != null)
+          _garantiePrevoyance = data['garantie_prevoyance'] == true ||
+              data['garantie_prevoyance'] == 1;
+        if (data['garantie_perte_emploi'] != null)
+          _garantiePerteEmploi = data['garantie_perte_emploi'] == true ||
+              data['garantie_perte_emploi'] == 1;
+
+        if (_garantiePrevoyance && data['capital_prevoyance'] != null) {
+          _capitalPrevoyanceController.text = _formatNumber(
+              data['capital_prevoyance'] is double
+                  ? data['capital_prevoyance']
+                  : double.parse(data['capital_prevoyance'].toString()));
+        }
+        if (_garantiePerteEmploi && data['capital_perte_emploi'] != null) {
+          _capitalPerteEmploiController.text = _formatNumber(
+              data['capital_perte_emploi'] is double
+                  ? data['capital_perte_emploi']
+                  : double.parse(data['capital_perte_emploi'].toString()));
+        }
+
+        if (data['prime_prevoyance'] != null)
+          _primePrevoyance = data['prime_prevoyance'] is double
+              ? data['prime_prevoyance']
+              : double.parse(data['prime_prevoyance'].toString());
+        if (data['prime_perte_emploi'] != null)
+          _primePerteEmploi = data['prime_perte_emploi'] is double
+              ? data['prime_perte_emploi']
+              : double.parse(data['prime_perte_emploi'].toString());
+        if (data['prime_annuelle'] != null)
+          _calculatedPrime = data['prime_annuelle'] is double
+              ? data['prime_annuelle']
+              : double.parse(data['prime_annuelle'].toString());
+        if (data['capital_garanti'] != null)
+          _calculatedCapital = data['capital_garanti'] is double
+              ? data['capital_garanti']
+              : double.parse(data['capital_garanti'].toString());
+
+        // Dates
+        if (data['date_effet'] != null) {
+          try {
+            _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_effet: $e');
+          }
+        }
+        if (data['date_echeance'] != null) {
+          try {
+            _dateEcheanceContrat =
+                DateTime.parse(data['date_echeance'].toString());
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_echeance: $e');
+          }
+        }
+      });
+
+      // Bénéficiaire
+      if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
+        final beneficiaire = data['beneficiaire'];
+        if (beneficiaire['nom'] != null) {
+          _beneficiaireNomController.text = beneficiaire['nom'].toString();
+        }
+        if (beneficiaire['contact'] != null) {
+          final contact = beneficiaire['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedBeneficiaireIndicatif = parts[0];
+            _beneficiaireContactController.text = parts.sublist(1).join(' ');
+          }
+        }
+        if (beneficiaire['lien_parente'] != null) {
+          _selectedLienParente = beneficiaire['lien_parente'].toString();
+        }
+      }
+
+      // Contact d'urgence
+      if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
+        final contactUrgence = data['contact_urgence'];
+        if (contactUrgence['nom'] != null) {
+          _personneContactNomController.text = contactUrgence['nom'].toString();
+        }
+        if (contactUrgence['contact'] != null) {
+          final contact = contactUrgence['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedContactIndicatif = parts[0];
+            _personneContactTelController.text = parts.sublist(1).join(' ');
+          }
+        }
+        if (contactUrgence['lien_parente'] != null) {
+          _selectedLienParenteUrgence =
+              contactUrgence['lien_parente'].toString();
+        }
+      }
+
+      // Client info if commercial
+      if (data['client_info'] != null && data['client_info'] is Map) {
+        final clientInfo = data['client_info'];
+        _isCommercial = true;
+
+        if (clientInfo['nom'] != null)
+          _clientNomController.text = clientInfo['nom'].toString();
+        if (clientInfo['prenom'] != null)
+          _clientPrenomController.text = clientInfo['prenom'].toString();
+        if (clientInfo['email'] != null)
+          _clientEmailController.text = clientInfo['email'].toString();
+        if (clientInfo['lieu_naissance'] != null)
+          _clientLieuNaissanceController.text =
+              clientInfo['lieu_naissance'].toString();
+        if (clientInfo['adresse'] != null)
+          _clientAdresseController.text = clientInfo['adresse'].toString();
+        if (clientInfo['civilite'] != null)
+          _selectedClientCivilite = clientInfo['civilite'].toString();
+        if (clientInfo['numero_piece_identite'] != null)
+          _clientNumeroPieceController.text =
+              clientInfo['numero_piece_identite'].toString();
+
+        if (clientInfo['telephone'] != null) {
+          final telephone = clientInfo['telephone'].toString();
+          final parts = telephone.split(' ');
+          if (parts.length >= 2) {
+            _selectedClientIndicatif = parts[0];
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+          }
+        }
+
+        if (clientInfo['date_naissance'] != null) {
+          try {
+            _clientDateNaissance =
+                DateTime.parse(clientInfo['date_naissance'].toString());
+            _clientDateNaissanceController.text =
+                "${_clientDateNaissance!.day.toString().padLeft(2, '0')}/${_clientDateNaissance!.month.toString().padLeft(2, '0')}/${_clientDateNaissance!.year}";
+            final now = DateTime.now();
+            _clientAge = now.year - _clientDateNaissance!.year;
+            if (now.month < _clientDateNaissance!.month ||
+                (now.month == _clientDateNaissance!.month &&
+                    now.day < _clientDateNaissance!.day)) {
+              _clientAge--;
+            }
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_naissance client: $e');
+          }
+        }
+      }
+
+      debugPrint('✅ Pré-remplissage FLEX terminé');
+    } catch (e) {
+      debugPrint('❌ Erreur pré-remplissage FLEX: $e');
     }
   }
 
@@ -2325,10 +2553,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       _showErrorSnackBar('L\'âge du client doit être entre 18 et 65 ans');
       return false;
     }
-    if (_clientEmailController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir l\'email du client');
-      return false;
-    }
+    // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
@@ -2412,10 +2637,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           _clientDateNaissanceController.text.trim().isEmpty ||
           _clientLieuNaissanceController.text.trim().isEmpty ||
           _clientTelephoneController.text.trim().isEmpty ||
-          _clientEmailController.text.trim().isEmpty ||
+          // Email non obligatoire - supprimé de la validation
           _clientAdresseController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez remplir toutes les informations du client');
+            'Veuillez remplir toutes les informations du client (sauf email qui est optionnel)');
         return false;
       }
     }
@@ -4492,16 +4717,24 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         };
       }
 
-      final response =
-          await subscriptionService.createSubscription(subscriptionData);
+      final http.Response response;
+      if (widget.subscriptionId != null) {
+        response = await subscriptionService.updateSubscription(
+            widget.subscriptionId!, subscriptionData);
+      } else {
+        response =
+            await subscriptionService.createSubscription(subscriptionData);
+      }
+
       final responseData = jsonDecode(response.body);
 
-      if (response.statusCode != 201 || !responseData['success']) {
+      if ((response.statusCode != 201 && response.statusCode != 200) ||
+          !responseData['success']) {
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      return responseData['data']['id'];
+      return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       debugPrint('Erreur sauvegarde souscription: $e');
       rethrow;

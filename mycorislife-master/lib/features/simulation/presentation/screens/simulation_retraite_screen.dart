@@ -681,7 +681,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     if (paidPremium < minPremium) {
       print('   ❌ ERREUR: Prime inférieure au minimum');
       showError(
-          "Pour cette périodicité ($periodicity), la prime minimum est ${_formatNumber(minPremium)} FCFA.");
+          "Pour cette périodicité ($periodicity), la prime minimale est ${_formatNumber(minPremium)} FCFA.");
       return -1;
     }
 

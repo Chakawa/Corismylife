@@ -216,77 +216,26 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         (widget.subscription['produit_nom'] ?? '').toLowerCase();
     final souscriptionData = _fullSubscriptionData?['souscriptiondata'];
 
-    // Naviguer vers la page de modification appropriée selon le produit
+    // Déterminer le type de produit pour la route
+    String routeProductType = '';
     if (productType.contains('etude')) {
-      Navigator.pushNamed(
-        context,
-        '/etude',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) {
-        // Recharger les données après modification
-        _loadFullSubscriptionData();
-      });
+      routeProductType = 'etude';
     } else if (productType.contains('serenite') ||
         productType.contains('sérénité')) {
-      Navigator.pushNamed(
-        context,
-        '/serenite',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'serenite';
     } else if (productType.contains('retraite')) {
-      Navigator.pushNamed(
-        context,
-        '/retraite',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'retraite';
     } else if (productType.contains('solidarite') ||
         productType.contains('solidarité')) {
-      Navigator.pushNamed(
-        context,
-        '/souscription_solidarite',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'solidarite';
     } else if (productType.contains('familis')) {
-      Navigator.pushNamed(
-        context,
-        '/familis',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'familis';
     } else if (productType.contains('flex') ||
         productType.contains('emprunteur')) {
-      Navigator.pushNamed(
-        context,
-        '/flex',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'flex';
     } else if (productType.contains('epargne') ||
         productType.contains('épargne')) {
-      Navigator.pushNamed(
-        context,
-        '/epargne',
-        arguments: {
-          'subscriptionId': subscriptionId,
-          'existingData': souscriptionData,
-        },
-      ).then((_) => _loadFullSubscriptionData());
+      routeProductType = 'epargne';
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -295,7 +244,23 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           backgroundColor: orangeWarning,
         ),
       );
+      return;
     }
+
+    // Naviguer vers la page de sélection de client avec les données de souscription en simulationData
+    Navigator.pushNamed(
+      context,
+      '/commercial/select_client',
+      arguments: {
+        'productType': routeProductType,
+        'simulationData':
+            souscriptionData, // Passer toutes les données de souscription pour pré-remplissage
+        'subscriptionId': subscriptionId, // Pour la modification
+      },
+    ).then((_) {
+      // Recharger les données après modification
+      _loadFullSubscriptionData();
+    });
   }
 
   void _showPaymentOptions() {

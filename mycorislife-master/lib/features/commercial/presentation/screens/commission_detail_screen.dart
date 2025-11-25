@@ -38,7 +38,13 @@ class CommissionDetailScreen extends StatelessWidget {
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) return 'Non renseigné';
-    return date;
+    try {
+      DateTime parsedDate = DateTime.parse(date);
+      return '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
+    } catch (e) {
+      print('Erreur formatage date: $e');
+      return date;
+    }
   }
 
   /// Formate un montant en FCFA

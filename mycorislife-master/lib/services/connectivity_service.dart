@@ -10,17 +10,20 @@ class ConnectivityService {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  StreamController<bool> connectionStatusController = StreamController<bool>.broadcast();
-  
+  StreamController<bool> connectionStatusController =
+      StreamController<bool>.broadcast();
+
   bool _isConnected = true;
   bool get isConnected => _isConnected;
 
   /// Initialise l'écoute des changements de connexion
   void initialize() {
     _checkConnection();
-    
-    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
+
+    _connectivity.onConnectivityChanged
+        .listen((List<ConnectivityResult> results) {
+      final result =
+          results.isNotEmpty ? results.first : ConnectivityResult.none;
       _updateConnectionStatus(result);
     });
   }
@@ -28,8 +31,10 @@ class ConnectivityService {
   /// Vérifie la connexion internet
   Future<void> _checkConnection() async {
     try {
-      final List<ConnectivityResult> results = await _connectivity.checkConnectivity();
-      final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
+      final List<ConnectivityResult> results =
+          await _connectivity.checkConnectivity();
+      final result =
+          results.isNotEmpty ? results.first : ConnectivityResult.none;
       _updateConnectionStatus(result);
     } catch (e) {
       debugPrint('❌ Erreur vérification connexion: $e');
@@ -41,9 +46,10 @@ class ConnectivityService {
   void _updateConnectionStatus(ConnectivityResult result) {
     final wasConnected = _isConnected;
     _isConnected = result != ConnectivityResult.none;
-    
+
     if (wasConnected != _isConnected) {
-      debugPrint('📡 Connexion internet: ${_isConnected ? "✅ Connecté" : "❌ Déconnecté"}');
+      debugPrint(
+          '📡 Connexion internet: ${_isConnected ? "✅ Connecté" : "❌ Déconnecté"}');
       connectionStatusController.add(_isConnected);
     }
   }
@@ -118,7 +124,8 @@ class _ConnectivityBuilderState extends State<ConnectivityBuilder> {
   void initState() {
     super.initState();
     _isConnected = _connectivityService.isConnected;
-    _subscription = _connectivityService.connectionStatusController.stream.listen((isConnected) {
+    _subscription = _connectivityService.connectionStatusController.stream
+        .listen((isConnected) {
       if (mounted) {
         setState(() {
           _isConnected = isConnected;

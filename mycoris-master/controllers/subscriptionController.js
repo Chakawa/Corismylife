@@ -28,9 +28,25 @@
 // ============================================
 // IMPORTS ET DÉPENDANCES
 // ============================================
-const pool = require('../db');  // Pool de connexions PostgreSQL (gestion automatique des connexions)
+const pool = require('../db');
+
+// Fonction helper pour convertir le code produit en nom
+function _getProductName(codeProd) {
+  const productMap = {
+    '240': 'CORIS SOLIDARITÉ',
+    '241': 'FLEX EMPRUNTEUR',
+    '242': 'CORIS ÉTUDE',
+    '243': 'CORIS RETRAITE',
+    '244': 'CORIS SÉRÉNITÉ',
+    '245': 'ÉPARGNE BONUS',
+    '246': 'CORIS FAMILIS'
+  };
+  return productMap[codeProd] || `Produit ${codeProd}`;
+}  // Pool de connexions PostgreSQL (gestion automatique des connexions)
 const { generatePolicyNumber } = require('../utils/helpers');  // Fonction utilitaire pour générer un numéro de police unique (format: PROD-YYYY-XXXXX)
 const PDFDocument = require('pdfkit'); // Bibliothèque pour générer des PDF dynamiques (utilisée pour les propositions/contrats)
+const fs = require('fs');  // Module Node.js pour les opérations sur le système de fichiers
+const path = require('path');  // Module Node.js pour manipuler les chemins de fichiers
 
 /**
  * ===============================================
@@ -428,11 +444,16 @@ exports.uploadDocument = async (req, res) => {
     console.log('🔗 URL du document:', documentUrl);
     
     // Récupérer l'ancien document pour le supprimer
+    // Note: Un commercial peut uploader pour une souscription créée pour un client
+    // Donc on vérifie soit user_id (souscription du client), soit code_apporteur (souscription créée par commercial)
     const oldDocQuery = `
       SELECT souscriptiondata->>'piece_identite' as old_doc,
-             souscriptiondata->>'piece_identite_url' as old_url
+             souscriptiondata->>'piece_identite_url' as old_url,
+             user_id,
+             code_apporteur
       FROM subscriptions 
-      WHERE id = $1 AND user_id = $2
+      WHERE id = $1 
+        AND (user_id = $2 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $2))
     `;
     const oldDocResult = await pool.query(oldDocQuery, [id, req.user.id]);
     
@@ -447,6 +468,7 @@ exports.uploadDocument = async (req, res) => {
     }
     
     // Mettre à jour avec le nom du fichier ET l'URL
+    // Note: Un commercial peut uploader pour une souscription qu'il a créée pour un client
     const query = `
       UPDATE subscriptions 
       SET souscriptiondata = jsonb_set(
@@ -459,7 +481,8 @@ exports.uploadDocument = async (req, res) => {
         $2
       ),
       updated_at = CURRENT_TIMESTAMP
-      WHERE id = $3 AND user_id = $4
+      WHERE id = $3 
+        AND (user_id = $4 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $4))
       RETURNING *;
     `;
     
@@ -475,9 +498,10 @@ exports.uploadDocument = async (req, res) => {
     if (result.rows.length === 0) {
       // Supprimer le fichier uploadé si la souscription n'existe pas
       fs.unlinkSync(req.file.path);
+      console.log('⚠️ Souscription non trouvée ou accès refusé pour user_id:', req.user.id, 'subscription_id:', id);
       return res.status(404).json({
         success: false,
-        message: 'Souscription non trouvée'
+        message: 'Souscription non trouvée ou accès refusé'
       });
     }
     
@@ -541,8 +565,8 @@ exports.getDocument = async (req, res) => {
       SELECT 
         s.id, 
         s.user_id, 
-        s.souscriptiondata->>'piece_identite' as doc_name,
-        s.souscriptiondata->>'code_apporteur' as code_apporteur
+        s.code_apporteur,
+        s.souscriptiondata->>'piece_identite' as doc_name
       FROM subscriptions s
       WHERE s.id = $1
     `;
@@ -594,7 +618,8 @@ exports.getDocument = async (req, res) => {
     }
     
     // Vérifier que le fichier demandé correspond au document de la souscription
-    if (subscription.doc_name !== filename) {
+    // Note: doc_name peut être null si pas de document uploadé
+    if (subscription.doc_name && subscription.doc_name !== filename) {
       console.error('❌ Fichier non autorisé:', filename, '!==', subscription.doc_name);
       return res.status(403).json({
         success: false,
@@ -604,9 +629,19 @@ exports.getDocument = async (req, res) => {
     
     const filePath = path.join(__dirname, '../uploads/identity-cards', filename);
     console.log('📂 Chemin fichier:', filePath);
+    console.log('📂 Chemin absolu:', path.resolve(filePath));
+    console.log('🔍 Fichier existe?', fs.existsSync(filePath));
     
     if (!fs.existsSync(filePath)) {
       console.error('❌ Fichier non trouvé sur le disque');
+      console.error('📂 Contenu du dossier identity-cards:');
+      const identityCardsDir = path.join(__dirname, '../uploads/identity-cards');
+      if (fs.existsSync(identityCardsDir)) {
+        const files = fs.readdirSync(identityCardsDir);
+        console.log('📁 Fichiers présents:', files);
+      } else {
+        console.error('❌ Le dossier identity-cards n\'existe pas!');
+      }
       return res.status(404).json({
         success: false,
         message: 'Fichier non trouvé sur le serveur'
@@ -697,13 +732,13 @@ exports.getUserPropositions = async (req, res) => {
  * RÉCUPÉRER LES CONTRATS DE L'UTILISATEUR
  * ===============================================
  * 
- * Retourne toutes les souscriptions avec statut "contrat"
- * (payées et activées) de l'utilisateur connecté
+ * Retourne les contrats de la table "contrats"
+ * pour l'utilisateur connecté
  * 
  * @route GET /subscriptions/user/contrats
  * @requires verifyToken
  * 
- * @returns {array} Liste des contrats triés par date (plus récent en premier)
+ * @returns {array} Liste des contrats triés par date
  * 
  * UTILISÉ PAR : Page "Mes Contrats" dans l'app mobile
  */
@@ -712,50 +747,82 @@ exports.getUserContracts = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
     
-    let result;
+    console.log('=== RÉCUPÉRATION CONTRATS USER ===');
+    console.log('👤 User ID:', userId);
+    console.log('🎭 Role:', userRole);
     
-    // Si c'est un commercial, récupérer uniquement les souscriptions avec son code_apporteur
+    let query, params;
+    
     if (userRole === 'commercial') {
+      // Commercial: récupérer via code_apporteur
       const codeApporteur = req.user.code_apporteur;
+      
       if (!codeApporteur) {
         return res.json({ success: true, data: [] });
       }
-      result = await pool.query(
-        "SELECT * FROM subscriptions WHERE code_apporteur = $1 AND statut = 'contrat' ORDER BY date_creation DESC",
-        [codeApporteur]
-      );
+      
+      console.log('💼 Code apporteur:', codeApporteur);
+      
+      query = `
+        SELECT * FROM contrats
+        WHERE codeappo = $1
+        ORDER BY dateeffet DESC
+      `;
+      params = [codeApporteur];
     } else {
-      // Si c'est un client, récupérer:
-      // 1. Les souscriptions où user_id correspond
-      // 2. Les souscriptions où code_apporteur existe ET le numéro dans souscription_data correspond au numéro du client
-      const userResult = await pool.query(
-        "SELECT telephone FROM users WHERE id = $1",
-        [userId]
-      );
-      const userTelephone = userResult.rows[0]?.telephone || '';
+      // Client: récupérer via téléphone
+      const userQuery = `SELECT telephone FROM users WHERE id = $1`;
+      const userResult = await pool.query(userQuery, [userId]);
       
-      // Extraire le numéro de téléphone (sans indicatif)
-      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
+      if (userResult.rows.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
       
-      result = await pool.query(
-        `SELECT * FROM subscriptions 
-         WHERE statut = 'contrat' 
-         AND (
-           user_id = $1 
-           OR (
-             code_apporteur IS NOT NULL 
-             AND souscriptiondata->'client_info'->>'telephone' LIKE $2
-           )
-         )
-         ORDER BY date_creation DESC`,
-        [userId, `%${telephoneNumber}%`]
-      );
+      const telephone = userResult.rows[0].telephone;
+      console.log('📞 Téléphone utilisateur:', telephone);
+      
+      // Préparer les différents formats de téléphone
+      const phoneVariants = [telephone];
+      
+      if (telephone.startsWith('+225')) {
+        const withoutCountryCode = telephone.replace('+225', '');
+        phoneVariants.push(withoutCountryCode);
+        if (!withoutCountryCode.startsWith('0')) {
+          phoneVariants.push('0' + withoutCountryCode);
+        }
+      } else if (telephone.startsWith('225')) {
+        phoneVariants.push('+' + telephone);
+        phoneVariants.push(telephone.replace('225', '0'));
+      } else if (telephone.startsWith('0')) {
+        const withoutZero = telephone.substring(1);
+        phoneVariants.push('+225' + withoutZero);
+        phoneVariants.push('225' + withoutZero);
+      } else {
+        phoneVariants.push('+225' + telephone);
+        phoneVariants.push('225' + telephone);
+        phoneVariants.push('0' + telephone);
+      }
+      
+      console.log('🔍 Formats de recherche:', phoneVariants);
+      
+      // Créer la requête avec tous les variants
+      const placeholders = phoneVariants.map((_, index) => `$${index + 1}`).join(', ');
+      query = `
+        SELECT * FROM contrats
+        WHERE telephone1 IN (${placeholders}) OR telephone2 IN (${placeholders})
+        ORDER BY dateeffet DESC
+      `;
+      params = phoneVariants;
     }
+    
+    const result = await pool.query(query, params);
+    
+    console.log(`✅ ${result.rows.length} contrat(s) trouvé(s)`);
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error("Erreur getUserContracts:", error);
-    res.status(500).json({ success: false, message: "Erreur serveur" });
+    console.error("❌ Erreur getUserContracts:", error);
+    res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
 };
 
@@ -904,6 +971,107 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userRole = req.user.role;
+    
+    console.log('=== RÉCUPÉRATION DÉTAILS SUBSCRIPTION/CONTRAT ===');
+    console.log('📋 ID:', id);
+    console.log('👤 User ID:', userId);
+    console.log('🎭 Role:', userRole);
+    
+    // =========================================
+    // ÉTAPE 0 : Vérifier si c'est un contrat de la table "contrats"
+    // =========================================
+    const contratCheck = await pool.query(
+      "SELECT * FROM contrats WHERE id = $1",
+      [id]
+    );
+    
+    if (contratCheck.rows.length > 0) {
+      console.log('✅ Contrat trouvé dans la table contrats');
+      const contrat = contratCheck.rows[0];
+      
+      // Vérifier les droits d'accès
+      let hasAccess = false;
+      
+      if (userRole === 'admin') {
+        hasAccess = true;
+      } else if (userRole === 'commercial' && req.user.code_apporteur === contrat.codeappo) {
+        hasAccess = true;
+      } else if (userRole === 'client') {
+        const userQuery = `SELECT telephone FROM users WHERE id = $1`;
+        const userResult = await pool.query(userQuery, [userId]);
+        if (userResult.rows.length > 0) {
+          const userPhone = userResult.rows[0].telephone;
+          const phoneVariants = [userPhone];
+          
+          if (userPhone.startsWith('+225')) {
+            const withoutCountryCode = userPhone.replace('+225', '');
+            phoneVariants.push(withoutCountryCode);
+            if (!withoutCountryCode.startsWith('0')) {
+              phoneVariants.push('0' + withoutCountryCode);
+            }
+          }
+          
+          if (phoneVariants.includes(contrat.telephone1) || phoneVariants.includes(contrat.telephone2)) {
+            hasAccess = true;
+          }
+        }
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Accès non autorisé à ce contrat'
+        });
+      }
+      
+      // Convertir le contrat au format attendu par le frontend
+      const subscriptionData = {
+        id: contrat.id,
+        user_id: userId,
+        numero_police: contrat.numepoli,
+        produit_nom: _getProductName(contrat.codeprod),
+        statut: contrat.etat || 'ACTIF',
+        date_creation: contrat.dateeffet,
+        date_validation: null,
+        code_apporteur: contrat.codeappo,
+        souscriptiondata: {
+          capital: contrat.capital,
+          prime: contrat.prime,
+          rente: contrat.rente,
+          duree: contrat.duree,
+          periodicite: contrat.periodicite,
+          date_effet: contrat.dateeffet,
+          date_echeance: contrat.dateeche,
+          montant_encaisse: contrat.montant_encaisse,
+          impaye: contrat.impaye,
+          domiciliation: contrat.domiciliation,
+        }
+      };
+      
+      // Créer les données utilisateur depuis les infos du contrat
+      const userData = {
+        id: userId,
+        civilite: 'Monsieur',
+        nom: contrat.nom_prenom?.split(' ')[0] || '',
+        prenom: contrat.nom_prenom?.split(' ').slice(1).join(' ') || '',
+        email: '',
+        telephone: contrat.telephone1 || '',
+        date_naissance: contrat.datenaissance,
+        lieu_naissance: '',
+        adresse: ''
+      };
+      
+      console.log('✅ Retour données contrat formatées');
+      return res.json({
+        success: true,
+        data: {
+          subscription: subscriptionData,
+          user: userData
+        }
+      });
+    }
+    
+    console.log('⚠️  Contrat non trouvé dans table contrats, recherche dans subscriptions');
     
     // =========================================
     // ÉTAPE 1 : Récupérer la souscription

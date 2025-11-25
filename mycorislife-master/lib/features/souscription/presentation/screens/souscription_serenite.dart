@@ -31,17 +31,24 @@ const Color orangeWarning = Color(0xFFF59E0B);
 /// [simulationData] : Données de simulation (capital, prime, durée, périodicité)
 /// [clientId] : ID du client si souscription par commercial (optionnel)
 /// [clientData] : Données du client si souscription par commercial (optionnel)
+/// [subscriptionId] : ID de la souscription si modification d'une proposition existante
+/// [existingData] : Données existantes de la proposition à modifier
 class SouscriptionSerenitePage extends StatefulWidget {
   final Map<String, dynamic>? simulationData;
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
+  final int? subscriptionId; // ID pour modification
+  final Map<String, dynamic>?
+      existingData; // Données existantes pour modification
 
   const SouscriptionSerenitePage({
     super.key,
     this.simulationData,
     this.clientId,
     this.clientData,
+    this.subscriptionId,
+    this.existingData,
   });
 
   @override
@@ -1043,8 +1050,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
     _animationController.forward();
 
-    // Pré-remplir d'abord avec les données de simulation
-    _prefillSimulationData();
+    // Pré-remplir depuis les données existantes OU depuis la simulation
+    if (widget.existingData != null) {
+      _prefillFromExistingData();
+    } else {
+      _prefillSimulationData();
+    }
 
     // Listeners pour le calcul automatique
     _capitalController.addListener(() {
@@ -1068,12 +1079,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           setState(() {
             _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
           });
-          
+
           // Validation de la durée minimale
           if (_selectedUnite == 'années' && duree < 1) {
             _showProfessionalDialog(
               title: 'Durée minimale requise',
-              message: 'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
+              message:
+                  'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1087,7 +1099,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
             _showProfessionalDialog(
               title: 'Durée minimale requise',
-              message: 'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
+              message:
+                  'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1098,12 +1111,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             });
             return;
           }
-          
+
           // Validation de la durée maximale
           if (_selectedUnite == 'années' && duree > 15) {
             _showProfessionalDialog(
               title: 'Durée maximale dépassée',
-              message: 'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
+              message:
+                  'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1117,7 +1131,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
             _showProfessionalDialog(
               title: 'Durée maximale dépassée',
-              message: 'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
+              message:
+                  'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1128,7 +1143,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             });
             return;
           }
-          
+
           _effectuerCalcul();
         }
       }
@@ -1296,6 +1311,239 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           _effectuerCalcul();
         }
       });
+    }
+  }
+
+  /// Méthode pour pré-remplir les champs depuis une proposition existante
+  void _prefillFromExistingData() {
+    if (widget.existingData == null) return;
+
+    final data = widget.existingData!;
+    debugPrint(
+        '🔄 Pré-remplissage SÉRÉNITÉ depuis données existantes: ${data.keys}');
+
+    // Détecter si c'est une souscription par commercial (présence de client_info)
+    if (data['client_info'] != null) {
+      _isCommercial = true;
+      final clientInfo = data['client_info'] as Map<String, dynamic>;
+      _clientNomController.text = clientInfo['nom'] ?? '';
+      _clientPrenomController.text = clientInfo['prenom'] ?? '';
+      _clientEmailController.text = clientInfo['email'] ?? '';
+      _clientTelephoneController.text = clientInfo['telephone'] ?? '';
+      _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
+      _clientAdresseController.text = clientInfo['adresse'] ?? '';
+      _clientNumeroPieceController.text =
+          clientInfo['numero_piece_identite'] ?? '';
+      if (clientInfo['civilite'] != null)
+        _selectedClientCivilite = clientInfo['civilite'];
+      if (clientInfo['date_naissance'] != null) {
+        try {
+          DateTime? dateNaissance;
+          if (clientInfo['date_naissance'] is String) {
+            dateNaissance = DateTime.parse(clientInfo['date_naissance']);
+          } else if (clientInfo['date_naissance'] is DateTime) {
+            dateNaissance = clientInfo['date_naissance'];
+          }
+          if (dateNaissance != null) {
+            _clientDateNaissance = dateNaissance;
+            _clientDateNaissanceController.text =
+                '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
+            final maintenant = DateTime.now();
+            _clientAge = maintenant.year - dateNaissance.year;
+            if (maintenant.month < dateNaissance.month ||
+                (maintenant.month == dateNaissance.month &&
+                    maintenant.day < dateNaissance.day)) {
+              _clientAge--;
+            }
+            _age = _clientAge;
+          }
+        } catch (e) {
+          debugPrint('Erreur parsing date de naissance client: $e');
+        }
+      }
+      final telephone = clientInfo['telephone'] ?? '';
+      if (telephone.isNotEmpty && telephone.startsWith('+')) {
+        final parts = telephone.split(' ');
+        if (parts.isNotEmpty) {
+          _selectedClientIndicatif = parts[0];
+          if (parts.length > 1)
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+        }
+      }
+    }
+
+    try {
+      // Pré-remplir la durée
+      if (data['duree'] != null) {
+        _dureeController.text = data['duree'].toString();
+        int duree = data['duree'] is int
+            ? data['duree']
+            : int.parse(data['duree'].toString());
+        _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
+      }
+
+      // Pré-remplir l'unité
+      if (data['duree_type'] != null) {
+        _selectedUnite = data['duree_type'];
+      }
+
+      // Pré-remplir la périodicité
+      if (data['periodicite'] != null) {
+        final periodicite = data['periodicite'].toString().toLowerCase();
+        switch (periodicite) {
+          case 'mensuel':
+            _selectedPeriode = Periode.mensuel;
+            break;
+          case 'trimestriel':
+            _selectedPeriode = Periode.trimestriel;
+            break;
+          case 'semestriel':
+            _selectedPeriode = Periode.semestriel;
+            break;
+          case 'annuel':
+            _selectedPeriode = Periode.annuel;
+            break;
+        }
+      }
+
+      // Pré-remplir capital et prime
+      if (data['capital'] != null) {
+        _calculatedCapital = data['capital'] is double
+            ? data['capital']
+            : double.parse(data['capital'].toString());
+        _capitalController.text = _formatNumber(_calculatedCapital);
+      }
+      if (data['prime'] != null) {
+        _calculatedPrime = data['prime'] is double
+            ? data['prime']
+            : double.parse(data['prime'].toString());
+        _primeController.text = _formatNumber(_calculatedPrime);
+      }
+
+      // Pré-remplir bénéficiaire
+      if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
+        final beneficiaire = data['beneficiaire'];
+        if (beneficiaire['nom'] != null) {
+          _beneficiaireNomController.text = beneficiaire['nom'].toString();
+        }
+        if (beneficiaire['contact'] != null) {
+          final contact = beneficiaire['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedBeneficiaireIndicatif = parts[0];
+            _beneficiaireContactController.text = parts.sublist(1).join(' ');
+          } else {
+            _beneficiaireContactController.text = contact;
+          }
+        }
+        if (beneficiaire['lien_parente'] != null) {
+          _selectedLienParente = beneficiaire['lien_parente'].toString();
+        }
+      }
+
+      // Pré-remplir contact d'urgence
+      if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
+        final contactUrgence = data['contact_urgence'];
+        if (contactUrgence['nom'] != null) {
+          _personneContactNomController.text = contactUrgence['nom'].toString();
+        }
+        if (contactUrgence['contact'] != null) {
+          final contact = contactUrgence['contact'].toString();
+          final parts = contact.split(' ');
+          if (parts.length >= 2) {
+            _selectedContactIndicatif = parts[0];
+            _personneContactTelController.text = parts.sublist(1).join(' ');
+          } else {
+            _personneContactTelController.text = contact;
+          }
+        }
+        if (contactUrgence['lien_parente'] != null) {
+          _selectedLienParenteUrgence =
+              contactUrgence['lien_parente'].toString();
+        }
+      }
+
+      // Pré-remplir dates
+      if (data['date_effet'] != null) {
+        try {
+          _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
+        } catch (e) {
+          debugPrint('⚠️ Erreur parsing date_effet: $e');
+        }
+      }
+      if (data['date_echeance'] != null) {
+        try {
+          _dateEcheanceContrat =
+              DateTime.parse(data['date_echeance'].toString());
+        } catch (e) {
+          debugPrint('⚠️ Erreur parsing date_echeance: $e');
+        }
+      }
+
+      // Pré-remplir les informations client si commercial
+      if (data['client_info'] != null && data['client_info'] is Map) {
+        final clientInfo = data['client_info'];
+        _isCommercial = true;
+
+        if (clientInfo['nom'] != null) {
+          _clientNomController.text = clientInfo['nom'].toString();
+        }
+        if (clientInfo['prenom'] != null) {
+          _clientPrenomController.text = clientInfo['prenom'].toString();
+        }
+        if (clientInfo['email'] != null) {
+          _clientEmailController.text = clientInfo['email'].toString();
+        }
+        if (clientInfo['telephone'] != null) {
+          final telephone = clientInfo['telephone'].toString();
+          final parts = telephone.split(' ');
+          if (parts.length >= 2) {
+            _selectedClientIndicatif = parts[0];
+            _clientTelephoneController.text = parts.sublist(1).join(' ');
+          } else {
+            _clientTelephoneController.text = telephone;
+          }
+        }
+        if (clientInfo['lieu_naissance'] != null) {
+          _clientLieuNaissanceController.text =
+              clientInfo['lieu_naissance'].toString();
+        }
+        if (clientInfo['adresse'] != null) {
+          _clientAdresseController.text = clientInfo['adresse'].toString();
+        }
+        if (clientInfo['civilite'] != null) {
+          _selectedClientCivilite = clientInfo['civilite'].toString();
+        }
+        if (clientInfo['numero_piece_identite'] != null) {
+          _clientNumeroPieceController.text =
+              clientInfo['numero_piece_identite'].toString();
+        }
+        if (clientInfo['date_naissance'] != null) {
+          try {
+            _clientDateNaissance =
+                DateTime.parse(clientInfo['date_naissance'].toString());
+            _clientDateNaissanceController.text =
+                "${_clientDateNaissance!.day.toString().padLeft(2, '0')}/${_clientDateNaissance!.month.toString().padLeft(2, '0')}/${_clientDateNaissance!.year}";
+            final now = DateTime.now();
+            _clientAge = now.year - _clientDateNaissance!.year;
+            if (now.month < _clientDateNaissance!.month ||
+                (now.month == _clientDateNaissance!.month &&
+                    now.day < _clientDateNaissance!.day)) {
+              _clientAge--;
+            }
+          } catch (e) {
+            debugPrint('⚠️ Erreur parsing date_naissance client: $e');
+          }
+        }
+      }
+
+      debugPrint('✅ Pré-remplissage SÉRÉNITÉ terminé avec succès');
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur lors du pré-remplissage SÉRÉNITÉ: $e');
     }
   }
 
@@ -1919,10 +2167,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           'Âge du client non valide (18-69 ans requis). Âge calculé: $_clientAge ans');
       return false;
     }
-    if (_clientEmailController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir l\'email du client');
-      return false;
-    }
+    // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
@@ -3686,17 +3931,26 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         };
       }
 
-      final response =
-          await subscriptionService.createSubscription(subscriptionData);
+      // Utiliser updateSubscription si on modifie, createSubscription sinon
+      final http.Response response;
+      if (widget.subscriptionId != null) {
+        response = await subscriptionService.updateSubscription(
+            widget.subscriptionId!, subscriptionData);
+      } else {
+        response =
+            await subscriptionService.createSubscription(subscriptionData);
+      }
+
       final responseData = jsonDecode(response.body);
 
-      if (response.statusCode != 201 || !responseData['success']) {
+      if ((response.statusCode != 201 && response.statusCode != 200) ||
+          !responseData['success']) {
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNER l'ID de la souscription créée
-      return responseData['data']['id'];
+      // RETOURNER l'ID de la souscription (créée ou mise à jour)
+      return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       debugPrint('Erreur sauvegarde souscription: $e');
       rethrow;

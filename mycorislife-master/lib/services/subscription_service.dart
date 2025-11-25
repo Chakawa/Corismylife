@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/models/subscription.dart';
@@ -110,21 +112,49 @@ class SubscriptionService {
 
   // Récupérer les contrats
   Future<List<Subscription>> getContrats() async {
-    final token = await storage.read(key: 'token');
-    final response = await http.get(
-      Uri.parse('$baseUrl/subscriptions/user/contrats'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    try {
+      final token = await storage.read(key: 'token');
+      print('🔑 Token: ${token?.substring(0, 20)}...');
+      print('🌐 URL: $baseUrl/subscriptions/user/contrats');
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/subscriptions/user/contrats'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success']) {
-        return (data['data'] as List)
-            .map((item) => Subscription.fromJson(item))
-            .toList();
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final List<dynamic> contractsList = data['data'] as List;
+          print('✅ ${contractsList.length} contrats à parser');
+          
+          final List<Subscription> subscriptions = [];
+          for (var i = 0; i < contractsList.length; i++) {
+            try {
+              final subscription = Subscription.fromJson(contractsList[i]);
+              subscriptions.add(subscription);
+              print('✅ Contrat $i parsé: ${subscription.numeroPolice}');
+            } catch (e) {
+              print('❌ Erreur parsing contrat $i: $e');
+              print('Données: ${contractsList[i]}');
+            }
+          }
+          
+          return subscriptions;
+        } else {
+          throw Exception(data['message'] ?? 'Erreur API');
+        }
+      } else {
+        throw Exception("Erreur serveur: ${response.statusCode} - ${response.body}");
       }
+    } catch (e, stackTrace) {
+      print('❌ Exception dans getContrats: $e');
+      print('Stack: $stackTrace');
+      throw Exception("Erreur lors de la récupération des contrats: $e");
     }
-    throw Exception("Erreur lors de la récupération des contrats");
   }
 
   // Récupérer toutes les souscriptions (combine propositions et contrats)
@@ -150,9 +180,28 @@ class SubscriptionService {
     );
 
     request.headers['Authorization'] = 'Bearer $token';
+
+    // Déterminer le type MIME en fonction de l'extension du fichier
+    String contentType = 'application/octet-stream';
+    final extension = filePath.toLowerCase().split('.').last;
+
+    if (extension == 'pdf') {
+      contentType = 'application/pdf';
+    } else if (extension == 'jpg' || extension == 'jpeg') {
+      contentType = 'image/jpeg';
+    } else if (extension == 'png') {
+      contentType = 'image/png';
+    } else if (extension == 'gif') {
+      contentType = 'image/gif';
+    }
+
+    debugPrint('📄 Extension fichier: $extension');
+    debugPrint('📝 Content-Type: $contentType');
+
     request.files.add(await http.MultipartFile.fromPath(
       'document',
       filePath,
+      contentType: MediaType.parse(contentType),
     ));
 
     var response = await http.Response.fromStream(await request.send());

@@ -49,6 +49,7 @@ app.get('/api/config/support', (_, res) => {
   res.json({ success: true, phone: process.env.SUPPORT_PHONE || '+2250700000000' });
 });
 app.use('/api/produits', require('./routes/produitRoutes'));
+app.use('/api/contrats', require('./routes/contratRoutes'));
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));
@@ -97,34 +98,26 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Configuration du serveur (avec fallback si le port est occupé)
-const DEFAULT_PORT = Number(process.env.PORT) || 5000;
+// Configuration du serveur (TOUJOURS sur le port défini, pas de changement automatique)
+const PORT = Number(process.env.PORT) || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-function startServer(port, attemptsLeft = 5, host = HOST) {
-  const server = app.listen(port, host, () => {
-    console.log(`🚀 Server ready at http://${host}:${port}`);
-    console.log(`🔗 Test endpoint: http://localhost:${port}/test-db`);
-  });
+const server = app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server ready at http://${HOST}:${PORT}`);
+  console.log(`🔗 Test endpoint: http://localhost:${PORT}/test-db`);
+});
 
-  server.on('error', (err) => {
-    if (err.code === 'EADDRNOTAVAIL' && host !== '0.0.0.0') {
-      console.warn(`⚠️  Adresse ${host} indisponible. Repli sur 0.0.0.0...`);
-      setTimeout(() => startServer(port, attemptsLeft, '0.0.0.0'), 200);
-      return;
-    }
-    if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {
-      const nextPort = port + 1;
-      console.warn(`⚠️  Port ${port} occupé. Tentative sur ${nextPort}...`);
-      setTimeout(() => startServer(nextPort, attemptsLeft - 1, host), 200);
-    } else {
-      console.error('❌ Impossible de démarrer le serveur:', err.message);
-      process.exit(1);
-    }
-  });
-}
-
-startServer(DEFAULT_PORT);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ ERREUR: Le port ${PORT} est déjà utilisé !`);
+    console.error(`💡 Arrêtez le processus qui utilise le port ${PORT} avec:`);
+    console.error(`   taskkill /F /IM node.exe`);
+    process.exit(1);
+  } else {
+    console.error('❌ Erreur lors du démarrage du serveur:', err.message);
+    process.exit(1);
+  }
+});
 
 // Gestion propre des arrêts
 process.on('SIGTERM', () => {
