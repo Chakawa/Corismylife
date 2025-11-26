@@ -45,10 +45,7 @@ class _ContratsPageState extends State<ContratsPage>
 
   Future<void> _loadContrats() async {
     try {
-      print('🔄 Chargement des contrats...');
       final result = await _service.getContrats();
-      print('✅ ${result.length} contrats reçus');
-      
       if (!mounted) return;
 
       setState(() {
@@ -56,45 +53,28 @@ class _ContratsPageState extends State<ContratsPage>
         isLoading = false;
       });
       _animationController.forward();
-    } catch (e, stackTrace) {
-      print('❌ Erreur chargement contrats: $e');
-      print('Stack trace: $stackTrace');
-      
+    } catch (e) {
       if (!mounted) return;
 
       setState(() => isLoading = false);
-      _showErrorSnackBar(e.toString());
+      _showErrorSnackBar();
     }
   }
 
-  void _showErrorSnackBar([String? errorMessage]) {
+  void _showErrorSnackBar() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
+        content: const Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                errorMessage ?? "Erreur lors du chargement des contrats",
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 12),
+            Text("Erreur lors du chargement des contrats"),
           ],
         ),
         backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-        ),
-        action: SnackBarAction(
-          label: 'Réessayer',
-          textColor: Colors.white,
-          onPressed: () {
-            setState(() => isLoading = true);
-            _loadContrats();
-          },
         ),
       ),
     );
@@ -380,23 +360,6 @@ class _ContratsPageState extends State<ContratsPage>
                 color: Color(0xFF64748B),
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() => isLoading = true);
-                _loadContrats();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Recharger'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF002B6B),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -408,13 +371,9 @@ class _ContratsPageState extends State<ContratsPage>
       children: [
         if (selectedFilter != 'Tous') _buildFilterChip(),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadContrats,
-            color: const Color(0xFF002B6B),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: _buildContratsList(),
-            ),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: _buildContratsList(),
           ),
         ),
       ],

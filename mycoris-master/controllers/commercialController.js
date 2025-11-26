@@ -90,12 +90,11 @@ exports.getCommercialStats = async (req, res) => {
     const clientsResult = await pool.query(clientsQuery, [codeApporteur]);
     const nbClients = parseInt(clientsResult.rows[0].count) || 0;
 
-    // Compter le nombre de contrats actifs (souscriptions avec statut 'contrat')
+    // Compter le nombre de contrats actifs depuis la table contrats
     const contratsQuery = `
-      SELECT COUNT(DISTINCT s.id) as count
-      FROM subscriptions s
-      INNER JOIN users u ON s.user_id = u.id
-      WHERE u.code_apporteur = $1 AND s.statut = 'contrat'
+      SELECT COUNT(*) as count
+      FROM contrats c
+      WHERE c.codeappo = $1 AND LOWER(c.etat) = 'actif'
     `;
     const contratsResult = await pool.query(contratsQuery, [codeApporteur]);
     const nbContrats = parseInt(contratsResult.rows[0].count) || 0;
@@ -597,6 +596,337 @@ exports.getCommercialCommissions = async (req, res) => {
       success: false,
       message: 'Erreur lors de la récupération des bordereaux de commissions',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Récupère tous les contrats du commercial
+ * GET /api/commercial/mes_contrats_commercial
+ */
+exports.getMesContratsCommercial = async (req, res) => {
+  try {
+    const codeApporteur = req.user.code_apporteur;
+
+    if (!codeApporteur) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code apporteur non trouvé'
+      });
+    }
+
+    const query = `
+      SELECT 
+        c.numepoli,
+        c.codeprod,
+        c.nom_prenom,
+        c.etat as statut,
+        c.dateeffet as datesous,
+        c.codeinte,
+        c.codeappo as code_apporteur,
+        c.codebran,
+        c.dateeffet,
+        c.dateecheance,
+        c.datenaissance,
+        -- Extraire prénom et nom si possible (format: "Prénom Nom")
+        TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
+        p.libelle as nom_produit
+      FROM contrats c
+      LEFT JOIN produits p ON c.codeprod = p.codeprod
+      WHERE c.codeappo = $1
+      ORDER BY c.dateeffet DESC
+    `;
+
+    const result = await pool.query(query, [String(codeApporteur)]);
+
+    res.json({
+      success: true,
+      contrats: result.rows
+    });
+  } catch (error) {
+    console.error('Erreur récupération contrats commercial:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des contrats'
+    });
+  }
+};
+
+/**
+ * Récupère la liste des clients du commercial
+ * GET /api/commercial/liste_clients
+ */
+exports.getListeClients = async (req, res) => {
+  try {
+    const codeApporteur = req.user.code_apporteur;
+
+    if (!codeApporteur) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code apporteur non trouvé'
+      });
+    }
+
+    // Récupérer les clients depuis users ET depuis les contrats (nomprenom)
+    const query = `
+      WITH clients_users AS (
+        SELECT DISTINCT
+          u.id,
+          u.nom,
+          u.prenom,
+          u.email,
+          u.telephone,
+          'user' as source
+        FROM users u
+        WHERE u.code_apporteur = $1 AND u.role = 'client'
+      ),
+      clients_contrats AS (
+        SELECT DISTINCT
+          NULL as id,
+          TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
+          TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
+          c.telephone1 as telephone,
+          NULL as email,
+          'contrat' as source
+        FROM contrats c
+        WHERE c.codeappo = $1
+          AND c.nom_prenom IS NOT NULL 
+          AND c.nom_prenom != ''
+          AND NOT EXISTS (
+            SELECT 1 FROM users u2 
+            WHERE u2.code_apporteur = $1 
+            AND LOWER(CONCAT(u2.prenom, ' ', u2.nom)) = LOWER(c.nom_prenom)
+          )
+      )
+      SELECT * FROM clients_users
+      UNION ALL
+      SELECT * FROM clients_contrats
+      ORDER BY nom, prenom
+    `;
+
+    const result = await pool.query(query, [String(codeApporteur)]);
+
+    res.json({
+      success: true,
+      clients: result.rows
+    });
+  } catch (error) {
+    console.error('Erreur récupération liste clients:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération de la liste des clients'
+    });
+  }
+};
+
+/**
+ * Récupère les contrats actifs du commercial
+ * GET /api/commercial/contrats_actifs
+ */
+exports.getContratsActifs = async (req, res) => {
+  try {
+    const codeApporteur = req.user.code_apporteur;
+
+    if (!codeApporteur) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code apporteur non trouvé'
+      });
+    }
+
+    const query = `
+      SELECT 
+        c.numepoli,
+        c.codeprod,
+        c.nom_prenom,
+        c.etat as statut,
+        c.dateeffet as datesous,
+        c.codeinte,
+        c.codeappo as code_apporteur,
+        c.codebran,
+        c.dateeffet,
+        c.dateecheance,
+        c.datenaissance,
+        -- Extraire prénom et nom si possible (format: "Prénom Nom")
+        TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
+        p.libelle as nom_produit
+      FROM contrats c
+      LEFT JOIN produits p ON c.codeprod = p.codeprod
+      WHERE c.codeappo = $1 AND LOWER(c.etat) = 'actif'
+      ORDER BY c.dateeffet DESC
+    `;
+
+    const result = await pool.query(query, [String(codeApporteur)]);
+
+    res.json({
+      success: true,
+      contrats: result.rows
+    });
+  } catch (error) {
+    console.error('Erreur récupération contrats actifs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des contrats actifs'
+    });
+  }
+};
+
+/**
+ * Récupère les détails d'un client
+ * GET /api/commercial/details_client/:clientId
+ */
+exports.getDetailsClient = async (req, res) => {
+  try {
+    const codeApporteur = req.user.code_apporteur;
+    const clientId = req.params.clientId;
+
+    if (!codeApporteur) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code apporteur non trouvé'
+      });
+    }
+
+    // Récupérer les infos du client
+    const clientQuery = `
+      SELECT 
+        u.id,
+        u.nom,
+        u.prenom,
+        u.email,
+        u.telephone,
+        u.date_naissance,
+        u.lieu_naissance,
+        u.adresse
+      FROM users u
+      WHERE u.id = $1 AND u.code_apporteur = $2
+    `;
+
+    const clientResult = await pool.query(clientQuery, [clientId, String(codeApporteur)]);
+
+    if (clientResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client non trouvé'
+      });
+    }
+
+    const client = clientResult.rows[0];
+
+    // Récupérer les contrats du client
+    const contratsQuery = `
+      SELECT 
+        c.numepoli,
+        c.codeprod,
+        c.etat as statut,
+        c.dateeffet as datesous
+      FROM contrats c
+      WHERE c.nom_prenom ILIKE $1 AND c.codeappo = $2
+      ORDER BY c.dateeffet DESC
+    `;
+
+    const nomComplet = `%${client.prenom} ${client.nom}%`;
+    const contratsResult = await pool.query(contratsQuery, [nomComplet, String(codeApporteur)]);
+
+    res.json({
+      success: true,
+      client: client,
+      contrats: contratsResult.rows
+    });
+  } catch (error) {
+    console.error('Erreur récupération détails client:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des détails du client'
+    });
+  }
+};
+
+/**
+ * Récupère les détails d'un contrat
+ * GET /api/commercial/contrat_details/:numepoli
+ */
+exports.getContratDetails = async (req, res) => {
+  try {
+    const codeApporteur = req.user.code_apporteur;
+    const numepoli = req.params.numepoli;
+
+    if (!codeApporteur) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code apporteur non trouvé'
+      });
+    }
+
+    // Récupérer tous les détails du contrat
+    const query = `
+      SELECT 
+        c.numepoli,
+        c.codeprod,
+        c.nom_prenom,
+        c.etat as statut,
+        c.dateeffet as datesous,
+        c.codeinte,
+        c.codeappo as code_apporteur,
+        c.codebran,
+        c.dateeffet,
+        c.dateecheance,
+        c.datenaissance,
+        c.duree,
+        c.periodicite,
+        c.domiciliation,
+        c.capital,
+        c.rente,
+        c.prime,
+        c.montant_encaisse,
+        c.impaye,
+        c.telephone1,
+        c.telephone2,
+        -- Extraire prénom et nom si possible
+        TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
+        p.libelle as nom_produit
+      FROM contrats c
+      LEFT JOIN produits p ON c.codeprod = p.codeprod
+      WHERE c.numepoli = $1 AND c.codeappo = $2
+    `;
+
+    const result = await pool.query(query, [numepoli, String(codeApporteur)]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contrat non trouvé'
+      });
+    }
+
+    // Récupérer les bénéficiaires du contrat
+    const benefQuery = `
+      SELECT 
+        b.id,
+        b.type_beneficiaires,
+        b.nom_benef,
+        b.codeinte,
+        b.numepoli
+      FROM beneficiaires b
+      WHERE b.numepoli = $1
+      ORDER BY b.id
+    `;
+    
+    const benefResult = await pool.query(benefQuery, [numepoli]);
+
+    res.json({
+      success: true,
+      contrat: result.rows[0],
+      beneficiaires: benefResult.rows
+    });
+  } catch (error) {
+    console.error('Erreur récupération détails contrat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des détails du contrat'
     });
   }
 };

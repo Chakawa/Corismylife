@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/core/widgets/country_selector.dart';
@@ -16,8 +15,6 @@ import 'package:mycorislife/core/widgets/phone_input_field.dart';
 /// Fonctionnalités:
 /// - Validation des champs de saisie
 /// - Authentification sécurisée avec JWT
-/// - Stockage sécurisé des informations de connexion
-/// - Option "Se souvenir de moi"
 /// - Animations fluides à l'affichage
 /// - Gestion des erreurs de connexion
 class LoginScreen extends StatefulWidget {
@@ -38,10 +35,8 @@ class _LoginScreenState extends State<LoginScreen>
   final passwordController = TextEditingController();
   bool passwordVisible = false; // Pour afficher/masquer le mot de passe
   bool isLoading = false; // Indicateur de chargement pendant la connexion
-  bool rememberMe = false; // Option "Se souvenir de moi"
   final _formKey =
       GlobalKey<FormState>(); // Clé pour la validation du formulaire
-  final storage = const FlutterSecureStorage(); // Stockage sécurisé des données
 
   // Type de connexion : 'phone' ou 'email'
   String loginType = 'phone';
@@ -89,7 +84,6 @@ class _LoginScreenState extends State<LoginScreen>
     ));
 
     _animationController.forward();
-    _loadSavedCredentials();
   }
 
   @override
@@ -99,35 +93,6 @@ class _LoginScreenState extends State<LoginScreen>
     phoneController.dispose();
     passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    final savedEmail = await storage.read(key: 'saved_email');
-    final savedPassword = await storage.read(key: 'saved_password');
-    final savedRememberMe = await storage.read(key: 'remember_me');
-
-    if (savedRememberMe == 'true' && savedEmail != null) {
-      setState(() {
-        emailController.text = savedEmail;
-        if (savedPassword != null) {
-          passwordController.text = savedPassword;
-        }
-        rememberMe = true;
-      });
-    }
-  }
-
-  Future<void> _saveCredentials() async {
-    if (rememberMe) {
-      await storage.write(key: 'saved_email', value: emailController.text);
-      await storage.write(
-          key: 'saved_password', value: passwordController.text);
-      await storage.write(key: 'remember_me', value: 'true');
-    } else {
-      await storage.delete(key: 'saved_email');
-      await storage.delete(key: 'saved_password');
-      await storage.write(key: 'remember_me', value: 'false');
-    }
   }
 
   /// ==========================================
@@ -151,9 +116,6 @@ class _LoginScreenState extends State<LoginScreen>
 
     // Activer l'indicateur de chargement
     setState(() => isLoading = true);
-    
-    // Sauvegarder les identifiants si "Se souvenir de moi" est coché
-    await _saveCredentials();
 
     try {
       // Déterminer l'identifiant selon le type de connexion choisi
@@ -605,63 +567,25 @@ class _LoginScreenState extends State<LoginScreen>
                             },
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Transform.scale(
-                                      scale: 1.1,
-                                      child: Checkbox(
-                                        value: rememberMe,
-                                        onChanged: (value) =>
-                                            setState(() => rememberMe = value!),
-                                        activeColor: bleuCoris,
-                                        checkColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        "Se souvenir de moi",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                    context, '/reset_password');
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: rougeCoris,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                              ),
+                              child: const Text(
+                                "Mot de passe oublié ?",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                      context, '/reset_password');
-                                },
-                                style: TextButton.styleFrom(
-                                  foregroundColor: rougeCoris,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                ),
-                                child: const Text(
-                                  "Mot de passe oublié ?",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                           SizedBox(height: isTablet ? 40 : 32),
                           SizedBox(

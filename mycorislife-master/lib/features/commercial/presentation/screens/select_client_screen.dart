@@ -82,6 +82,8 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
       '/souscription_${widget.productType}',
       arguments: {
         'isCommercial': true,
+        'client_id': client['id'], // ID du client pour l'API
+        'client': client, // Données complètes du client pour pré-remplissage
         'clientInfo':
             client, // Passer les informations du client pour pré-remplissage
         'simulationData':

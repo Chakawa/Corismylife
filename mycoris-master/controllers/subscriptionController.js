@@ -28,21 +28,7 @@
 // ============================================
 // IMPORTS ET DÉPENDANCES
 // ============================================
-const pool = require('../db');
-
-// Fonction helper pour convertir le code produit en nom
-function _getProductName(codeProd) {
-  const productMap = {
-    '240': 'CORIS SOLIDARITÉ',
-    '241': 'FLEX EMPRUNTEUR',
-    '242': 'CORIS ÉTUDE',
-    '243': 'CORIS RETRAITE',
-    '244': 'CORIS SÉRÉNITÉ',
-    '245': 'ÉPARGNE BONUS',
-    '246': 'CORIS FAMILIS'
-  };
-  return productMap[codeProd] || `Produit ${codeProd}`;
-}  // Pool de connexions PostgreSQL (gestion automatique des connexions)
+const pool = require('../db');  // Pool de connexions PostgreSQL (gestion automatique des connexions)
 const { generatePolicyNumber } = require('../utils/helpers');  // Fonction utilitaire pour générer un numéro de police unique (format: PROD-YYYY-XXXXX)
 const PDFDocument = require('pdfkit'); // Bibliothèque pour générer des PDF dynamiques (utilisée pour les propositions/contrats)
 const fs = require('fs');  // Module Node.js pour les opérations sur le système de fichiers
@@ -603,9 +589,12 @@ exports.getDocument = async (req, res) => {
     
     // 3. C'est un commercial et c'est sa souscription (code_apporteur)
     else if (req.user.role === 'commercial' && req.user.code_apporteur) {
-      if (subscription.code_apporteur === req.user.code_apporteur) {
+      // Comparer en convertissant les deux en string pour éviter les problèmes de type
+      if (String(subscription.code_apporteur) === String(req.user.code_apporteur)) {
         hasAccess = true;
         console.log('✅ Accès autorisé: commercial avec code_apporteur correspondant');
+      } else {
+        console.log('❌ Code apporteur ne correspond pas:', req.user.code_apporteur, 'vs', subscription.code_apporteur, '(types:', typeof req.user.code_apporteur, 'vs', typeof subscription.code_apporteur, ')');
       }
     }
     
@@ -732,13 +721,13 @@ exports.getUserPropositions = async (req, res) => {
  * RÉCUPÉRER LES CONTRATS DE L'UTILISATEUR
  * ===============================================
  * 
- * Retourne les contrats de la table "contrats"
- * pour l'utilisateur connecté
+ * Retourne toutes les souscriptions avec statut "contrat"
+ * (payées et activées) de l'utilisateur connecté
  * 
  * @route GET /subscriptions/user/contrats
  * @requires verifyToken
  * 
- * @returns {array} Liste des contrats triés par date
+ * @returns {array} Liste des contrats triés par date (plus récent en premier)
  * 
  * UTILISÉ PAR : Page "Mes Contrats" dans l'app mobile
  */
@@ -747,82 +736,50 @@ exports.getUserContracts = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
     
-    console.log('=== RÉCUPÉRATION CONTRATS USER ===');
-    console.log('👤 User ID:', userId);
-    console.log('🎭 Role:', userRole);
+    let result;
     
-    let query, params;
-    
+    // Si c'est un commercial, récupérer uniquement les souscriptions avec son code_apporteur
     if (userRole === 'commercial') {
-      // Commercial: récupérer via code_apporteur
       const codeApporteur = req.user.code_apporteur;
-      
       if (!codeApporteur) {
         return res.json({ success: true, data: [] });
       }
-      
-      console.log('💼 Code apporteur:', codeApporteur);
-      
-      query = `
-        SELECT * FROM contrats
-        WHERE codeappo = $1
-        ORDER BY dateeffet DESC
-      `;
-      params = [codeApporteur];
+      result = await pool.query(
+        "SELECT * FROM subscriptions WHERE code_apporteur = $1 AND statut = 'contrat' ORDER BY date_creation DESC",
+        [codeApporteur]
+      );
     } else {
-      // Client: récupérer via téléphone
-      const userQuery = `SELECT telephone FROM users WHERE id = $1`;
-      const userResult = await pool.query(userQuery, [userId]);
+      // Si c'est un client, récupérer:
+      // 1. Les souscriptions où user_id correspond
+      // 2. Les souscriptions où code_apporteur existe ET le numéro dans souscription_data correspond au numéro du client
+      const userResult = await pool.query(
+        "SELECT telephone FROM users WHERE id = $1",
+        [userId]
+      );
+      const userTelephone = userResult.rows[0]?.telephone || '';
       
-      if (userResult.rows.length === 0) {
-        return res.json({ success: true, data: [] });
-      }
+      // Extraire le numéro de téléphone (sans indicatif)
+      const telephoneNumber = userTelephone.replace(/^\+?\d{1,4}\s*/, '').trim();
       
-      const telephone = userResult.rows[0].telephone;
-      console.log('📞 Téléphone utilisateur:', telephone);
-      
-      // Préparer les différents formats de téléphone
-      const phoneVariants = [telephone];
-      
-      if (telephone.startsWith('+225')) {
-        const withoutCountryCode = telephone.replace('+225', '');
-        phoneVariants.push(withoutCountryCode);
-        if (!withoutCountryCode.startsWith('0')) {
-          phoneVariants.push('0' + withoutCountryCode);
-        }
-      } else if (telephone.startsWith('225')) {
-        phoneVariants.push('+' + telephone);
-        phoneVariants.push(telephone.replace('225', '0'));
-      } else if (telephone.startsWith('0')) {
-        const withoutZero = telephone.substring(1);
-        phoneVariants.push('+225' + withoutZero);
-        phoneVariants.push('225' + withoutZero);
-      } else {
-        phoneVariants.push('+225' + telephone);
-        phoneVariants.push('225' + telephone);
-        phoneVariants.push('0' + telephone);
-      }
-      
-      console.log('🔍 Formats de recherche:', phoneVariants);
-      
-      // Créer la requête avec tous les variants
-      const placeholders = phoneVariants.map((_, index) => `$${index + 1}`).join(', ');
-      query = `
-        SELECT * FROM contrats
-        WHERE telephone1 IN (${placeholders}) OR telephone2 IN (${placeholders})
-        ORDER BY dateeffet DESC
-      `;
-      params = phoneVariants;
+      result = await pool.query(
+        `SELECT * FROM subscriptions 
+         WHERE statut = 'contrat' 
+         AND (
+           user_id = $1 
+           OR (
+             code_apporteur IS NOT NULL 
+             AND souscriptiondata->'client_info'->>'telephone' LIKE $2
+           )
+         )
+         ORDER BY date_creation DESC`,
+        [userId, `%${telephoneNumber}%`]
+      );
     }
-    
-    const result = await pool.query(query, params);
-    
-    console.log(`✅ ${result.rows.length} contrat(s) trouvé(s)`);
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error("❌ Erreur getUserContracts:", error);
-    res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+    console.error("Erreur getUserContracts:", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -978,102 +935,6 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     console.log('🎭 Role:', userRole);
     
     // =========================================
-    // ÉTAPE 0 : Vérifier si c'est un contrat de la table "contrats"
-    // =========================================
-    const contratCheck = await pool.query(
-      "SELECT * FROM contrats WHERE id = $1",
-      [id]
-    );
-    
-    if (contratCheck.rows.length > 0) {
-      console.log('✅ Contrat trouvé dans la table contrats');
-      const contrat = contratCheck.rows[0];
-      
-      // Vérifier les droits d'accès
-      let hasAccess = false;
-      
-      if (userRole === 'admin') {
-        hasAccess = true;
-      } else if (userRole === 'commercial' && req.user.code_apporteur === contrat.codeappo) {
-        hasAccess = true;
-      } else if (userRole === 'client') {
-        const userQuery = `SELECT telephone FROM users WHERE id = $1`;
-        const userResult = await pool.query(userQuery, [userId]);
-        if (userResult.rows.length > 0) {
-          const userPhone = userResult.rows[0].telephone;
-          const phoneVariants = [userPhone];
-          
-          if (userPhone.startsWith('+225')) {
-            const withoutCountryCode = userPhone.replace('+225', '');
-            phoneVariants.push(withoutCountryCode);
-            if (!withoutCountryCode.startsWith('0')) {
-              phoneVariants.push('0' + withoutCountryCode);
-            }
-          }
-          
-          if (phoneVariants.includes(contrat.telephone1) || phoneVariants.includes(contrat.telephone2)) {
-            hasAccess = true;
-          }
-        }
-      }
-      
-      if (!hasAccess) {
-        return res.status(403).json({
-          success: false,
-          message: 'Accès non autorisé à ce contrat'
-        });
-      }
-      
-      // Convertir le contrat au format attendu par le frontend
-      const subscriptionData = {
-        id: contrat.id,
-        user_id: userId,
-        numero_police: contrat.numepoli,
-        produit_nom: _getProductName(contrat.codeprod),
-        statut: contrat.etat || 'ACTIF',
-        date_creation: contrat.dateeffet,
-        date_validation: null,
-        code_apporteur: contrat.codeappo,
-        souscriptiondata: {
-          capital: contrat.capital,
-          prime: contrat.prime,
-          rente: contrat.rente,
-          duree: contrat.duree,
-          periodicite: contrat.periodicite,
-          date_effet: contrat.dateeffet,
-          date_echeance: contrat.dateeche,
-          montant_encaisse: contrat.montant_encaisse,
-          impaye: contrat.impaye,
-          domiciliation: contrat.domiciliation,
-        }
-      };
-      
-      // Créer les données utilisateur depuis les infos du contrat
-      const userData = {
-        id: userId,
-        civilite: 'Monsieur',
-        nom: contrat.nom_prenom?.split(' ')[0] || '',
-        prenom: contrat.nom_prenom?.split(' ').slice(1).join(' ') || '',
-        email: '',
-        telephone: contrat.telephone1 || '',
-        date_naissance: contrat.datenaissance,
-        lieu_naissance: '',
-        adresse: ''
-      };
-      
-      console.log('✅ Retour données contrat formatées');
-      return res.json({
-        success: true,
-        data: {
-          subscription: subscriptionData,
-          user: userData
-        }
-      });
-    }
-    
-    console.log('⚠️  Contrat non trouvé dans table contrats, recherche dans subscriptions');
-    
-    // =========================================
     // ÉTAPE 1 : Récupérer la souscription
     // =========================================
     let subscriptionResult;
@@ -1081,15 +942,18 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     if (userRole === 'commercial') {
       const codeApporteur = req.user.code_apporteur;
       if (!codeApporteur) {
+        console.log('❌ Code apporteur manquant');
         return res.status(404).json({
           success: false,
           message: 'Souscription non trouvée'
         });
       }
+      // Comparer avec String() pour éviter les problèmes de type
       subscriptionResult = await pool.query(
-        "SELECT * FROM subscriptions WHERE id = $1 AND code_apporteur = $2",
+        "SELECT * FROM subscriptions WHERE id = $1 AND CAST(code_apporteur AS TEXT) = CAST($2 AS TEXT)",
         [id, codeApporteur]
       );
+      console.log('🔍 Recherche avec code_apporteur:', codeApporteur, '- Trouvé:', subscriptionResult.rows.length);
     } else {
       // Pour un client, vérifier user_id OU code_apporteur avec numéro correspondant
       const userResult = await pool.query(

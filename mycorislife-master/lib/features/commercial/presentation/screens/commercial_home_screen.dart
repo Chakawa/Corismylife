@@ -309,6 +309,90 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // Voir mes contrats
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [bleuCoris, bleuCoris.withValues(alpha: 0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: bleuCoris.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    Navigator.pushNamed(context, '/mes_contrats_commercial');
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenHeight * 0.02,
+                      horizontal: screenWidth * 0.04,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.assignment,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Voir mes contrats',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: screenWidth * 0.045,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Consultez tous vos contrats',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: screenWidth * 0.035,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           const SizedBox(height: 30),
 
           // Produits
@@ -503,20 +587,32 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: _buildQuickStat(
-                        icon: Icons.people_outline,
-                        value: _isLoadingStats ? "..." : _nbClients.toString(),
-                        label: "Clients",
-                        screenWidth: screenWidth,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/liste_clients');
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildQuickStat(
+                          icon: Icons.people_outline,
+                          value: _isLoadingStats ? "..." : _nbClients.toString(),
+                          label: "Clients",
+                          screenWidth: screenWidth,
+                        ),
                       ),
                     ),
                     SizedBox(width: 16),
                     Expanded(
-                      child: _buildQuickStat(
-                        icon: Icons.assignment_turned_in,
-                        value: _isLoadingStats ? "..." : _nbContrats.toString(),
-                        label: "Contrats actifs",
-                        screenWidth: screenWidth,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/contrats_actifs');
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildQuickStat(
+                          icon: Icons.assignment_turned_in,
+                          value: _isLoadingStats ? "..." : _nbContrats.toString(),
+                          label: "Contrats actifs",
+                          screenWidth: screenWidth,
+                        ),
                       ),
                     ),
                   ],

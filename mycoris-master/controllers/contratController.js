@@ -24,40 +24,15 @@ exports.getContratsByTelephone = async (req, res) => {
     console.log('👤 User ID:', req.user.id);
     console.log('🎭 Role:', req.user.role);
     
-    // Préparer les différents formats de téléphone
-    const phoneVariants = [telephone];
-    
-    // Si le numéro commence par +225, ajouter la version sans +225
+    // Nettoyer le numéro: enlever +225 s'il existe
+    let cleanPhone = telephone;
     if (telephone.startsWith('+225')) {
-      const withoutCountryCode = telephone.replace('+225', '');
-      phoneVariants.push(withoutCountryCode);
-      // Ajouter aussi avec 0 au début si pas déjà présent
-      if (!withoutCountryCode.startsWith('0')) {
-        phoneVariants.push('0' + withoutCountryCode);
-      }
+      cleanPhone = telephone.substring(4); // Enlever +225
     }
-    // Si le numéro commence par 225 (sans +), ajouter les autres versions
-    else if (telephone.startsWith('225')) {
-      phoneVariants.push('+' + telephone);
-      phoneVariants.push(telephone.replace('225', '0'));
-    }
-    // Si le numéro commence par 0, ajouter les versions avec indicatif
-    else if (telephone.startsWith('0')) {
-      const withoutZero = telephone.substring(1);
-      phoneVariants.push('+225' + withoutZero);
-      phoneVariants.push('225' + withoutZero);
-    }
-    // Sinon, ajouter les versions avec indicatif
-    else {
-      phoneVariants.push('+225' + telephone);
-      phoneVariants.push('225' + telephone);
-      phoneVariants.push('0' + telephone);
-    }
+    console.log('📞 Téléphone nettoyé:', cleanPhone);
     
-    console.log('🔍 Formats de recherche:', phoneVariants);
-    
-    // Créer la requête avec tous les variants
-    const placeholders = phoneVariants.map((_, index) => `$${index + 1}`).join(', ');
+    // Récupérer tous les contrats du client
+    // On cherche avec les deux formats: avec et sans +225
     const query = `
       SELECT 
         id,
@@ -81,11 +56,15 @@ exports.getContratsByTelephone = async (req, res) => {
         nom_prenom,
         datenaissance
       FROM contrats
-      WHERE telephone1 IN (${placeholders}) OR telephone2 IN (${placeholders})
+      WHERE telephone1 = $1 
+         OR telephone1 = $2
+         OR telephone2 = $1
+         OR telephone2 = $2
       ORDER BY dateeffet DESC
     `;
     
-    const result = await pool.query(query, phoneVariants);
+    const phoneWithPrefix = '+225' + cleanPhone;
+    const result = await pool.query(query, [cleanPhone, phoneWithPrefix]);
     
     console.log(`✅ ${result.rows.length} contrat(s) trouvé(s)`);
     
@@ -224,30 +203,16 @@ exports.getContratDetails = async (req, res) => {
       if (userResult.rows.length > 0) {
         const userPhone = userResult.rows[0].telephone;
         
-        // Préparer les différents formats de téléphone
-        const phoneVariants = [userPhone];
-        
+        // Nettoyer le numéro: enlever +225 s'il existe
+        let cleanPhone = userPhone;
         if (userPhone.startsWith('+225')) {
-          const withoutCountryCode = userPhone.replace('+225', '');
-          phoneVariants.push(withoutCountryCode);
-          if (!withoutCountryCode.startsWith('0')) {
-            phoneVariants.push('0' + withoutCountryCode);
-          }
-        } else if (userPhone.startsWith('225')) {
-          phoneVariants.push('+' + userPhone);
-          phoneVariants.push(userPhone.replace('225', '0'));
-        } else if (userPhone.startsWith('0')) {
-          const withoutZero = userPhone.substring(1);
-          phoneVariants.push('+225' + withoutZero);
-          phoneVariants.push('225' + withoutZero);
-        } else {
-          phoneVariants.push('+225' + userPhone);
-          phoneVariants.push('225' + userPhone);
-          phoneVariants.push('0' + userPhone);
+          cleanPhone = userPhone.substring(4);
         }
+        const phoneWithPrefix = '+225' + cleanPhone;
         
-        // Vérifier si le téléphone du contrat correspond à l'un des variants
-        if (phoneVariants.includes(contrat.telephone1) || phoneVariants.includes(contrat.telephone2)) {
+        // Comparer avec et sans +225
+        if (contrat.telephone1 === cleanPhone || contrat.telephone1 === phoneWithPrefix ||
+            contrat.telephone2 === cleanPhone || contrat.telephone2 === phoneWithPrefix) {
           hasAccess = true;
         }
       }
@@ -332,34 +297,17 @@ exports.getMesContrats = async (req, res) => {
       }
       
       const telephone = userResult.rows[0].telephone;
-      console.log('📞 Téléphone utilisateur:', telephone);
       
-      // Préparer les différents formats de téléphone
-      const phoneVariants = [telephone];
-      
+      // Nettoyer le numéro: enlever +225 s'il existe
+      let cleanPhone = telephone;
       if (telephone.startsWith('+225')) {
-        const withoutCountryCode = telephone.replace('+225', '');
-        phoneVariants.push(withoutCountryCode);
-        if (!withoutCountryCode.startsWith('0')) {
-          phoneVariants.push('0' + withoutCountryCode);
-        }
-      } else if (telephone.startsWith('225')) {
-        phoneVariants.push('+' + telephone);
-        phoneVariants.push(telephone.replace('225', '0'));
-      } else if (telephone.startsWith('0')) {
-        const withoutZero = telephone.substring(1);
-        phoneVariants.push('+225' + withoutZero);
-        phoneVariants.push('225' + withoutZero);
-      } else {
-        phoneVariants.push('+225' + telephone);
-        phoneVariants.push('225' + telephone);
-        phoneVariants.push('0' + telephone);
+        cleanPhone = telephone.substring(4);
       }
+      const phoneWithPrefix = '+225' + cleanPhone;
       
-      console.log('🔍 Formats de recherche:', phoneVariants);
+      console.log('📞 Téléphone nettoyé:', cleanPhone);
+      console.log('📞 Avec préfixe:', phoneWithPrefix);
       
-      // Créer la requête avec tous les variants
-      const placeholders = phoneVariants.map((_, index) => `$${index + 1}`).join(', ');
       query = `
         SELECT 
           id,
@@ -383,10 +331,11 @@ exports.getMesContrats = async (req, res) => {
           nom_prenom,
           datenaissance
         FROM contrats
-        WHERE telephone1 IN (${placeholders}) OR telephone2 IN (${placeholders})
+        WHERE telephone1 = $1 OR telephone1 = $2
+           OR telephone2 = $1 OR telephone2 = $2
         ORDER BY dateeffet DESC
       `;
-      params = phoneVariants;
+      params = [cleanPhone, phoneWithPrefix];
     }
     
     const result = await pool.query(query, params);

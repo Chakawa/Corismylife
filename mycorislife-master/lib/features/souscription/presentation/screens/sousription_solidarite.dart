@@ -382,6 +382,9 @@ class _SouscriptionSolidaritePageState
   void initState() {
     super.initState();
 
+    // Toujours initialiser selectedCapital avec une valeur valide pour éviter l'erreur dropdown
+    selectedCapital = 500000;
+    
     // Vérifier si on est en mode modification
     _isModification =
         widget.subscriptionId != null && widget.existingData != null;

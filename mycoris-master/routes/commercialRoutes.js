@@ -67,6 +67,48 @@ router.get('/clients-with-subscriptions', verifyToken, commercialController.getC
  */
 router.get('/commissions', verifyToken, commercialController.getCommercialCommissions);
 
+/**
+ * GET /api/commercial/mes_contrats_commercial
+ * Récupère tous les contrats du commercial
+ * Headers : Authorization: Bearer <token>
+ * Retour : { success: true, contrats: [...] }
+ */
+router.get('/mes_contrats_commercial', verifyToken, commercialController.getMesContratsCommercial);
+
+/**
+ * GET /api/commercial/liste_clients
+ * Récupère la liste des clients du commercial
+ * Headers : Authorization: Bearer <token>
+ * Retour : { success: true, clients: [...] }
+ */
+router.get('/liste_clients', verifyToken, commercialController.getListeClients);
+
+/**
+ * GET /api/commercial/contrats_actifs
+ * Récupère les contrats actifs du commercial
+ * Headers : Authorization: Bearer <token>
+ * Retour : { success: true, contrats: [...] }
+ */
+router.get('/contrats_actifs', verifyToken, commercialController.getContratsActifs);
+
+/**
+ * GET /api/commercial/details_client/:clientId
+ * Récupère les détails d'un client
+ * Headers : Authorization: Bearer <token>
+ * Params : clientId (int)
+ * Retour : { success: true, client: {...}, contrats: [...] }
+ */
+router.get('/details_client/:clientId', verifyToken, commercialController.getDetailsClient);
+
+/**
+ * GET /api/commercial/contrat_details/:numepoli
+ * Récupère les détails d'un contrat
+ * Headers : Authorization: Bearer <token>
+ * Params : numepoli (string)
+ * Retour : { success: true, contrat: {...} }
+ */
+router.get('/contrat_details/:numepoli', verifyToken, commercialController.getContratDetails);
+
 module.exports = router;
 
 

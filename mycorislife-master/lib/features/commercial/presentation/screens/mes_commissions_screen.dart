@@ -99,18 +99,8 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) return 'Non renseigné';
-    
-    try {
-      // Parser la date ISO
-      DateTime parsedDate = DateTime.parse(date);
-      
-      // Formater au format DD/MM/YYYY
-      return '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
-    } catch (e) {
-      // Si le parsing échoue, retourner la date telle quelle ou un message
-      print('Erreur formatage date: $e');
-      return date;
-    }
+    // Les dates viennent déjà au format DD/MM/YYYY depuis l'API
+    return date;
   }
 
   /// Filtre les bordereaux selon la requête de recherche

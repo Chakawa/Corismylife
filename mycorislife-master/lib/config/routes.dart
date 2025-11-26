@@ -33,6 +33,11 @@ import 'package:mycorislife/features/commercial/presentation/screens/profile_com
 import 'package:mycorislife/features/commercial/presentation/screens/select_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/create_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/register_client_screen.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/mes_contrats_commercial_page.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/liste_clients_page.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/contrats_actifs_page.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/details_client_page.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/contrat_details_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
 
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
@@ -141,6 +146,14 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/commercial_home': (context) => const CommercialHomePage(),
   '/commercialHome': (context) => CommercialHomePage(),
   '/profileCommercial': (context) => CommercialProfile(),
+  '/mes_contrats_commercial': (context) => const MesContratsCommercialPage(),
+  '/liste_clients': (context) => const ListeClientsPage(),
+  '/contrats_actifs': (context) => const ContratsActifsPage(),
+  '/details_client': (context) => const DetailsClientPage(),
+  '/contrat_details': (context) {
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    return ContratDetailsPage(contrat: args['contrat']);
+  },
   '/commercial/create_client': (context) => const CreateClientScreen(),
   '/commercial/select_client': (context) {
     final args =

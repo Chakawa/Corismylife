@@ -71,23 +71,10 @@ async function testContrats() {
     const userPhone = '+2250576097537';
     console.log(`🔍 Recherche de contrats pour: ${userPhone}\n`);
     
-    // Préparer les différents formats
-    const phoneVariants = [userPhone];
-    if (userPhone.startsWith('+225')) {
-      const withoutCountryCode = userPhone.replace('+225', '');
-      phoneVariants.push(withoutCountryCode);
-      if (!withoutCountryCode.startsWith('0')) {
-        phoneVariants.push('0' + withoutCountryCode);
-      }
-    }
-    
-    console.log('📞 Formats de recherche:', phoneVariants, '\n');
-    
-    const placeholders = phoneVariants.map((_, index) => `$${index + 1}`).join(', ');
     const userContrats = await pool.query(`
       SELECT * FROM contrats 
-      WHERE telephone1 IN (${placeholders}) OR telephone2 IN (${placeholders})
-    `, phoneVariants);
+      WHERE telephone1 = $1 OR telephone2 = $1
+    `, [userPhone]);
     
     if (userContrats.rows.length === 0) {
       console.log(`❌ Aucun contrat trouvé pour ${userPhone}\n`);
