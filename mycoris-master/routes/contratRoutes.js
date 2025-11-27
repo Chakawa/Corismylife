@@ -23,6 +23,13 @@ router.use(verifyToken);
 router.get('/mes-contrats', contratController.getMesContrats);
 
 /**
+ * GET /api/commercial/contrat_details/:numepoli
+ * Récupère les détails complets d'un contrat via le numéro de police
+ * Inclut les bénéficiaires
+ */
+router.get('/commercial/contrat_details/:numepoli', contratController.getContratDetailsByNumepoli);
+
+/**
  * GET /api/contrats/client/:telephone
  * Récupère tous les contrats d'un client via son téléphone
  * Accessible par: Admin, Commercial (si c'est son client)
@@ -45,5 +52,12 @@ router.get('/commercial/:codeappo', contratController.getContratsByCodeApporteur
  * - Client: ses contrats (via téléphone)
  */
 router.get('/:id', contratController.getContratDetails);
+
+/**
+ * GET /api/contrats/pdf/:numepoli
+ * Génère et retourne le PDF d'un contrat
+ * Format: PDF avec toutes les informations du contrat
+ */
+router.get('/pdf/:numepoli', contratController.generateContratPdf);
 
 module.exports = router;

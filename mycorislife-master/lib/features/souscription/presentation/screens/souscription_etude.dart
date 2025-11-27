@@ -3415,8 +3415,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
+    // Vérifier si la valeur est valide (null ou dans la liste)
+    final validValue = (value != null && items.contains(value)) ? value : null;
+    
     return DropdownButtonFormField<String>(
-      value: value,
+      value: validValue,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(

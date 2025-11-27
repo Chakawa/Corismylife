@@ -76,7 +76,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   // Variables pour la simulation
   int _dureeEnAnnees = 5;
   String _selectedUnite = 'années';
-  Periode _selectedPeriode = Periode.annuel;
+  Periode? _selectedPeriode; // Initialisé dans initState
   SimulationType _currentSimulation = SimulationType.parPrime;
   String _selectedSimulationType = 'Par Prime';
   double _calculatedPrime = 0.0;
@@ -441,6 +441,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   @override
   void initState() {
     super.initState();
+
+    // Initialiser _selectedPeriode avec une valeur par défaut
+    _selectedPeriode = Periode.annuel;
 
     // Initialisation des animations
     _animationController = AnimationController(
@@ -1021,7 +1024,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   String _getPeriodiciteKey() {
-    switch (_selectedPeriode) {
+    switch (_selectedPeriode ?? Periode.annuel) {
       case Periode.mensuel:
         return 'mensuel';
       case Periode.trimestriel:
@@ -1264,7 +1267,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   String _getPeriodeTextForDisplay() {
-    switch (_selectedPeriode) {
+    switch (_selectedPeriode ?? Periode.annuel) {
       case Periode.mensuel:
         return 'Mensuel';
       case Periode.trimestriel:
@@ -2502,8 +2505,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       required IconData icon,
       required List<String> items,
       required ValueChanged<String?> onChanged}) {
+    // Vérifier si la valeur est valide (null ou dans la liste)
+    final validValue = (value != null && items.contains(value)) ? value : null;
+    
     return DropdownButtonFormField<String>(
-      value: value,
+      value: validValue,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,

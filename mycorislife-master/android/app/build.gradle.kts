@@ -8,12 +8,18 @@ plugins {
 android {
     namespace = "com.example.mycorislife"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    // NDK version removed - use default
     
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     kotlinOptions {
@@ -44,6 +50,11 @@ android {
             //     getDefaultProguardFile("proguard-android-optimize.txt"),
             //     "proguard-rules.pro"
             // )
+            
+            // Désactiver le stripping des symboles natifs pour éviter les erreurs NDK
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
             
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

@@ -154,6 +154,106 @@ exports.getContratsByCodeApporteur = async (req, res) => {
 };
 
 /**
+ * Récupère les détails complets d'un contrat par numepoli (numéro de police)
+ * Route: GET /api/commercial/contrat_details/:numepoli
+ */
+exports.getContratDetailsByNumepoli = async (req, res) => {
+  try {
+    const { numepoli } = req.params;
+    
+    console.log('=== RÉCUPÉRATION DÉTAILS CONTRAT PAR NUMEPOLI ===');
+    console.log('📋 Numéro de police:', numepoli);
+    console.log('👤 User ID:', req.user.id);
+    console.log('🎭 Role:', req.user.role);
+    
+    // Récupérer tous les détails du contrat + bénéficiaires
+    const contratQuery = `
+      SELECT *
+      FROM contrats
+      WHERE numepoli = $1
+    `;
+    
+    const contratResult = await pool.query(contratQuery, [numepoli]);
+    
+    if (contratResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contrat non trouvé'
+      });
+    }
+    
+    const contrat = contratResult.rows[0];
+    
+    // Vérifier les droits d'accès
+    let hasAccess = false;
+    
+    // 1. Admin a accès à tout
+    if (req.user.role === 'admin') {
+      hasAccess = true;
+    }
+    // 2. Commercial a accès à ses contrats
+    else if (req.user.role === 'commercial' && req.user.code_apporteur === contrat.codeappo) {
+      hasAccess = true;
+    }
+    // 3. Client a accès à ses contrats (via téléphone)
+    else if (req.user.role === 'client') {
+      // Récupérer le téléphone du user
+      const userQuery = `SELECT telephone FROM users WHERE id = $1`;
+      const userResult = await pool.query(userQuery, [req.user.id]);
+      if (userResult.rows.length > 0) {
+        const userPhone = userResult.rows[0].telephone;
+        
+        // Nettoyer le numéro: enlever +225 s'il existe
+        let cleanPhone = userPhone;
+        if (userPhone.startsWith('+225')) {
+          cleanPhone = userPhone.substring(4);
+        }
+        const phoneWithPrefix = '+225' + cleanPhone;
+        
+        // Comparer avec et sans +225
+        if (contrat.telephone1 === cleanPhone || contrat.telephone1 === phoneWithPrefix ||
+            contrat.telephone2 === cleanPhone || contrat.telephone2 === phoneWithPrefix) {
+          hasAccess = true;
+        }
+      }
+    }
+    
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé à ce contrat'
+      });
+    }
+    
+    // Récupérer les bénéficiaires
+    const benefQuery = `
+      SELECT *
+      FROM beneficiaires
+      WHERE numepoli = $1
+      ORDER BY id
+    `;
+    
+    const benefResult = await pool.query(benefQuery, [numepoli]);
+    
+    console.log('✅ Contrat trouvé avec', benefResult.rows.length, 'bénéficiaire(s)');
+    
+    res.json({
+      success: true,
+      contrat: contrat,
+      beneficiaires: benefResult.rows
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur récupération détails contrat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération du contrat',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Récupère les détails complets d'un contrat spécifique
  * Route: GET /api/contrats/:id
  */
@@ -353,6 +453,98 @@ exports.getMesContrats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des contrats',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Génère le PDF d'un contrat
+ * Route: GET /api/contrats/pdf/:numepoli
+ */
+exports.generateContratPdf = async (req, res) => {
+  try {
+    const { numepoli } = req.params;
+    
+    console.log('=== GÉNÉRATION PDF CONTRAT ===');
+    console.log('📋 Numéro police:', numepoli);
+    console.log('👤 User ID:', req.user.id);
+    console.log('🎭 Role:', req.user.role);
+    
+    // Récupérer les détails du contrat
+    const query = `
+      SELECT *
+      FROM contrats
+      WHERE numepoli = $1
+    `;
+    
+    const result = await pool.query(query, [numepoli]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contrat non trouvé'
+      });
+    }
+    
+    const contrat = result.rows[0];
+    
+    // Vérifier les droits d'accès
+    let hasAccess = false;
+    
+    if (req.user.role === 'admin') {
+      hasAccess = true;
+    } else if (req.user.role === 'commercial' && req.user.code_apporteur === contrat.codeappo) {
+      hasAccess = true;
+    } else if (req.user.role === 'client') {
+      const userQuery = `SELECT telephone FROM users WHERE id = $1`;
+      const userResult = await pool.query(userQuery, [req.user.id]);
+      if (userResult.rows.length > 0) {
+        const userPhone = userResult.rows[0].telephone;
+        let cleanPhone = userPhone;
+        if (userPhone.startsWith('+225')) {
+          cleanPhone = userPhone.substring(4);
+        }
+        const phoneWithPrefix = '+225' + cleanPhone;
+        
+        if (contrat.telephone1 === cleanPhone || contrat.telephone1 === phoneWithPrefix ||
+            contrat.telephone2 === cleanPhone || contrat.telephone2 === phoneWithPrefix) {
+          hasAccess = true;
+        }
+      }
+    }
+    
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé à ce contrat'
+      });
+    }
+    
+    // Récupérer les bénéficiaires
+    const benefQuery = `
+      SELECT * FROM beneficiaires
+      WHERE numepoli = $1
+    `;
+    const benefResult = await pool.query(benefQuery, [numepoli]);
+    
+    // Pour l'instant, retourner une réponse JSON
+    // TODO: Implémenter la génération PDF réelle avec une bibliothèque comme PDFKit
+    console.log('✅ PDF prêt (simulation)');
+    
+    res.json({
+      success: true,
+      message: 'PDF généré avec succès (simulation)',
+      contrat: contrat,
+      beneficiaires: benefResult.rows,
+      note: 'Pour générer un vrai PDF, installer PDFKit ou utiliser un service externe'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur génération PDF contrat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la génération du PDF',
       error: error.message
     });
   }

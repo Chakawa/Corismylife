@@ -23,39 +23,61 @@ class _ListeClientsPageState extends State<ListeClientsPage> {
   }
 
   Future<void> _loadClients() async {
+    print('👥 [LISTE CLIENTS] ========== DÉBUT CHARGEMENT ==========');
     setState(() => isLoading = true);
+    
     try {
-      final token = await storage.read(key: 'auth_token');
+      final token = await storage.read(key: 'token');
+      print('🔑 [LISTE CLIENTS] Token: ${token != null ? "✅ OK" : "❌ Manquant"}');
+      
       if (token == null) {
         throw Exception('Token non trouvé');
       }
 
+      final url = '${AppConfig.baseUrl}/commercial/liste_clients';
+      print('🌐 [LISTE CLIENTS] URL: $url');
+      
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/commercial/liste_clients'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
+      print('📊 [LISTE CLIENTS] Status: ${response.statusCode}');
+      print('📦 [LISTE CLIENTS] Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('✅ [LISTE CLIENTS] Données décodées: ${data.keys}');
+        
         setState(() {
           clients = data['clients'] ?? [];
           isLoading = false;
         });
+        
+        print('📋 [LISTE CLIENTS] ${clients.length} clients chargés');
       } else {
-        throw Exception('Erreur lors du chargement des clients');
+        print('❌ [LISTE CLIENTS] Erreur HTTP ${response.statusCode}');
+        throw Exception('Erreur ${response.statusCode}: ${response.body}');
       }
-    } catch (e) {
-      print('Erreur: $e');
+    } catch (e, stackTrace) {
+      print('❌ [LISTE CLIENTS] EXCEPTION: $e');
+      print('📍 [LISTE CLIENTS] Stack: $stackTrace');
       setState(() => isLoading = false);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
+    
+    print('👥 [LISTE CLIENTS] ========== FIN CHARGEMENT ==========');
   }
 
   @override

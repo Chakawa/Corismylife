@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/models/subscription.dart';
+import 'package:mycorislife/models/contrat.dart';
 
 class SubscriptionService {
   static String get baseUrl => AppConfig.baseUrl;
@@ -110,32 +111,31 @@ class SubscriptionService {
     throw Exception("Erreur lors de la récupération des propositions");
   }
 
-  // Récupérer les contrats
-  Future<List<Subscription>> getContrats() async {
+  // Récupérer les contrats depuis la table contrats
+  Future<List<Contrat>> getContrats() async {
     final token = await storage.read(key: 'token');
     final response = await http.get(
-      Uri.parse('$baseUrl/subscriptions/user/contrats'),
+      Uri.parse('$baseUrl/contrats/mes-contrats'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
-        return (data['data'] as List)
-            .map((item) => Subscription.fromJson(item))
+        return (data['contrats'] as List)
+            .map((item) => Contrat.fromJson(item))
             .toList();
       }
     }
     throw Exception("Erreur lors de la récupération des contrats");
   }
 
-  // Récupérer toutes les souscriptions (combine propositions et contrats)
+  // Récupérer toutes les souscriptions (propositions uniquement, contrats séparés)
   Future<List<Subscription>> getAllSubscriptions() async {
     try {
-      // Récupérer les propositions et les contrats, puis les combiner
+      // Récupérer uniquement les propositions (les contrats sont dans la table contrats)
       final propositions = await getPropositions();
-      final contrats = await getContrats();
-      return [...propositions, ...contrats];
+      return propositions;
     } catch (e) {
       throw Exception("Erreur lors de la récupération des souscriptions: $e");
     }

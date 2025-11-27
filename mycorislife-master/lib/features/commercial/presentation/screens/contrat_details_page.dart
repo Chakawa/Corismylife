@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/services/contrat_pdf_service.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/contrat_pdf_viewer_page.dart';
 
 class ContratDetailsPage extends StatefulWidget {
   final Map<String, dynamic> contrat;
@@ -42,7 +44,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
   Future<void> _loadContratDetails() async {
     setState(() => isLoading = true);
     try {
-      final token = await storage.read(key: 'auth_token');
+      final token = await storage.read(key: 'token');
       if (token == null) throw Exception('Token non trouvé');
 
       final numepoli = widget.contrat['numepoli'];
@@ -122,24 +124,113 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
     }
   }
 
+  /// Ouvre la visionneuse PDF du contrat
+  Future<void> _viewPDF() async {
+    if (contratDetails == null) return;
+    
+    final numepoli = contratDetails!['numepoli'];
+    if (numepoli == null) {
+      _showMessage('Numéro de police non disponible', isError: true);
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ContratPdfViewerPage(
+          numepoli: numepoli,
+          clientName: _formatClientName(),
+        ),
+      ),
+    );
+  }
+
+  /// Partage le PDF du contrat
   Future<void> _generateAndSharePDF() async {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fonctionnalité de partage à venir. Installez share_plus package.'),
+    if (contratDetails == null) return;
+    
+    final numepoli = contratDetails!['numepoli'];
+    if (numepoli == null) {
+      _showMessage('Numéro de police non disponible', isError: true);
+      return;
+    }
+
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF002B6B)),
         ),
       );
+
+      await ContratPdfService.downloadAndSharePdf(numepoli);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Fermer le dialog
+      _showMessage('PDF prêt à partager');
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Fermer le dialog
+      _showMessage('Erreur lors du partage: $e', isError: true);
     }
   }
 
+  /// Télécharge le PDF du contrat
   Future<void> _downloadPDF() async {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fonctionnalité de téléchargement à venir. Installez pdf package.'),
+    if (contratDetails == null) return;
+    
+    final numepoli = contratDetails!['numepoli'];
+    if (numepoli == null) {
+      _showMessage('Numéro de police non disponible', isError: true);
+      return;
+    }
+
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF002B6B)),
         ),
       );
+
+      final path = await ContratPdfService.downloadContratPdf(numepoli);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Fermer le dialog
+      _showMessage('PDF téléchargé avec succès!\n$path');
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Fermer le dialog
+      _showMessage('Erreur lors du téléchargement: $e', isError: true);
     }
+  }
+
+  /// Affiche un message à l'utilisateur
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red : const Color(0xFF10B981),
+        duration: Duration(seconds: isError ? 4 : 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   void _copyToClipboard(String text) {
@@ -160,13 +251,9 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
         backgroundColor: const Color(0xFF002B6B),
         actions: [
           IconButton(
-            icon: Icon(showProfessionalView ? Icons.visibility_off : Icons.visibility),
-            tooltip: showProfessionalView ? 'Vue Client' : 'Vue Professionnelle',
-            onPressed: () {
-              setState(() {
-                showProfessionalView = !showProfessionalView;
-              });
-            },
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Voir PDF',
+            onPressed: contratDetails != null ? _viewPDF : null,
           ),
           IconButton(
             icon: const Icon(Icons.share),
@@ -178,10 +265,19 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
             tooltip: 'Télécharger PDF',
             onPressed: contratDetails != null ? _downloadPDF : null,
           ),
+          IconButton(
+            icon: Icon(showProfessionalView ? Icons.visibility_off : Icons.visibility),
+            tooltip: showProfessionalView ? 'Vue Client' : 'Vue Professionnelle',
+            onPressed: () {
+              setState(() {
+                showProfessionalView = !showProfessionalView;
+              });
+            },
+          ),
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF002B6B)))
           : contratDetails == null
               ? const Center(
                   child: Text(
@@ -200,7 +296,14 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                         // En-tête du contrat
                         Card(
                           elevation: 4,
-                          color: Colors.blue.shade50,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: const Color(0xFF002B6B).withOpacity(0.3),
+                              width: 2,
+                            ),
+                          ),
+                          color: const Color(0xFF002B6B).withOpacity(0.05),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -208,7 +311,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.description, size: 32, color: Colors.blue),
+                                    const Icon(Icons.description, size: 32, color: Color(0xFF002B6B)),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
@@ -257,6 +360,10 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
 
                         // Informations du contrat
                         Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -526,7 +633,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.blue),
+          Icon(icon, size: 20, color: const Color(0xFF002B6B)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

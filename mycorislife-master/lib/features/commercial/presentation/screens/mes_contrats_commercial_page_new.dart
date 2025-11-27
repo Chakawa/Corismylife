@@ -4,14 +4,14 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 
-class MesContratsCommercialPage extends StatefulWidget {
-  const MesContratsCommercialPage({Key? key}) : super(key: key);
+class MesContratsCommercialPageNew extends StatefulWidget {
+  const MesContratsCommercialPageNew({Key? key}) : super(key: key);
 
   @override
-  State<MesContratsCommercialPage> createState() => _MesContratsCommercialPageState();
+  State<MesContratsCommercialPageNew> createState() => _MesContratsCommercialPageNewState();
 }
 
-class _MesContratsCommercialPageState extends State<MesContratsCommercialPage> 
+class _MesContratsCommercialPageNewState extends State<MesContratsCommercialPageNew> 
     with SingleTickerProviderStateMixin {
   final storage = const FlutterSecureStorage();
   List<dynamic> contrats = [];
@@ -19,8 +19,6 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   bool isLoading = true;
   String _searchQuery = '';
   String _filterStatus = 'tous';
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
   late AnimationController _animationController;
 
   final Map<String, Map<String, dynamic>> productConfig = {
@@ -46,7 +44,6 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   @override
   void dispose() {
     _animationController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -149,119 +146,175 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF002B6B),
-        elevation: 0,
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Rechercher...',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
+      body: CustomScrollView(
+        slivers: [
+          // AppBar avec gradient
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF002B6B),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF002B6B), Color(0xFF004080)],
+                  ),
                 ),
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                  _filterContrats();
-                },
-              )
-            : const Text(
-                'Mes Contrats',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.1,
+                        child: CustomPaint(painter: _PatternPainter()),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'Mes Contrats',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${contrats.length} contrat${contrats.length > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  _searchQuery = '';
-                  _filterContrats();
-                }
-              });
-            },
+              title: const Text('Mes Contrats'),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.filter_list),
+                onPressed: () => _showFilterDialog(),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Header avec stats
-          Container(
-            color: const Color(0xFF002B6B),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total',
-                    '${contrats.length}',
-                    Icons.folder,
-                    Colors.white,
-                    const Color(0xFF002B6B),
+
+          // Stats cards
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Total',
+                          '${contrats.length}',
+                          Icons.folder,
+                          const Color(0xFF002B6B),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Actifs',
+                          '$actifsCount',
+                          Icons.check_circle,
+                          const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Actifs',
-                    '$actifsCount',
-                    Icons.check_circle,
-                    Colors.white,
-                    const Color(0xFF10B981),
+                  const SizedBox(height: 16),
+                  
+                  // Barre de recherche
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() => _searchQuery = value);
+                        _filterContrats();
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un contrat...',
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF002B6B)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // Liste des contrats
-          Expanded(
-            child: isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
+          if (isLoading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
+                ),
+              ),
+            )
+          else if (filteredContrats.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox, size: 80, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Aucun contrat trouvé',
+                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
-                  )
-                : filteredContrats.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inbox, size: 80, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Aucun contrat trouvé'
-                                  : 'Aucun contrat disponible',
-                              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadContrats,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                          itemCount: filteredContrats.length,
-                          itemBuilder: (context, index) {
-                            final contrat = filteredContrats[index];
-                            return _buildContratCard(contrat, index);
-                          },
-                        ),
-                      ),
-          ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final contrat = filteredContrats[index];
+                    return _buildContratCard(contrat, index);
+                  },
+                  childCount: filteredContrats.length,
+                ),
+              ),
+            ),
         ],
       ),
 
@@ -271,49 +324,47 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color backgroundColor, Color accentColor) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: accentColor, size: 24),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: accentColor,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -323,9 +374,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   Widget _buildContratCard(Map<String, dynamic> contrat, int index) {
     final config = _getProductConfig(contrat['codeprod']?.toString());
-    final etat = contrat['etat']?.toString() ?? 'Inconnu';
-    final isActif = etat.toLowerCase() == 'actif';
-    final displayStatus = etat.isNotEmpty && etat != 'null' ? etat : 'Inactif';
+    final isActif = (contrat['etat'] ?? '').toString().toLowerCase() == 'actif';
     
     return FadeTransition(
       opacity: Tween<double>(begin: 0, end: 1).animate(
@@ -372,12 +421,21 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF002B6B),
-                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [config['color'], config['color'].withOpacity(0.8)],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: config['color'].withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: Icon(config['icon'], color: Colors.white, size: 24),
+                        child: Icon(config['icon'], color: Colors.white, size: 28),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -395,17 +453,18 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                             ),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                displayStatus.toUpperCase(),
+                                contrat['etat'] ?? 'N/A',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
@@ -421,15 +480,15 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                   // Produit
                   Row(
                     children: [
-                      const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF002B6B)),
+                      Icon(Icons.shield_outlined, size: 18, color: config['color']),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           config['name'],
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: TextStyle(
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF002B6B),
+                            color: config['color'],
                           ),
                         ),
                       ),
@@ -591,4 +650,25 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       ),
     );
   }
+}
+
+class _PatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    for (var i = 0; i < 5; i++) {
+      canvas.drawCircle(
+        Offset(size.width * 0.8, size.height * 0.3 + i * 30),
+        20 + i * 10,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

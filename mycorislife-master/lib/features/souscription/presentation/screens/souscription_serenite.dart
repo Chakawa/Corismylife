@@ -3233,8 +3233,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       required IconData icon,
       required List<String> items,
       required ValueChanged<String?> onChanged}) {
+    // Vérifier si la valeur est valide (null ou dans la liste)
+    final validValue = (value != null && items.contains(value)) ? value : null;
+    
     return DropdownButtonFormField<String>(
-      value: value,
+      value: validValue,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,

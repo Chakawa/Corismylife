@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/models/subscription.dart';
+import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/features/client/presentation/screens/contrat_detail_page.dart';
 
 class ContratsPage extends StatefulWidget {
@@ -14,7 +14,7 @@ class ContratsPage extends StatefulWidget {
 class _ContratsPageState extends State<ContratsPage>
     with TickerProviderStateMixin {
   final SubscriptionService _service = SubscriptionService();
-  List<Subscription> contrats = [];
+  List<Contrat> contrats = [];
   bool isLoading = true;
   String selectedFilter = 'Tous';
   late AnimationController _animationController;
@@ -167,19 +167,18 @@ class _ContratsPageState extends State<ContratsPage>
     }
   }
 
-  String _getContractStatus(Subscription contrat) {
-    final dateEcheance = contrat.souscriptionData['dateEcheance'];
+  String _getContractStatus(Contrat contrat) {
+    if (contrat.etat != null && contrat.etat!.toLowerCase() != 'actif') {
+      return contrat.etat!;
+    }
+    
+    final dateEcheance = contrat.dateeche;
     if (dateEcheance != null) {
-      try {
-        final echeance = DateTime.parse(dateEcheance.toString());
-        final now = DateTime.now();
-        if (echeance.isBefore(now)) {
-          return 'Échu';
-        } else if (echeance.difference(now).inDays <= 30) {
-          return 'Bientôt échu';
-        }
-      } catch (e) {
-        // Si erreur de parsing, on considère comme actif
+      final now = DateTime.now();
+      if (dateEcheance.isBefore(now)) {
+        return 'Échu';
+      } else if (dateEcheance.difference(now).inDays <= 30) {
+        return 'Bientôt échu';
       }
     }
     return 'Actif';
@@ -198,12 +197,12 @@ class _ContratsPageState extends State<ContratsPage>
     }
   }
 
-  List<Subscription> get filteredContrats {
+  List<Contrat> get filteredContrats {
     if (selectedFilter == 'Tous') {
       return contrats;
     }
     return contrats
-        .where((contrat) => _getBadgeText(contrat.produitNom) == selectedFilter)
+        .where((contrat) => _getBadgeText(contrat.productName) == selectedFilter)
         .toList();
   }
 
@@ -438,10 +437,10 @@ class _ContratsPageState extends State<ContratsPage>
     );
   }
 
-  Widget _buildModernContractCard(Subscription contrat, int index) {
+  Widget _buildModernContractCard(Contrat contrat, int index) {
     final status = _getContractStatus(contrat);
-    final prime = contrat.souscriptionData['prime']?.toString() ?? '-';
-    final dateEcheance = contrat.souscriptionData['dateEcheance'];
+    final prime = contrat.prime?.toString() ?? '-';
+    final dateEcheance = contrat.dateeche;
 
     return Container(
       decoration: BoxDecoration(
@@ -476,11 +475,11 @@ class _ContratsPageState extends State<ContratsPage>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: _getBadgeGradient(contrat.produitNom),
+                        gradient: _getBadgeGradient(contrat.productName),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        _getProductIcon(contrat.produitNom),
+                        _getProductIcon(contrat.productName),
                         color: Colors.white,
                         size: 20,
                       ),
@@ -505,16 +504,16 @@ class _ContratsPageState extends State<ContratsPage>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: _getBadgeColor(contrat.produitNom)
+                              color: _getBadgeColor(contrat.productName)
                                   .withAlpha(26), // 0.1 opacity
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              _getBadgeText(contrat.produitNom),
+                              _getBadgeText(contrat.productName),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: _getBadgeColor(contrat.produitNom),
+                                color: _getBadgeColor(contrat.productName),
                               ),
                             ),
                           ),
@@ -588,7 +587,7 @@ class _ContratsPageState extends State<ContratsPage>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "Créé le ${_formatDate(contrat.dateCreation)}",
+                        "Créé le ${_formatDate(contrat.dateeffet)}",
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF64748B),
@@ -644,7 +643,7 @@ class _ContratsPageState extends State<ContratsPage>
     );
   }
 
-  Widget _buildActionButton(String status, Subscription contrat) {
+  Widget _buildActionButton(String status, Contrat contrat) {
     switch (status) {
       case 'Échu':
         return ElevatedButton(
@@ -712,19 +711,19 @@ class _ContratsPageState extends State<ContratsPage>
     }
   }
 
-  void _handleContractTap(Subscription contrat) {
+  void _handleContractTap(Contrat contrat) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ContratDetailPage(
           subscriptionId: contrat.id,
-          contractNumber: _getContractNumber(contrats.indexOf(contrat)),
+          contractNumber: contrat.numepoli ?? _getContractNumber(contrats.indexOf(contrat)),
         ),
       ),
     );
   }
 
-  void _handleRenewal(Subscription contrat) {
+  void _handleRenewal(Contrat contrat) {
     HapticFeedback.lightImpact();
 
     ScaffoldMessenger.of(context).showSnackBar(

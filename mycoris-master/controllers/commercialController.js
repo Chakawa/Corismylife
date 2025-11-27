@@ -617,6 +617,7 @@ exports.getMesContratsCommercial = async (req, res) => {
 
     const query = `
       SELECT 
+        c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
@@ -624,25 +625,40 @@ exports.getMesContratsCommercial = async (req, res) => {
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
-        c.codebran,
         c.dateeffet,
-        c.dateecheance,
+        c.dateeche as dateecheance,
         c.datenaissance,
+        c.duree,
+        c.periodicite,
         -- Extraire prénom et nom si possible (format: "Prénom Nom")
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
-        p.libelle as nom_produit
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
       FROM contrats c
-      LEFT JOIN produits p ON c.codeprod = p.codeprod
       WHERE c.codeappo = $1
       ORDER BY c.dateeffet DESC
     `;
 
     const result = await pool.query(query, [String(codeApporteur)]);
 
+    // Ajouter le nom du produit côté serveur
+    const produitsMap = {
+      '225': 'CORIS SOLIDARITÉ',
+      '205': 'FLEX EMPRUNTEUR',
+      '242': 'CORIS ÉPARGNE BONUS',
+      '240': 'CORIS RETRAITE',
+      '202': 'CORIS SÉRÉNITÉ',
+      '246': 'CORIS ÉTUDE',
+      '200': 'CORIS FAMILIS'
+    };
+
+    const contratsAvecNomProduit = result.rows.map(contrat => ({
+      ...contrat,
+      nom_produit: produitsMap[contrat.codeprod] || `Produit ${contrat.codeprod}`
+    }));
+
     res.json({
       success: true,
-      contrats: result.rows
+      contrats: contratsAvecNomProduit
     });
   } catch (error) {
     console.error('Erreur récupération contrats commercial:', error);
@@ -672,7 +688,7 @@ exports.getListeClients = async (req, res) => {
     const query = `
       WITH clients_users AS (
         SELECT DISTINCT
-          u.id,
+          CAST(u.id AS TEXT) as id,
           u.nom,
           u.prenom,
           u.email,
@@ -683,14 +699,14 @@ exports.getListeClients = async (req, res) => {
       ),
       clients_contrats AS (
         SELECT DISTINCT
-          NULL as id,
+          CAST(NULL AS TEXT) as id,
           TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
           TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-          c.telephone1 as telephone,
-          NULL as email,
+          CAST(c.telephone1 AS TEXT) as telephone,
+          CAST(NULL AS TEXT) as email,
           'contrat' as source
         FROM contrats c
-        WHERE c.codeappo = $1
+        WHERE CAST(c.codeappo AS TEXT) = $1
           AND c.nom_prenom IS NOT NULL 
           AND c.nom_prenom != ''
           AND NOT EXISTS (
@@ -737,6 +753,7 @@ exports.getContratsActifs = async (req, res) => {
 
     const query = `
       SELECT 
+        c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
@@ -744,25 +761,40 @@ exports.getContratsActifs = async (req, res) => {
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
-        c.codebran,
         c.dateeffet,
-        c.dateecheance,
+        c.dateeche as dateecheance,
         c.datenaissance,
+        c.duree,
+        c.periodicite,
         -- Extraire prénom et nom si possible (format: "Prénom Nom")
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
-        p.libelle as nom_produit
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
       FROM contrats c
-      LEFT JOIN produits p ON c.codeprod = p.codeprod
       WHERE c.codeappo = $1 AND LOWER(c.etat) = 'actif'
       ORDER BY c.dateeffet DESC
     `;
 
     const result = await pool.query(query, [String(codeApporteur)]);
 
+    // Ajouter le nom du produit côté serveur
+    const produitsMap = {
+      '225': 'CORIS SOLIDARITÉ',
+      '205': 'FLEX EMPRUNTEUR',
+      '242': 'CORIS ÉPARGNE BONUS',
+      '240': 'CORIS RETRAITE',
+      '202': 'CORIS SÉRÉNITÉ',
+      '246': 'CORIS ÉTUDE',
+      '200': 'CORIS FAMILIS'
+    };
+
+    const contratsAvecNomProduit = result.rows.map(contrat => ({
+      ...contrat,
+      nom_produit: produitsMap[contrat.codeprod] || `Produit ${contrat.codeprod}`
+    }));
+
     res.json({
       success: true,
-      contrats: result.rows
+      contrats: contratsAvecNomProduit
     });
   } catch (error) {
     console.error('Erreur récupération contrats actifs:', error);
@@ -850,19 +882,21 @@ exports.getDetailsClient = async (req, res) => {
  */
 exports.getContratDetails = async (req, res) => {
   try {
+    const userRole = req.user.role;
     const codeApporteur = req.user.code_apporteur;
+    const userTelephone = req.user.telephone;
     const numepoli = req.params.numepoli;
 
-    if (!codeApporteur) {
-      return res.status(400).json({
-        success: false,
-        message: 'Code apporteur non trouvé'
-      });
-    }
+    console.log('🔍 [CONTRAT DETAILS] ========== DÉBUT ==========');
+    console.log('👤 [CONTRAT DETAILS] Rôle:', userRole);
+    console.log('📞 [CONTRAT DETAILS] Téléphone:', userTelephone);
+    console.log('💼 [CONTRAT DETAILS] Code apporteur:', codeApporteur);
+    console.log('📄 [CONTRAT DETAILS] Numéro police:', numepoli);
 
     // Récupérer tous les détails du contrat
     const query = `
       SELECT 
+        c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
@@ -870,9 +904,8 @@ exports.getContratDetails = async (req, res) => {
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
-        c.codebran,
         c.dateeffet,
-        c.dateecheance,
+        c.dateeche as dateecheance,
         c.datenaissance,
         c.duree,
         c.periodicite,
@@ -886,14 +919,26 @@ exports.getContratDetails = async (req, res) => {
         c.telephone2,
         -- Extraire prénom et nom si possible
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
-        p.libelle as nom_produit
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
       FROM contrats c
-      LEFT JOIN produits p ON c.codeprod = p.codeprod
-      WHERE c.numepoli = $1 AND c.codeappo = $2
+      WHERE c.numepoli = $1 
+        AND (
+          $2::text IS NULL 
+          OR c.codeappo = $2 
+          OR c.telephone1 = $3 
+          OR c.telephone2 = $3
+          OR REPLACE(c.telephone1, ' ', '') = REPLACE($3, ' ', '')
+          OR REPLACE(c.telephone2, ' ', '') = REPLACE($3, ' ', '')
+        )
     `;
 
-    const result = await pool.query(query, [numepoli, String(codeApporteur)]);
+    const result = await pool.query(query, [
+      numepoli, 
+      codeApporteur || null, 
+      userTelephone || null
+    ]);
+
+    console.log('📊 [CONTRAT DETAILS] Résultats trouvés:', result.rows.length);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -901,6 +946,22 @@ exports.getContratDetails = async (req, res) => {
         message: 'Contrat non trouvé'
       });
     }
+
+    // Ajouter le nom du produit côté serveur
+    const produitsMap = {
+      '225': 'CORIS SOLIDARITÉ',
+      '205': 'FLEX EMPRUNTEUR',
+      '242': 'CORIS ÉPARGNE BONUS',
+      '240': 'CORIS RETRAITE',
+      '202': 'CORIS SÉRÉNITÉ',
+      '246': 'CORIS ÉTUDE',
+      '200': 'CORIS FAMILIS'
+    };
+
+    const contratAvecNomProduit = {
+      ...result.rows[0],
+      nom_produit: produitsMap[result.rows[0].codeprod] || `Produit ${result.rows[0].codeprod}`
+    };
 
     // Récupérer les bénéficiaires du contrat
     const benefQuery = `
@@ -919,7 +980,7 @@ exports.getContratDetails = async (req, res) => {
 
     res.json({
       success: true,
-      contrat: result.rows[0],
+      contrat: contratAvecNomProduit,
       beneficiaires: benefResult.rows
     });
   } catch (error) {
