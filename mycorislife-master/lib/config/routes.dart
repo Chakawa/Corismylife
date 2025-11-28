@@ -151,8 +151,13 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/contrats_actifs': (context) => const ContratsActifsPage(),
   '/details_client': (context) => const DetailsClientPage(),
   '/contrat_details': (context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    return ContratDetailsUnifiedPage(contrat: args['contrat']);
+    final args = ModalRoute.of(context)!.settings.arguments;
+    // Si args est déjà un Map<String, dynamic> (contrat direct), on l'utilise
+    // Sinon on essaie d'extraire args['contrat']
+    final contrat = args is Map<String, dynamic>
+        ? (args.containsKey('contrat') ? args['contrat'] : args)
+        : args as Map<String, dynamic>;
+    return ContratDetailsUnifiedPage(contrat: contrat);
   },
   '/commercial/create_client': (context) => const CreateClientScreen(),
   '/commercial/select_client': (context) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'home_content.dart';
 import 'mes_propositions_page.dart';
-import 'mes_contrats_page.dart';
+import 'mes_contrats_client_page.dart';
 import 'profil_screen.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
     HomeContent(), // Onglet 0: Accueil
     PropositionsPage(), // Onglet 1: Propositions
     SizedBox.shrink(), // Onglet 2: Placeholder pour Simuler
-    ContratsPage(), // Onglet 3: Contrats
+    MesContratsClientPage(), // Onglet 3: Contrats
     ProfilPage(), // Onglet 4: Profil
   ];
 

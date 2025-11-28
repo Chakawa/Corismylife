@@ -570,8 +570,15 @@ class _LoginScreenState extends State<LoginScreen>
                           Center(
                             child: TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(
-                                    context, '/reset_password');
+                                // TODO: Implémenter la fonctionnalité de réinitialisation du mot de passe
+                                // Navigator.pushNamed(context, '/reset_password');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Fonctionnalité en cours de développement'),
+                                    backgroundColor: Color(0xFFF59E0B),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: rougeCoris,

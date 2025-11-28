@@ -42,8 +42,10 @@ class ContratService {
         
         try {
           final contrats = contratsJson.map((json) {
-            print('🔄 Parsing contrat: ${json['numepoli']}');
-            return Contrat.fromJson(json);
+            print('🔄 Parsing contrat: ${json['numepoli']} - État: ${json['etat']}');
+            final contrat = Contrat.fromJson(json);
+            print('✅ Contrat parsé - État final: ${contrat.etat}');
+            return contrat;
           }).toList();
           print('✅ ${contrats.length} contrat(s) parsé(s) avec succès');
           return contrats;

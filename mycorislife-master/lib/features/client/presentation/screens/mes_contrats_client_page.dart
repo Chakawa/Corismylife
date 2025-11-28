@@ -12,13 +12,33 @@ class MesContratsClientPage extends StatefulWidget {
 class _MesContratsClientPageState extends State<MesContratsClientPage> {
   final ContratService _service = ContratService();
   List<Contrat> contrats = [];
+  List<Contrat> filteredContrats = [];
   bool isLoading = true;
   String? errorMessage;
+  String _filterStatus = 'tous';
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadContrats();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+      _filterContrats();
+    });
   }
 
   Future<void> _loadContrats() async {
@@ -37,6 +57,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
       setState(() {
         contrats = result;
+        _filterContrats();
         isLoading = false;
       });
       print('✅ État mis à jour avec ${contrats.length} contrat(s)');
@@ -51,6 +72,60 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
         isLoading = false;
       });
     }
+  }
+
+  void _filterContrats() {
+    setState(() {
+      filteredContrats = contrats.where((contrat) {
+        // Filtre par statut
+        bool matchesStatus = true;
+        if (_filterStatus != 'tous') {
+          matchesStatus = contrat.etat?.toLowerCase() == _filterStatus;
+        }
+
+        // Filtre par recherche
+        bool matchesSearch = true;
+        if (_searchQuery.isNotEmpty) {
+        matchesSearch = 
+          (contrat.numepoli?.toLowerCase().contains(_searchQuery) ?? false) ||
+          (contrat.codeprod.toLowerCase().contains(_searchQuery));
+        }
+
+        return matchesStatus && matchesSearch;
+      }).toList();
+    });
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filtrer par statut'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildFilterOption('Tous', 'tous'),
+            _buildFilterOption('Actif', 'actif'),
+            _buildFilterOption('Inactif', 'inactif'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOption(String label, String value) {
+    return RadioListTile<String>(
+      title: Text(label),
+      value: value,
+      groupValue: _filterStatus,
+      onChanged: (newValue) {
+        setState(() {
+          _filterStatus = newValue!;
+          _filterContrats();
+        });
+        Navigator.pop(context);
+      },
+    );
   }
 
   String _formatDate(dynamic dateValue) {
@@ -121,18 +196,24 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   String _getStatutDisplay(Contrat contrat) {
-    if (contrat.etat == null) return 'Inconnu';
-    final statut = contrat.etat!.toLowerCase();
+    if (contrat.etat == null) {
+      return 'Inconnu';
+    }
+    final statut = contrat.etat!.toLowerCase().trim();
     
-    if (statut.contains('actif') || statut.contains('active')) {
+    // Vérifier l'égalité exacte d'abord pour éviter les faux positifs
+    if (statut == 'actif' || statut == 'active') {
       return 'ACTIF';
-    } else if (statut.contains('suspendu')) {
+    } else if (statut == 'inactif' || statut == 'inactive') {
+      return 'INACTIF';
+    } else if (statut == 'suspendu') {
       return 'SUSPENDU';
     } else if (statut.contains('résili') || statut.contains('resili')) {
       return 'RÉSILIÉ';
     } else if (statut.contains('échu') || statut.contains('echu')) {
       return 'ÉCHU';
     }
+    
     return statut.toUpperCase();
   }
 
@@ -142,6 +223,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     switch (statut) {
       case 'ACTIF':
         return Colors.green;
+      case 'INACTIF':
+        return Colors.grey;
       case 'SUSPENDU':
         return Colors.orange;
       case 'RÉSILIÉ':
@@ -162,21 +245,65 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   @override
   Widget build(BuildContext context) {
+    final actifsCount = contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Mes Contrats',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          color: Colors.white,
+          onPressed: () => Navigator.pop(context),
         ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher...',
+                  hintStyle: const TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white, width: 2),
+                  ),
+                  isDense: true,
+                ),
+              )
+            : const Text(
+                'Mes Contrats',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
         backgroundColor: const Color(0xFF002B6B),
         elevation: 0,
         actions: [
           IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            color: Colors.white,
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            color: Colors.white,
+            onPressed: _showFilterDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
+            color: Colors.white,
             onPressed: _loadContrats,
             tooltip: 'Actualiser',
           ),
@@ -190,9 +317,94 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
             )
           : errorMessage != null
               ? _buildErrorState()
-              : contrats.isEmpty
-                  ? _buildEmptyState()
-                  : _buildContratsList(),
+              : Column(
+                  children: [
+                    // Statistiques
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Total',
+                              '${contrats.length}',
+                              Icons.description,
+                              const Color(0xFF002B6B),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Actifs',
+                              '$actifsCount',
+                              Icons.check_circle,
+                              const Color(0xFF10B981),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Liste des contrats
+                    Expanded(
+                      child: contrats.isEmpty
+                          ? _buildEmptyState()
+                          : _buildContratsList(),
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -306,14 +518,50 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   Widget _buildContratsList() {
+    final displayContrats = filteredContrats.isEmpty && _searchQuery.isEmpty && _filterStatus == 'tous' 
+        ? contrats 
+        : filteredContrats;
+
+    if (displayContrats.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun contrat trouvé',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Essayez de modifier vos filtres',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: _loadContrats,
       color: const Color(0xFF002B6B),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: contrats.length,
+        itemCount: displayContrats.length,
         itemBuilder: (context, index) {
-          final contrat = contrats[index];
+          final contrat = displayContrats[index];
           return _buildContratCard(contrat);
         },
       ),
@@ -324,8 +572,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     final productColor = _getProductColor(contrat.codeprod);
     final productName = _getProductName(contrat.codeprod);
     final clientName = _formatClientName(contrat);
-    // Afficher uniquement le numéro de police sans le codeinte
-    final numepoli = contrat.numepoli ?? 'N/A';
+    // Afficher le numéro de police complet avec codeinte
+    final numpolice = '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
     final dateeffet = _formatDate(contrat.dateeffet);
     final dateeche = _formatDate(contrat.dateeche);
     final prime = _formatNumber(contrat.prime);
@@ -395,34 +643,57 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          numepoli,
-                          style: TextStyle(
-                            fontSize: 16,
+                          numpolice,
+                          style: const TextStyle(
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: productColor,
+                            color: Color(0xFF002B6B),
                             letterSpacing: 0.3,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: statutColor,
+                            color: productColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            statut,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            productName,
+                            style: TextStyle(
+                              color: productColor,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  // Badge statut à droite
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statutColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: statutColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      statut,
+                      style: TextStyle(
+                        color: statutColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const Icon(

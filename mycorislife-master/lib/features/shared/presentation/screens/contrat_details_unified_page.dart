@@ -1,3 +1,35 @@
+/**
+ * ===============================================
+ * PAGE - DÉTAILS CONTRAT UNIFIÉ
+ * ===============================================
+ * 
+ * Page unifiée permettant d'afficher les détails d'un contrat
+ * accessible à la fois par les commerciaux ET les clients.
+ * 
+ * FONCTIONNALITÉS :
+ * - Affichage complet des informations du contrat
+ * - Affichage du badge de statut (Actif/Inactif)
+ * - Navigation vers le PDF du contrat
+ * - Compatible commercial et client (vérification backend)
+ * 
+ * ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+ * ==========================================
+ * Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
+ * - Accès via: contratDetails['etat']
+ * - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
+ * - Ne PAS utiliser contratDetails['statut'] (ancienne convention, maintenant dépréciée)
+ * 
+ * SÉCURITÉ :
+ * - Les commerciaux voient les contrats via leur code_apporteur
+ * - Les clients voient les contrats via leur numéro de téléphone
+ * - Le backend vérifie automatiquement les droits d'accès
+ * 
+ * DESIGN :
+ * - Header bleu CORIS uniforme avec badge de statut
+ * - Cards modernes avec informations groupées
+ * - Bouton d'action flottant pour accéder au PDF
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
@@ -321,8 +353,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     }
 
     final config = _getProductConfig();
+    // Utilisation du champ 'etat' depuis la base de données (uniformisation)
+    print('🔍 [ETAT] contratDetails etat: ${contratDetails?['etat']}');
+    print('🔍 [ETAT] toLowerCase: ${contratDetails?['etat']?.toString().toLowerCase()}');
     final isActif =
-        contratDetails?['statut']?.toString().toLowerCase() == 'actif';
+        contratDetails?['etat']?.toString().toLowerCase() == 'actif';
+    print('🔍 [ETAT] isActif: $isActif');
     final liaisonpolice = "-";
     final numpolice = contratDetails?['numepoli'] +
         liaisonpolice +
@@ -331,23 +367,16 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
-          // Header bleu CORIS uniforme
+          // Header bleu CORIS simplifié (sans badge fixé)
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 160,
             pinned: true,
             elevation: 0,
             backgroundColor: const Color(0xFF002B6B),
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: Colors.white, size: 18),
-                onPressed: () => Navigator.pop(context),
-              ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new),
+              color: Colors.white,
+              onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -380,9 +409,9 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        fontFamily: 'Roboto',
                       ),
                     ),
-                    //const SizedBox(height: 6),
                     // Nom du produit
                     Text(
                       config['name'],
@@ -390,6 +419,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: Colors.white70,
+                        fontFamily: 'Roboto',
                       ),
                     ),
                   ],
@@ -404,182 +434,265 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: _slideAnimation,
-                child: Column(
-                  children: [
-                    // Badge de statut
-                    Transform.translate(
-                      offset: const Offset(0, 5),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isActif
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFF59E0B),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            (contratDetails?['etat'] ?? 'Inactif')
-                                .toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Informations du contrat (avec état intégré)
+                      _buildModernCard(
+                        title: 'Informations du Contrat',
+                        icon: Icons.description_outlined,
+                        color: config['color'],
                         children: [
-                          // Informations principales
-                          _buildModernCard(
-                            title: 'Informations Client',
-                            icon: Icons.person_outline,
-                            color: config['color'],
-                            children: [
-                              _buildInfoRow(
-                                'Client',
-                                contratDetails?['nom_prenom'] ?? 'N/A',
-                                Icons.badge,
-                              ),
-                              _buildInfoRow(
-                                'Téléphone',
-                                contratDetails?['telephone1'] ?? 'N/A',
-                                Icons.phone,
-                                canCopy: true,
-                              ),
-                              if (contratDetails?['datenaissance'] != null)
-                                _buildInfoRow(
-                                  'Date de naissance',
-                                  _formatDate(contratDetails?['datenaissance']),
-                                  Icons.cake,
-                                ),
-                            ],
+                          _buildInfoRow(
+                            'Numéro de police',
+                            numpolice ?? 'N/A',
+                            Icons.receipt_long,
+                            canCopy: true,
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Informations financières
-                          _buildModernCard(
-                            title: 'Informations Financières',
-                            icon: Icons.account_balance_wallet_outlined,
-                            color: const Color(0xFF10B981),
-                            children: [
-                              if (contratDetails?['capital'] != null)
-                                _buildFinanceRow(
-                                  'Capital',
-                                  _formatMontant(contratDetails?['capital']),
-                                  Icons.trending_up,
-                                  const Color(0xFF10B981),
-                                ),
-                              if (contratDetails?['prime'] != null)
-                                _buildFinanceRow(
-                                  'Prime',
-                                  _formatMontant(contratDetails?['prime']),
-                                  Icons.payments,
-                                  const Color(0xFF8B5CF6),
-                                ),
-                              if (contratDetails?['duree'] != null)
-                                _buildInfoRow(
-                                  'Durée',
-                                  '${contratDetails?['duree']} ans',
-                                  Icons.schedule,
-                                ),
-                              if (contratDetails?['periodicite'] != null)
-                                _buildInfoRow(
-                                  'Périodicité',
-                                  contratDetails?['periodicite'],
-                                  Icons.repeat,
-                                ),
-                            ],
+                          _buildInfoRow(
+                            'Produit',
+                            config['name'],
+                            Icons.category,
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Dates importantes
-                          _buildModernCard(
-                            title: 'Dates Importantes',
-                            icon: Icons.calendar_today,
-                            color: const Color(0xFF8B5CF6),
-                            children: [
-                              if (contratDetails?['dateeffet'] != null)
-                                _buildInfoRow(
-                                  'Date d\'effet',
-                                  _formatDate(contratDetails?['dateeffet']),
-                                  Icons.event_available,
-                                ),
-                              if (contratDetails?['dateeche'] != null)
-                                _buildInfoRow(
-                                  'Date d\'échéance',
-                                  _formatDate(contratDetails?['dateeche']),
-                                  Icons.event_busy,
-                                ),
-                              if (contratDetails?['datesous'] != null)
-                                _buildInfoRow(
-                                  'Date de souscription',
-                                  _formatDate(contratDetails?['datesous']),
-                                  Icons.edit_calendar,
-                                ),
-                            ],
+                          // État intégré dans les informations du contrat
+                          _buildStatusRow(
+                            'État du contrat',
+                            contratDetails?['etat'] ?? 'Inactif',
+                            isActif,
                           ),
-
-                          // Bénéficiaires
-                          if (beneficiaires.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            _buildModernCard(
-                              title: 'Bénéficiaires',
-                              icon: Icons.people_outline,
-                              color: const Color(0xFFF59E0B),
-                              children: beneficiaires.map((benef) {
-                                return _buildBeneficiaireCard(
-                                    benef, config['color']);
-                              }).toList(),
+                          if (contratDetails?['datesous'] != null)
+                            _buildInfoRow(
+                              'Date de souscription',
+                              _formatDate(contratDetails?['datesous']),
+                              Icons.edit_calendar,
                             ),
-                          ],
-
-                          // Informations professionnelles (commercial uniquement)
-                          if (userRole == 'commercial') ...[
-                            const SizedBox(height: 16),
-                            _buildModernCard(
-                              title: 'Informations Professionnelles',
-                              icon: Icons.admin_panel_settings,
-                              color: const Color(0xFFEF4444),
-                              children: [
-                                _buildInfoRow(
-                                  'Code produit',
-                                  contratDetails?['codeprod'] ?? 'N/A',
-                                  Icons.qr_code,
-                                  canCopy: true,
-                                ),
-                                if (contratDetails?['codeinte'] != null)
-                                  _buildInfoRow(
-                                    'Code intermédiaire',
-                                    contratDetails?['codeinte'],
-                                    Icons.business,
-                                    canCopy: true,
-                                  ),
-                                if (contratDetails?['codeappo'] != null)
-                                  _buildInfoRow(
-                                    'Code apporteur',
-                                    contratDetails?['codeappo'],
-                                    Icons.badge,
-                                    canCopy: true,
-                                  ),
-                              ],
+                          if (contratDetails?['dateeffet'] != null)
+                            _buildInfoRow(
+                              'Date d\'effet',
+                              _formatDate(contratDetails?['dateeffet']),
+                              Icons.calendar_today,
                             ),
-                          ],
-
-                          const SizedBox(height: 100),
+                          if (contratDetails?['dateeffet'] != null &&
+                              (contratDetails?['dateeche'] != null || contratDetails?['dateecheance'] != null))
+                            _buildInfoRow(
+                              'Durée du contrat',
+                              _calculateDuree(
+                                contratDetails?['dateeffet'],
+                                contratDetails?['dateeche'] ?? contratDetails?['dateecheance'],
+                              ),
+                              Icons.schedule,
+                            ),
+                          if (contratDetails?['dateeche'] != null || contratDetails?['dateecheance'] != null)
+                            _buildInfoRow(
+                              'Date d\'échéance',
+                              _formatDate(contratDetails?['dateeche'] ?? contratDetails?['dateecheance']),
+                              Icons.event_busy,
+                            ),
+                          if (contratDetails?['periodicite'] != null)
+                            _buildInfoRow(
+                              'Périodicité',
+                              contratDetails?['periodicite'],
+                              Icons.repeat,
+                            ),
+                          if (contratDetails?['domiciliation'] != null)
+                            _buildInfoRow(
+                              'Domiciliation',
+                              contratDetails?['domiciliation'],
+                              Icons.account_balance,
+                            ),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 16),
+
+                      // Informations client
+                      _buildModernCard(
+                        title: 'Informations Client',
+                        icon: Icons.person_outline,
+                        color: const Color(0xFF002B6B),
+                        children: [
+                          _buildInfoRow(
+                            'Client',
+                            contratDetails?['nom_prenom'] ?? 'N/A',
+                            Icons.badge,
+                          ),
+                          _buildInfoRow(
+                            'Téléphone 1',
+                            contratDetails?['telephone1'] ?? 'N/A',
+                            Icons.phone,
+                            canCopy: true,
+                          ),
+                          if (contratDetails?['telephone2'] != null && contratDetails!['telephone2'].toString().trim().isNotEmpty)
+                            _buildInfoRow(
+                              'Téléphone 2',
+                              contratDetails!['telephone2'].toString(),
+                              Icons.phone_android,
+                              canCopy: true,
+                            ),
+                          if (contratDetails?['datenaissance'] != null)
+                            _buildInfoRow(
+                              'Date de naissance',
+                              _formatDate(contratDetails?['datenaissance']),
+                              Icons.cake,
+                            ),
+                          if (contratDetails?['code_apporteur'] != null)
+                            _buildInfoRow(
+                              'Code du commercial',
+                              contratDetails!['code_apporteur'].toString(),
+                              Icons.badge_outlined,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Informations financières
+                      _buildModernCard(
+                        title: 'Informations Financières',
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: const Color(0xFF002B6B),
+                        children: [
+                          if (contratDetails?['capital'] != null)
+                            _buildInfoRow(
+                              'Capital',
+                              _formatMontant(contratDetails?['capital']),
+                              Icons.trending_up,
+                            ),
+                          // Afficher Prime OU Rente selon ce qui est disponible
+                          if (contratDetails?['prime'] != null && 
+                              (contratDetails?['prime'].toString() != '0' && 
+                               contratDetails?['prime'].toString() != '0.0'))
+                            _buildInfoRow(
+                              'Prime',
+                              _formatMontant(contratDetails?['prime']),
+                              Icons.payments,
+                            ),
+                          if (contratDetails?['rente'] != null && 
+                              (contratDetails?['rente'].toString() != '0' && 
+                               contratDetails?['rente'].toString() != '0.0'))
+                            _buildInfoRow(
+                              'Rente',
+                              _formatMontant(contratDetails?['rente']),
+                              Icons.account_balance,
+                            ),
+                          _buildInfoRow(
+                            'Montant Encaissé',
+                            _formatMontant(contratDetails?['montant_encaisse'] ?? 0),
+                            Icons.money,
+                          ),
+                          _buildInfoRow(
+                            'Impayé',
+                            _formatMontant(contratDetails?['impaye'] ?? 0),
+                            Icons.warning_amber,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Bénéficiaires
+                      if (beneficiaires.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildModernCard(
+                          title: 'Bénéficiaires',
+                          icon: Icons.people_outline,
+                          color: const Color(0xFF002B6B),
+                          children: beneficiaires.map((benef) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 20,
+                                      color: Color(0xFF002B6B),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          benef['nom_benef'] ?? benef['nom'] ?? 'N/A',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF002B6B).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            _getBeneficiaireType(benef['type_beneficiaires']),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF002B6B),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+
+                      // Informations professionnelles (commercial uniquement)
+                      if (userRole == 'commercial') ...[
+                        const SizedBox(height: 16),
+                        _buildModernCard(
+                          title: 'Informations Professionnelles',
+                          icon: Icons.admin_panel_settings,
+                          color: const Color(0xFF002B6B),
+                          children: [
+                            _buildInfoRow(
+                              'Code produit',
+                              contratDetails?['codeprod'] ?? 'N/A',
+                              Icons.qr_code,
+                              canCopy: true,
+                            ),
+                            if (contratDetails?['codeinte'] != null)
+                              _buildInfoRow(
+                                'Code intermédiaire',
+                                contratDetails?['codeinte'],
+                                Icons.business,
+                                canCopy: true,
+                              ),
+                            if (contratDetails?['codeappo'] != null)
+                              _buildInfoRow(
+                                'Code du commercial',
+                                contratDetails?['codeappo'],
+                                Icons.badge,
+                                canCopy: true,
+                              ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -685,6 +798,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                     color: Color(0xFF94A3B8),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
+                    fontFamily: 'Roboto',
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -695,6 +809,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                     letterSpacing: 0.2,
+                    fontFamily: 'Roboto',
                   ),
                 ),
               ],
@@ -712,135 +827,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     );
   }
 
-  Widget _buildFinanceRow(
-      String label, String value, IconData icon, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBeneficiaireCard(Map<String, dynamic> benef, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: color.withOpacity(0.15),
-            child: Text(
-              (benef['nom_benef']?.toString().substring(0, 1).toUpperCase() ??
-                  'B'),
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  benef['nom_benef'] ?? 'N/A',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _getBeneficiaireType(benef['type_beneficiaires']),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _getBeneficiaireType(String? type) {
     if (type == null) return 'N/A';
     switch (type.toUpperCase()) {
@@ -851,6 +837,125 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       default:
         return type;
     }
+  }
+
+  // Calcul de la durée entre la date d'effet et la date d'échéance (en mois)
+  String _calculateDuree(dynamic dateEffet, dynamic dateEcheance) {
+    print('📊 [DUREE] dateEffet: $dateEffet (${dateEffet.runtimeType})');
+    print('📊 [DUREE] dateEcheance: $dateEcheance (${dateEcheance.runtimeType})');
+    
+    if (dateEffet == null || dateEcheance == null) {
+      print('❌ [DUREE] Une des dates est null');
+      return 'N/A';
+    }
+    
+    try {
+      DateTime debut;
+      DateTime fin;
+      
+      if (dateEffet is String) {
+        debut = DateTime.parse(dateEffet);
+      } else if (dateEffet is DateTime) {
+        debut = dateEffet;
+      } else {
+        debut = DateTime.parse(dateEffet.toString());
+      }
+      
+      if (dateEcheance is String) {
+        fin = DateTime.parse(dateEcheance);
+      } else if (dateEcheance is DateTime) {
+        fin = dateEcheance;
+      } else {
+        fin = DateTime.parse(dateEcheance.toString());
+      }
+      
+      // Calculer la différence en mois
+      int moisTotal = (fin.year - debut.year) * 12 + (fin.month - debut.month);
+      
+      // Ajuster si le jour d'échéance est avant le jour d'effet
+      if (fin.day < debut.day) {
+        moisTotal--;
+      }
+      
+      print('✅ [DUREE] Résultat: $moisTotal mois');
+      return '$moisTotal mois';
+    } catch (e) {
+      print('❌ [DUREE] Erreur: $e');
+      return 'N/A';
+    }
+  }
+
+  // Widget pour afficher le statut du contrat avec badge
+  Widget _buildStatusRow(String label, String etat, bool isActif) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isActif ? Icons.check_circle : Icons.cancel,
+              size: 20,
+              color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActif
+                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        : const Color(0xFFF59E0B).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActif
+                          ? const Color(0xFF10B981).withOpacity(0.3)
+                          : const Color(0xFFF59E0B).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    etat.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isActif
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFF59E0B),
+                      letterSpacing: 0.5,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFloatingActions(Color color) {

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
-import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
 
 class ContratsActifsPage extends StatefulWidget {
   const ContratsActifsPage({Key? key}) : super(key: key);
@@ -156,16 +155,27 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          color: Colors.white,
+          onPressed: () => Navigator.pop(context),
+        ),
         title: _isSearching
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Rechercher...',
-                  hintStyle: TextStyle(color: Colors.white70),
+                  hintStyle: const TextStyle(color: Colors.white70),
                   border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white, width: 2),
+                  ),
+                  isDense: true,
                 ),
                 onChanged: (_) => setState(() {}),
               )
@@ -193,18 +203,16 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
           ),
         ],
       ),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF002B6B)))
           : Column(
               children: [
-                // Stat card pour afficher le nombre de contrats actifs
+                // Statistiques
                 Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -213,40 +221,16 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                       ),
                     ],
                   ),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
+                      Expanded(
+                        child: _buildStatCard(
+                          'Actifs',
+                          '${contratsActifs.length}',
                           Icons.check_circle,
-                          color: Color(0xFF10B981),
-                          size: 28,
+                          const Color(0xFF10B981),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${contratsActifs.length}',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF002B6B),
-                            ),
-                          ),
-                          const Text(
-                            'Contrats Actifs',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -437,6 +421,48 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

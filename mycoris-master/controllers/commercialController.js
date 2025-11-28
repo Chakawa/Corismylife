@@ -27,6 +27,23 @@
  * - Toutes les routes nécessitent une authentification JWT
  * - Vérification du code_apporteur pour filtrer les données
  * - Les commerciaux ne peuvent voir que leurs propres souscriptions
+ * 
+ * ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+ * ==========================================
+ * CONTRATS (table 'contrats'):
+ *   - Utiliser UNIQUEMENT le champ 'etat' (pas de 'statut')
+ *   - Colonne en base: contrats.etat (VARCHAR)
+ *   - Valeurs: 'Actif', 'Inactif', 'Suspendu'
+ *   - Frontend accède via: contrat['etat']
+ * 
+ * SOUSCRIPTIONS (table 'subscriptions'):
+ *   - Utiliser UNIQUEMENT le champ 'statut' (différent du contexte contrats)
+ *   - Colonne en base: subscriptions.statut (VARCHAR)
+ *   - Valeurs: 'proposition', 'contrat', 'rejeté'
+ *   - Frontend accède via: subscription['statut']
+ * 
+ * ⚠️ Ne JAMAIS aliaser 'c.etat as statut' dans les requêtes SQL
+ * ⚠️ Retourner toujours 'c.etat' directement pour éviter la confusion
  */
 
 // ============================================
@@ -615,13 +632,14 @@ exports.getMesContratsCommercial = async (req, res) => {
       });
     }
 
+    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
     const query = `
       SELECT 
         c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
-        c.etat as statut,
+        c.etat,
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
@@ -751,13 +769,14 @@ exports.getContratsActifs = async (req, res) => {
       });
     }
 
+    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
     const query = `
       SELECT 
         c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
-        c.etat as statut,
+        c.etat,
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
@@ -848,11 +867,12 @@ exports.getDetailsClient = async (req, res) => {
     const client = clientResult.rows[0];
 
     // Récupérer les contrats du client
+    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
     const contratsQuery = `
       SELECT 
         c.numepoli,
         c.codeprod,
-        c.etat as statut,
+        c.etat,
         c.dateeffet as datesous
       FROM contrats c
       WHERE c.nom_prenom ILIKE $1 AND c.codeappo = $2
@@ -894,13 +914,14 @@ exports.getContratDetails = async (req, res) => {
     console.log('📄 [CONTRAT DETAILS] Numéro police:', numepoli);
 
     // Récupérer tous les détails du contrat
+    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
     const query = `
       SELECT 
         c.id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
-        c.etat as statut,
+        c.etat,
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,

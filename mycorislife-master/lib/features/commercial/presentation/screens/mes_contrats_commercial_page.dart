@@ -1,3 +1,31 @@
+/**
+ * ===============================================
+ * PAGE - MES CONTRATS COMMERCIAL
+ * ===============================================
+ * 
+ * Cette page affiche la liste complète des contrats d'un commercial.
+ * 
+ * FONCTIONNALITÉS :
+ * - Affichage de statistiques (Total contrats, Contrats actifs)
+ * - Liste des contrats avec recherche et filtres
+ * - Navigation vers les détails d'un contrat
+ * - Filtrage par statut (Tous, Actif, Inactif)
+ * - Recherche par numéro de police ou nom client
+ * 
+ * ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+ * ==========================================
+ * Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
+ * - Accès via: contrat['etat']
+ * - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
+ * - Ne PAS utiliser contrat['statut'] (ancienne convention, maintenant dépréciée)
+ * 
+ * DESIGN :
+ * - Couleur principale: CORIS Blue #002B6B
+ * - Actif: Vert #10B981
+ * - Inactif: Orange #F59E0B
+ * - Fond: Gris clair #F8FAFC
+ */
+
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -190,15 +218,27 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       appBar: AppBar(
         backgroundColor: const Color(0xFF002B6B),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          color: Colors.white,
+          onPressed: () => Navigator.pop(context),
+        ),
         title: _isSearching
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Rechercher...',
-                  hintStyle: TextStyle(color: Colors.white70),
+                  hintStyle: const TextStyle(color: Colors.white70),
                   border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white, width: 2),
+                  ),
+                  isDense: true,
                 ),
                 onChanged: (value) {
                   setState(() => _searchQuery = value);
@@ -214,8 +254,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                 ),
               ),
         actions: [
+          // Icône de recherche maintenant blanche pour être visible
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            icon: Icon(
+              _isSearching ? Icons.close : Icons.search,
+              color: Colors.white,
+            ),
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
@@ -227,26 +271,40 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
               });
             },
           ),
+          // Icône de filtrage maintenant blanche pour être visible
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(
+              Icons.filter_list,
+              color: Colors.white,
+            ),
             onPressed: () => _showFilterDialog(),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Header avec stats
+          // Statistiques déplacées SOUS la navbar (plus dans la navbar)
           Container(
-            color: const Color(0xFF002B6B),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: _buildStatCard(
                     'Total',
                     '${contrats.length}',
-                    Icons.folder,
-                    Colors.white,
+                    Icons.description_outlined,
+                    const Color(0xFFF8FAFC),
                     const Color(0xFF002B6B),
                   ),
                 ),
@@ -255,8 +313,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                   child: _buildStatCard(
                     'Actifs',
                     '$actifsCount',
-                    Icons.check_circle,
-                    Colors.white,
+                    Icons.check_circle_outline,
+                    const Color(0xFFF0FDF4),
                     const Color(0xFF10B981),
                   ),
                 ),
@@ -320,16 +378,23 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
+          color: accentColor.withOpacity(0.1),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.2),
+              color: accentColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: accentColor, size: 24),
@@ -349,9 +414,9 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                 ),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white70,
+                    color: const Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -365,7 +430,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   Widget _buildContratCard(Map<String, dynamic> contrat, int index) {
     final config = _getProductConfig(contrat['codeprod']?.toString());
-    final etat = contrat['statut']?.toString() ?? 'Inconnu';
+    // Utilisation du champ 'etat' depuis la base de données (uniformisation)
+    final etat = contrat['etat']?.toString() ?? 'Inconnu';
     final liaisonpolice = "-";
     final numpolice = contrat['numepoli'] + liaisonpolice + contrat['codeinte'];
     final isActif = etat.toLowerCase() == 'actif';
