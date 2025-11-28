@@ -8,20 +8,22 @@ import 'package:mycorislife/config/app_config.dart';
 class ContratDetailsUnifiedPage extends StatefulWidget {
   final Map<String, dynamic> contrat;
 
-  const ContratDetailsUnifiedPage({Key? key, required this.contrat}) : super(key: key);
+  const ContratDetailsUnifiedPage({Key? key, required this.contrat})
+      : super(key: key);
 
   @override
-  State<ContratDetailsUnifiedPage> createState() => _ContratDetailsUnifiedPageState();
+  State<ContratDetailsUnifiedPage> createState() =>
+      _ContratDetailsUnifiedPageState();
 }
 
-class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage> 
+class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     with TickerProviderStateMixin {
   final storage = const FlutterSecureStorage();
   Map<String, dynamic>? contratDetails;
   List<Map<String, dynamic>> beneficiaires = [];
   bool isLoading = true;
   String? userRole;
-  
+
   late AnimationController _headerAnimationController;
   late AnimationController _contentAnimationController;
   late Animation<double> _fadeAnimation;
@@ -85,7 +87,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     _contentAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -112,25 +114,25 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   Future<void> _loadContratDetails() async {
     print('🔍 [DETAILS] ========== DÉBUT CHARGEMENT ==========');
     setState(() => isLoading = true);
-    
+
     try {
       final token = await storage.read(key: 'token');
       final role = await storage.read(key: 'role');
-      
+
       print('🔑 [DETAILS] Token: ${token != null ? "✅ Présent" : "❌ Absent"}');
       print('👤 [DETAILS] Rôle: $role');
-      
+
       if (token == null) throw Exception('Token non trouvé');
 
       setState(() => userRole = role);
-      
+
       final numepoli = widget.contrat['numepoli'];
       print('📄 [DETAILS] Numéro de police: $numepoli');
       print('📦 [DETAILS] Contrat complet: ${widget.contrat}');
-      
+
       final url = '${AppConfig.baseUrl}/commercial/contrat_details/$numepoli';
       print('🌐 [DETAILS] URL: $url');
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -147,13 +149,14 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         print('✅ [DETAILS] Données décodées: ${data.keys}');
         print('📋 [DETAILS] Contrat: ${data['contrat']}');
         print('👥 [DETAILS] Bénéficiaires: ${data['beneficiaires']}');
-        
+
         setState(() {
           contratDetails = data['contrat'];
-          beneficiaires = List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
+          beneficiaires =
+              List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
           isLoading = false;
         });
-        
+
         print('✅ [DETAILS] Chargement terminé avec succès');
         _headerAnimationController.forward();
         _contentAnimationController.forward();
@@ -168,18 +171,19 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       setState(() => isLoading = false);
       _showError('Erreur: $e');
     }
-    
+
     print('🔍 [DETAILS] ========== FIN CHARGEMENT ==========');
   }
 
   Map<String, dynamic> _getProductConfig() {
     final codeprod = contratDetails?['codeprod']?.toString();
-    return productConfig[codeprod] ?? {
-      'name': 'Produit $codeprod',
-      'icon': Icons.description,
-      'color': Color(0xFF002B6B),
-      'gradient': [Color(0xFF002B6B), Color(0xFF004080)],
-    };
+    return productConfig[codeprod] ??
+        {
+          'name': 'Produit $codeprod',
+          'icon': Icons.description,
+          'color': Color(0xFF002B6B),
+          'gradient': [Color(0xFF002B6B), Color(0xFF004080)],
+        };
   }
 
   String _formatDate(String? date) {
@@ -195,10 +199,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   String _formatMontant(dynamic montant) {
     if (montant == null) return '0 FCFA';
     final num = double.tryParse(montant.toString()) ?? 0;
-    return '${num.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]} '
-    )} FCFA';
+    return '${num.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} FCFA';
   }
 
   void _showError(String message) {
@@ -270,7 +271,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                 ),
                 child: const Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
                     strokeWidth: 3,
                   ),
                 ),
@@ -319,8 +321,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     }
 
     final config = _getProductConfig();
-    final isActif = contratDetails?['etat']?.toString().toLowerCase() == 'actif';
-
+    final isActif =
+        contratDetails?['statut']?.toString().toLowerCase() == 'actif';
+    final liaisonpolice = "-";
+    final numpolice = contratDetails?['numepoli'] +
+        liaisonpolice +
+        contratDetails?['codeinte'];
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
@@ -338,7 +344,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white, size: 18),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -362,20 +369,20 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                       child: Icon(
                         config['icon'],
                         color: Colors.white,
-                        size: 28,
+                        size: 20,
                       ),
                     ),
                     const SizedBox(height: 12),
                     // Numéro de police
                     Text(
-                      contratDetails?['numepoli'] ?? 'N/A',
+                      numpolice ?? 'N/A',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    //const SizedBox(height: 6),
                     // Nom du produit
                     Text(
                       config['name'],
@@ -401,16 +408,20 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                   children: [
                     // Badge de statut
                     Transform.translate(
-                      offset: const Offset(0, -15),
+                      offset: const Offset(0, 5),
                       child: Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            color: isActif
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFF59E0B),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            (contratDetails?['etat'] ?? 'Inactif').toUpperCase(),
+                            (contratDetails?['etat'] ?? 'Inactif')
+                                .toUpperCase(),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -526,7 +537,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                               icon: Icons.people_outline,
                               color: const Color(0xFFF59E0B),
                               children: beneficiaires.map((benef) {
-                                return _buildBeneficiaireCard(benef, config['color']);
+                                return _buildBeneficiaireCard(
+                                    benef, config['color']);
                               }).toList(),
                             ),
                           ],
@@ -574,7 +586,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
           ),
         ],
       ),
-      
+
       // Boutons d'action flottants
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _buildFloatingActions(config['color']),
@@ -646,7 +658,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon, {bool canCopy = false}) {
+  Widget _buildInfoRow(String label, String value, IconData icon,
+      {bool canCopy = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -699,7 +712,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     );
   }
 
-  Widget _buildFinanceRow(String label, String value, IconData icon, Color color) {
+  Widget _buildFinanceRow(
+      String label, String value, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -776,7 +790,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
             radius: 24,
             backgroundColor: color.withOpacity(0.15),
             child: Text(
-              (benef['nom_benef']?.toString().substring(0, 1).toUpperCase() ?? 'B'),
+              (benef['nom_benef']?.toString().substring(0, 1).toUpperCase() ??
+                  'B'),
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
@@ -801,7 +816,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -828,9 +844,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   String _getBeneficiaireType(String? type) {
     if (type == null) return 'N/A';
     switch (type.toUpperCase()) {
-      case 'D': return 'Décès';
-      case 'V': return 'Vie';
-      default: return type;
+      case 'D':
+        return 'Décès';
+      case 'V':
+        return 'Vie';
+      default:
+        return type;
     }
   }
 
@@ -873,7 +892,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, bool isPrimary) {
+  Widget _buildActionButton(
+      String label, IconData icon, Color color, bool isPrimary) {
     return ElevatedButton(
       onPressed: () {
         HapticFeedback.lightImpact();
@@ -882,7 +902,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
             content: Text('$label en cours...'),
             backgroundColor: color,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       },
@@ -893,7 +914,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: isPrimary ? BorderSide.none : BorderSide(color: color, width: 2),
+          side:
+              isPrimary ? BorderSide.none : BorderSide(color: color, width: 2),
         ),
       ),
       child: Row(

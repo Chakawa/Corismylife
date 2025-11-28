@@ -249,7 +249,7 @@ class _HomeContentState extends State<HomeContent> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bienvenue!',
+                        'Bienvenue ',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: screenWidth * 0.07,
@@ -258,7 +258,7 @@ class _HomeContentState extends State<HomeContent> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Chez l\'assureur qui vous rassure!',
+                        'Chez Coris Assurances Vie Côte d\'Ivoire !',
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: screenWidth * 0.04,

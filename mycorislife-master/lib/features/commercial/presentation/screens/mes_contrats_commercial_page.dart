@@ -8,10 +8,11 @@ class MesContratsCommercialPage extends StatefulWidget {
   const MesContratsCommercialPage({Key? key}) : super(key: key);
 
   @override
-  State<MesContratsCommercialPage> createState() => _MesContratsCommercialPageState();
+  State<MesContratsCommercialPage> createState() =>
+      _MesContratsCommercialPageState();
 }
 
-class _MesContratsCommercialPageState extends State<MesContratsCommercialPage> 
+class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     with SingleTickerProviderStateMixin {
   final storage = const FlutterSecureStorage();
   List<dynamic> contrats = [];
@@ -24,13 +25,41 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   late AnimationController _animationController;
 
   final Map<String, Map<String, dynamic>> productConfig = {
-    '242': {'name': 'ÉPARGNE BONUS', 'color': Color(0xFF8B5CF6), 'icon': Icons.savings},
-    '202': {'name': 'CORIS SÉRÉNITÉ', 'color': Color(0xFF002B6B), 'icon': Icons.health_and_safety},
-    '200': {'name': 'CORIS FAMILIS', 'color': Color(0xFFF59E0B), 'icon': Icons.family_restroom},
-    '240': {'name': 'CORIS RETRAITE', 'color': Color(0xFF10B981), 'icon': Icons.elderly},
-    '225': {'name': 'CORIS SOLIDARITÉ', 'color': Color(0xFF002B6B), 'icon': Icons.volunteer_activism},
-    '246': {'name': 'CORIS ÉTUDE', 'color': Color(0xFF8B5CF6), 'icon': Icons.school},
-    '205': {'name': 'CORIS FLEX EMPRUNTEUR', 'color': Color(0xFFEF4444), 'icon': Icons.home},
+    '242': {
+      'name': 'ÉPARGNE BONUS',
+      'color': Color(0xFF8B5CF6),
+      'icon': Icons.savings
+    },
+    '202': {
+      'name': 'CORIS SÉRÉNITÉ',
+      'color': Color(0xFF002B6B),
+      'icon': Icons.health_and_safety
+    },
+    '200': {
+      'name': 'CORIS FAMILIS',
+      'color': Color(0xFFF59E0B),
+      'icon': Icons.family_restroom
+    },
+    '240': {
+      'name': 'CORIS RETRAITE',
+      'color': Color(0xFF10B981),
+      'icon': Icons.elderly
+    },
+    '225': {
+      'name': 'CORIS SOLIDARITÉ',
+      'color': Color(0xFF002B6B),
+      'icon': Icons.volunteer_activism
+    },
+    '246': {
+      'name': 'CORIS ÉTUDE',
+      'color': Color(0xFF8B5CF6),
+      'icon': Icons.school
+    },
+    '205': {
+      'name': 'CORIS FLEX EMPRUNTEUR',
+      'color': Color(0xFFEF4444),
+      'icon': Icons.home
+    },
   };
 
   @override
@@ -53,18 +82,19 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   Future<void> _loadContrats() async {
     print('📡 [COMMERCIAL CONTRATS] Début chargement...');
     setState(() => isLoading = true);
-    
+
     try {
       final token = await storage.read(key: 'token');
-      print('🔑 [COMMERCIAL CONTRATS] Token: ${token != null ? "✅ OK" : "❌ Manquant"}');
-      
+      print(
+          '🔑 [COMMERCIAL CONTRATS] Token: ${token != null ? "✅ OK" : "❌ Manquant"}');
+
       if (token == null) {
         throw Exception('Token non trouvé');
       }
 
       final url = '${AppConfig.baseUrl}/commercial/mes_contrats_commercial';
       print('🌐 [COMMERCIAL CONTRATS] URL: $url');
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -79,13 +109,13 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('✅ [COMMERCIAL CONTRATS] Données décodées: ${data.keys}');
-        
+
         setState(() {
           contrats = data['contrats'] ?? [];
           filteredContrats = contrats;
           isLoading = false;
         });
-        
+
         print('📋 [COMMERCIAL CONTRATS] ${contrats.length} contrats chargés');
         _animationController.forward();
       } else {
@@ -94,9 +124,9 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     } catch (e, stackTrace) {
       print('❌ [COMMERCIAL CONTRATS] Erreur: $e');
       print('📍 [COMMERCIAL CONTRATS] Stack: $stackTrace');
-      
+
       setState(() => isLoading = false);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -112,23 +142,31 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     setState(() {
       filteredContrats = contrats.where((contrat) {
         final matchesSearch = _searchQuery.isEmpty ||
-            contrat['numepoli'].toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            (contrat['nom_prenom'] ?? '').toString().toLowerCase().contains(_searchQuery.toLowerCase());
-        
+            contrat['numepoli']
+                .toString()
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            (contrat['nom_prenom'] ?? '')
+                .toString()
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase());
+
         final matchesStatus = _filterStatus == 'tous' ||
-            (contrat['etat'] ?? '').toString().toLowerCase() == _filterStatus.toLowerCase();
-        
+            (contrat['etat'] ?? '').toString().toLowerCase() ==
+                _filterStatus.toLowerCase();
+
         return matchesSearch && matchesStatus;
       }).toList();
     });
   }
 
   Map<String, dynamic> _getProductConfig(String? codeprod) {
-    return productConfig[codeprod] ?? {
-      'name': 'Produit $codeprod',
-      'color': Color(0xFF64748B),
-      'icon': Icons.description,
-    };
+    return productConfig[codeprod] ??
+        {
+          'name': 'Produit $codeprod',
+          'color': Color(0xFF64748B),
+          'icon': Icons.description,
+        };
   }
 
   String _formatDate(String? date) {
@@ -143,9 +181,9 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   @override
   Widget build(BuildContext context) {
-    final actifsCount = contrats.where((c) => 
-      (c['etat'] ?? '').toString().toLowerCase() == 'actif'
-    ).length;
+    final actifsCount = contrats
+        .where((c) => (c['etat'] ?? '').toString().toLowerCase() == 'actif')
+        .length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -231,7 +269,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
             child: isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
                     ),
                   )
                 : filteredContrats.isEmpty
@@ -239,13 +278,15 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.inbox, size: 80, color: Colors.grey[300]),
+                            Icon(Icons.inbox,
+                                size: 80, color: Colors.grey[300]),
                             const SizedBox(height: 16),
                             Text(
                               _searchQuery.isNotEmpty
                                   ? 'Aucun contrat trouvé'
                                   : 'Aucun contrat disponible',
-                              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -271,7 +312,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color backgroundColor, Color accentColor) {
+  Widget _buildStatCard(String label, String value, IconData icon,
+      Color backgroundColor, Color accentColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -323,10 +365,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   Widget _buildContratCard(Map<String, dynamic> contrat, int index) {
     final config = _getProductConfig(contrat['codeprod']?.toString());
-    final etat = contrat['etat']?.toString() ?? 'Inconnu';
+    final etat = contrat['statut']?.toString() ?? 'Inconnu';
+    final liaisonpolice = "-";
+    final numpolice = contrat['numepoli'] + liaisonpolice + contrat['codeinte'];
     final isActif = etat.toLowerCase() == 'actif';
     final displayStatus = etat.isNotEmpty && etat != 'null' ? etat : 'Inactif';
-    
+
     return FadeTransition(
       opacity: Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
@@ -377,7 +421,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                           color: const Color(0xFF002B6B),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(config['icon'], color: Colors.white, size: 24),
+                        child:
+                            Icon(config['icon'], color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -385,7 +430,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              contrat['numepoli'] ?? 'N/A',
+                              numpolice ?? 'N/A',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -395,9 +440,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                             ),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                color: isActif
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFF59E0B),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -412,16 +460,19 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 18),
+                      const Icon(Icons.arrow_forward_ios,
+                          color: Color(0xFF94A3B8), size: 18),
                     ],
                   ),
-                  
-                  const Divider(height: 24, thickness: 1, color: Color(0xFFE2E8F0)),
-                  
+
+                  const Divider(
+                      height: 24, thickness: 1, color: Color(0xFFE2E8F0)),
+
                   // Produit
                   Row(
                     children: [
-                      const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF002B6B)),
+                      const Icon(Icons.shield_outlined,
+                          size: 18, color: Color(0xFF002B6B)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -435,13 +486,14 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Client
                   Row(
                     children: [
-                      const Icon(Icons.person_outline, size: 18, color: Color(0xFF64748B)),
+                      const Icon(Icons.person_outline,
+                          size: 18, color: Color(0xFF64748B)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -455,9 +507,9 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Date
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -467,7 +519,8 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 16, color: Color(0xFF64748B)),
+                        const Icon(Icons.calendar_today,
+                            size: 16, color: Color(0xFF64748B)),
                         const SizedBox(width: 8),
                         Text(
                           'Effet: ${_formatDate(contrat['dateeffet'])}',

@@ -60,7 +60,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
         final data = json.decode(response.body);
         setState(() {
           contratDetails = data['contrat'];
-          beneficiaires = List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
+          beneficiaires =
+              List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
           isLoading = false;
         });
       } else {
@@ -84,7 +85,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
 
   String _formatClientName() {
     if (contratDetails == null) return 'N/A';
-    
+
     // Essayer avec prénom et nom séparés
     if (contratDetails!['prenom'] != null && contratDetails!['nom'] != null) {
       final prenom = contratDetails!['prenom'].toString().trim();
@@ -93,12 +94,12 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
         return '$prenom $nom';
       }
     }
-    
+
     // Sinon utiliser nom_prenom
     if (contratDetails!['nom_prenom'] != null) {
       return contratDetails!['nom_prenom'].toString().trim();
     }
-    
+
     return 'N/A';
   }
 
@@ -127,7 +128,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
   /// Ouvre la visionneuse PDF du contrat
   Future<void> _viewPDF() async {
     if (contratDetails == null) return;
-    
+
     final numepoli = contratDetails!['numepoli'];
     if (numepoli == null) {
       _showMessage('Numéro de police non disponible', isError: true);
@@ -148,7 +149,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
   /// Partage le PDF du contrat
   Future<void> _generateAndSharePDF() async {
     if (contratDetails == null) return;
-    
+
     final numepoli = contratDetails!['numepoli'];
     if (numepoli == null) {
       _showMessage('Numéro de police non disponible', isError: true);
@@ -166,7 +167,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
       );
 
       await ContratPdfService.downloadAndSharePdf(numepoli);
-      
+
       if (!mounted) return;
       Navigator.pop(context); // Fermer le dialog
       _showMessage('PDF prêt à partager');
@@ -180,7 +181,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
   /// Télécharge le PDF du contrat
   Future<void> _downloadPDF() async {
     if (contratDetails == null) return;
-    
+
     final numepoli = contratDetails!['numepoli'];
     if (numepoli == null) {
       _showMessage('Numéro de police non disponible', isError: true);
@@ -198,7 +199,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
       );
 
       final path = await ContratPdfService.downloadContratPdf(numepoli);
-      
+
       if (!mounted) return;
       Navigator.pop(context); // Fermer le dialog
       _showMessage('PDF téléchargé avec succès!\n$path');
@@ -266,8 +267,10 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
             onPressed: contratDetails != null ? _downloadPDF : null,
           ),
           IconButton(
-            icon: Icon(showProfessionalView ? Icons.visibility_off : Icons.visibility),
-            tooltip: showProfessionalView ? 'Vue Client' : 'Vue Professionnelle',
+            icon: Icon(
+                showProfessionalView ? Icons.visibility_off : Icons.visibility),
+            tooltip:
+                showProfessionalView ? 'Vue Client' : 'Vue Professionnelle',
             onPressed: () {
               setState(() {
                 showProfessionalView = !showProfessionalView;
@@ -277,7 +280,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF002B6B)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF002B6B)))
           : contratDetails == null
               ? const Center(
                   child: Text(
@@ -311,34 +315,43 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.description, size: 32, color: Color(0xFF002B6B)),
+                                    const Icon(Icons.description,
+                                        size: 32, color: Color(0xFF002B6B)),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           const Text(
                                             'N° de Police',
-                                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey),
                                           ),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  contratDetails?['numepoli'] ?? 'N/A',
-                                                  style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.copy, size: 20),
-                                                onPressed: () => _copyToClipboard(
-                                                    contratDetails?['numepoli'] ?? ''),
-                                              ),
-                                            ],
-                                          ),
+                                          // Row(
+                                          //   children: [
+                                          //     Expanded(
+                                          //       child: Text(
+                                          //         contratDetails?['numepoli'] ??
+                                          //             'N/A',
+                                          //         style: const TextStyle(
+                                          //           fontSize: 20,
+                                          //           fontWeight: FontWeight.bold,
+                                          //         ),
+                                          //       ),
+                                          //     ),
+                                          //     IconButton(
+                                          //       icon: const Icon(Icons.copy,
+                                          //           size: 20),
+                                          //       onPressed: () =>
+                                          //           _copyToClipboard(
+                                          //               contratDetails?[
+                                          //                       'numepoli'] ??
+                                          //                   ''),
+                                          //     ),
+                                          //   ],
+                                          // ),
                                         ],
                                       ),
                                     ),
@@ -348,7 +361,10 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                 _buildInfoChip(
                                   'Statut',
                                   contratDetails?['statut'] ?? 'N/A',
-                                  (contratDetails?['statut']?.toString().toLowerCase() == 'actif')
+                                  (contratDetails?['statut']
+                                              ?.toString()
+                                              .toLowerCase() ==
+                                          'actif')
                                       ? Colors.green
                                       : Colors.orange,
                                 ),
@@ -356,7 +372,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
                         // Informations du contrat
                         Card(
@@ -395,7 +411,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                 if (contratDetails?['datenaissance'] != null)
                                   _buildDetailRow(
                                     'Date de naissance',
-                                    _formatDate(contratDetails?['datenaissance']),
+                                    _formatDate(
+                                        contratDetails?['datenaissance']),
                                     Icons.cake,
                                   ),
                                 if (contratDetails?['dateeffet'] != null)
@@ -407,7 +424,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                 if (contratDetails?['dateecheance'] != null)
                                   _buildDetailRow(
                                     'Date d\'échéance',
-                                    _formatDate(contratDetails?['dateecheance']),
+                                    _formatDate(
+                                        contratDetails?['dateecheance']),
                                     Icons.event_busy,
                                   ),
                                 if (contratDetails?['telephone1'] != null)
@@ -430,7 +448,7 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                         ),
 
                         // Informations financières
-                        if (contratDetails?['capital'] != null || 
+                        if (contratDetails?['capital'] != null ||
                             contratDetails?['prime'] != null ||
                             contratDetails?['rente'] != null) ...[
                           const SizedBox(height: 16),
@@ -466,7 +484,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                       '${contratDetails?['rente']} FCFA',
                                       Icons.trending_up,
                                     ),
-                                  if (contratDetails?['montant_encaisse'] != null)
+                                  if (contratDetails?['montant_encaisse'] !=
+                                      null)
                                     _buildDetailRow(
                                       'Montant encaissé',
                                       '${contratDetails?['montant_encaisse']} FCFA',
@@ -514,37 +533,50 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                       decoration: BoxDecoration(
                                         color: Colors.grey.shade50,
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(
+                                            color: Colors.grey.shade300),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
                                               CircleAvatar(
-                                                backgroundColor: const Color(0xFF002B6B),
+                                                backgroundColor:
+                                                    const Color(0xFF002B6B),
                                                 child: Text(
-                                                  benef['nom_benef']?.toString().substring(0, 1).toUpperCase() ?? 'B',
-                                                  style: const TextStyle(color: Colors.white),
+                                                  benef['nom_benef']
+                                                          ?.toString()
+                                                          .substring(0, 1)
+                                                          .toUpperCase() ??
+                                                      'B',
+                                                  style: const TextStyle(
+                                                      color: Colors.white),
                                                 ),
                                               ),
                                               const SizedBox(width: 12),
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      benef['nom_benef'] ?? 'N/A',
+                                                      benef['nom_benef'] ??
+                                                          'N/A',
                                                       style: const TextStyle(
                                                         fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                       ),
                                                     ),
                                                     Text(
-                                                      _getBeneficiaireType(benef['type_beneficiaires']),
+                                                      _getBeneficiaireType(benef[
+                                                          'type_beneficiaires']),
                                                       style: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.grey.shade600,
+                                                        color: Colors
+                                                            .grey.shade600,
                                                       ),
                                                     ),
                                                   ],
@@ -574,7 +606,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.admin_panel_settings, color: Colors.orange),
+                                      const Icon(Icons.admin_panel_settings,
+                                          color: Colors.orange),
                                       const SizedBox(width: 8),
                                       const Text(
                                         'Informations Professionnelles',
@@ -600,7 +633,9 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
                                   ),
                                   _buildDetailRow(
                                     'Code apporteur',
-                                    contratDetails?['code_apporteur']?.toString() ?? 'N/A',
+                                    contratDetails?['code_apporteur']
+                                            ?.toString() ??
+                                        'N/A',
                                     Icons.badge,
                                     canCopy: true,
                                   ),
@@ -627,7 +662,8 @@ class _ContratDetailsPageState extends State<ContratDetailsPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, {bool canCopy = false}) {
+  Widget _buildDetailRow(String label, String value, IconData icon,
+      {bool canCopy = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
