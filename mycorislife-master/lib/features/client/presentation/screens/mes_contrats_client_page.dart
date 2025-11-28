@@ -253,7 +253,11 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           color: Colors.white,
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/client_home',
+            (route) => false,
+          ),
         ),
         title: _isSearching
             ? TextField(
