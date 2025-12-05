@@ -5112,13 +5112,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     
                     if (mode == 'Virement') {
                       icon = Icons.account_balance;
-                      color = bleuCoris;
+                      color = Colors.blue;
                     } else if (mode == 'Wave') {
-                      icon = Icons.phone_android;
-                      color = const Color(0xFFFF6B00);
+                      icon = Icons.water_drop;
+                      color = const Color(0xFF00BFFF);
                     } else {
-                      icon = Icons.smartphone;
-                      color = const Color(0xFFFF8C00);
+                      icon = Icons.phone_android;
+                      color = Colors.orange;
                     }
 
                     return GestureDetector(
