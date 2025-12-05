@@ -10,14 +10,17 @@ import 'package:mycorislife/features/simulation/presentation/screens/simulation_
 import 'package:mycorislife/features/simulation/presentation/screens/simulation_serenite_screen.dart';
 import 'package:mycorislife/features/simulation/presentation/screens/simulation_solidarite_screen.dart';
 import 'package:mycorislife/features/simulation/presentation/screens/simulation_familis_screen.dart';
-import 'package:mycorislife/features/simulation/presentation/screens/flex_emprunteur_page.dart';
+// ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+// import 'package:mycorislife/features/simulation/presentation/screens/flex_emprunteur_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/profil_screen.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/home_souscription.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_epargne.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_etude.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
-import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
-import 'package:mycorislife/features/souscription/presentation/screens/souscription_prets_scolaire.dart';
+// ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+// import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
+// ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
+// import 'package:mycorislife/features/souscription/presentation/screens/souscription_prets_scolaire.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_retraite.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_serenite.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/sousription_solidarite.dart';
@@ -26,9 +29,11 @@ import 'package:mycorislife/features/produit/presentation/screens/desciption_ret
 import 'package:mycorislife/features/produit/presentation/screens/description_solidarite.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_familis.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_serenite.dart';
-import 'package:mycorislife/features/produit/presentation/screens/description_flex.dart';
+// ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+// import 'package:mycorislife/features/produit/presentation/screens/description_flex.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_etude.dart';
-import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
+// ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
+// import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/profile_commercial.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/select_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/create_client_screen.dart';
@@ -58,7 +63,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   // Simulations Client
   '/simulation_etude': (context) => const SimulationEtudeScreen(),
   '/simulation_retraite': (context) => const CorisRetraiteScreen(),
-  '/simulation_emprunteur': (context) => const FlexEmprunteurPage(),
+  // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+  // '/simulation_emprunteur': (context) => const FlexEmprunteurPage(),
   '/simulation_serenite': (context) => const SimulationSereniteScreen(),
   '/simulation_solidarite': (context) => const SolidariteSimulationPage(),
   '/simulation_familis': (context) => const SimulationFamilisScreen(),
@@ -89,25 +95,28 @@ final Map<String, WidgetBuilder> appRoutes = {
       clientData: args?['client'],
     );
   },
-  '/souscription_emprunteur': (context) {
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    return SouscriptionFlexPage(
-      simulationData: args?['simulationData'],
-      clientId: args?['client_id'],
-      clientData: args?['client'],
-    );
-  },
-  '/souscription_flex': (context) {
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    return SouscriptionFlexPage(
-      simulationData: args?['simulationData'],
-      clientId: args?['client_id'],
-      clientData: args?['client'],
-    );
-  },
-  '/souscription_prets': (context) => const SouscriptionPretsScolairePage(),
+  // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+  // '/souscription_emprunteur': (context) {
+  //   final args =
+  //       ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+  //   return SouscriptionFlexPage(
+  //     simulationData: args?['simulationData'],
+  //     clientId: args?['client_id'],
+  //     clientData: args?['client'],
+  //   );
+  // },
+  // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+  // '/souscription_flex': (context) {
+  //   final args =
+  //       ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+  //   return SouscriptionFlexPage(
+  //     simulationData: args?['simulationData'],
+  //     clientId: args?['client_id'],
+  //     clientData: args?['client'],
+  //   );
+  // },
+  // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
+  // '/souscription_prets': (context) => const SouscriptionPretsScolairePage(),
   '/souscription_retraite': (context) {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -184,8 +193,10 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/produits': (context) => HomeSouscriptionPage(),
   '/serenite': (context) => const DescriptionSerenitePage(),
   '/solidarite': (context) => const DescriptionSolidaritePage(),
-  '/flex': (context) => const DescriptionFlexPage(),
-  '/prets': (context) => const DescriptionPretsPage(),
+  // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+  // '/flex': (context) => const DescriptionFlexPage(),
+  // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
+  // '/prets': (context) => const DescriptionPretsPage(),
   '/familis': (context) => const DescriptionFamilisPage(),
   '/etude': (context) => const DescriptionEtudePage(),
   '/retraite': (context) => const DescriptionRetraitePage(),

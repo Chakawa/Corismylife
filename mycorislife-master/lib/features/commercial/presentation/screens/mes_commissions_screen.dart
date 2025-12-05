@@ -99,8 +99,54 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) return 'Non renseigné';
-    // Les dates viennent déjà au format DD/MM/YYYY depuis l'API
-    return date;
+    
+    // Si la date contient déjà le bon format DD/MM/YYYY, la retourner telle quelle
+    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) {
+      return date;
+    }
+    
+    // Sinon, parser et formater proprement (enlever les timestamps)
+    try {
+      // Supprimer les timestamps et heures si présents
+      String cleanDate = date.split('T')[0].split(' ')[0];
+      
+      // Parser la date
+      DateTime parsedDate;
+      if (cleanDate.contains('-')) {
+        // Format ISO 8601 : YYYY-MM-DD
+        parsedDate = DateTime.parse(cleanDate);
+      } else if (cleanDate.contains('/')) {
+        // Format déjà DD/MM/YYYY ou MM/DD/YYYY
+        final parts = cleanDate.split('/');
+        if (parts.length == 3) {
+          // Assumer DD/MM/YYYY si le premier nombre est <= 31
+          if (int.parse(parts[0]) <= 31) {
+            parsedDate = DateTime(
+              int.parse(parts[2]), // année
+              int.parse(parts[1]), // mois
+              int.parse(parts[0]), // jour
+            );
+          } else {
+            // MM/DD/YYYY
+            parsedDate = DateTime(
+              int.parse(parts[2]),
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+            );
+          }
+        } else {
+          return date;
+        }
+      } else {
+        return date;
+      }
+      
+      // Formater au format DD/MM/YYYY
+      return '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
+    } catch (e) {
+      // En cas d'erreur, retourner la date telle quelle
+      return date;
+    }
   }
 
   /// Filtre les bordereaux selon la requête de recherche

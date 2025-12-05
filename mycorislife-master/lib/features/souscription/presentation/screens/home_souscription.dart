@@ -40,21 +40,23 @@ class HomeSouscriptionPage extends StatelessWidget {
       'title': 'CORIS SOLIDARITE',
       'route': '/souscription_solidarite', // Page de souscription directe
     },
-    {
-      'image': 'assets/images/emprunteur.png',
-      'title': 'FLEX EMPRUNTEUR',
-      'route': '/souscription_flex', // Page de souscription directe
-    },
+    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+    // {
+    //   'image': 'assets/images/emprunteur.png',
+    //   'title': 'FLEX EMPRUNTEUR',
+    //   'route': '/souscription_flex', // Page de souscription directe
+    // },
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
       'route': '/souscription_familis', // Page de souscription directe
     },
-    {
-      'image': 'assets/images/prets.png',
-      'title': 'PRETS SCOLAIRE',
-      'route': '/souscription_prets_scolaire', // Page de souscription directe
-    },
+    // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
+    // {
+    //   'image': 'assets/images/prets.png',
+    //   'title': 'PRETS SCOLAIRE',
+    //   'route': '/souscription_prets_scolaire', // Page de souscription directe
+    // },
     {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS EPARGNE BONUS',

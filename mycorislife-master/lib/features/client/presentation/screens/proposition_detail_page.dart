@@ -375,6 +375,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
                   const SizedBox(height: 20),
 
+                  // 💳 Mode de Paiement
+                  _buildPaymentMethodSection(),
+
+                  const SizedBox(height: 20),
+
                   // Documents
                   _buildDocumentsSection(),
 
@@ -825,6 +830,62 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       contactUrgenceNom: contactUrgence?['nom'],
       contactUrgenceContact: contactUrgence?['contact'],
       contactUrgenceLienParente: contactUrgence?['lien_parente'],
+    );
+  }
+
+  /// 💳 Construit la section Mode de Paiement
+  Widget _buildPaymentMethodSection() {
+    final details = _getSubscriptionDetails();
+    final modePaiement = details['mode_paiement'];
+
+    // Si aucun mode de paiement n'est défini, retourner un container vide
+    if (modePaiement == null || modePaiement.toString().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    const Color bleuCoris = Color(0xFF002B6B);
+    const Color orangeCoris = Color(0xFFFF6B00);
+    const Color cyanWave = Color(0xFF00BFFF);
+
+    // Chercher les infos de paiement dans plusieurs endroits possibles
+    String? banque = details['banque'];
+    String? numeroCompte = details['numero_compte'];
+    String? numeroMobileMoney = details['numero_mobile_money'];
+
+    // Vérifier aussi dans infos_paiement si présent
+    if (details['infos_paiement'] != null && details['infos_paiement'] is Map) {
+      final infos = details['infos_paiement'] as Map;
+      banque ??= infos['banque'];
+      numeroCompte ??= infos['numero_compte'];
+      numeroMobileMoney ??= infos['numero_telephone'];
+    }
+
+    // Déterminer la couleur selon le mode
+    Color sectionColor = bleuCoris;
+    if (modePaiement.toString().toLowerCase().contains('wave')) {
+      sectionColor = cyanWave;
+    } else if (modePaiement.toString().toLowerCase().contains('orange')) {
+      sectionColor = orangeCoris;
+    }
+
+    return SubscriptionRecapWidgets.buildRecapSection(
+      'Mode de Paiement',
+      Icons.payment,
+      sectionColor,
+      [
+        SubscriptionRecapWidgets.buildRecapRow('Mode choisi', modePaiement.toString()),
+        const SizedBox(height: 8),
+        if (modePaiement.toString().toLowerCase().contains('virement')) ...[
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Banque', banque != null && banque.toString().isNotEmpty ? banque.toString() : 'Non renseigné'),
+          SubscriptionRecapWidgets.buildRecapRow('Numéro de compte',
+              numeroCompte != null && numeroCompte.toString().isNotEmpty ? numeroCompte.toString() : 'Non renseigné'),
+        ] else if (modePaiement.toString().toLowerCase().contains('wave') ||
+            modePaiement.toString().toLowerCase().contains('orange')) ...[
+          SubscriptionRecapWidgets.buildRecapRow('Numéro de téléphone',
+              numeroMobileMoney != null && numeroMobileMoney.toString().isNotEmpty ? numeroMobileMoney.toString() : 'Non renseigné'),
+        ],
+      ],
     );
   }
 

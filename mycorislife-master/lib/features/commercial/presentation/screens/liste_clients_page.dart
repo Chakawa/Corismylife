@@ -135,7 +135,7 @@ class _ListeClientsPageState extends State<ListeClientsPage> {
                             Navigator.pushNamed(
                               context,
                               '/details_client',
-                              arguments: {'client_id': client['id']},
+                              arguments: {'client': client},
                             );
                           },
                         ),

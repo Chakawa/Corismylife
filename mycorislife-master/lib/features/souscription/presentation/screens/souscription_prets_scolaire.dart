@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+/// ===============================================
+/// ❌❌❌ PRODUIT DÉSACTIVÉ - NE PAS UTILISER ❌❌❌
+/// ===============================================
+/// PAGE DE SOUSCRIPTION - PRÊTS SCOLAIRES
+/// ===============================================
+/// ⚠️ CE PRODUIT A ÉTÉ TEMPORAIREMENT DÉSACTIVÉ ⚠️
+
 class SouscriptionPretsScolairePage extends StatefulWidget {
   const SouscriptionPretsScolairePage({super.key});
 

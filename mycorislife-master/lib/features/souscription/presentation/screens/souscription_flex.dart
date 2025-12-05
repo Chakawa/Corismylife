@@ -10,9 +10,11 @@ import 'dart:convert';
 import 'dart:io';
 
 /// ===============================================
+/// ❌❌❌ PRODUIT DÉSACTIVÉ - NE PAS UTILISER ❌❌❌
+/// ===============================================
 /// PAGE DE SOUSCRIPTION - FLEX EMPRUNTEUR
 /// ===============================================
-///
+/// ⚠️ CE PRODUIT A ÉTÉ TEMPORAIREMENT DÉSACTIVÉ ⚠️
 /// Cette page permet de souscrire à une assurance emprunteur (FLEX EMPRUNTEUR)
 /// avec garanties prévoyance et perte d'emploi.
 ///
@@ -2648,9 +2650,14 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _personneContactNomController.text.trim().isEmpty ||
-        _personneContactTelController.text.trim().isEmpty ||
-        _pieceIdentite == null) {
+        _personneContactTelController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
+      return false;
+    }
+    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
+    // En mode modification, elle est optionnelle
+    if (_pieceIdentite == null && widget.subscriptionId == null) {
+      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;

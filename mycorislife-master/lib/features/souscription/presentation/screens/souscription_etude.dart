@@ -104,6 +104,31 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   File? _pieceIdentite;
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
+  
+  // 💳 VARIABLES MODE DE PAIEMENT
+  String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
+  String? _selectedBanque;
+  final _banqueController = TextEditingController();
+  final _numeroCompteController = TextEditingController();
+  final _numeroMobileMoneyController = TextEditingController();
+  final List<String> _modePaiementOptions = [
+    'Virement',
+    'Wave',
+    'Orange Money'
+  ];
+  final List<String> _banques = [
+    'CORIS BANK',
+    'SGCI',
+    'BICICI',
+    'Ecobank',
+    'BOA',
+    'UBA',
+    'Société Générale',
+    'BNI',
+    'Banque Atlantique',
+    'Autre',
+  ];
+  
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
     'Enfant',
@@ -974,8 +999,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         });
       }
 
-      // Pré-remplir les champs avec les informations du client si disponibles
-      if (args['clientInfo'] != null) {
+      // Si on est en mode modification (avec existingData), pré-remplir tout
+      if (args['existingData'] != null) {
+        // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
+        // On ne fait rien ici pour éviter d'écraser les données
+      }
+      // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
+      else if (args['clientInfo'] != null) {
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
@@ -1292,6 +1322,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _dateEcheanceContrat = DateTime.parse(data['date_echeance']);
       } catch (e) {
         debugPrint('Erreur parsing date_echeance: $e');
+      }
+    }
+
+    // 💳 MODE DE PAIEMENT - Pré-remplissage
+    if (data['mode_paiement'] != null) {
+      _selectedModePaiement = data['mode_paiement'];
+      
+      if (data['infos_paiement'] != null) {
+        final infos = data['infos_paiement'];
+        if (_selectedModePaiement == 'Virement') {
+          _banqueController.text = infos['banque'] ?? '';
+          _numeroCompteController.text = infos['numero_compte'] ?? '';
+        } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+          _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
+        }
       }
     }
 
@@ -1647,34 +1692,40 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _nextStep() {
-    // maxStep est maintenant 4 pour inclure l'étape de paiement
-    // Clients: 0 (params), 1 (bénéficiaire), 2 (recap), 3 (paiement)
-    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (recap), 4 (paiement)
-    final maxStep = _isCommercial ? 4 : 3;
+    // maxStep mis à jour pour inclure l'étape mode de paiement
+    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (recap), 4 (paiement)
+    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (recap), 5 (paiement)
+    final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = recap
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
-          _recalculerValeurs(); // Call here before moving to recap (step 3)
-        } else if (_currentStep == 3) {
+          _recalculerValeurs();
+        } else if (_currentStep == 3 && _validateStepModePaiement()) {
+          // Validation du mode de paiement avant le récap
+          canProceed = true;
+        } else if (_currentStep == 4) {
           // Recap pour commerciaux - aller au paiement
           canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = recap
+        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
-          _recalculerValeurs(); // Call here before moving to recap (step 2)
-        } else if (_currentStep == 2) {
+          _recalculerValeurs();
+        } else if (_currentStep == 2 && _validateStepModePaiement()) {
+          // Validation du mode de paiement avant le récap
+          canProceed = true;
+        } else if (_currentStep == 3) {
           // Recap pour clients - aller au paiement
           canProceed = true;
         }
@@ -1801,7 +1852,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       return false;
     }
 
-    if (_pieceIdentite == null) {
+    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
+    // En mode modification, elle est optionnelle
+    if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
@@ -1820,6 +1873,43 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
       return false;
+    }
+
+    return true;
+  }
+
+  /// 💳 VALIDATION MODE DE PAIEMENT
+  bool _validateStepModePaiement() {
+    if (_selectedModePaiement == null) {
+      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
+      return false;
+    }
+
+    if (_selectedModePaiement == 'Virement') {
+      if (_banqueController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
+        return false;
+      }
+      if (_numeroCompteController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+        return false;
+      }
+    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+      if (_numeroMobileMoneyController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+        return false;
+      }
+      if (!RegExp(r'^[0-9]{8,10}$').hasMatch(_numeroMobileMoneyController.text.trim())) {
+        _showErrorSnackBar('Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+        return false;
+      }
+      // Validation spécifique pour Orange Money : doit commencer par 07
+      if (_selectedModePaiement == 'Orange Money') {
+        if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
+          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          return false;
+        }
+      }
     }
 
     return true;
@@ -1935,6 +2025,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'age_parent': _calculatedAgeParent,
         'date_naissance_parent':
             _dateNaissanceParent?.toIso8601String().split('T').first,
+        // 💳 MODE DE PAIEMENT
+        'mode_paiement': _selectedModePaiement,
+        'infos_paiement': _selectedModePaiement == 'Virement'
+            ? {
+                'banque': _banqueController.text.trim(),
+                'numero_compte': _numeroCompteController.text.trim(),
+              }
+            : (_selectedModePaiement == 'Wave' ||
+                    _selectedModePaiement == 'Orange Money')
+                ? {
+                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
+                  }
+                : null,
       };
 
       // Si c'est un commercial, ajouter les infos client
@@ -2376,14 +2479,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
                         _buildStep1(), // Page 1: Paramètres de souscription
                         _buildStep2(), // Page 2: Bénéficiaire/Contact
-                        _buildStep3(), // Page 3: Récapitulatif
-                        _buildStep4(), // Page 4: Paiement
+                        _buildStepModePaiement(), // Page 3: Mode de paiement
+                        _buildStep3(), // Page 4: Récapitulatif
+                        _buildStep4(), // Page 5: Paiement
                       ]
                     : [
                         _buildStep1(), // Page 0: Paramètres de souscription
                         _buildStep2(), // Page 1: Bénéficiaire/Contact
-                        _buildStep3(), // Page 2: Récapitulatif
-                        _buildStep4(), // Page 3: Paiement
+                        _buildStepModePaiement(), // Page 2: Mode de paiement
+                        _buildStep3(), // Page 3: Récapitulatif
+                        _buildStep4(), // Page 4: Paiement
                       ],
               ),
             ),
@@ -2410,7 +2515,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < (_isCommercial ? 5 : 4); i++) ...[
+          for (int i = 0; i < (_isCommercial ? 6 : 5); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -2440,15 +2545,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                   : i == 2
                                       ? Icons.person_add
                                       : i == 3
-                                          ? Icons.check_circle
-                                          : Icons.payment)
+                                          ? Icons.payment
+                                          : i == 4
+                                              ? Icons.check_circle
+                                              : Icons.credit_card)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
                                   ? Icons.person_add
                                   : i == 2
-                                      ? Icons.check_circle
-                                      : Icons.payment),
+                                      ? Icons.payment
+                                      : i == 3
+                                          ? Icons.check_circle
+                                          : Icons.credit_card),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 16,
                     ),
@@ -2463,15 +2572,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                 : i == 2
                                     ? 'Infos'
                                     : i == 3
-                                        ? 'Recap'
-                                        : 'Paie')
+                                        ? 'Paiement'
+                                        : i == 4
+                                            ? 'Recap'
+                                            : 'Finaliser')
                         : (i == 0
                             ? 'Souscription'
                             : i == 1
                                 ? 'Infos'
                                 : i == 2
-                                    ? 'Recap'
-                                    : 'Paie'),
+                                    ? 'Paiement'
+                                    : i == 3
+                                        ? 'Recap'
+                                        : 'Finaliser'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight:
@@ -2482,7 +2595,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 ],
               ),
             ),
-            if (i < (_isCommercial ? 4 : 3))
+            if (i < (_isCommercial ? 5 : 4))
               Expanded(
                 child: Container(
                   height: 2,
@@ -3558,6 +3671,322 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
+  /// 💳 ÉTAPE MODE DE PAIEMENT
+  Widget _buildStepModePaiement() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Titre de la section
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [bleuCoris, bleuCoris.withOpacity(0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: bleuCoris.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: blanc.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.payment, color: blanc, size: 32),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Informations de Paiement',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: blanc,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Comment souhaitez-vous payer vos primes ?',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: blanc.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 30),
+
+                  // Sélection du mode de paiement
+                  Text(
+                    'Mode de paiement *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: bleuCoris,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      children: _modePaiementOptions.map((mode) {
+                        final isSelected = _selectedModePaiement == mode;
+                        IconData icon;
+                        Color iconColor;
+                        
+                        switch (mode) {
+                          case 'Virement':
+                            icon = Icons.account_balance;
+                            iconColor = Colors.blue;
+                            break;
+                          case 'Wave':
+                            icon = Icons.water_drop;
+                            iconColor = Color(0xFF00BFFF);
+                            break;
+                          case 'Orange Money':
+                            icon = Icons.phone_android;
+                            iconColor = Colors.orange;
+                            break;
+                          default:
+                            icon = Icons.payment;
+                            iconColor = bleuCoris;
+                        }
+
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedModePaiement = mode;
+                              // Réinitialiser les champs
+                              _banqueController.clear();
+                              _numeroCompteController.clear();
+                              _numeroMobileMoneyController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected ? bleuCoris.withOpacity(0.1) : Colors.transparent,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: _modePaiementOptions.last == mode
+                                      ? Colors.transparent
+                                      : Colors.grey[300]!,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 28),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    mode,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? bleuCoris : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(Icons.check_circle, color: bleuCoris, size: 28),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  // Champs conditionnels selon le mode sélectionné
+                  if (_selectedModePaiement != null) ...[
+                    SizedBox(height: 30),
+
+                    // VIREMENT
+                    if (_selectedModePaiement == 'Virement') ...[
+                      Text(
+                        'Informations bancaires',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      
+                      // Nom de la banque
+                      DropdownButtonFormField<String>(
+                        value: _selectedBanque,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la banque *',
+                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        items: _banques.map((String banque) {
+                          return DropdownMenuItem<String>(
+                            value: banque,
+                            child: Text(banque),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedBanque = newValue;
+                            if (newValue != null && newValue != 'Autre') {
+                              _banqueController.text = newValue;
+                            } else if (newValue == 'Autre') {
+                              _banqueController.text = '';
+                            }
+                          });
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      
+                      // Champ texte personnalisé si "Autre" est sélectionné
+                      if (_selectedBanque == 'Autre') ...[
+                        TextField(
+                          controller: _banqueController,
+                          decoration: InputDecoration(
+                            labelText: 'Nom de votre banque *',
+                            hintText: 'Entrez le nom de votre banque',
+                            prefixIcon: Icon(Icons.edit, color: bleuCoris),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                      ],
+                      
+                      // Numéro de compte
+                      TextField(
+                        controller: _numeroCompteController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de compte *',
+                          hintText: 'Entrez votre numéro de compte',
+                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+
+                    // WAVE ou ORANGE MONEY
+                    if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
+                      Text(
+                        'Numéro ${_selectedModePaiement}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      
+                      TextField(
+                        controller: _numeroMobileMoneyController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone *',
+                          hintText: 'Ex: 0707070707',
+                          prefixIcon: Icon(
+                            Icons.phone_android,
+                            color: _selectedModePaiement == 'Wave' 
+                                ? Color(0xFF00BFFF) 
+                                : Colors.orange,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
+                  ],
+
+                  SizedBox(height: 30),
+
+                  // Note informative
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildStep3() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3774,6 +4203,49 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         const SizedBox(height: 20),
 
+        // 💳 SECTION MODE DE PAIEMENT
+        if (_selectedModePaiement != null)
+          SubscriptionRecapWidgets.buildRecapSection(
+            'Mode de Paiement',
+            Icons.payment,
+            _selectedModePaiement == 'Virement'
+                ? Colors.blue
+                : _selectedModePaiement == 'Wave'
+                    ? Color(0xFF00BFFF)
+                    : Colors.orange,
+            [
+              SubscriptionRecapWidgets.buildRecapRow(
+                'Mode choisi',
+                _selectedModePaiement!,
+              ),
+              const SizedBox(height: 8),
+              if (_selectedModePaiement == 'Virement') ...[
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Banque',
+                  _banqueController.text.isNotEmpty
+                      ? _banqueController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro de compte',
+                  _numeroCompteController.text.isNotEmpty
+                      ? _numeroCompteController.text
+                      : 'Non renseigné',
+                ),
+              ] else if (_selectedModePaiement == 'Wave' ||
+                  _selectedModePaiement == 'Orange Money') ...[
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro ${_selectedModePaiement}',
+                  _numeroMobileMoneyController.text.isNotEmpty
+                      ? _numeroMobileMoneyController.text
+                      : 'Non renseigné',
+                ),
+              ],
+            ],
+          ),
+
+        if (_selectedModePaiement != null) const SizedBox(height: 20),
+
         SubscriptionRecapWidgets.buildDocumentsSection(
           pieceIdentite: _pieceIdentite?.path.split('/').last,
           onDocumentTap: _pieceIdentite != null
@@ -3875,14 +4347,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  // Déterminer l'étape finale selon si commercial ou pas
-                  int finalStep = _isCommercial ? 3 : 2;
+                  // Déterminer l'étape du récapitulatif selon si commercial ou pas
+                  // Commercial: 0=Client, 1=Souscription, 2=Infos, 3=Paiement, 4=Recap, 5=Finaliser
+                  // Client: 0=Souscription, 1=Infos, 2=Paiement, 3=Recap, 4=Finaliser
+                  int recapStep = _isCommercial ? 4 : 3;
+                  int finalStep = _isCommercial ? 5 : 4;
 
-                  if (_currentStep == finalStep) {
-                    // Depuis le récapitulatif: ouvrir directement les options de paiement
-                    _showPaymentOptions();
-                  } else if (_currentStep == finalStep + 1) {
-                    // Étape paiement - ouvrir aussi les options de paiement
+                  if (_currentStep == recapStep) {
+                    // Depuis le récapitulatif: aller à finaliser
+                    _nextStep();
+                  } else if (_currentStep == finalStep) {
+                    // Étape finaliser - ouvrir les options de paiement
                     _showPaymentOptions();
                   } else {
                     // Autres étapes - avancer
@@ -3904,11 +4379,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   children: [
                     Text(
                       () {
-                        int finalStep = _isCommercial ? 3 : 2;
-                        if (_currentStep == finalStep) {
-                          return 'Finaliser';
-                        } else if (_currentStep == finalStep + 1) {
-                          return 'Payer maintenant';
+                        int recapStep = _isCommercial ? 4 : 3;
+                        int finalStep = _isCommercial ? 5 : 4;
+                        if (_currentStep == recapStep) {
+                          return 'Suivant';
+                        } else if (_currentStep == finalStep) {
+                          return 'Finaliser & Payer';
                         } else {
                           return 'Suivant';
                         }
@@ -3922,9 +4398,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     SizedBox(width: 8),
                     Icon(
                       () {
-                        int finalStep = _isCommercial ? 3 : 2;
-                        if (_currentStep == finalStep + 1) {
-                          return Icons.payment;
+                        int finalStep = _isCommercial ? 5 : 4;
+                        if (_currentStep == finalStep) {
+                          return Icons.check_circle;
                         } else {
                           return Icons.arrow_forward;
                         }
@@ -3955,14 +4431,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
+                  // En-tête de finalisation
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: bleuCoris,
+                      gradient: LinearGradient(
+                        colors: [vertSucces, vertSucces.withOpacity(0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(26),
+                          color: vertSucces.withOpacity(0.3),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -3970,22 +4451,22 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.payment, color: blanc, size: 48),
+                        Icon(Icons.check_circle, color: blanc, size: 56),
                         SizedBox(height: 16),
                         Text(
-                          'Finalisation du Paiement',
+                          'Souscription Prête !',
                           style: TextStyle(
                             color: blanc,
-                            fontSize: 20,
+                            fontSize: 24,
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Choisissez votre méthode de paiement',
+                          'Toutes vos informations ont été enregistrées',
                           style: TextStyle(
-                            color: blanc.withAlpha(204),
+                            color: blanc.withOpacity(0.9),
                             fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
@@ -4036,90 +4517,169 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  // Méthodes de paiement
+                  
+                  // Titre de la section
                   Text(
-                    'Méthodes de paiement disponibles',
+                    'Que souhaitez-vous faire maintenant ?',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 12),
-                  // Wave
-                  _buildPaymentMethodCard(
-                    icon: Icons.phone_android,
-                    title: 'Wave',
-                    description: 'Paiement par SMS',
-                    onTap: () => _processPayment('Wave'),
-                  ),
-                  SizedBox(height: 12),
-                  // Orange Money
-                  _buildPaymentMethodCard(
-                    icon: Icons.monetization_on,
-                    title: 'Orange Money',
-                    description: 'Portefeuille Orange Money',
-                    onTap: () => _processPayment('Orange Money'),
-                  ),
-                  SizedBox(height: 12),
-                  // Payer plus tard
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: orangeWarning.withAlpha(26),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: orangeWarning.withAlpha(128),
+                  SizedBox(height: 20),
+                  
+                  // Option 1: Payer maintenant
+                  InkWell(
+                    onTap: () => _showPaymentOptions(),
+                    child: Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: bleuCoris,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: bleuCoris.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: blanc.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.payment, color: blanc, size: 32),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payer Maintenant',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: blanc,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Finalisez votre souscription avec un paiement immédiat',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: blanc.withOpacity(0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios, color: blanc, size: 20),
+                        ],
                       ),
                     ),
+                  ),
+                  
+                  SizedBox(height: 16),
+                  
+                  // Option 2: Payer plus tard
+                  InkWell(
+                    onTap: () => _saveAsProposition(),
+                    child: Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: blanc,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: orangeWarning, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: orangeWarning.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.schedule, color: orangeWarning, size: 32),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payer Plus Tard',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: orangeWarning,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Enregistrez votre proposition et payez ultérieurement',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: grisTexte,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios, color: orangeWarning, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: 24),
+                  
+                  // Note informative
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.schedule, color: orangeWarning, size: 20),
+                        Icon(Icons.info_outline, color: bleuCoris, size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Payer plus tard',
+                                'Information importante',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: orangeWarning,
                                   fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: bleuCoris,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              SizedBox(height: 4),
                               Text(
-                                'Enregistrez la proposition et payez ultérieurement',
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
                                 style: TextStyle(
-                                  color: grisTexte,
                                   fontSize: 12,
+                                  color: Colors.blue[900],
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            _processPayment('later');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: orangeWarning,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'OK',
-                            style: TextStyle(
-                              color: blanc,
-                              fontWeight: FontWeight.w600,
-                            ),
                           ),
                         ),
                       ],

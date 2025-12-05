@@ -29,11 +29,14 @@ class ProduitsPage extends StatelessWidget {
       'title': 'CORIS SOLIDARITE',
       'route': '/simulation_solidarite',
     },
-    {
-      'image': 'assets/images/emprunteur.png',
-      'title': 'FLEX EMPRUNTEUR',
-      'route': '/simulation_emprunteur',
-    },
+    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+    // {
+    //   'image': 'assets/images/emprunteur.png',
+    //   'title': 'FLEX EMPRUNTEUR',
+    //   'route': '/simulation_emprunteur',
+    // },
+    // ❌ PRODUIT DÉSACTIVÉ - PRÊT SCOLAIRE  
+    // (Note: Prêt scolaire n'était pas dans la liste originale)
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',

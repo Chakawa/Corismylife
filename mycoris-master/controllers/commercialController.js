@@ -390,13 +390,12 @@ exports.getCommercialSubscriptions = async (req, res) => {
 };
 
 /**
- * Récupère la liste unique de TOUS les clients qui ont des souscriptions
- * (peu importe le commercial qui a créé la souscription)
+ * Récupère la liste unique des clients qui ont des souscriptions
+ * créées par le commercial connecté UNIQUEMENT
  * GET /api/commercial/clients-with-subscriptions
  * 
- * MODIFICATION: Retourne TOUS les clients de TOUS les commerciaux
- * pour permettre à n'importe quel commercial de réutiliser les données
- * d'un client déjà enregistré par un autre commercial.
+ * MODIFICATION: Retourne UNIQUEMENT les clients du commercial connecté
+ * pour que chaque commercial ne voie que ses propres clients.
  */
 exports.getClientsWithSubscriptions = async (req, res) => {
   try {
@@ -409,9 +408,8 @@ exports.getClientsWithSubscriptions = async (req, res) => {
       });
     }
 
-    // Récupérer TOUS les clients uniques depuis TOUTES les souscriptions
-    // (suppression du filtre WHERE s.code_apporteur = $1)
-    // Utiliser les infos depuis souscription_data.client_info
+    // Récupérer UNIQUEMENT les clients des souscriptions du commercial connecté
+    // Filtre WHERE s.code_apporteur = $1 pour ne retourner que les clients du commercial
     const query = `
       SELECT DISTINCT ON (
         COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone)
@@ -437,14 +435,15 @@ exports.getClientsWithSubscriptions = async (req, res) => {
         u.civilite as user_civilite
       FROM subscriptions s
       LEFT JOIN users u ON s.user_id = u.id
-      WHERE (
-        s.souscriptiondata->'client_info'->>'nom' IS NOT NULL
-        OR u.nom IS NOT NULL
-      )
+      WHERE s.code_apporteur = $1
+        AND (
+          s.souscriptiondata->'client_info'->>'nom' IS NOT NULL
+          OR u.nom IS NOT NULL
+        )
       ORDER BY COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone), s.date_creation DESC
     `;
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, [codeApporteur]);
 
     // Formater les résultats pour utiliser les infos client depuis souscription_data en priorité
     const formattedResults = result.rows
@@ -459,15 +458,14 @@ exports.getClientsWithSubscriptions = async (req, res) => {
         civilite: row.civilite || row.user_civilite || '',
         numero_piece_identite: row.numero_piece_identite || '',
         user_id: row.user_id || null,
-        created_by_code: row.created_by_code || null, // Code du commercial qui a créé cette souscription
-        is_own_client: row.created_by_code === codeApporteur // Indique si c'est un client du commercial connecté
+        created_by_code: row.created_by_code || null
       }))
       .filter(client => (client.nom && client.nom.trim() !== '') || (client.prenom && client.prenom.trim() !== ''));
 
     res.json({
       success: true,
       data: formattedResults,
-      message: `${formattedResults.length} client(s) trouvé(s) (tous commerciaux confondus)`
+      message: `${formattedResults.length} client(s) trouvé(s)`
     });
   } catch (error) {
     console.error('Erreur récupération clients avec souscriptions:', error);
@@ -702,48 +700,42 @@ exports.getListeClients = async (req, res) => {
       });
     }
 
-    // Récupérer les clients depuis users ET depuis les contrats (nomprenom)
+    // Récupérer UNIQUEMENT les clients des souscriptions du commercial connecté
+    // Utilise client_info depuis subscriptions pour avoir les vraies données
     const query = `
-      WITH clients_users AS (
-        SELECT DISTINCT
-          CAST(u.id AS TEXT) as id,
-          u.nom,
-          u.prenom,
-          u.email,
-          u.telephone,
-          'user' as source
-        FROM users u
-        WHERE u.code_apporteur = $1 AND u.role = 'client'
-      ),
-      clients_contrats AS (
-        SELECT DISTINCT
-          CAST(NULL AS TEXT) as id,
-          TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
-          TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-          CAST(c.telephone1 AS TEXT) as telephone,
-          CAST(NULL AS TEXT) as email,
-          'contrat' as source
-        FROM contrats c
-        WHERE CAST(c.codeappo AS TEXT) = $1
-          AND c.nom_prenom IS NOT NULL 
-          AND c.nom_prenom != ''
-          AND NOT EXISTS (
-            SELECT 1 FROM users u2 
-            WHERE u2.code_apporteur = $1 
-            AND LOWER(CONCAT(u2.prenom, ' ', u2.nom)) = LOWER(c.nom_prenom)
-          )
+      SELECT DISTINCT ON (
+        COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone)
       )
-      SELECT * FROM clients_users
-      UNION ALL
-      SELECT * FROM clients_contrats
-      ORDER BY nom, prenom
+        CAST(u.id AS TEXT) as id,
+        COALESCE(s.souscriptiondata->'client_info'->>'nom', u.nom) as nom,
+        COALESCE(s.souscriptiondata->'client_info'->>'prenom', u.prenom) as prenom,
+        COALESCE(s.souscriptiondata->'client_info'->>'email', u.email) as email,
+        COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone) as telephone,
+        CASE 
+          WHEN u.id IS NOT NULL THEN 'user'
+          ELSE 'souscription'
+        END as source
+      FROM subscriptions s
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.code_apporteur = $1
+        AND (
+          s.souscriptiondata->'client_info'->>'nom' IS NOT NULL
+          OR u.nom IS NOT NULL
+        )
+      ORDER BY COALESCE(s.souscriptiondata->'client_info'->>'telephone', u.telephone), s.date_creation DESC
     `;
 
     const result = await pool.query(query, [String(codeApporteur)]);
 
+    // Filtrer les clients qui ont au moins un nom ou prénom
+    const formattedClients = result.rows.filter(client => 
+      (client.nom && client.nom.trim() !== '') || 
+      (client.prenom && client.prenom.trim() !== '')
+    );
+
     res.json({
       success: true,
-      clients: result.rows
+      clients: formattedClients
     });
   } catch (error) {
     console.error('Erreur récupération liste clients:', error);

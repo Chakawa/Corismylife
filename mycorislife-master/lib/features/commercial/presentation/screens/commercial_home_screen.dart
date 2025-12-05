@@ -83,20 +83,35 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
       'title': 'CORIS SOLIDARITE',
       'route': '/solidarite',
     },
-    {
-      'image': 'assets/images/emprunteur.png',
-      'title': 'FLEX EMPRUNTEUR',
-      'route': '/flex',
-    },
-    {
-      'image': 'assets/images/prets.png',
-      'title': 'PRETS SCOLAIRES',
-      'route': '/prets',
-    },
+    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+    // {
+    //   'image': 'assets/images/emprunteur.png',
+    //   'title': 'FLEX EMPRUNTEUR',
+    //   'route': '/flex',
+    // },
+    // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRES
+    // {
+    //   'image': 'assets/images/prets.png',
+    //   'title': 'PRETS SCOLAIRES',
+    //   'route': '/prets',
+    // },
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
       'route': '/familis',
+    },
+    // 🚫 PRODUITS AFFICHÉS MAIS NON SOUSCRIPTIBLES
+    {
+      'image': 'assets/images/auto.png',
+      'title': 'CORIS AUTO',
+      'route': null,
+      'disabled': true,
+    },
+    {
+      'image': 'assets/images/habitation.png',
+      'title': 'CORIS HABITATION',
+      'route': null,
+      'disabled': true,
     },
   ];
 
@@ -423,14 +438,15 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
               ),
               itemCount: _services.length,
               itemBuilder: (context, index) {
+                final isDisabled = _services[index]['disabled'] == true;
                 return InkWell(
-                  onTap: () {
+                  onTap: isDisabled ? null : () {
                     Navigator.pushNamed(context, _services[index]['route']);
                   },
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: isDisabled ? Colors.grey[300] : Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -463,13 +479,30 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                             style: TextStyle(
                               fontSize: screenWidth * 0.028,
                               fontWeight: FontWeight.w600,
-                              color: bleuCoris,
+                              color: isDisabled ? Colors.grey[600] : bleuCoris,
                               height: 1.2,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (isDisabled)
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Bientôt',
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.02,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

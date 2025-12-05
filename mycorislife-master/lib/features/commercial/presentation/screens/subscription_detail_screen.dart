@@ -216,6 +216,12 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         (widget.subscription['produit_nom'] ?? '').toLowerCase();
     final souscriptionData = _fullSubscriptionData?['souscriptiondata'];
 
+    // Extraire les infos client depuis souscriptionData
+    final clientInfo = souscriptionData?['client_info'];
+    final String? clientId = clientInfo?['id']?.toString();
+    final Map<String, dynamic>? clientData =
+        clientInfo != null ? Map<String, dynamic>.from(clientInfo) : null;
+
     // Déterminer le type de produit pour la route
     String routeProductType = '';
     if (productType.contains('etude')) {
@@ -230,10 +236,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       routeProductType = 'solidarite';
     } else if (productType.contains('familis')) {
       routeProductType = 'familis';
-    } else if (productType.contains('flex') ||
-        productType.contains('emprunteur')) {
-      routeProductType = 'flex';
-    } else if (productType.contains('epargne') ||
+    } 
+    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
+    // else if (productType.contains('flex') ||
+    //     productType.contains('emprunteur')) {
+    //   routeProductType = 'flex';
+    // } 
+    else if (productType.contains('epargne') ||
         productType.contains('épargne')) {
       routeProductType = 'epargne';
     } else {
@@ -247,15 +256,19 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       return;
     }
 
-    // Naviguer vers la page de sélection de client avec les données de souscription en simulationData
+    // En mode modification, naviguer DIRECTEMENT vers la page de souscription
+    // avec les données pré-remplies (pas de sélection de client)
     Navigator.pushNamed(
       context,
-      '/commercial/select_client',
+      '/souscription_$routeProductType',
       arguments: {
-        'productType': routeProductType,
-        'simulationData':
-            souscriptionData, // Passer toutes les données de souscription pour pré-remplissage
-        'subscriptionId': subscriptionId, // Pour la modification
+        'isCommercial': true,
+        'client_id': clientId,
+        'client': clientData,
+        'clientInfo': clientData,
+        'simulationData': souscriptionData,
+        'existingData': souscriptionData,
+        'subscriptionId': subscriptionId,
       },
     ).then((_) {
       // Recharger les données après modification
@@ -625,6 +638,39 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                   souscriptionData['contact_urgence']['lien_parente'] ??
                       'Non renseigné',
                 ),
+              ],
+            ],
+          ),
+
+        // 💳 Mode de Paiement
+        if (souscriptionData['mode_paiement'] != null &&
+            souscriptionData['mode_paiement'].toString().isNotEmpty)
+          _buildRecapSection(
+            'Mode de Paiement',
+            Icons.payment,
+            souscriptionData['mode_paiement'].toString().toLowerCase().contains('virement')
+                ? bleuCoris
+                : souscriptionData['mode_paiement'].toString().toLowerCase().contains('wave')
+                    ? const Color(0xFF00BFFF)
+                    : const Color(0xFFFF6B00),
+            [
+              _buildRecapRow('Mode choisi', souscriptionData['mode_paiement'].toString()),
+              const SizedBox(height: 8),
+              if (souscriptionData['mode_paiement'].toString().toLowerCase().contains('virement')) ...[
+                _buildRecapRow('Banque',
+                    souscriptionData['banque'] != null && souscriptionData['banque'].toString().isNotEmpty 
+                        ? souscriptionData['banque'].toString() 
+                        : 'Non renseigné'),
+                _buildRecapRow('Numéro de compte',
+                    souscriptionData['numero_compte'] != null && souscriptionData['numero_compte'].toString().isNotEmpty 
+                        ? souscriptionData['numero_compte'].toString() 
+                        : 'Non renseigné'),
+              ] else if (souscriptionData['mode_paiement'].toString().toLowerCase().contains('wave') ||
+                  souscriptionData['mode_paiement'].toString().toLowerCase().contains('orange')) ...[
+                _buildRecapRow('Numéro de téléphone',
+                    souscriptionData['numero_mobile_money'] != null && souscriptionData['numero_mobile_money'].toString().isNotEmpty 
+                        ? souscriptionData['numero_mobile_money'].toString() 
+                        : 'Non renseigné'),
               ],
             ],
           ),

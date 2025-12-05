@@ -158,6 +158,31 @@ class _SouscriptionSolidaritePageState
   String _selectedContactIndicatif = '+221';
   File? _pieceIdentite;
 
+  // 💳 Variables Mode de Paiement
+  String? _selectedModePaiement;
+  String? _selectedBanque;
+  final TextEditingController _banqueController = TextEditingController();
+  final List<String> _banques = [
+    'CORIS BANK',
+    'SGCI',
+    'BICICI',
+    'Ecobank',
+    'BOA',
+    'UBA',
+    'Société Générale',
+    'BNI',
+    'Banque Atlantique',
+    'Autre',
+  ];
+  final TextEditingController _numeroCompteController = TextEditingController();
+  final TextEditingController _numeroMobileMoneyController =
+      TextEditingController();
+  final List<String> _modePaiementOptions = [
+    'Virement',
+    'Wave',
+    'Orange Money'
+  ];
+
   final List<String> _lienParenteOptions = [
     'Conjoint(e)',
     'Enfant',
@@ -384,7 +409,7 @@ class _SouscriptionSolidaritePageState
 
     // Toujours initialiser selectedCapital avec une valeur valide pour éviter l'erreur dropdown
     selectedCapital = 500000;
-    
+
     // Vérifier si on est en mode modification
     _isModification =
         widget.subscriptionId != null && widget.existingData != null;
@@ -2198,6 +2223,7 @@ class _SouscriptionSolidaritePageState
     }
 
     steps.add(_buildStep2());
+    steps.add(_buildStepModePaiement()); // 💳 Étape mode de paiement
     steps.add(_buildStepRecap());
 
     return steps;
@@ -2210,6 +2236,7 @@ class _SouscriptionSolidaritePageState
     if (nbConjoints > 0) total++;
     if (nbEnfants > 0) total++;
     if (nbAscendants > 0) total++;
+    total++; // 💳 Mode de paiement
     total++; // Récapitulatif
     return total;
   }
@@ -2327,6 +2354,251 @@ class _SouscriptionSolidaritePageState
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
+  }
+
+  /// 💳 ÉTAPE MODE DE PAIEMENT
+  Widget _buildStepModePaiement() {
+    const Color bleuCoris = Color(0xFF002B6B);
+    const Color rougeCoris = Color(0xFFE30613);
+    const Color blanc = Colors.white;
+    const Color fondCarte = Color(0xFFF8FAFC);
+    const Color grisTexte = Color(0xFF64748B);
+    const Color orangeCoris = Color(0xFFFF6B00);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre
+          Text(
+            'Choisissez votre mode de paiement',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: bleuCoris,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Sélectionnez comment vous souhaitez effectuer vos paiements',
+            style: TextStyle(
+              fontSize: 14,
+              color: grisTexte,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Sélection du mode de paiement
+          Container(
+            decoration: BoxDecoration(
+              color: blanc,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Mode de paiement *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: bleuCoris,
+                    ),
+                  ),
+                ),
+                ..._modePaiementOptions.map((mode) {
+                  final isSelected = _selectedModePaiement == mode;
+                  return InkWell(
+                    onTap: () => setState(() {
+                      _selectedModePaiement = mode;
+                      // Réinitialiser les champs selon le mode
+                      if (mode != 'Virement') {
+                        _banqueController.clear();
+                        _numeroCompteController.clear();
+                      }
+                      if (mode == 'Virement') {
+                        _numeroMobileMoneyController.clear();
+                      }
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? bleuCoris.withOpacity(0.1)
+                            : Colors.transparent,
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.grey.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            mode == 'Virement'
+                                ? Icons.account_balance
+                                : mode == 'Wave'
+                                    ? Icons.water_drop
+                                    : Icons.phone_android,
+                            color: isSelected ? bleuCoris : grisTexte,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              mode,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isSelected ? bleuCoris : grisTexte,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle,
+                                color: bleuCoris, size: 24),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Champs conditionnels selon le mode
+          if (_selectedModePaiement == 'Virement') ...[
+            DropdownButtonFormField<String>(
+              value: _selectedBanque,
+              decoration: InputDecoration(
+                labelText: 'Nom de la banque',
+                prefixIcon: Container(
+                  margin: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: bleuCoris.withAlpha(26),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      Icon(Icons.account_balance, color: bleuCoris, size: 20),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: grisLeger),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                ),
+                filled: true,
+                fillColor: fondCarte,
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              hint: Text('Sélectionnez votre banque'),
+              items: _banques.map((String banque) {
+                return DropdownMenuItem<String>(
+                  value: banque,
+                  child: Text(banque),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedBanque = newValue;
+                  if (newValue != null && newValue != 'Autre') {
+                    _banqueController.text = newValue;
+                  } else if (newValue == 'Autre') {
+                    _banqueController.text = '';
+                  }
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Veuillez sélectionner une banque';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Champ texte personnalisé si "Autre" est sélectionné
+            if (_selectedBanque == 'Autre') ...[
+              _buildModernTextField(
+                controller: _banqueController,
+                label: 'Nom de votre banque',
+                icon: Icons.edit,
+              ),
+              const SizedBox(height: 16),
+            ],
+            _buildModernTextField(
+              controller: _numeroCompteController,
+              label: 'Numéro de compte',
+              icon: Icons.credit_card,
+              keyboardType: TextInputType.number,
+            ),
+          ] else if (_selectedModePaiement == 'Wave' ||
+              _selectedModePaiement == 'Orange Money') ...[
+            _buildModernTextField(
+              controller: _numeroMobileMoneyController,
+              label: 'Numéro de téléphone',
+              icon: Icons.phone,
+              keyboardType: TextInputType.phone,
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Information
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: orangeCoris.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: orangeCoris.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: orangeCoris, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ces informations seront utilisées pour vos paiements de primes. Assurez-vous qu\'elles sont correctes.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: grisTexte,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStepRecap() {
@@ -2568,6 +2840,42 @@ class _SouscriptionSolidaritePageState
             _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
           ]),
           const SizedBox(height: 12),
+
+          // 💳 Mode de Paiement
+          if (_selectedModePaiement != null)
+            _buildRecapSection(
+              'Mode de Paiement',
+              Icons.payment,
+              _selectedModePaiement == 'Virement'
+                  ? bleuCoris
+                  : _selectedModePaiement == 'Wave'
+                      ? Color(0xFF00BFFF)
+                      : Color(0xFFFF6B00),
+              [
+                _buildRecapRow('Mode choisi', _selectedModePaiement!),
+                const SizedBox(height: 8),
+                if (_selectedModePaiement == 'Virement') ...[
+                  _buildRecapRow(
+                      'Banque',
+                      _banqueController.text.isNotEmpty
+                          ? _banqueController.text
+                          : 'Non renseigné'),
+                  _buildRecapRow(
+                      'Numéro de compte',
+                      _numeroCompteController.text.isNotEmpty
+                          ? _numeroCompteController.text
+                          : 'Non renseigné'),
+                ] else if (_selectedModePaiement == 'Wave' ||
+                    _selectedModePaiement == 'Orange Money') ...[
+                  _buildRecapRow(
+                      'Numéro ${_selectedModePaiement}',
+                      _numeroMobileMoneyController.text.isNotEmpty
+                          ? _numeroMobileMoneyController.text
+                          : 'Non renseigné'),
+                ],
+              ],
+            ),
+          if (_selectedModePaiement != null) const SizedBox(height: 12),
 
           // Documents
           _buildRecapSection('Documents', Icons.description, bleuSecondaire, [
@@ -2824,6 +3132,47 @@ class _SouscriptionSolidaritePageState
     return true;
   }
 
+  /// 💳 VALIDATION MODE DE PAIEMENT
+  bool _validateStepModePaiement() {
+    if (_selectedModePaiement == null) {
+      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
+      return false;
+    }
+
+    if (_selectedModePaiement == 'Virement') {
+      if (_banqueController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
+        return false;
+      }
+      if (_numeroCompteController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+        return false;
+      }
+    } else if (_selectedModePaiement == 'Wave' ||
+        _selectedModePaiement == 'Orange Money') {
+      if (_numeroMobileMoneyController.text.trim().isEmpty) {
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+        return false;
+      }
+      if (!RegExp(r'^[0-9]{8,10}$')
+          .hasMatch(_numeroMobileMoneyController.text.trim())) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+        return false;
+      }
+      // Validation spécifique pour Orange Money : doit commencer par 07
+      if (_selectedModePaiement == 'Orange Money') {
+        if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
+          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   void _nextStep() {
     // Valider la page client si c'est un commercial et qu'on est à l'étape 0
     if (_isCommercial && _currentStep == 0) {
@@ -2832,14 +3181,22 @@ class _SouscriptionSolidaritePageState
       }
     }
 
+    // Valider le mode de paiement si on est sur cette étape (avant-dernière étape avant récap)
+    final modePaiementStep = _getTotalSteps() - 2;
+    if (_currentStep == modePaiementStep) {
+      if (!_validateStepModePaiement()) {
+        return; // Ne pas passer au récap si le mode de paiement n'est pas validé
+      }
+    }
+
     if (_currentStep < _getTotalSteps() - 1) {
       setState(() => _currentStep++);
       _pageController.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
-      // Valider les âges des membres avant d'afficher les options de paiement
+      // Dernière étape (récap), aller à la page de paiement
       if (!_validateMembresAges()) {
-        return; // Ne pas continuer si les âges ne sont pas valides
+        return; // Valider les âges avant le paiement
       }
       _showPaymentOptions();
     }
@@ -2926,7 +3283,7 @@ class _SouscriptionSolidaritePageState
                               children: [
                                 Text(
                                     _currentStep == _getTotalSteps() - 1
-                                        ? 'Payer maintenant'
+                                        ? 'Finaliser'
                                         : 'Suivant',
                                     style: TextStyle(
                                         color: blanc,
