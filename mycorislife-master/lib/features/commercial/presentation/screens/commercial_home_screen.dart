@@ -117,28 +117,32 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
   // Produits pour entreprises
   final List<Map<String, dynamic>> _produitsEntreprises = [
     {
-      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
+      'icon': Icons.business_center,
+      'iconColor': Color(0xFF0288D1),
       'title': 'IFC - Indemnité Fin de Carrière',
       'route': '/ifc',
-      'isIcon': false,
+      'isIcon': true,
     },
     {
-      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
+      'icon': Icons.account_balance,
+      'iconColor': Color(0xFF5E35B1),
       'title': 'Retraite Complementaire Entreprise',
-      'route': '/retraite-entreprise',
-      'isIcon': false,
+      'route': '/retraite-collective',
+      'isIcon': true,
     },
     {
-      'image': 'assets/images/prevoyance_social_entreprise.jpg',
+      'icon': Icons.shield,
+      'iconColor': Color(0xFF00897B),
       'title': 'Prevoyance Sociale Entreprise',
-      'route': '/prevoyance-entreprise',
-      'isIcon': false,
+      'route': '/prevoyance-collective',
+      'isIcon': true,
     },
     {
-      'image': 'assets/images/homme_cle.jpg',
+      'icon': Icons.person_pin,
+      'iconColor': Color(0xFFE53935),
       'title': 'Homme Clé',
       'route': '/homme-cle',
-      'isIcon': false,
+      'isIcon': true,
     },
   ];
 

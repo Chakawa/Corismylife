@@ -141,42 +141,26 @@ La mise en place se fait en plusieurs étapes :
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image d'en-tête
+            // Icône d'en-tête
             Container(
               width: double.infinity,
               height: 200,
               decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/retraite_collective.jpg'),
-                  fit: BoxFit.cover,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF5E35B1).withOpacity(0.8),
+                    Color(0xFF5E35B1),
+                  ],
                 ),
               ),
-            ),
-            
-            // Badge "Bientôt disponible"
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                border: Border.all(color: Colors.orange[200]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.orange[700]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Ce produit sera bientôt disponible. Restez connecté !',
-                      style: TextStyle(
-                        color: Colors.orange[700],
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: Icon(
+                  Icons.account_balance,
+                  size: 100,
+                  color: Colors.white,
+                ),
               ),
             ),
 
@@ -208,6 +192,34 @@ La mise en place se fait en plusieurs étapes :
                 ),
               ),
             ),
+
+            // Badge "Bientôt disponible"
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                border: Border.all(color: Colors.orange[200]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ce produit sera bientôt disponible. Restez connecté !',
+                      style: TextStyle(
+                        color: Colors.orange[700],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // Bouton de souscription désactivé
             Padding(

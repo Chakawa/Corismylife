@@ -3685,53 +3685,46 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titre de la section
+                  // En-tête avec gradient
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [bleuCoris, bleuCoris.withOpacity(0.8)],
+                        colors: [bleuCoris, bleuSecondaire],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: bleuCoris.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: blanc.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
+                            color: blanc.withAlpha(51),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(Icons.payment, color: blanc, size: 32),
+                          child: const Icon(Icons.payment, color: blanc, size: 32),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Informations de Paiement',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                'Mode de Paiement',
+                                style: const TextStyle(
                                   color: blanc,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
+                                  color: blanc.withAlpha(229),
                                   fontSize: 14,
-                                  color: blanc.withOpacity(0.9),
                                 ),
                               ),
                             ],
@@ -3740,7 +3733,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
                   // Sélection du mode de paiement
                   Text(
@@ -3748,7 +3741,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: bleuCoris,
+                      color: grisTexte,
                     ),
                   ),
                   SizedBox(height: 12),
@@ -3843,14 +3836,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     // VIREMENT
                     if (_selectedModePaiement == 'Virement') ...[
                       Text(
-                        'Informations bancaires',
+                        'Informations Bancaires',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: bleuCoris,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       
                       // Nom de la banque
                       DropdownButtonFormField<String>(
@@ -3923,12 +3916,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       Text(
                         'Numéro ${_selectedModePaiement}',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: bleuCoris,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       
                       TextField(
                         controller: _numeroMobileMoneyController,
