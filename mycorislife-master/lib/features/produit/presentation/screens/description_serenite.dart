@@ -14,11 +14,23 @@ class DescriptionSerenitePage extends StatelessWidget {
 
 ---
 
-#### **Présentation du produit**
+#### **CORIS SÉRÉNITÉ PLUS, pourquoi souscrire ?**
 
-**CORIS SÉRÉNITÉ PLUS** est bien plus qu'un simple contrat d'épargne. C'est une solution financière innovante qui allie la sécurité d'un capital garanti à la flexibilité d'une épargne modulable. Conçu spécifiquement pour répondre aux besoins des épargnants avisés, ce contrat vous accompagne dans la préparation de votre retraite ou la réalisation de vos projets les plus ambitieux.
+• Vous souhaitez faire face aux aléas de la vie ?
 
-Grâce à sa structure unique, CORIS SÉRÉNITÉ PLUS s'adapte parfaitement à l'évolution de votre situation personnelle et professionnelle, vous offrant la liberté de moduler vos versements selon vos capacités financières du moment.
+• Comment protéger vos proches contre les conséquences d'une disparition prématurée : léguer votre patrimoine, maintenir le niveau de vie de vos protégés, subvenir aux besoins de la famille après vous, etc. ?
+
+#### **CORIS SÉRÉNITÉ PLUS, de quoi s'agit-il ?**
+
+Ce contrat garantit, en cas de décès ou de Perte Totale et Irréversible d'Autonomie de l'assuré (PTIA), quelle que soit la date de survenance, le versement d'un capital dont le montant est défini à la souscription aux bénéficiaire(s) désigné(s). Ainsi, il permet de garantir durablement la sécurité financière et matérielle du conjoint, des enfants ou des proches en cas d'événements malheureux tout en constituant au fur et à mesure une épargne de prévoyance qui pour vous et libre disposition en cas de nécessité.
+
+#### **CORIS SÉRÉNITÉ PLUS, quelles sont les garanties ?**
+
+**🛡️ À tout moment**
+Après au moins deux primes annuelles ou 15% du cumul des primes prévues dans le contrat, le souscripteur peut disposer d'une partie de ses cotisations en rachetant son contrat.
+
+**⚰️ En cas décès ou de Perte Totale et Irréversible d'Autonomie**
+Pendant la période de garantie, **CORIS VIE CI** règle le capital défini à la souscription, au(x) bénéficiaire(s) désigné(s) dans le contrat.
 
 #### **Caractéristiques principales**
 
@@ -38,58 +50,25 @@ Grâce à sa structure unique, CORIS SÉRÉNITÉ PLUS s'adapte parfaitement à l
 - Adaptation aux variations de vos revenus
 - Suspension temporaire possible sans pénalités
 
-#### **Avantages exclusifs**
+#### **CORIS SÉRÉNITÉ PLUS, quels sont les avantages ?**
 
-**💰 Avantages financiers**
-* **Rendement supérieur** : Votre épargne bénéfie d'un taux d'intérêt particulièrement avantageux, supérieur aux livrets classiques
-* **Capitalisation** : Les intérêts générés sont automatiquement réinvestis pour maximiser votre capital
-* **Transparence totale** : Suivi en temps réel de l'évolution de votre épargne
+• **Une couverture complète** : le décès toutes causes et la Perte Totale et Irréversible d'Autonomie (PTIA)
 
-**🎯 Avantages fiscaux**
-* **Optimisation fiscale** : Bénéficiez d'avantages fiscaux selon la législation en vigueur
-* **Défiscalisation** : Possibilité de déduction des versements dans certaines conditions
-* **Transmission facilitée** : Conditions avantageuses pour la transmission de votre patrimoine
+• **Une tranquillité d'esprit** : sécurité financière assurée avec la garantie d'un capital de survie pour votre famille dès la signature du contrat et le versement de la première prime et les frais de dossier
 
-**🛡️ Sécurité et garanties**
-* **Capital protégé** : Aucun risque de perte sur le montant de vos cotisations
-* **Garantie décès** : Protection de vos proches en cas de décès
-* **Stabilité** : Produit adossé à des actifs sécurisés et diversifiés
+• **Une formule d'assurance flexible** : libre choix des bénéficiaires, du capital garanti, de la durée et la périodicité de paiement des cotisations
 
-#### **Public cible**
+• **Coût connu à l'avance** : le montant de la cotisation est fixé à l'adhésion et n'augmente pas suivant votre âge ou la dégradation de votre état de santé
 
-**CORIS SÉRÉNITÉ PLUS** s'adresse particulièrement à :
+• **Une fiscalité avantageuse** : en cas de sinistre, le capital réglé n'est assujetti à aucune imposition
 
-**👥 Profils d'épargnants**
-- Actifs souhaitant préparer leur retraite de manière progressive
-- Personnes avec des revenus variables recherchant la flexibilité
-- Épargnants prudents privilégiant la sécurité du capital
-- Investisseurs débutants souhaitant se familiariser avec l'épargne long terme
+#### **CORIS SÉRÉNITÉ PLUS, qui peut souscrire ?**
 
-**🎯 Objectifs patrimoniaux**
-- Constitution d'un complément de retraite substantiel
-- Financement de projets d'envergure (acquisition immobilière, études des enfants)
-- Création d'une réserve financière sécurisée
-- Optimisation de la transmission patrimoniale
+Toute personne physique âgée d'au moins 18 ans et au plus 65 ans à la souscription.
 
-#### **Modalités pratiques**
+#### **CORIS SÉRÉNITÉ PLUS, combien ça coûte ?**
 
-**💳 Versements**
-- **Montant minimum** : Accessible dès 50€ par mois
-- **Versements libres** : De 100€ à 50 000€ selon vos capacités
-- **Périodicité flexible** : Mensuel, trimestriel, semestriel ou annuel
-- **Versements exceptionnels** : Possibilité d'effectuer des versements ponctuels importants
-
-**📊 Gestion et suivi**
-- Interface en ligne dédiée pour le suivi de votre contrat
-- Relevés périodiques détaillés
-- Conseils personnalisés de nos experts
-- Service client dédié et réactif
-
-**🏆 Pourquoi choisir CORIS SÉRÉNITÉ PLUS ?**
-
-Dans un environnement financier en constante évolution, CORIS SÉRÉNITÉ PLUS représente la solution idéale pour tous ceux qui souhaitent concilier performance et sécurité. Ce produit d'épargne nouvelle génération vous offre la possibilité de construire votre avenir financier en toute confiance, avec la garantie d'un accompagnement professionnel de qualité.
-
-*Investir dans CORIS SÉRÉNITÉ PLUS, c'est faire le choix d'une épargne intelligente, flexible et sécurisée.*
+La prime est fonction de l'âge de l'assuré à la date de souscription, du capital garanti et de la durée de paiement des cotisations.
 """;
 
     return Scaffold(

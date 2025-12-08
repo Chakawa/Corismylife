@@ -10,15 +10,39 @@ class DescriptionEtudePage extends StatelessWidget {
     const String markdownContent = """
 ### **CORIS ÉTUDE** 🎓
 
-**L'avenir de vos enfants commence aujourd'hui.**
-
-Le contrat **CORIS ÉTUDE** est conçu pour vous aider à garantir un avenir scolaire et professionnel serein à vos enfants. Il s'agit d'un plan d'épargne qui vous permet de constituer, à votre rythme, un capital pour couvrir leurs frais de scolarité (école primaire, secondaire, université) ou les aider à démarrer leur vie d'adulte.
+**Garantissez l'avenir éducatif de vos enfants avec une solution complète et sécurisée.**
 
 ---
 
-#### **Présentation du produit**
+#### **CORIS ÉTUDE, pourquoi souscrire ?**
 
-**CORIS ÉTUDE** est une solution d'épargne dédiée à l'éducation de vos enfants. Ce contrat d'assurance-vie vous permet de préparer sereinement l'avenir scolaire et professionnel de vos enfants en constituant un capital garanti qui sera disponible au moment opportun.
+• Grande importance de l'éducation dans la réussite sociale de nos enfants
+
+• Cherté future du coût de l'éducation, combinée à une inflation galopante
+
+• Disparition de la solidarité africaine
+
+• Coûts annexes liés au financement des études par des opérations de crédit si rien n'est planifié
+
+#### **CORIS ÉTUDE, de quoi s'agit-il ?**
+
+Le contrat CORIS ÉTUDE permet aux parents ou tuteurs d'enfants de garantir des rentes certaines, pendant une durée de dix ans ou d'un capital, pour l'éducation des enfants, en cas de vie, mais aussi en cas de décès ou de Perte Totale et Irréversible d'Autonomie pendant la période de cotisation.
+
+#### **CORIS ÉTUDE, comment ça fonctionne ?**
+
+• Les cotisations nettes de frais capitalisées au taux d'intérêt annuel de **3,5%** majorées de la participation aux bénéfices avec une périodicité de paiement des primes : mensuelle, trimestrielle, semestrielle, annuelle, unique
+
+• La durée et le montant de la cotisation sont déterminés par le souscripteur en fonction de l'âge de l'enfant bénéficiaire et de son projet avec une prime minimale de 10 000 F CFA. Les frais de dossier sont de 5 000 F CFA payable une seule fois
+
+• Les garanties du contrat sont :
+  ◦ en cas de vie de l'assuré au terme de la période de cotisation, CORIS VIE CI verse une rente certaine annuelle de 10 ans échu, dont le montant est défini dans le contrat pendant une durée de 5 ans
+  ◦ en cas de décès ou de Perte Totale et Irréversible d'Autonomie de l'assuré pendant la durée de cotisation :
+
+**En paiement de sinistre CORIS VIE CI verse un capital dont le montant est égal à 50 % de la rente annuelle prévue dans le contrat**
+
+-à partir de la première date d'anniversaire du contrat suivant le sinistre et ce, jusqu'au terme de la période de cotisation, CORIS VIE CI **verse une rente annuelle équivalente à 50 % de la rente annuelle définie à la souscription**
+
+-au terme de la période contractuelle de cotisation et ce, jusqu'au terme du contrat, CORIS VIE CI verse **la rente annuelle payable à terme échu dont le montant a été défini à la souscription**
 
 #### **Caractéristiques principales**
 
@@ -38,42 +62,21 @@ Le contrat **CORIS ÉTUDE** est conçu pour vous aider à garantir un avenir sco
 - Valorisation annuelle de votre épargne
 - Participation aux bénéfices
 
-#### **Avantages exclusifs**
+#### **CORIS ÉTUDE, quels sont les avantages ?**
 
-**💰 Avantages financiers**
-* **Épargne progressive** : Constituer un capital à votre rythme
-* **Capitalisation** : Les intérêts générés sont automatiquement réinvestis
-* **Transparence totale** : Suivi en temps réel de l'évolution de votre épargne
+• Un concours financier sûr pour vos enfants pendant leurs études, ou pour leur permettre de s'établir dans la vie professionnelle
 
-**🎯 Avantages pratiques**
-* **Utilisation flexible** : Utilisez le capital pour les frais de scolarité, les études supérieures, ou le lancement dans la vie active
-* **Transmission facilitée** : Conditions avantageuses pour la transmission du capital à vos enfants
-* **Accompagnement personnalisé** : Conseils de nos experts pour optimiser votre épargne
+• Des garanties complètes pour assurer un avenir radieux à vos enfants quoiqu'il arrive
 
-**🛡️ Sécurité et garanties**
-* **Capital protégé** : Aucun risque de perte sur le montant de vos cotisations
-* **Garantie décès** : Protection de vos proches en cas de décès
-* **Stabilité** : Produit adossé à des actifs sécurisés
+• Une offre flexible et accessible à tous
 
-#### **Public cible**
+#### **CORIS ÉTUDE, qui peut souscrire ?**
 
-**CORIS ÉTUDE** s'adresse particulièrement à :
+Toute personne physique âgée de 18 ans minimum et au plus 65 ans à la date de souscription.
 
-**👥 Profils de parents**
-- Parents souhaitant préparer l'avenir scolaire de leurs enfants
-- Familles avec plusieurs enfants à scolariser
-- Parents soucieux de garantir l'éducation de leurs enfants
+#### **CORIS ÉTUDE, comment souscrire ?**
 
-**🎯 Objectifs éducatifs**
-- Financement des études primaires, secondaires ou supérieures
-- Constitution d'un capital pour le lancement dans la vie active
-- Création d'une réserve financière pour l'éducation
-
-#### **Modalités pratiques**
-
-**💳 Versements**
-- **Montant minimum** : Accessible dès 25 000 FCFA par mois
-- **Versements libres** : Adaptés à votre budget
+Pour souscrire, choisissez le montant de la cotisation ou la rente annuelle et renseignez votre proposition d'assurance de même que le questionnaire médical.
 - **Périodicité flexible** : Mensuel, trimestriel, semestriel ou annuel
 - **Versements exceptionnels** : Possibilité d'effectuer des versements ponctuels
 

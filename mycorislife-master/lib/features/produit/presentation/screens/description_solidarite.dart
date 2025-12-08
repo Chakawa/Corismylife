@@ -10,15 +10,37 @@ class DescriptionSolidaritePage extends StatelessWidget {
     const String markdownContent = """
 ### **CORIS SOLIDARITÉ**
 
-**Le contrat qui vous permet de faire face aux événements sociaux de la vie.**
+**L'assurance obsèques qui protège toute la famille, sans formalités médicales.**
 
 ---
 
-#### **Présentation du produit**
+#### **CORIS SOLIDARITÉ, pourquoi souscrire ?**
 
-**CORIS SOLIDARITÉ** est un contrat d'assurance conçu pour vous accompagner dans les moments difficiles de la vie. Que ce soit pour les obsèques, les frais funéraires ou les dépenses imprévues lors du décès d'un membre de la famille assurée, CORIS SOLIDARITÉ garantit le versement d'un capital forfaitaire destiné à couvrir ces dépenses.
+• Anticiper sur les événements de la vie
 
-Ce contrat permet de protéger financièrement votre famille en cas de décès, en vous assurant que les frais liés aux funérailles et aux autres obligations ne deviennent pas un fardeau pour vos proches.
+• Faire face aux obsèques et funérailles des membres de la famille sans s'endetter, se ruiner ou annuler des projets d'investissements
+
+#### **CORIS SOLIDARITÉ, de quoi s'agit-il ?**
+
+Le contrat **CORIS SOLIDARITÉ** vous permet de faire face aux événements sociaux de la vie que sont les obsèques et les funérailles en garantissant le versement d'un capital forfaitaire destiné à couvrir les frais funéraires exposés lors du décès d'un membre de la famille assurée pendant la durée du contrat.
+
+#### **CORIS SOLIDARITÉ, comment ça fonctionne ?**
+
+L'adhésion est réservée à toute personne physique âgée de moins soixante-quatre (64) ans et le groupe familial de base assuré est composé :
+
+• **du souscripteur** : qui est l'assuré principal qui signe le contrat et paye les primes. Il est le propriétaire du contrat d'assurance
+
+• **d'un (1) conjoint du souscripteur**
+
+• **de six (06) enfants mineurs du souscripteur reconnus, âgés de 12 ans minimum et au plus 21 ans à la date de souscription**
+
+Le souscripteur a la possibilité d'incorporer des adhérents supplémentaires contre une surprime tels que les ascendants directs (père et mère) du souscripteur et/ou du conjoint, les enfants et conjoints.
+
+Le groupe familial assuré est composé au maximum de quatre (04) personnes âgées de plus de soixante-cinq (65) ans et de moins de soixante-dix (70) ans.
+
+**L'adhésion est conclue pour une durée initiale d'une année et se renouvelle par tacite reconduction jusqu'au 70ème anniversaire de l'adhérent.**
+
+Le souscripteur a le choix entre quatre (04) options de capitaux garantis par tête variant de 500 000 à 2 000 000 F CFA.
 
 #### **Caractéristiques principales**
 
@@ -43,38 +65,19 @@ Ce contrat permet de protéger financièrement votre famille en cas de décès, 
 
 #### **Avantages exclusifs**
 
-**💚 Protection complète de la famille**
-* **Sécurité financière** : Garantit que les funérailles et obsèques de tous les membres couverts soient dignement organisées
-* **Soutien immédiat** : Versement rapide du capital pour faire face aux dépenses urgentes
-* **Sérénité d'esprit** : Vous protégez vos proches contre les difficultés financières liées au deuil
+#### **CORIS SOLIDARITÉ, quels sont les avantages ?**
 
-**📋 Simplicité et accessibilité**
-* **Souscription facile** : Procédure simple et rapide
-* **Primes abordables** : Tarifs adaptés à tous les budgets
-* **Gestion simplifiée** : Un seul contrat pour toute la famille
-* **Sans questionnaire médical** : Pas d'examen médical requis
+• une assistance inédite : mise à la disposition, du bénéficiaire désigné, d'un ensemble de prestations par l'intermédiaire des pompes funèbres partenaires ou le paiement du capital
 
-**🤝 Accompagnement personnalisé**
-* **Assistance 24/7** : Service d'assistance disponible en permanence
-* **Conseil personnalisé** : Nos experts vous accompagnent dans le choix de vos garanties
-* **Suivi régulier** : Révision annuelle de vos besoins
-* **Service de qualité** : Équipe dédiée pour vous accompagner
+• une offre souple et accessible : adhérer sur une simple déclaration écrite sur l'honneur de la composition de la famille sans formalités médicales
 
-#### **Public cible**
+• une cotisation à la portée de tous, à partir de 2 699 F CFA par mois
 
-**CORIS SOLIDARITÉ** s'adresse particulièrement à :
+• Le souscripteur a la possibilité d'incorporer ou de retirer les membres de sa famille conformément aux conditions de souscription
 
-**👨‍👩‍👧‍👦 Familles soucieuses de protection**
-- Chefs de famille souhaitant protéger leurs proches
-- Parents avec enfants à charge
-- Personnes avec ascendants à leur charge
-- Familles élargies recherchant une couverture globale
+#### **CORIS SOLIDARITÉ, comment souscrire ?**
 
-**💼 Objectifs de protection**
-- Couverture des frais funéraires
-- Protection financière de la famille
-- Prévention des difficultés financières liées au deuil
-- Préservation de la dignité lors des obsèques
+Pour souscrire, choisissez votre option de capital et renseignez votre proposition d'assurance.
 
 #### **Modalités pratiques**
 

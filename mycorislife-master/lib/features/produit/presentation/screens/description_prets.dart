@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:mycorislife/services/auth_service.dart';
 
 /// ============================================
 /// PAGE DESCRIPTION PRÊTS SCOLAIRES
@@ -278,37 +277,45 @@ Avec notre solution, vous investissez dans l'avenir de vos enfants tout en bén�
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16.0),
+                  // Badge "Bientôt disponible"
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ce produit sera bientôt disponible. Restez connecté !',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        // Vérifier le rôle de l'utilisateur pour déterminer le flux de navigation
-                        // Si c'est un commercial, il doit passer par la sélection de client
-                        // Si c'est un client, il peut accéder directement à la souscription
-                        final userRole = await AuthService.getUserRole();
-                        if (userRole == 'commercial') {
-                          // Pour les commerciaux, rediriger vers la sélection de client
-                          Navigator.pushNamed(
-                            context,
-                            '/commercial/select_client',
-                            arguments: {
-                              'productType': 'prets',
-                              'simulationData': null, // Pas de simulation, accès direct
-                            },
-                          );
-                        } else {
-                          // Pour les clients, navigation directe vers la page de souscription
-                        Navigator.pushNamed(context, '/souscription_prets');
-                        }
-                      },
+                      onPressed: null, // Bouton désactivé
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
+                        backgroundColor: Colors.grey[400],
+                        disabledBackgroundColor: Colors.grey[400],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 18.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
-                        elevation: 3.0,
+                        elevation: 0.0,
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,

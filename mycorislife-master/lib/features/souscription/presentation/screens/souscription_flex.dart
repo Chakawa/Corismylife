@@ -2657,7 +2657,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      _showErrorSnackBar(
+          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;
@@ -3619,7 +3620,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   }) {
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
-    
+
     return DropdownButtonFormField<String>(
       value: validValue,
       decoration: InputDecoration(

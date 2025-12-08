@@ -2359,7 +2359,6 @@ class _SouscriptionSolidaritePageState
   /// 💳 ÉTAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
     const Color bleuCoris = Color(0xFF002B6B);
-    const Color rougeCoris = Color(0xFFE30613);
     const Color blanc = Colors.white;
     const Color fondCarte = Color(0xFFF8FAFC);
     const Color grisTexte = Color(0xFF64748B);

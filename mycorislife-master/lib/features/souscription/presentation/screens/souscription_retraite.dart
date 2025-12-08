@@ -131,7 +131,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   DateTime? _dateEcheanceContrat;
   String _selectedBeneficiaireIndicatif = '+225';
   String _selectedContactIndicatif = '+225';
-  bool _isLoading = false;
 
   File? _pieceIdentite;
 

@@ -4722,6 +4722,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   /// Widget pour afficher les méthodes de paiement
+  // Méthode non utilisée - conservée pour référence future
+  // ignore: unused_element
   Widget _buildPaymentMethodCard({
     required IconData icon,
     required String title,

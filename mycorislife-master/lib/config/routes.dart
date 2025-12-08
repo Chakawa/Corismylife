@@ -25,15 +25,23 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_serenite.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/sousription_solidarite.dart';
 import 'package:mycorislife/features/produit/presentation/screens/desciption_epargne.dart';
-import 'package:mycorislife/features/produit/presentation/screens/desciption_retraite.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_solidarite.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_familis.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_serenite.dart';
-// ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
-// import 'package:mycorislife/features/produit/presentation/screens/description_flex.dart';
+// ℹ️ PRODUIT AFFICHÉ (souscription désactivée)
+import 'package:mycorislife/features/produit/presentation/screens/description_flex.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_etude.dart';
-// ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
-// import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
+// ℹ️ PRODUIT AFFICHÉ (souscription désactivée)
+import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
+// ℹ️ NOUVEAUX PRODUITS (souscription désactivée)
+import 'package:mycorislife/features/produit/presentation/screens/description_bon_plan.dart';
+import 'package:mycorislife/features/produit/presentation/screens/description_assure_prestige.dart';
+import 'package:mycorislife/features/produit/presentation/screens/description_retraite.dart';
+// ℹ️ NOUVEAUX PRODUITS COLLECTIFS (souscription désactivée)
+import 'package:mycorislife/features/produit/presentation/screens/description_homme_cle.dart';
+import 'package:mycorislife/features/produit/presentation/screens/description_ifc.dart';
+import 'package:mycorislife/features/produit/presentation/screens/description_retraite_collective.dart';
+import 'package:mycorislife/features/produit/presentation/screens/description_prevoyance_collective.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/profile_commercial.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/select_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/create_client_screen.dart';
@@ -44,6 +52,7 @@ import 'package:mycorislife/features/commercial/presentation/screens/contrats_ac
 import 'package:mycorislife/features/commercial/presentation/screens/details_client_page.dart';
 import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
+
 
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
@@ -193,14 +202,21 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/produits': (context) => HomeSouscriptionPage(),
   '/serenite': (context) => const DescriptionSerenitePage(),
   '/solidarite': (context) => const DescriptionSolidaritePage(),
-  // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
-  // '/flex': (context) => const DescriptionFlexPage(),
-  // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
-  // '/prets': (context) => const DescriptionPretsPage(),
   '/familis': (context) => const DescriptionFamilisPage(),
   '/etude': (context) => const DescriptionEtudePage(),
   '/retraite': (context) => const DescriptionRetraitePage(),
   '/epargne': (context) => const DescriptionEpargnePage(),
+  // PRODUITS AFFICHÉS (souscription désactivée)
+  '/flex': (context) => const DescriptionFlexPage(),
+  '/prets': (context) => const DescriptionPretsPage(),
+  // NOUVEAUX PRODUITS (souscription désactivée)
+  '/bon-plan': (context) => const DescriptionBonPlanPage(),
+  '/assure-prestige': (context) => const DescriptionAssurePrestigePage(),
+  // NOUVEAUX PRODUITS COLLECTIFS (souscription désactivée)
+  '/homme-cle': (context) => const DescriptionHommeClePage(),
+  '/ifc': (context) => const DescriptionIfcPage(),
+  '/retraite-collective': (context) => const DescriptionRetraiteCollectivePage(),
+  '/prevoyance-collective': (context) => const DescriptionPrevoyanceCollectivePage(),
 
   // profil
   '/profile': (context) => const ProfilPage(),

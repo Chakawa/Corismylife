@@ -16,6 +16,10 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
   static const bleuCoris = Color(0xFF002B6B);
   static const rougeCoris = Color(0xFFE30613);
 
+  // Gestion des onglets produits
+  String _selectedProductTab =
+      'particuliers'; // 'particuliers' ou 'entreprises'
+
   // Statistiques
   int _nbClients = 0;
   int _nbContrats = 0;
@@ -57,61 +61,84 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
     }
   }
 
-  final List<Map<String, dynamic>> _services = [
+  // Produits pour particuliers
+  final List<Map<String, dynamic>> _produitsParticuliers = [
     {
       'image': 'assets/images/etudee.png',
       'title': 'CORIS ETUDE',
       'route': '/etude',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/epargnee.png',
-      'title': 'CORIS EPARGNE',
+      'title': 'CORIS EPARGNE BONUS',
       'route': '/epargne',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/serenite.png',
       'title': 'CORIS SERENITE PLUS',
       'route': '/serenite',
-    },
-    {
-      'image': 'assets/images/retraitee.png',
-      'title': 'CORIS RETRAITE',
-      'route': '/retraite',
+      'isIcon': false,
     },
     {
       'image': 'assets/images/solidarite.png',
       'title': 'CORIS SOLIDARITE',
       'route': '/solidarite',
+      'isIcon': false,
     },
-    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
-    // {
-    //   'image': 'assets/images/emprunteur.png',
-    //   'title': 'FLEX EMPRUNTEUR',
-    //   'route': '/flex',
-    // },
-    // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRES
-    // {
-    //   'image': 'assets/images/prets.png',
-    //   'title': 'PRETS SCOLAIRES',
-    //   'route': '/prets',
-    // },
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
       'route': '/familis',
+      'isIcon': false,
     },
-    // 🚫 PRODUITS AFFICHÉS MAIS NON SOUSCRIPTIBLES
+    // PRODUITS AFFICHÉS (souscription désactivée dans les détails)
     {
-      'image': 'assets/images/auto.png',
-      'title': 'CORIS AUTO',
-      'route': null,
-      'disabled': true,
+      'image': 'assets/images/emprunteur.png',
+      'title': 'FLEX EMPRUNTEUR',
+      'route': '/flex',
+      'isIcon': false,
     },
     {
-      'image': 'assets/images/habitation.png',
-      'title': 'CORIS HABITATION',
-      'route': null,
-      'disabled': true,
+      'image': 'assets/images/bon_plan_coris.jpg',
+      'title': 'MON BON PLAN CORIS',
+      'route': '/bon-plan',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/coris_assure_prestige.jpg',
+      'title': 'CORIS ASSURE PRESTIGE',
+      'route': '/assure-prestige',
+      'isIcon': false,
+    },
+  ];
+
+  // Produits pour entreprises
+  final List<Map<String, dynamic>> _produitsEntreprises = [
+    {
+      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
+      'title': 'IFC - Indemnité Fin de Carrière',
+      'route': '/ifc',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
+      'title': 'Retraite Complementaire Entreprise',
+      'route': '/retraite-entreprise',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/prevoyance_social_entreprise.jpg',
+      'title': 'Prevoyance Sociale Entreprise',
+      'route': '/prevoyance-entreprise',
+      'isIcon': false,
+    },
+    {
+      'image': 'assets/images/homme_cle.jpg',
+      'title': 'Homme Clé',
+      'route': '/homme-cle',
+      'isIcon': false,
     },
   ];
 
@@ -410,20 +437,77 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
 
           const SizedBox(height: 30),
 
-          // Produits
+          // Boutons onglets Particuliers / Entreprises
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-            child: Text(
-              'Nos Produits',
-              style: TextStyle(
-                fontSize: screenWidth * 0.06,
-                fontWeight: FontWeight.bold,
-                color: bleuCoris,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedProductTab = 'particuliers';
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _selectedProductTab == 'particuliers'
+                          ? bleuCoris
+                          : Colors.grey[300],
+                      foregroundColor: _selectedProductTab == 'particuliers'
+                          ? Colors.white
+                          : Colors.black87,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: _selectedProductTab == 'particuliers' ? 4 : 1,
+                    ),
+                    child: Text(
+                      'Nos produits aux particuliers',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.035,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedProductTab = 'entreprises';
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _selectedProductTab == 'entreprises'
+                          ? bleuCoris
+                          : Colors.grey[300],
+                      foregroundColor: _selectedProductTab == 'entreprises'
+                          ? Colors.white
+                          : Colors.black87,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: _selectedProductTab == 'entreprises' ? 4 : 1,
+                    ),
+                    child: Text(
+                      'Nos produits aux entreprises',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.035,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
 
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
@@ -436,17 +520,23 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                 mainAxisSpacing: 12,
                 childAspectRatio: screenWidth > 400 ? 2.8 : 2.2,
               ),
-              itemCount: _services.length,
+              itemCount: _selectedProductTab == 'particuliers'
+                  ? _produitsParticuliers.length
+                  : _produitsEntreprises.length,
               itemBuilder: (context, index) {
-                final isDisabled = _services[index]['disabled'] == true;
+                final products = _selectedProductTab == 'particuliers'
+                    ? _produitsParticuliers
+                    : _produitsEntreprises;
+                final product = products[index];
+
                 return InkWell(
-                  onTap: isDisabled ? null : () {
-                    Navigator.pushNamed(context, _services[index]['route']);
+                  onTap: () {
+                    Navigator.pushNamed(context, product['route']);
                   },
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDisabled ? Colors.grey[300] : Colors.grey[200],
+                      color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -459,50 +549,68 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          _services[index]['image'],
-                          width: 32,
-                          height: 32,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.credit_card,
-                              size: 32,
-                              color: bleuCoris,
-                            );
-                          },
-                        ),
+                        if (product['isIcon'] == true)
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: (product['iconColor'] as Color)
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              product['icon'],
+                              size: 24,
+                              color: product['iconColor'],
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                product['image'],
+                                width: 32,
+                                height: 32,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      size: 20,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            _services[index]['title'],
+                            product['title'],
                             style: TextStyle(
                               fontSize: screenWidth * 0.028,
                               fontWeight: FontWeight.w600,
-                              color: isDisabled ? Colors.grey[600] : bleuCoris,
+                              color: bleuCoris,
                               height: 1.2,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isDisabled)
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Bientôt',
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.02,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -627,7 +735,8 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                         borderRadius: BorderRadius.circular(16),
                         child: _buildQuickStat(
                           icon: Icons.people_outline,
-                          value: _isLoadingStats ? "..." : _nbClients.toString(),
+                          value:
+                              _isLoadingStats ? "..." : _nbClients.toString(),
                           label: "Clients",
                           screenWidth: screenWidth,
                         ),
@@ -642,7 +751,8 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
                         borderRadius: BorderRadius.circular(16),
                         child: _buildQuickStat(
                           icon: Icons.assignment_turned_in,
-                          value: _isLoadingStats ? "..." : _nbContrats.toString(),
+                          value:
+                              _isLoadingStats ? "..." : _nbContrats.toString(),
                           label: "Contrats actifs",
                           screenWidth: screenWidth,
                         ),

@@ -19,8 +19,7 @@ class _HomeContentState extends State<HomeContent> {
   int _unreadNotificationsCount = 0;
 
   // Gestion des onglets produits
-  String _selectedProductTab =
-      'particuliers'; // 'particuliers' ou 'entreprises'
+  String _selectedProductTab = 'particuliers'; // 'particuliers' ou 'entreprises'
 
   static const bleuCoris = Color(0xFF002B6B);
   static const rougeCoris = Color(0xFFE30613);
@@ -57,6 +56,20 @@ class _HomeContentState extends State<HomeContent> {
       'route': '/etude',
       'isIcon': false,
     },
+    // ❌ CORIS RETRAITE MASQUÉ - Remplacé par Mon Bon Plan Coris
+    // {
+    //   'image': 'assets/images/retraitee.png',
+    //   'title': 'CORIS RETRAITE',
+    //   'route': '/retraite',
+    //   'isIcon': false,
+    // },
+    {
+      'icon': Icons.card_giftcard,
+      'title': 'MON BON PLAN CORIS',
+      'route': '/bon-plan',
+      'isIcon': true,
+      'iconColor': Color(0xFFFF6B00), // Orange
+    },
     {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS ÉPARGNE BONUS',
@@ -89,44 +102,43 @@ class _HomeContentState extends State<HomeContent> {
       'isIcon': false,
     },
     {
-      'image': 'assets/images/bon_plan_coris.jpg',
+      'icon': Icons.school,
       'title': 'MON BON PLAN CORIS',
-      'route': '/bon-plan',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/coris_assure_prestige.jpg',
-      'title': 'CORIS ASSURE PRESTIGE',
-      'route': '/assure-prestige',
-      'isIcon': false,
+      'route': '/prets',
+      'isIcon': true,
+      'iconColor': Color(0xFF3B82F6), // Bleu
     },
   ];
 
   // Produits pour entreprises
   final List<Map<String, dynamic>> _produitsEntreprises = [
     {
-      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
+      'icon': Icons.workspace_premium,
       'title': 'IFC - Indemnité Fin de Carrière',
       'route': '/ifc',
-      'isIcon': false,
+      'isIcon': true,
+      'iconColor': Color(0xFF002B6B), // Bleu Coris
     },
     {
-      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
-      'title': 'Retraite Complementaire Entreprise',
+      'icon': Icons.elderly,
+      'title': 'Retraite Complémentaire Entreprise',
       'route': '/retraite-entreprise',
-      'isIcon': false,
+      'isIcon': true,
+      'iconColor': Color(0xFF059669), // Vert
     },
     {
-      'image': 'assets/images/prevoyance_social_entreprise.jpg',
-      'title': 'Prevoyance Sociale Entreprise',
+      'icon': Icons.health_and_safety,
+      'title': 'Prévoyance Sociale Entreprise',
       'route': '/prevoyance-entreprise',
-      'isIcon': false,
+      'isIcon': true,
+      'iconColor': Color(0xFFE30613), // Rouge Coris
     },
     {
-      'image': 'assets/images/homme_cle.jpg',
+      'icon': Icons.person_pin,
       'title': 'Homme Clé',
       'route': '/homme-cle',
-      'isIcon': false,
+      'isIcon': true,
+      'iconColor': Color(0xFF8B5CF6), // Violet
     },
   ];
 
@@ -497,6 +509,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ),
                 const SizedBox(height: 30),
+                // Boutons onglets Particuliers / Entreprises
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                   child: Row(
@@ -509,20 +522,17 @@ class _HomeContentState extends State<HomeContent> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _selectedProductTab == 'particuliers'
-                                    ? bleuCoris
-                                    : Colors.grey[300],
-                            foregroundColor:
-                                _selectedProductTab == 'particuliers'
-                                    ? Colors.white
-                                    : Colors.black87,
+                            backgroundColor: _selectedProductTab == 'particuliers'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'particuliers'
+                                ? Colors.white
+                                : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation:
-                                _selectedProductTab == 'particuliers' ? 4 : 1,
+                            elevation: _selectedProductTab == 'particuliers' ? 4 : 1,
                           ),
                           child: Text(
                             'Nos produits aux particuliers',
@@ -543,20 +553,17 @@ class _HomeContentState extends State<HomeContent> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _selectedProductTab == 'entreprises'
-                                    ? bleuCoris
-                                    : Colors.grey[300],
-                            foregroundColor:
-                                _selectedProductTab == 'entreprises'
-                                    ? Colors.white
-                                    : Colors.black87,
+                            backgroundColor: _selectedProductTab == 'entreprises'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'entreprises'
+                                ? Colors.white
+                                : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation:
-                                _selectedProductTab == 'entreprises' ? 4 : 1,
+                            elevation: _selectedProductTab == 'entreprises' ? 4 : 1,
                           ),
                           child: Text(
                             'Nos produits aux entreprises',
@@ -592,7 +599,7 @@ class _HomeContentState extends State<HomeContent> {
                           ? _produitsParticuliers
                           : _produitsEntreprises;
                       final product = products[index];
-
+                      
                       return InkWell(
                         onTap: () {
                           Navigator.pushNamed(context, product['route']);
@@ -618,8 +625,7 @@ class _HomeContentState extends State<HomeContent> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: (product['iconColor'] as Color)
-                                        .withOpacity(0.1),
+                                    color: (product['iconColor'] as Color).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
@@ -629,37 +635,26 @@ class _HomeContentState extends State<HomeContent> {
                                   ),
                                 )
                               else
-                                Container(
+                                Image.asset(
+                                  product['image'],
                                   width: 40,
                                   height: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.asset(
-                                      product['image'],
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
                                       width: 40,
                                       height: 40,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.image_not_supported,
-                                            size: 24,
-                                            color: Colors.grey,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        size: 24,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
                                 ),
                               const SizedBox(width: 10),
                               Expanded(

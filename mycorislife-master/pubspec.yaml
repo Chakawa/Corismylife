@@ -62,7 +62,9 @@ flutter:
     - assets/images/epargnee.png
     - assets/images/user_avatar.png
     - assets/images/man.png
-    - assets/images/etudee.png
-    - assets/images/epargnee.png
-    - assets/images/user_avatar.png
-    - assets/images/man.png
+    - assets/images/bon_plan_coris.jpg
+    - assets/images/coris_assure_prestige.jpg
+    - assets/images/homme_cle.jpg
+    - assets/images/IFC_indemnite_fin_carriere.jpg
+    - assets/images/prevoyance_social_entreprise.jpg
+    - assets/images/retraite_complementaire_entreprise.jpg

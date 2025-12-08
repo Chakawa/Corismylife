@@ -1,0 +1,223 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
+class DescriptionAssurePrestigePage extends StatelessWidget {
+  const DescriptionAssurePrestigePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const String markdownContent = """
+### **CORIS ASSURE PRESTIGE**
+
+**Une solution d'épargne flexible pour concrétiser vos projets et bâtir votre avenir.**
+
+---
+
+#### **Objectif**
+
+Ce contrat permet de se constituer à travers des versements libres, une épargne qui servira à financer un projet ou disposer d'un capital (revenus complémentaires). Au terme, l'assuré perçoit un capital revalorisé d'année en année grâce au taux d'intérêts et à la participation aux bénéfices distribués par Coris Assurances Vie.
+
+#### **Fonctionnement**
+
+**Versements libres et flexibles**
+À la souscription, l'assuré choisit le montant de son premier versement. Par la suite, il peut faire des versements complémentaires à son rythme tout au long de la durée du contrat.
+
+**Capitalisation attractive**
+L'épargne est constituée par les cotisations nettes de frais, capitalisée au taux d'intérêt technique annuel garanti de **3,5%** et augmentées des participations aux bénéfices techniques et financiers de Coris Assurances Vie.
+
+**Disponibilité de l'épargne**
+En cas de coup dur, l'épargne constituée reste accessible à tout moment selon les conditions prévues au contrat.
+
+**Au terme du contrat**
+Au terme du contrat ou au moment du départ à la retraite, l'assuré perçoit l'épargne constituée sous forme de capital ou de rentes.
+
+**Protection en cas de décès**
+En cas de décès avant le terme du contrat, l'épargne constituée au jour du décès est versée au(x) bénéficiaires désignés.
+
+#### **Avantages**
+
+**💰 Liberté**
+L'assuré choisit librement le montant, la durée, et la périodicité de ses primes.
+
+**⚡ Disponibilité**
+En cas de coup dur, l'épargne reste disponible sous certaines conditions.
+
+**📈 Rentabilité**
+L'épargne constituée bénéficie des intérêts et participations aux bénéfices distribués.
+
+**🎯 Transmission**
+Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR PRESTIGE permet de léguer un capital exonéré de droits de successions à la (aux) personne(s) de son choix.
+""";
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFF002B6B),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'CORIS ASSURE PRESTIGE',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF002B6B), Color(0xFF1e3c72)],
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Image d'en-tête
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF002B6B).withOpacity(0.1),
+                    Colors.white,
+                  ],
+                ),
+              ),
+              child: Image.asset(
+                'assets/images/coris_assure_prestige.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.workspace_premium, size: 80, color: Color(0xFF002B6B)),
+                  );
+                },
+              ),
+            ),
+            // Contenu Markdown
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              child: MarkdownBody(
+                data: markdownContent,
+                styleSheet: MarkdownStyleSheet(
+                  h3: const TextStyle(
+                    fontSize: 26.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF002B6B),
+                  ),
+                  h4: const TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF002B6B),
+                  ),
+                  p: TextStyle(
+                    fontSize: 16.0,
+                    height: 1.6,
+                    color: Colors.grey[800],
+                  ),
+                  listBullet: const TextStyle(
+                    fontSize: 16.0,
+                    color: Color(0xFFE30613),
+                  ),
+                ),
+              ),
+            ),
+            // Section Souscription
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.grey[100]!,
+                    Colors.grey[50]!,
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Intéressé par ce produit prestige ?',
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16.0),
+                  // Badge "Bientôt disponible"
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ce produit sera bientôt disponible. Restez connecté !',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: null, // Bouton désactivé
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[400],
+                        disabledBackgroundColor: Colors.grey[400],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0.0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.workspace_premium, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            'SOUSCRIRE MAINTENANT',
+                            style: TextStyle(
+                              fontSize: 17.0,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
