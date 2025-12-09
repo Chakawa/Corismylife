@@ -929,7 +929,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // VALIDATION SPÉCIFIQUE À MON BON PLAN CORIS
     if (_montantCotisationController.text.trim().isEmpty ||
         _selectedPeriodicite.isEmpty ||
-        _dateEffetContrat == null) {
+        _dateEffetContrat == null ||
+        _dureeController.text.trim().isEmpty) {
       _showErrorSnackBar(
           'Veuillez compléter tous les champs obligatoires avant de continuer.');
       return false;
@@ -948,6 +949,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     if (montant < MONTANT_MINIMAL_COTISATION) {
       _showErrorSnackBar(
           'Le montant minimal de la cotisation est de ${_formatMontant(MONTANT_MINIMAL_COTISATION)}.');
+      return false;
+    }
+
+    // Validation de la durée
+    final duree = int.tryParse(_dureeController.text);
+    if (duree == null || duree <= 0) {
+      _showErrorSnackBar('Veuillez entrer une durée valide.');
       return false;
     }
 
@@ -2457,6 +2465,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// 🟦 4. PAGE DE RÉCAPITULATIF (sans calculs - juste affichage des informations)
   Widget _buildStep3() {
+    debugPrint('🟦 _buildStep3 appelé - _currentStep: $_currentStep');
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
@@ -2471,14 +2480,24 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserData(),
                       builder: (context, snapshot) {
+                        debugPrint('🔵 FutureBuilder - State: ${snapshot.connectionState}');
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
+                          debugPrint('⏳ Chargement des données utilisateur...');
                           return Center(
-                            child: CircularProgressIndicator(color: bleuCoris),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(color: bleuCoris),
+                                SizedBox(height: 16),
+                                Text('Chargement du récapitulatif...'),
+                              ],
+                            ),
                           );
                         }
 
                         if (snapshot.hasError) {
+                          debugPrint('❌ Erreur FutureBuilder: ${snapshot.error}');
                           if (_userData.isNotEmpty) {
                             return _buildRecapContent(userData: _userData);
                           }
@@ -2524,6 +2543,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
+    debugPrint('🟦 _buildRecapContent appelé - userData: ${userData?.keys}');
     // Formater le montant pour l'affichage
     final montantText = _montantCotisationController.text.replaceAll(' ', '');
     final montant = double.tryParse(montantText) ?? 0;
