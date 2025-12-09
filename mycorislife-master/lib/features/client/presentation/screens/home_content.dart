@@ -105,32 +105,28 @@ class _HomeContentState extends State<HomeContent> {
   // Produits pour entreprises
   final List<Map<String, dynamic>> _produitsEntreprises = [
     {
-      'icon': Icons.business_center,
-      'iconColor': Color(0xFF0288D1),
+      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
       'title': 'IFC - Indemnité Fin de Carrière',
       'route': '/ifc',
-      'isIcon': true,
+      'isIcon': false,
     },
     {
-      'icon': Icons.account_balance,
-      'iconColor': Color(0xFF5E35B1),
+      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
       'title': 'Retraite Complementaire Entreprise',
       'route': '/retraite-collective',
-      'isIcon': true,
+      'isIcon': false,
     },
     {
-      'icon': Icons.shield,
-      'iconColor': Color(0xFF00897B),
+      'image': 'assets/images/prevoyance_social_entreprise.jpg',
       'title': 'Prevoyance Sociale Entreprise',
       'route': '/prevoyance-collective',
-      'isIcon': true,
+      'isIcon': false,
     },
     {
-      'icon': Icons.person_pin,
-      'iconColor': Color(0xFFE53935),
+      'image': 'assets/images/homme_cle.jpg',
       'title': 'Homme Clé',
       'route': '/homme-cle',
-      'isIcon': true,
+      'isIcon': false,
     },
   ];
 

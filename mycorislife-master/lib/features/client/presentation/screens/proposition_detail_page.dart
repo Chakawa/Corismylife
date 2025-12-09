@@ -158,7 +158,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       return 'CORIS SÉRÉNITÉ';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
-    } else if (produit.toLowerCase().contains('epargne')) {
+    } else if (produit.toLowerCase().contains('assure') ||
+        produit.toLowerCase().contains('prestige')) {
+      return 'CORIS ASSURE PRESTIGE';
+    } else if (produit.toLowerCase().contains('bon') &&
+        produit.toLowerCase().contains('plan')) {
+      return 'MON BON PLAN CORIS';
+    } else if (produit.toLowerCase().contains('epargne') ||
+        produit.toLowerCase().contains('bonus')) {
       return 'CORIS ÉPARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
@@ -603,6 +610,78 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
+    // Pour CORIS ASSURE PRESTIGE
+    if (productType.contains('assure') || productType.contains('prestige')) {
+      final versementInitial =
+          details['versement_initial'] ?? details['montant_versement'] ?? 0;
+      final capitalDeces = details['capital_deces'] ?? 0;
+      final primeDecesAnnuelle = details['prime_deces_annuelle'] ?? 0;
+      final duree =
+          details['duree'] ?? details['duree_contrat'] ?? 'Non définie';
+      final uniteDuree =
+          details['duree_type'] ?? details['unite_duree'] ?? 'ans';
+      final dateEffet = details['date_effet'];
+      final dateEcheance = details['date_echeance'];
+
+      return SubscriptionRecapWidgets.buildRecapSection(
+        'Détails du Contrat - CORIS ASSURE PRESTIGE',
+        Icons.verified_user,
+        vertSucces,
+        [
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Produit', 'CORIS ASSURE PRESTIGE'),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Montant du versement initial',
+              SubscriptionRecapWidgets.formatMontant(versementInitial),
+              'Durée du contrat',
+              '$duree $uniteDuree'),
+          SubscriptionRecapWidgets.buildRecapRow('Capital décès',
+              SubscriptionRecapWidgets.formatMontant(capitalDeces)),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Prime décès annuelle',
+              SubscriptionRecapWidgets.formatMontant(primeDecesAnnuelle),
+              'Périodicité',
+              details['periodicite'] ?? 'Annuel'),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Date d\'effet',
+              dateEffet != null
+                  ? SubscriptionRecapWidgets.formatDate(dateEffet)
+                  : 'Non définie',
+              'Date d\'échéance',
+              dateEcheance != null
+                  ? SubscriptionRecapWidgets.formatDate(dateEcheance)
+                  : 'Non définie'),
+        ],
+      );
+    }
+
+    // Pour MON BON PLAN CORIS
+    if (productType.contains('bon') && productType.contains('plan')) {
+      final montantCotisation = details['montant_cotisation'] ?? 0;
+      final periodicite = details['periodicite'] ?? 'Non définie';
+      final dateEffet = details['date_effet'];
+
+      return SubscriptionRecapWidgets.buildRecapSection(
+        'Détails du Contrat - MON BON PLAN CORIS',
+        Icons.savings,
+        vertSucces,
+        [
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Produit', 'MON BON PLAN CORIS'),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Périodicité',
+              periodicite,
+              'Date d\'effet',
+              dateEffet != null
+                  ? SubscriptionRecapWidgets.formatDate(dateEffet)
+                  : 'Non définie'),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Montant de la cotisation ${periodicite.toLowerCase()}',
+              SubscriptionRecapWidgets.formatMontant(montantCotisation)),
+        ],
+      );
+    }
+
     // Pour FLEX EMPRUNTEUR
     if (productType.contains('flex') || productType.contains('emprunteur')) {
       final typePret = details['type_pret'] ?? 'Non défini';
@@ -873,17 +952,28 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       Icons.payment,
       sectionColor,
       [
-        SubscriptionRecapWidgets.buildRecapRow('Mode choisi', modePaiement.toString()),
+        SubscriptionRecapWidgets.buildRecapRow(
+            'Mode choisi', modePaiement.toString()),
         const SizedBox(height: 8),
         if (modePaiement.toString().toLowerCase().contains('virement')) ...[
           SubscriptionRecapWidgets.buildRecapRow(
-              'Banque', banque != null && banque.toString().isNotEmpty ? banque.toString() : 'Non renseigné'),
-          SubscriptionRecapWidgets.buildRecapRow('Numéro de compte',
-              numeroCompte != null && numeroCompte.toString().isNotEmpty ? numeroCompte.toString() : 'Non renseigné'),
+              'Banque',
+              banque != null && banque.toString().isNotEmpty
+                  ? banque.toString()
+                  : 'Non renseigné'),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Numéro de compte',
+              numeroCompte != null && numeroCompte.toString().isNotEmpty
+                  ? numeroCompte.toString()
+                  : 'Non renseigné'),
         ] else if (modePaiement.toString().toLowerCase().contains('wave') ||
             modePaiement.toString().toLowerCase().contains('orange')) ...[
-          SubscriptionRecapWidgets.buildRecapRow('Numéro de téléphone',
-              numeroMobileMoney != null && numeroMobileMoney.toString().isNotEmpty ? numeroMobileMoney.toString() : 'Non renseigné'),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Numéro de téléphone',
+              numeroMobileMoney != null &&
+                      numeroMobileMoney.toString().isNotEmpty
+                  ? numeroMobileMoney.toString()
+                  : 'Non renseigné'),
         ],
       ],
     );

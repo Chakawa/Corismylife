@@ -236,15 +236,18 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       routeProductType = 'solidarite';
     } else if (productType.contains('familis')) {
       routeProductType = 'familis';
-    } 
+    }
     // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
     // else if (productType.contains('flex') ||
     //     productType.contains('emprunteur')) {
     //   routeProductType = 'flex';
-    // } 
+    // }
     else if (productType.contains('epargne') ||
         productType.contains('épargne')) {
       routeProductType = 'epargne';
+    } else if (productType.contains('assure') ||
+        productType.contains('prestige')) {
+      routeProductType = 'assure_prestige';
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -407,6 +410,117 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
+  /**
+   * ============================================
+   * WIDGET _buildProductSection
+   * ============================================
+   * 
+   * Construit la section produit avec les détails spécifiques selon le type
+   */
+  Widget _buildProductSection(Map<String, dynamic> subscription,
+      Map<String, dynamic> souscriptionData, bool isPaid) {
+    final productType =
+        (subscription['product_type'] ?? subscription['produit_type'] ?? '')
+            .toString()
+            .toLowerCase();
+
+    // Pour CORIS ASSURE PRESTIGE
+    if (productType.contains('assure') || productType.contains('prestige')) {
+      final versementInitial = souscriptionData['versement_initial'] ??
+          souscriptionData['montant_versement'] ??
+          0;
+      final capitalDeces = souscriptionData['capital_deces'] ?? 0;
+      final primeDecesAnnuelle = souscriptionData['prime_deces_annuelle'] ?? 0;
+      final duree = souscriptionData['duree'] ??
+          souscriptionData['duree_contrat'] ??
+          'Non définie';
+      final uniteDuree = souscriptionData['duree_type'] ??
+          souscriptionData['unite_duree'] ??
+          'ans';
+      final dateEffet = souscriptionData['date_effet'];
+      final dateEcheance = souscriptionData['date_echeance'];
+
+      return _buildRecapSection(
+        'Détails du Contrat - CORIS ASSURE PRESTIGE',
+        Icons.verified_user,
+        vertSucces,
+        [
+          _buildCombinedRecapRow(
+            'Produit',
+            'CORIS ASSURE PRESTIGE',
+            'N° Police',
+            subscription['numero_police'] ?? 'N/A',
+          ),
+          _buildCombinedRecapRow(
+            'Montant du versement initial',
+            _formatMontant(versementInitial),
+            'Durée du contrat',
+            '$duree $uniteDuree',
+          ),
+          _buildCombinedRecapRow(
+            'Capital décès',
+            _formatMontant(capitalDeces),
+            'Prime décès annuelle',
+            _formatMontant(primeDecesAnnuelle),
+          ),
+          _buildCombinedRecapRow(
+            'Périodicité',
+            souscriptionData['periodicite'] ?? 'Annuel',
+            '',
+            '',
+          ),
+          _buildCombinedRecapRow(
+            'Date d\'effet',
+            _formatDate(dateEffet?.toString()),
+            'Date d\'échéance',
+            _formatDate(dateEcheance?.toString()),
+          ),
+          _buildCombinedRecapRow(
+            'Date de création',
+            _formatDate(subscription['date_creation']?.toString()),
+            'Statut',
+            isPaid ? 'Contrat' : 'Proposition',
+          ),
+        ],
+      );
+    }
+
+    // Section générique pour les autres produits
+    return _buildRecapSection(
+      'Produit Souscrit',
+      Icons.description,
+      vertSucces,
+      [
+        _buildCombinedRecapRow(
+          'Produit',
+          _formatProductName(subscription['produit_nom'] ?? 'Non renseigné'),
+          'N° Police',
+          subscription['numero_police'] ?? 'N/A',
+        ),
+        if (souscriptionData['capital'] != null)
+          _buildCombinedRecapRow(
+            'Capital',
+            _formatMontant(souscriptionData['capital']),
+            'Prime',
+            _formatMontant(souscriptionData['prime']),
+          ),
+        if (souscriptionData['duree'] != null)
+          _buildCombinedRecapRow(
+            'Durée',
+            '${souscriptionData['duree']} ${souscriptionData['duree_type'] ?? ''}',
+            'Périodicité',
+            souscriptionData['periodicite'] ?? 'Non renseigné',
+          ),
+        _buildCombinedRecapRow(
+          'Date de création',
+          _formatDate(subscription['date_creation']?.toString()),
+          'Statut',
+          isPaid ? 'Contrat' : 'Proposition',
+        ),
+      ],
+    );
+  }
+
   Widget _buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
     return Padding(
@@ -544,41 +658,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           ],
         ),
 
-        // Produit souscrit
-        _buildRecapSection(
-          'Produit Souscrit',
-          Icons.description,
-          vertSucces,
-          [
-            _buildCombinedRecapRow(
-              'Produit',
-              _formatProductName(
-                  subscription['produit_nom'] ?? 'Non renseigné'),
-              'N° Police',
-              subscription['numero_police'] ?? 'N/A',
-            ),
-            if (souscriptionData['capital'] != null)
-              _buildCombinedRecapRow(
-                'Capital',
-                _formatMontant(souscriptionData['capital']),
-                'Prime',
-                _formatMontant(souscriptionData['prime']),
-              ),
-            if (souscriptionData['duree'] != null)
-              _buildCombinedRecapRow(
-                'Durée',
-                '${souscriptionData['duree']} ${souscriptionData['duree_type'] ?? ''}',
-                'Périodicité',
-                souscriptionData['periodicite'] ?? 'Non renseigné',
-              ),
-            _buildCombinedRecapRow(
-              'Date de création',
-              _formatDate(subscription['date_creation']?.toString()),
-              'Statut',
-              isPaid ? 'Contrat' : 'Proposition',
-            ),
-          ],
-        ),
+        // Produit souscrit - Section adaptée selon le type de produit
+        _buildProductSection(subscription, souscriptionData, isPaid),
 
         // Bénéficiaire et Contact d'urgence (si disponibles)
         if (souscriptionData['beneficiaire'] != null ||
@@ -648,28 +729,54 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           _buildRecapSection(
             'Mode de Paiement',
             Icons.payment,
-            souscriptionData['mode_paiement'].toString().toLowerCase().contains('virement')
+            souscriptionData['mode_paiement']
+                    .toString()
+                    .toLowerCase()
+                    .contains('virement')
                 ? bleuCoris
-                : souscriptionData['mode_paiement'].toString().toLowerCase().contains('wave')
+                : souscriptionData['mode_paiement']
+                        .toString()
+                        .toLowerCase()
+                        .contains('wave')
                     ? const Color(0xFF00BFFF)
                     : const Color(0xFFFF6B00),
             [
-              _buildRecapRow('Mode choisi', souscriptionData['mode_paiement'].toString()),
+              _buildRecapRow(
+                  'Mode choisi', souscriptionData['mode_paiement'].toString()),
               const SizedBox(height: 8),
-              if (souscriptionData['mode_paiement'].toString().toLowerCase().contains('virement')) ...[
-                _buildRecapRow('Banque',
-                    souscriptionData['banque'] != null && souscriptionData['banque'].toString().isNotEmpty 
-                        ? souscriptionData['banque'].toString() 
+              if (souscriptionData['mode_paiement']
+                  .toString()
+                  .toLowerCase()
+                  .contains('virement')) ...[
+                _buildRecapRow(
+                    'Banque',
+                    souscriptionData['banque'] != null &&
+                            souscriptionData['banque'].toString().isNotEmpty
+                        ? souscriptionData['banque'].toString()
                         : 'Non renseigné'),
-                _buildRecapRow('Numéro de compte',
-                    souscriptionData['numero_compte'] != null && souscriptionData['numero_compte'].toString().isNotEmpty 
-                        ? souscriptionData['numero_compte'].toString() 
+                _buildRecapRow(
+                    'Numéro de compte',
+                    souscriptionData['numero_compte'] != null &&
+                            souscriptionData['numero_compte']
+                                .toString()
+                                .isNotEmpty
+                        ? souscriptionData['numero_compte'].toString()
                         : 'Non renseigné'),
-              ] else if (souscriptionData['mode_paiement'].toString().toLowerCase().contains('wave') ||
-                  souscriptionData['mode_paiement'].toString().toLowerCase().contains('orange')) ...[
-                _buildRecapRow('Numéro de téléphone',
-                    souscriptionData['numero_mobile_money'] != null && souscriptionData['numero_mobile_money'].toString().isNotEmpty 
-                        ? souscriptionData['numero_mobile_money'].toString() 
+              ] else if (souscriptionData['mode_paiement']
+                      .toString()
+                      .toLowerCase()
+                      .contains('wave') ||
+                  souscriptionData['mode_paiement']
+                      .toString()
+                      .toLowerCase()
+                      .contains('orange')) ...[
+                _buildRecapRow(
+                    'Numéro de téléphone',
+                    souscriptionData['numero_mobile_money'] != null &&
+                            souscriptionData['numero_mobile_money']
+                                .toString()
+                                .isNotEmpty
+                        ? souscriptionData['numero_mobile_money'].toString()
                         : 'Non renseigné'),
               ],
             ],

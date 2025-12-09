@@ -112,25 +112,37 @@ La souscription se fait auprès de CORIS VIE CI avec :
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icône d'en-tête
+            // Image d'en-tête réduite
             Container(
               width: double.infinity,
-              height: 200,
+              height: 150,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFE53935).withOpacity(0.8),
-                    Color(0xFFE53935),
-                  ],
-                ),
+                color: Colors.grey[100],
               ),
               child: Center(
-                child: Icon(
-                  Icons.person_pin,
-                  size: 100,
-                  color: Colors.white,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/homme_cle.jpg',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFE53935).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.person_pin,
+                          size: 60,
+                          color: Color(0xFFE53935),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

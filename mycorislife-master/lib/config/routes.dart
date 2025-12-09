@@ -17,6 +17,8 @@ import 'package:mycorislife/features/souscription/presentation/screens/home_sous
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_epargne.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_etude.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_assure_prestige.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_mon_bon_plan.dart';
 // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
 // import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
 // ❌ PRODUIT DÉSACTIVÉ - PRETS SCOLAIRE
@@ -52,7 +54,6 @@ import 'package:mycorislife/features/commercial/presentation/screens/contrats_ac
 import 'package:mycorislife/features/commercial/presentation/screens/details_client_page.dart';
 import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
-
 
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
@@ -159,6 +160,22 @@ final Map<String, WidgetBuilder> appRoutes = {
       existingData: args?['existingData'],
     );
   },
+  '/souscription_assure_prestige': (context) {
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionPrestigePage(
+      subscriptionId: args?['subscriptionId'],
+      existingData: args?['existingData'],
+    );
+  },
+  '/souscription_mon_bon_plan': (context) {
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    return SouscriptionBonPlanPage(
+      subscriptionId: args?['subscriptionId'],
+      existingData: args?['existingData'],
+    );
+  },
 
   // commercial route
   '/commercial_home': (context) => const CommercialHomePage(),
@@ -215,8 +232,10 @@ final Map<String, WidgetBuilder> appRoutes = {
   // NOUVEAUX PRODUITS COLLECTIFS (souscription désactivée)
   '/homme-cle': (context) => const DescriptionHommeClePage(),
   '/ifc': (context) => const DescriptionIfcPage(),
-  '/retraite-collective': (context) => const DescriptionRetraiteCollectivePage(),
-  '/prevoyance-collective': (context) => const DescriptionPrevoyanceCollectivePage(),
+  '/retraite-collective': (context) =>
+      const DescriptionRetraiteCollectivePage(),
+  '/prevoyance-collective': (context) =>
+      const DescriptionPrevoyanceCollectivePage(),
 
   // profil
   '/profile': (context) => const ProfilPage(),

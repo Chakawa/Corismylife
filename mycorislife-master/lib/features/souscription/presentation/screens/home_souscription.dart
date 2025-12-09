@@ -62,6 +62,16 @@ class HomeSouscriptionPage extends StatelessWidget {
       'title': 'CORIS EPARGNE BONUS',
       'route': '/souscription_epargne', // Page de souscription directe
     },
+    {
+      'image': 'assets/images/coris_assure_prestige.jpg',
+      'title': 'CORIS ASSURE PRESTIGE',
+      'route': '/souscription_assure_prestige', // Page de souscription directe
+    },
+    {
+      'image': 'assets/images/bon_plan_coris.jpg',
+      'title': 'MON BON PLAN CORIS',
+      'route': '/souscription_mon_bon_plan', // Page de souscription directe
+    },
   ];
 
   @override

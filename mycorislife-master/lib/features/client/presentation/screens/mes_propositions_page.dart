@@ -122,8 +122,17 @@ class _PropositionsPageState extends State<PropositionsPage>
       return 'CORIS SÉRÉNITÉ';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
-    } else {
+    } else if (produit.toLowerCase().contains('assure') ||
+        produit.toLowerCase().contains('prestige')) {
+      return 'CORIS ASSURE PRESTIGE';
+    } else if (produit.toLowerCase().contains('bon') &&
+        produit.toLowerCase().contains('plan')) {
+      return 'MON BON PLAN CORIS';
+    } else if (produit.toLowerCase().contains('epargne') ||
+        produit.toLowerCase().contains('bonus')) {
       return 'ÉPARGNE BONUS';
+    } else {
+      return 'ASSURANCE VIE';
     }
   }
 
@@ -140,6 +149,15 @@ class _PropositionsPageState extends State<PropositionsPage>
       return Icons.health_and_safety_outlined;
     } else if (produit.toLowerCase().contains('familis')) {
       return Icons.family_restroom_outlined;
+    } else if (produit.toLowerCase().contains('assure') ||
+        produit.toLowerCase().contains('prestige')) {
+      return Icons.verified_user_outlined;
+    } else if (produit.toLowerCase().contains('bon') &&
+        produit.toLowerCase().contains('plan')) {
+      return Icons.trending_up_outlined;
+    } else if (produit.toLowerCase().contains('epargne') ||
+        produit.toLowerCase().contains('bonus')) {
+      return Icons.savings_outlined;
     } else {
       return Icons.security_outlined;
     }
@@ -158,6 +176,15 @@ class _PropositionsPageState extends State<PropositionsPage>
       return const Color(0xFFF59E0B); // Orange
     } else if (produit.toLowerCase().contains('familis')) {
       return const Color(0xFFEC4899); // Rose
+    } else if (produit.toLowerCase().contains('assure') ||
+        produit.toLowerCase().contains('prestige')) {
+      return const Color(0xFF059669); // Vert émeraude pour Prestige
+    } else if (produit.toLowerCase().contains('bon') &&
+        produit.toLowerCase().contains('plan')) {
+      return const Color(0xFF8B5CF6); // Violet pour Bon Plan
+    } else if (produit.toLowerCase().contains('epargne') ||
+        produit.toLowerCase().contains('bonus')) {
+      return const Color(0xFF3B82F6); // Bleu
     } else {
       return const Color(0xFF002B6B); // Bleu par défaut
     }

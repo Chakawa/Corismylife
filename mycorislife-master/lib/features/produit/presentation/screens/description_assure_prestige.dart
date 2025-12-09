@@ -76,28 +76,38 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Image d'en-tête
+            // Image d'en-tête réduite
             Container(
               width: double.infinity,
-              height: 200,
+              height: 150,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF002B6B).withOpacity(0.1),
-                    Colors.white,
-                  ],
-                ),
+                color: Colors.grey[100],
               ),
-              child: Image.asset(
-                'assets/images/coris_assure_prestige.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.workspace_premium, size: 80, color: Color(0xFF002B6B)),
-                  );
-                },
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/coris_assure_prestige.jpg',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF002B6B).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.diamond,
+                          size: 60,
+                          color: Color(0xFF002B6B),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
             // Contenu Markdown

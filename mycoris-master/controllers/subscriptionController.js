@@ -1308,6 +1308,8 @@ exports.getSubscriptionPDF = async (req, res) => {
     const isFamilis = productName.includes('familis');
     const isSolidarite = productName.includes('solidarite');
     const isEpargne = productName.includes('epargne');
+    const isAssurePrestige = productName.includes('assure') || productName.includes('prestige');
+    const isBonPlan = productName.includes('bon') && productName.includes('plan');
     
     const TITLE = isEtude ? 'CORIS ETUDE'
       : isRetraite ? 'CORIS RETRAITE'
@@ -1316,6 +1318,8 @@ exports.getSubscriptionPDF = async (req, res) => {
       : isFamilis ? 'CORIS FAMILIS'
       : isSolidarite ? 'CORIS SOLIDARITE'
       : isEpargne ? 'CORIS EPARGNE BONUS'
+      : isAssurePrestige ? 'CORIS ASSURE PRESTIGE'
+      : isBonPlan ? 'MON BON PLAN CORIS'
       : (subscription.produit_nom || 'ASSURANCE VIE').toUpperCase();
 
     // Couleur bleue Coris - Gris normal pour les cases
@@ -1556,7 +1560,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     if (duree) {
       if (dureeType === 'ans' || dureeType === 'Années' || dureeType === 'années' || dureeType === 'an') {
         dureeMois = parseInt(duree) * 12;
-        dureeAffichee = `${dureeMois} Mois`;
+        dureeAffichee = `${duree} ans`;
       } else if (dureeType === 'mois' || dureeType === 'Mois' || dureeType === 'mois') {
         dureeMois = parseInt(duree);
         dureeAffichee = `${dureeMois} Mois`;
@@ -1771,36 +1775,73 @@ exports.getSubscriptionPDF = async (req, res) => {
     // Utiliser prime_calculee en priorité, sinon prime, sinon montant
     const primeNette = d.prime_calculee || d.prime || d.montant || d.prime_mensuelle || d.prime_annuelle || 0;
     
-    // Déterminer le nombre de lignes nécessaires
-    let caracteristiquesLignes = 1;
-    if (isEtude && d.rente_calculee) caracteristiquesLignes++;
-    else if (isRetraite && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
-    else if (isSerenite && d.rente_calculee) caracteristiquesLignes++;
-    else if ((isSolidarite || isFamilis || isEmprunteur) && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
-    else if (isEpargne && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
-    
-    drawRow(startX, curY, fullW, rowH * caracteristiquesLignes);
-    
-    // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
-    // Afficher la périodicité pour Coris Étude
-    const cotisationLabel = isEtude && periodiciteFormatee ? `Prime ${periodiciteFormatee}` : 'Cotisation Périodique';
-    write(cotisationLabel, startX + 5, curY + 3, 9, '#666', 130);
-    write(money(primeNette), startX + 145, curY + 3, 9, '#000', 150);
-    write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
-    write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
-    
-    // Ligne 2: Rente ou Capital (selon le produit)
-    if (caracteristiquesLignes > 1) {
-      if ((isEtude || isSerenite) && d.rente_calculee) {
-        write('Valeur de la Rente', startX + 5, curY + 3 + 13, 9, '#666', 130);
-        write(money(d.rente_calculee || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
-      } else if ((isRetraite || isSolidarite || isFamilis || isEmprunteur || isEpargne) && (d.capital || d.capital_garanti)) {
-        write('Capital au terme', startX + 5, curY + 3 + 13, 9, '#666', 130);
-        write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+    // Pour Coris Assure Prestige : affichage spécifique
+    if (isAssurePrestige) {
+      const versementInitial = d.versement_initial || 0;
+      const fraisAccessoires = 0; // Pas de frais accessoires pour Coris Assure Prestige
+      const primeTotal = versementInitial + fraisAccessoires;
+      
+      drawRow(startX, curY, fullW, rowH * 2);
+      
+      // Ligne 1: Versement Initial / Taux d'intérêt Net
+      write('Versement Initial', startX + 5, curY + 3, 9, '#666', 130);
+      write(money(versementInitial), startX + 145, curY + 3, 9, '#000', 150);
+      write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
+      write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
+      
+      // Ligne 2: Frais Accessoires / Prime Total
+      write('Frais Accessoires', startX + 5, curY + 3 + 13, 9, '#666', 130);
+      write(money(fraisAccessoires), startX + 145, curY + 3 + 13, 9, '#000', 150);
+      write("Prime Total", startX + 305, curY + 3 + 13, 9, '#666', 100);
+      write(money(primeTotal), startX + 410, curY + 3 + 13, 9, '#000', 125);
+      
+      curY += rowH * 2 + 5;
+    } else if (isBonPlan) {
+      // Pour Mon Bon Plan Coris : affichage avec cotisation périodique
+      const montantCotisation = d.montant_cotisation || primeNette;
+      
+      drawRow(startX, curY, fullW, rowH);
+      
+      // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
+      const periodiciteLabel = periodiciteFormatee ? `Cotisation ${periodiciteFormatee}` : 'Cotisation Périodique';
+      write(periodiciteLabel, startX + 5, curY + 3, 9, '#666', 130);
+      write(money(montantCotisation), startX + 145, curY + 3, 9, '#000', 150);
+      write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
+      write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
+      
+      curY += rowH + 5;
+    } else {
+      // Déterminer le nombre de lignes nécessaires
+      let caracteristiquesLignes = 1;
+      if (isEtude && d.rente_calculee) caracteristiquesLignes++;
+      else if (isRetraite && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
+      else if (isSerenite && d.rente_calculee) caracteristiquesLignes++;
+      else if ((isSolidarite || isFamilis || isEmprunteur) && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
+      else if (isEpargne && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
+      
+      drawRow(startX, curY, fullW, rowH * caracteristiquesLignes);
+      
+      // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
+      // Afficher la périodicité pour Coris Étude
+      const cotisationLabel = isEtude && periodiciteFormatee ? `Prime ${periodiciteFormatee}` : 'Cotisation Périodique';
+      write(cotisationLabel, startX + 5, curY + 3, 9, '#666', 130);
+      write(money(primeNette), startX + 145, curY + 3, 9, '#000', 150);
+      write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
+      write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
+      
+      // Ligne 2: Rente ou Capital (selon le produit)
+      if (caracteristiquesLignes > 1) {
+        if ((isEtude || isSerenite) && d.rente_calculee) {
+          write('Valeur de la Rente', startX + 5, curY + 3 + 13, 9, '#666', 130);
+          write(money(d.rente_calculee || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+        } else if ((isRetraite || isSolidarite || isFamilis || isEmprunteur || isEpargne) && (d.capital || d.capital_garanti)) {
+          write('Capital au terme', startX + 5, curY + 3 + 13, 9, '#666', 130);
+          write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
+        }
       }
+      
+      curY += rowH * caracteristiquesLignes + 5;
     }
-    
-    curY += rowH * caracteristiquesLignes + 5;
 
     // Garanties - Adapté selon le produit
     // Pré-calculer le nombre de lignes de garanties avant de créer l'en-tête
@@ -1809,7 +1850,14 @@ exports.getSubscriptionPDF = async (req, res) => {
     const capitalVie = d.capital_garanti || d.capital || 0;
     
     // Compter les lignes de garanties selon le produit
-    if (isEtude) {
+    if (isAssurePrestige) {
+      // Coris Assure Prestige : Capital décès + Prime décès
+      if (capitalDeces > 0) garantiesLignes++;
+      if (d.prime_deces_annuelle || d.prime_annuelle) garantiesLignes++;
+    } else if (isBonPlan) {
+      // Mon Bon Plan Coris : Pas de garantie décès
+      // Aucune garantie à afficher
+    } else if (isEtude) {
       if (capitalDeces > 0) garantiesLignes++;
       if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
     } else if (isRetraite) {
@@ -1872,6 +1920,30 @@ exports.getSubscriptionPDF = async (req, res) => {
       // Epargne Bonus : Pas de décès/invalidité
       else if (isEpargne) {
         // Pas de garanties affichées
+      }
+      // Coris Assure Prestige : Capital décès + Prime décès
+      else if (isAssurePrestige) {
+        const primeDecesAnnuelle = d.prime_deces_annuelle || d.prime_annuelle || 0;
+        
+        // Ligne 1: Capital décès avec sa valeur
+        if (capitalDeces > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Capital Décès', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(capitalDeces), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
+        
+        // Ligne 2: Prime décès annuelle avec sa valeur
+        if (primeDecesAnnuelle > 0) {
+          drawRow(startX, curY, fullW, rowH);
+          write('Prime Décès Annuelle', startX + 5, curY + 4, 9, '#000', 185);
+          writeCentered(money(primeDecesAnnuelle), startX + 200, curY + 4, 165, 9);
+          writeCentered('', startX + 365, curY + 4, 170, 9);
+          curY += rowH;
+          garantiesLignes++;
+        }
       }
       // Coris Sérénité : Décès (si renseigné), pas de Vie à terme
       else if (isSerenite) {
