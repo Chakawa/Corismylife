@@ -17,7 +17,7 @@ class SouscriptionPrestigePage extends StatefulWidget {
   final int?
       subscriptionId; // ID de la souscription à modifier (si mode édition)
   final Map<String, dynamic>? existingData; // Données existantes à préremplir
-  
+
   const SouscriptionPrestigePage({
     super.key,
     this.clientId,
@@ -25,9 +25,10 @@ class SouscriptionPrestigePage extends StatefulWidget {
     this.subscriptionId,
     this.existingData,
   });
-  
+
   @override
-  SouscriptionPrestigePageState createState() => SouscriptionPrestigePageState();
+  SouscriptionPrestigePageState createState() =>
+      SouscriptionPrestigePageState();
 }
 
 class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
@@ -43,7 +44,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   static const Color vertSucces = Color(0xFF10B981);
   static const Color orangeWarning = Color(0xFFF59E0B);
   static const Color bleuClair = Color(0xFFE8F4FD);
-  
+
   final PageController _pageController = PageController();
   late AnimationController _animationController;
   late AnimationController _progressController;
@@ -64,18 +65,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final _montantVersementController = TextEditingController();
   final _dureeContratController = TextEditingController();
   final _dateEffetController = TextEditingController();
-  
+
   // Variables pour la durée
   String _selectedUniteDuree = 'Mois'; // 'Mois' ou 'Années'
   final List<String> _uniteDureeOptions = ['Mois', 'Années'];
-  
+
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
-  
+
   // Variables pour les calculs spécifiques à Coris Assure Prestige
   double _capitalDeces = 0.0;
   double _primeDecesAnnuelle = 0.0;
-  
+
   // Constantes pour les calculs
   static const double montantMinimalVersement = 250000;
   static const double multiplicateurCapital = 1.5;
@@ -96,7 +97,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
-  
+
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
     'Conjoint',
@@ -106,10 +107,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     'Ami',
     'Autre'
   ];
-  
+
   File? _pieceIdentite;
   bool _isProcessing = false;
-  
+
   // 🟦 3. TROISIÈME PARTIE
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
@@ -137,7 +138,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   // Variables pour commercial (souscription pour un client)
   bool _isCommercial = false;
-  
+
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
@@ -154,7 +155,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
   String _selectedClientIndicatif = '+225';
-  
+
   final storage = const FlutterSecureStorage();
 
   @override
@@ -247,7 +248,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _animationController.forward();
-    
+
     // Ajouter un délai pour s'assurer que tout est initialisé avant le calcul
     Future.delayed(Duration(milliseconds: 100), () {
       _recalculerValeurs();
@@ -270,7 +271,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         debugPrint('❌ Token non trouvé');
         return {};
       }
-      
+
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
@@ -279,12 +280,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           'Authorization': 'Bearer $token'
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
           Map<String, dynamic>? userData;
-          
+
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
@@ -301,9 +302,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           else if (data.containsKey('id') && data.containsKey('email')) {
             userData = Map<String, dynamic>.from(data);
           }
-          
+
           if (userData != null && userData.isNotEmpty) {
-            debugPrint('✅ Données utilisateur chargées: ${userData['nom']} ${userData['prenom']}');
+            debugPrint(
+                '✅ Données utilisateur chargées: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData!;
@@ -431,13 +433,14 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
-      
+
       if (data['infos_paiement'] != null) {
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
           _banqueController.text = infos['banque'] ?? '';
           _numeroCompteController.text = infos['numero_compte'] ?? '';
-        } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+        } else if (_selectedModePaiement == 'Wave' ||
+            _selectedModePaiement == 'Orange Money') {
           _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
         }
       }
@@ -464,7 +467,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
-    
+
     // Dispose des contrôleurs client
     _clientNomController.dispose();
     _clientPrenomController.dispose();
@@ -474,12 +477,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
-    
+
     // Dispose des contrôleurs de paiement
     _banqueController.dispose();
     _numeroCompteController.dispose();
     _numeroMobileMoneyController.dispose();
-    
+
     super.dispose();
   }
 
@@ -658,7 +661,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       // Préparer les données de souscription spécifiques à Coris Assure Prestige
       final subscriptionData = {
         'product_type': 'coris_assure_prestige',
-        'versement_initial': double.parse(_montantVersementController.text.replaceAll(' ', '')).toInt(),
+        'versement_initial':
+            double.parse(_montantVersementController.text.replaceAll(' ', ''))
+                .toInt(),
         'duree': int.tryParse(_dureeContratController.text) ?? 0,
         'duree_type': _selectedUniteDuree,
         'periodicite': 'Annuel',
@@ -689,7 +694,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone':
+                        _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
       };
@@ -902,7 +908,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     if (_dureeContratController.text.isNotEmpty && _dateEffetContrat != null) {
       final duree = int.tryParse(_dureeContratController.text) ?? 0;
       final dureeMois = _selectedUniteDuree == 'Années' ? duree * 12 : duree;
-      
+
       setState(() {
         _dateEcheanceContrat = DateTime(
           _dateEffetContrat!.year,
@@ -922,7 +928,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       if (montant > 0) {
         // Capital décès = 1,5 × Versement initial
         _capitalDeces = montant * multiplicateurCapital;
-        
+
         // Prime annuelle = 0,6685% × Capital décès
         _primeDecesAnnuelle = _capitalDeces * tauxPrimeAnnuel;
       } else {
@@ -947,7 +953,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // =================================================================
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 5 : 4;
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
@@ -960,8 +966,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           canProceed = true;
-        } else if (_currentStep == 4) {
-          canProceed = true;
         }
       } else {
         if (_currentStep == 0 && _validateStep1()) {
@@ -969,8 +973,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          canProceed = true;
-        } else if (_currentStep == 3) {
           canProceed = true;
         }
       }
@@ -1029,7 +1031,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     final montantText = _montantVersementController.text.replaceAll(' ', '');
     final montant = double.tryParse(montantText);
-    
+
     if (montant == null || montant <= 0) {
       _showErrorSnackBar(
           'Le montant saisi est invalide. Veuillez entrer un montant positif.');
@@ -1103,13 +1105,17 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
         return false;
       }
-    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' ||
+        _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
         return false;
       }
-      if (!RegExp(r'^[0-9]{8,10}$').hasMatch(_numeroMobileMoneyController.text.trim())) {
-        _showErrorSnackBar('Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+      if (!RegExp(r'^[0-9]{8,10}$')
+          .hasMatch(_numeroMobileMoneyController.text.trim())) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -1201,32 +1207,32 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             ),
           ];
         },
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: NeverScrollableScrollPhysics(),
-                children: _isCommercial
-                    ? [
-                        _buildStepClientInfo(), // Page 0: Informations client
-                        _buildStep1(), // Page 1: Paramètres de souscription
-                        _buildStep2(), // Page 2: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 3: Mode de paiement
-                        _buildStep3(), // Page 4: Récapitulatif
-                        _buildStep4(), // Page 5: Paiement
-                      ]
-                    : [
-                        _buildStep1(), // Page 0: Paramètres de souscription
-                        _buildStep2(), // Page 1: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 2: Mode de paiement
-                        _buildStep3(), // Page 3: Récapitulatif
-                        _buildStep4(), // Page 4: Paiement
-                      ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: _isCommercial
+                      ? [
+                          _buildStepClientInfo(), // Page 0: Informations client
+                          _buildStep1(), // Page 1: Paramètres de souscription
+                          _buildStep2(), // Page 2: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 3: Mode de paiement
+                          _buildStep3(), // Page 4: Récapitulatif
+                        ]
+                      : [
+                          _buildStep1(), // Page 0: Paramètres de souscription
+                          _buildStep2(), // Page 1: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 2: Mode de paiement
+                          _buildStep3(), // Page 3: Récapitulatif
+                        ],
+                ),
               ),
-            ),
-            _buildNavigationButtons(),
-          ],
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -1480,20 +1486,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             ],
                           ),
                           const SizedBox(height: 20),
-                          
+
                           // 🟦 1. MONTANT DU VERSEMENT INITIAL
                           _buildMontantVersementField(),
                           const SizedBox(height: 16),
-                          
+
                           // 🟦 2. DURÉE DU CONTRAT AVEC UNITÉ
                           _buildDureeContratField(),
                           const SizedBox(height: 16),
-                          
+
                           // 🟦 3. DATE D'EFFET DU CONTRAT
                           _buildDateEffetField(),
-                          
+
                           SizedBox(height: 16),
-                          
+
                           // 🟦 AFFICHAGE DES CALCULS
                           if (_montantVersementController.text.isNotEmpty)
                             Container(
@@ -1557,8 +1563,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             hintText: 'Minimum ${_formatMontant(montantMinimalVersement)}',
             prefixIcon: Icon(Icons.monetization_on,
-                size: 20,
-                color: bleuCoris.withAlpha(179)),
+                size: 20, color: bleuCoris.withAlpha(179)),
             suffixText: 'CFA',
             filled: true,
             fillColor: bleuClair.withAlpha(77),
@@ -1615,11 +1620,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 },
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   hintText: 'Durée',
                   prefixIcon: Icon(Icons.timer,
-                      size: 20,
-                      color: bleuCoris.withAlpha(179)),
+                      size: 20, color: bleuCoris.withAlpha(179)),
                   filled: true,
                   fillColor: bleuClair.withAlpha(77),
                   border: OutlineInputBorder(
@@ -2025,7 +2030,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     required ValueChanged<String?> onChanged,
   }) {
     final validValue = (value != null && items.contains(value)) ? value : null;
-    
+
     return DropdownButtonFormField<String>(
       value: validValue,
       decoration: InputDecoration(
@@ -2199,7 +2204,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             color: blanc.withAlpha(51),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.payment, color: blanc, size: 32),
+                          child:
+                              const Icon(Icons.payment, color: blanc, size: 32),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -2251,7 +2257,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
-                        
+
                         switch (mode) {
                           case 'Virement':
                             icon = Icons.account_balance;
@@ -2283,7 +2289,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isSelected ? bleuCoris.withOpacity(0.1) : Colors.transparent,
+                              color: isSelected
+                                  ? bleuCoris.withOpacity(0.1)
+                                  : Colors.transparent,
                               border: Border(
                                 bottom: BorderSide(
                                   color: _modePaiementOptions.last == mode
@@ -2309,13 +2317,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                     mode,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected ? bleuCoris : Colors.black87,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? bleuCoris
+                                          : Colors.black87,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
-                                  Icon(Icons.check_circle, color: bleuCoris, size: 28),
+                                  Icon(Icons.check_circle,
+                                      color: bleuCoris, size: 28),
                               ],
                             ),
                           ),
@@ -2339,13 +2352,14 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Nom de la banque
                       DropdownButtonFormField<String>(
                         value: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -2370,7 +2384,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         },
                       ),
                       SizedBox(height: 16),
-                      
+
                       // Champ texte personnalisé si "Autre" est sélectionné
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
@@ -2388,7 +2402,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         ),
                         SizedBox(height: 16),
                       ],
-                      
+
                       // Numéro de compte
                       TextField(
                         controller: _numeroCompteController,
@@ -2407,7 +2421,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ],
 
                     // WAVE ou ORANGE MONEY
-                    if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
+                    if (_selectedModePaiement == 'Wave' ||
+                        _selectedModePaiement == 'Orange Money') ...[
                       Text(
                         'Numéro ${_selectedModePaiement}',
                         style: TextStyle(
@@ -2417,7 +2432,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
@@ -2425,8 +2439,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.phone_android,
-                            color: _selectedModePaiement == 'Wave' 
-                                ? Color(0xFF00BFFF) 
+                            color: _selectedModePaiement == 'Wave'
+                                ? Color(0xFF00BFFF)
                                 : Colors.orange,
                           ),
                           border: OutlineInputBorder(
@@ -2452,7 +2466,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
+                        Icon(Icons.info_outline,
+                            color: Colors.blue[700], size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -2496,22 +2511,28 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
                               return Center(
-                                child: CircularProgressIndicator(color: bleuCoris),
+                                child:
+                                    CircularProgressIndicator(color: bleuCoris),
                               );
                             }
 
                             if (snapshot.hasError) {
-                              debugPrint('❌ Erreur FutureBuilder: ${snapshot.error}');
+                              debugPrint(
+                                  '❌ Erreur FutureBuilder: ${snapshot.error}');
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.error, size: 48, color: rougeCoris),
+                                    Icon(Icons.error,
+                                        size: 48, color: rougeCoris),
                                     SizedBox(height: 16),
-                                    Text('Erreur lors du chargement des données'),
+                                    Text(
+                                        'Erreur lors du chargement des données'),
                                     SizedBox(height: 8),
-                                    Text('${snapshot.error}', 
-                                      style: TextStyle(fontSize: 12, color: grisTexte),
+                                    Text(
+                                      '${snapshot.error}',
+                                      style: TextStyle(
+                                          fontSize: 12, color: grisTexte),
                                       textAlign: TextAlign.center,
                                     ),
                                     SizedBox(height: 16),
@@ -2527,10 +2548,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             }
 
                             final userData = snapshot.data ?? {};
-                            
+
                             // Si toujours vide, afficher un message et permettre de continuer
                             if (userData.isEmpty) {
-                              debugPrint('⚠️ Données utilisateur vides, affichage avec données minimales');
+                              debugPrint(
+                                  '⚠️ Données utilisateur vides, affichage avec données minimales');
                               // Utiliser des données minimales pour permettre l'affichage
                               return _buildRecapContent(userData: {
                                 'nom': 'Non disponible',
@@ -2586,13 +2608,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 'Produit', 'CORIS ASSURE PRESTIGE'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Montant du versement initial',
-                _formatMontant(double.parse(_montantVersementController.text.replaceAll(' ', ''))),
+                _formatMontant(double.parse(
+                    _montantVersementController.text.replaceAll(' ', ''))),
                 'Durée du contrat',
                 '${_dureeContratController.text} $_selectedUniteDuree'),
             // 🟦 CAPITAL DÉCÈS = 1,5 × Versement initial
             SubscriptionRecapWidgets.buildRecapRow(
-                'Capital décès',
-                _formatMontant(_capitalDeces)),
+                'Capital décès', _formatMontant(_capitalDeces)),
             // 🟦 PRIME ANNUELLE = 0,6685% × Capital décès
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Prime décès annuelle',
@@ -2801,18 +2823,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  int recapStep = _isCommercial ? 4 : 3;
-                  int finalStep = _isCommercial ? 5 : 4;
-
-                  if (_currentStep == recapStep) {
-                    _nextStep();
-                  } else if (_currentStep == finalStep) {
-                    _showPaymentOptions();
-                  } else {
-                    _nextStep();
-                  }
-                },
+                onPressed: _currentStep == (_isCommercial ? 4 : 3)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -2826,17 +2839,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      () {
-                        int recapStep = _isCommercial ? 4 : 3;
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == recapStep) {
-                          return 'Suivant';
-                        } else if (_currentStep == finalStep) {
-                          return 'Finaliser & Payer';
-                        } else {
-                          return 'Suivant';
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? 'Finaliser'
+                          : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -2845,14 +2850,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      () {
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == finalStep) {
-                          return Icons.check_circle;
-                        } else {
-                          return Icons.arrow_forward;
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? Icons.check
+                          : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
                     ),
@@ -2923,7 +2923,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Montant à payer (Prime décès annuelle)
                   Container(
                     padding: EdgeInsets.all(16),
@@ -2966,7 +2966,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Titre de la section
                   Text(
                     'Que souhaitez-vous faire maintenant ?',
@@ -2977,7 +2977,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                   ),
                   SizedBox(height: 20),
-                  
+
                   // Option 1: Payer maintenant
                   InkWell(
                     onTap: () => _showPaymentOptions(),
@@ -3033,9 +3033,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 16),
-                  
+
                   // Option 2: Payer plus tard
                   InkWell(
                     onTap: () => _saveAsProposition(),
@@ -3061,7 +3061,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               color: orangeWarning.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.schedule, color: orangeWarning, size: 32),
+                            child: Icon(Icons.schedule,
+                                color: orangeWarning, size: 32),
                           ),
                           SizedBox(width: 16),
                           Expanded(
@@ -3087,14 +3088,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               ],
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, color: orangeWarning, size: 20),
+                          Icon(Icons.arrow_forward_ios,
+                              color: orangeWarning, size: 20),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Note informative
                   Container(
                     padding: EdgeInsets.all(16),
@@ -3135,7 +3137,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Avertissement de sécurité
                   Container(
                     padding: EdgeInsets.all(12),

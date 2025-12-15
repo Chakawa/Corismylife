@@ -29,14 +29,18 @@ class ProduitsPage extends StatelessWidget {
       'title': 'CORIS SOLIDARITE',
       'route': '/simulation_solidarite',
     },
+    // ❌ PRODUIT MASQUÉ - PRÊT SCOLAIRE (code conservé)
+    // {
+    //   'image': 'assets/images/etudee.png',
+    //   'title': 'PRÊT SCOLAIRE',
+    //   'route': '/description_pret_scolaire',
+    // },
     // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
     // {
     //   'image': 'assets/images/emprunteur.png',
     //   'title': 'FLEX EMPRUNTEUR',
     //   'route': '/simulation_emprunteur',
     // },
-    // ❌ PRODUIT DÉSACTIVÉ - PRÊT SCOLAIRE  
-    // (Note: Prêt scolaire n'était pas dans la liste originale)
     {
       'image': 'assets/images/familis.png',
       'title': 'CORIS FAMILIS',
@@ -349,24 +353,26 @@ class ProduitsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: Column(
-        children: [
-          _buildModernHeader(context),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildHeaderCard(),
-                  const SizedBox(height: 10),
-                  _buildProductsSection(context),
-                  const SizedBox(height: 30),
-                  _buildAssistanceSection(),
-                  const SizedBox(height: 30),
-                ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildModernHeader(context),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildHeaderCard(),
+                    const SizedBox(height: 10),
+                    _buildProductsSection(context),
+                    const SizedBox(height: 30),
+                    _buildAssistanceSection(),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

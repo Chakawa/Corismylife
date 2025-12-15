@@ -1549,10 +1549,29 @@ exports.getSubscriptionPDF = async (req, res) => {
     
     // d est déjà défini plus haut dans la section Souscripteur
     const dateEffet = d.date_effet || d.date_debut || d.date_debut_garantie || '';
-    const dateEcheance = d.date_echeance || d.date_fin || d.date_echeance_contrat || d.date_fin_garantie || '';
+    let dateEcheance = d.date_echeance || d.date_fin || d.date_echeance_contrat || d.date_fin_garantie || '';
     const duree = d.duree || d.duree_contrat || '';
     const dureeType = d.duree_type || d.type_duree || 'mois';
     const periodicite = d.periodicite || d.mode_souscription || d.mode_paiement || '';
+    
+    // Calculer la date d'échéance si elle n'existe pas
+    if (!dateEcheance && dateEffet && duree) {
+      try {
+        const dateEffetObj = new Date(dateEffet);
+        const dureeNum = parseInt(duree);
+        if (!isNaN(dateEffetObj.getTime()) && !isNaN(dureeNum)) {
+          if (dureeType === 'ans' || dureeType === 'Années' || dureeType === 'années' || dureeType === 'an') {
+            dateEffetObj.setFullYear(dateEffetObj.getFullYear() + dureeNum);
+          } else {
+            dateEffetObj.setMonth(dateEffetObj.getMonth() + dureeNum);
+          }
+          dateEcheance = dateEffetObj.toISOString();
+          console.log('✅ Date échéance calculée:', dateEcheance);
+        }
+      } catch (e) {
+        console.log('❌ Erreur calcul date échéance:', e.message);
+      }
+    }
 
     // Calculer la durée en mois si nécessaire
     let dureeMois = duree;
@@ -1797,19 +1816,22 @@ exports.getSubscriptionPDF = async (req, res) => {
       
       curY += rowH * 2 + 5;
     } else if (isBonPlan) {
-      // Pour Mon Bon Plan Coris : affichage avec cotisation périodique
+      // Pour Mon Bon Plan Coris : affichage avec Versement Initial et Capital Décès
       const montantCotisation = d.montant_cotisation || primeNette;
       
-      drawRow(startX, curY, fullW, rowH);
+      drawRow(startX, curY, fullW, rowH * 2);
       
-      // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
-      const periodiciteLabel = periodiciteFormatee ? `Cotisation ${periodiciteFormatee}` : 'Cotisation Périodique';
-      write(periodiciteLabel, startX + 5, curY + 3, 9, '#666', 130);
+      // Ligne 1: Versement Initial / Taux d'intérêt Net
+      write('Versement Initial', startX + 5, curY + 3, 9, '#666', 130);
       write(money(montantCotisation), startX + 145, curY + 3, 9, '#000', 150);
       write("Taux d'intérêt Net", startX + 305, curY + 3, 9, '#666', 100);
       write('3,500%', startX + 410, curY + 3, 9, '#000', 125);
       
-      curY += rowH + 5;
+      // Ligne 2: Capital Décès (garantie fixe de 120000F)
+      write('Capital Décès', startX + 5, curY + 3 + 13, 9, '#666', 130);
+      write(money(120000), startX + 145, curY + 3 + 13, 9, '#000', 150);
+      
+      curY += rowH * 2 + 5;
     } else {
       // Déterminer le nombre de lignes nécessaires
       let caracteristiquesLignes = 1;
@@ -1855,8 +1877,8 @@ exports.getSubscriptionPDF = async (req, res) => {
       if (capitalDeces > 0) garantiesLignes++;
       if (d.prime_deces_annuelle || d.prime_annuelle) garantiesLignes++;
     } else if (isBonPlan) {
-      // Mon Bon Plan Coris : Pas de garantie décès
-      // Aucune garantie à afficher
+      // Mon Bon Plan Coris : Pas de section Garanties (Capital Décès déjà dans Caractéristiques)
+      garantiesLignes = 0;
     } else if (isEtude) {
       if (capitalDeces > 0) garantiesLignes++;
       if (capitalVie > 0 && d.rente_calculee) garantiesLignes++;
@@ -1944,6 +1966,10 @@ exports.getSubscriptionPDF = async (req, res) => {
           curY += rowH;
           garantiesLignes++;
         }
+      }
+      // Mon Bon Plan Coris : Pas d'affichage (Capital Décès déjà dans Caractéristiques)
+      else if (isBonPlan) {
+        // Rien à afficher ici
       }
       // Coris Sérénité : Décès (si renseigné), pas de Vie à terme
       else if (isSerenite) {
@@ -2049,9 +2075,15 @@ exports.getSubscriptionPDF = async (req, res) => {
     const primeBoxW = Math.floor(fullW / 3);
     
     // En-têtes et valeurs dans la même ligne pour économiser l'espace
+    // Pour Coris Assure Prestige et Mon Bon Plan : Prime Nette = Versement Initial
+    const primeNetteAffichee = (isAssurePrestige || isBonPlan) ? (d.versement_initial || d.montant_versement || d.montant_cotisation || primeNette) : primeNette;
+    
+    // Prime Totale = Prime Nette + Accessoires
+    const primeTotaleAffichee = primeNetteAffichee + accessoiresMontant;
+    
     drawRow(startX, curY, primeBoxW, rowH * 1.5);
     writeCentered('Prime Nette', startX, curY + 3, primeBoxW, 8, '#666');
-    writeCentered(money(primeNette), startX, curY + 3 + 11, primeBoxW, 8, '#000', true);
+    writeCentered(money(primeNetteAffichee), startX, curY + 3 + 11, primeBoxW, 8, '#000', true);
     
     drawRow(startX + primeBoxW, curY, primeBoxW, rowH * 1.5);
     writeCentered('Accessoires', startX + primeBoxW, curY + 3, primeBoxW, 8, '#666');
@@ -2059,7 +2091,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     
     drawRow(startX + primeBoxW * 2, curY, primeBoxW, rowH * 1.5);
     writeCentered('Prime Totale', startX + primeBoxW * 2, curY + 3, primeBoxW, 8, '#666');
-    writeCentered(money(primeTotale), startX + primeBoxW * 2, curY + 3 + 11, primeBoxW, 8, '#000', true);
+    writeCentered(money(primeTotaleAffichee), startX + primeBoxW * 2, curY + 3 + 11, primeBoxW, 8, '#000', true);
     
     curY += rowH * 1.5 + 6;
 
@@ -2242,11 +2274,569 @@ exports.getSubscriptionPDF = async (req, res) => {
       console.log('✅ Page 2 ajoutée pour Coris Solidarité avec bénéficiaires détaillés');
     }
 
+    // Pour Coris Sérénité : Ajouter une deuxième page avec les conditions générales
+    if (isSerenite) {
+      doc.addPage();
+      curY = 30;
+      
+      // Titre centré
+      doc.fontSize(12).fillColor('#000000').font('Helvetica-Bold');
+      doc.text('Résumé des conditions générales', startX, curY, { width: fullW, align: 'center' });
+      curY += 14;
+      doc.fontSize(10).font('Helvetica-Oblique');
+      doc.text('(Valant notice d\'information)', startX, curY, { width: fullW, align: 'center' });
+      curY += 18;
+
+      // Configuration deux colonnes
+      const colLeftX = startX;
+      const colRightX = startX + fullW / 2 + 5;
+      const colWidth = (fullW / 2) - 8;
+      let leftY = curY;
+      let rightY = curY;
+
+      // **COLONNE GAUCHE**
+      
+      // Article 1
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 1 : Objet du contrat', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le contrat CORIS SERENITE PLUS est un contrat individuel d\'assurance vie à adhésion facultative et cotisations définies.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 11;
+      doc.text('Il garantit, en cas de décès ou de Perte Totale et Irréversible d\'Autonomie de l\'assuré (PTIA), quelle que soit la date de survenance, le versement d\'un capital dont le montant est défini à la souscription au(x) bénéficiaire(s) désigné(s) au contrat.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 18;
+      
+      // Article 2
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 2 : Adhésion', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('L\'adhésion est réservée à toutes personnes physiques âgées de plus dix-huit (18) ans et de moins de soixante-dix (70) ans et satisfaire aux formalités médicales.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 15;
+      
+      // Article 3
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 3 : Paiement de la prime', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le montant de la cotisation est fonction du capital garanti et de l\'âge de l\'assuré à la date d\'effet de la souscription et payable par tout moyen à votre convenance (espèces, chèque, virement bancaire, prélèvement à la source, moyens électroniques). La périodicité peut être mensuelle, trimestrielle, semestrielle, annuelle ou unique. Les frais de dossier unique sont fixés à 5 000 F CFA.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 32;
+      
+      // Article 4
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 4 : Rémunération du contrat', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Les cotisations nettes de frais sont capitalisées au taux d\'intérêt annuel de 3,5%. Le contrat prévoit chaque année l\'attribution d\'une participation aux bénéfices (PB) au moins égale à 90% des résultats techniques et 85% des résultats financiers et au minimum à 2% du résultat avant impôt de l\'exercice. La répartition de la participation aux bénéfices entre toutes les catégories de contrats se fait au prorata des provisions mathématiques moyennes de chaque catégorie.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 42;
+      
+      // Article 5
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 5 : Renonciation', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le souscripteur peut renoncer au contrat dans le délai de trente (30) jours à compter du paiement de la première cotisation, par lettre recommandée avec avis de réception ou tout autre moyen faisant foi de la réception. Il lui est alors restitué les cotisations versées déduction faite des coûts de police dans un délai maximal de quinze (15) jours à compter de la date de réception de ladite renonciation. Au-delà de ce délai, les sommes non restituées produisent de plein droit un intérêt de retard de 2,5% par mois indépendamment de toute réclamation.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 48;
+      
+      // Article 5 : Rachat -Reduction
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 5 : Rachat -Reduction', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Après deux années effectives de cotisations ou de versement d\'au moins 15% des cotisations prévues sur toute la durée du contrat, le souscripteur peut mettre fin au contrat en contrepartie de la cessation de toutes les garanties. En cas de rachat, la valeur de rachat est égale à 95% de la provision mathématique de la deuxième à la cinquième année, plus 1% par année pour atteindre 100% à la fin de la dixième année. Le paiement de la valeur de rachat total met fin au contrat.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 45;
+      doc.text('Lorsque le souscripteur cesse de payer ses primes alors que le contrat a une valeur de rachat, les garanties du contrat CORIS SERENITE PLUS sont réévaluées et continuent pour des capitaux assurés réduits.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 22;
+
+      // Article 6
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 6 : Rachat Partiel - Avances', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le rachat partiel et l\'avance ne sont pas autorisés.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 13;
+      
+      // Article 7
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 7 : Garanties du contrat', colLeftX, leftY, { width: colWidth });
+      leftY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('• à tout moment, après au moins deux primes annuelles ou 15% du cumul des primes prévues au contrat, le souscripteur peut disposer d\'une partie de ses cotisations en rachetant son contrat.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 15;
+      doc.text('• En cas décès ou de Perte Totale et Irréversible d\'Autonomie pendant la période de garantie: le versement d\'un capital dont le montant est défini à la souscription au(x) bénéficiaire(s) désigné(s) au contrat.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      leftY += 18;
+      doc.text('Le souscripteur, en accord avec l\'assureur, a la possibilité de modifier, en cours de contrat, le montant du capital garanti. Cette modification impacte la prime et sera matérialisée par un avenant au contrat.', colLeftX, leftY, { width: colWidth, lineGap: 0.5 });
+      
+      // **COLONNE DROITE**
+      
+      // Article 8
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 8 : Paiement des sommes assurées', colRightX, rightY, { width: colWidth });
+      rightY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le paiement des sommes assurées est effectué à notre siège social, dans les 15 jours suivant la remise des pièces justificatives :', colRightX, rightY, { width: colWidth, lineGap: 0.5 });
+      rightY += 12;
+      doc.font('Helvetica-Bold').fontSize(6.5);
+      doc.text('En cas de rachat : ', colRightX, rightY, { width: colWidth, continued: true });
+      doc.font('Helvetica').text('la lettre de demande de rachat du contrat ; l\'original de votre contrat et la fiche d\'état civil de l\'assuré ;', { lineGap: 0.5 });
+      rightY += 12;
+      doc.font('Helvetica-Bold').fontSize(6.5);
+      doc.text('En cas de décès : ', colRightX, rightY, { width: colWidth, continued: true });
+      doc.font('Helvetica').text('l\'original de votre contrat ; le certificat de genre de mort ; l\'extrait d\'acte de décès ; la fiche d\'état civil du (ou des) bénéficiaire(s) désignée(s) ; la fiche d\'état civil du (ou des) de l\'assuré.', { lineGap: 0.5 });
+      rightY += 15;
+      doc.font('Helvetica-Bold').fontSize(6.5);
+      doc.text('En cas de Perte Totale et Irréversible d\'Autonomie : ', colRightX, rightY, { width: colWidth, continued: true });
+      doc.font('Helvetica').text('l\'original de votre contrat ; le certificat médical constatant votre état d\'invalidité ; la (ou les) fiche(s) d\'état civil de la (ou des) personnes (s) désignée (s) comme bénéficiaire (s) ; l\'acte de naissance de l\'assuré.', { lineGap: 0.5 });
+      rightY += 19;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('En cas de pluralité de bénéficiaires notre paiement intervient sur quittance conjointe des intéressés', colRightX, rightY, { width: colWidth, lineGap: 0.5 });
+      rightY += 15;
+      
+      // Article 9 avec tableaux
+      doc.fontSize(7.5).font('Helvetica-Bold');
+      doc.text('Article 9 : Valeurs minimum de rachats garanties', colRightX, rightY, { width: colWidth });
+      rightY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Capital décès : 1 000 000 F CFA ; durée de cotisation de 25 ans ; un âge de 35 ans et une prime mensuelle de 1 698 F CFA.', colRightX, rightY, { width: colWidth, lineGap: 0.5 });
+      rightY += 14;
+      
+      // Deux tableaux dans la colonne droite
+      const colWSmall = [32, 48, 48]; // Année, Cumul, Valeur
+      const table1X = colRightX;
+      const table2X = colRightX;
+      const tableRowH = 16;
+      
+      // Tableau 1 (années 1-4)
+      let tableY = rightY;
+      
+      // En-têtes tableau 1
+      drawRow(table1X, tableY, colWSmall[0], tableRowH, grisNormal);
+      write('Année', table1X + 1, tableY + 6, 6.5, '#000', colWSmall[0] - 2, true);
+      drawRow(table1X + colWSmall[0], tableY, colWSmall[1], tableRowH, grisNormal);
+      write('Cumul\ncotisations', table1X + colWSmall[0] + 1, tableY + 3, 6, '#000', colWSmall[1] - 2, true);
+      drawRow(table1X + colWSmall[0] + colWSmall[1], tableY, colWSmall[2], tableRowH, grisNormal);
+      write('Valeur\nde rachat', table1X + colWSmall[0] + colWSmall[1] + 1, tableY + 3, 6, '#000', colWSmall[2] - 2, true);
+      tableY += tableRowH;
+      
+      // Données tableau 1
+      const data1 = [
+        ['1', '20\n377', '0'],
+        ['2', '40 755', '29 261'],
+        ['3', '61\n132', '44\n658'],
+        ['4', '81\n509', '61\n177']
+      ];
+      
+      data1.forEach((row) => {
+        drawRow(table1X, tableY, colWSmall[0], tableRowH);
+        write(row[0], table1X + 1, tableY + 6, 6.5, '#000', colWSmall[0] - 2);
+        drawRow(table1X + colWSmall[0], tableY, colWSmall[1], tableRowH);
+        write(row[1], table1X + colWSmall[0] + 1, tableY + 3, 6, '#000', colWSmall[1] - 2);
+        drawRow(table1X + colWSmall[0] + colWSmall[1], tableY, colWSmall[2], tableRowH);
+        write(row[2], table1X + colWSmall[0] + colWSmall[1] + 1, tableY + 3, 6, '#000', colWSmall[2] - 2);
+        tableY += tableRowH;
+      });
+      
+      tableY += 4;
+      
+      // Tableau 2 (années 5-8)
+      // En-têtes tableau 2
+      drawRow(table2X, tableY, colWSmall[0], tableRowH, grisNormal);
+      write('Année', table2X + 1, tableY + 6, 6.5, '#000', colWSmall[0] - 2, true);
+      drawRow(table2X + colWSmall[0], tableY, colWSmall[1], tableRowH, grisNormal);
+      write('Cumul\ncotisations', table2X + colWSmall[0] + 1, tableY + 3, 6, '#000', colWSmall[1] - 2, true);
+      drawRow(table2X + colWSmall[0] + colWSmall[1], tableY, colWSmall[2], tableRowH, grisNormal);
+      write('Valeur\nde rachat', table2X + colWSmall[0] + colWSmall[1] + 1, tableY + 3, 6, '#000', colWSmall[2] - 2, true);
+      tableY += tableRowH;
+      
+      // Données tableau 2
+      const data2 = [
+        ['5', '101\n886', '76\n897'],
+        ['6', '122\n264', '93 708'],
+        ['7', '142\n641', '110\n634'],
+        ['8', '163 018', '128 628']
+      ];
+      
+      data2.forEach((row) => {
+        drawRow(table2X, tableY, colWSmall[0], tableRowH);
+        write(row[0], table2X + 1, tableY + 6, 6.5, '#000', colWSmall[0] - 2);
+        drawRow(table2X + colWSmall[0], tableY, colWSmall[1], tableRowH);
+        write(row[1], table2X + colWSmall[0] + 1, tableY + 3, 6, '#000', colWSmall[1] - 2);
+        drawRow(table2X + colWSmall[0] + colWSmall[1], tableY, colWSmall[2], tableRowH);
+        write(row[2], table2X + colWSmall[0] + colWSmall[1] + 1, tableY + 3, 6, '#000', colWSmall[2] - 2);
+        tableY += tableRowH;
+      });
+      
+      console.log('✅ Page 2 ajoutée pour Coris Sérénité avec résumé des conditions générales');
+    }
+
+    // Pour Coris Retraite : Ajouter une deuxième page avec les conditions générales
+    if (isRetraite) {
+      doc.addPage();
+      curY = 30;
+      
+      // Titre principal
+      doc.font('Helvetica-Bold').fontSize(12);
+      doc.text('Résumé des conditions générales', startX, curY, { width: fullW, align: 'center' });
+      curY += 14;
+      doc.font('Helvetica-Oblique').fontSize(10);
+      doc.text('(Valant notice d\'information)', startX, curY, { width: fullW, align: 'center' });
+      curY += 18;
+
+      // Article 1
+      doc.fontSize(7).font('Helvetica-Bold');
+      doc.text('Article 1 : Objet du contrat', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le contrat CORIS RETRAITE est un contrat individuel d\'assurance vie à adhésion facultative et cotisations définies.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 10;
+      doc.text('Il permet au souscripteur de se constituer une épargne complémentaire pour la retraite, totalement libérale ou convertible en rente certaine ou viagère au moment de son départ à la retraite. A cet effet, chaque souscripteur dispose d\'un Compte Individuel Retraite (C.I.R) alimenté par les cotisations nettes qui sont affectées.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 17;
+
+      // Article 2
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 2 : Adhésion', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('L\'adhésion est réservée à toutes personnes physiques âgées de plus de dix-huit (18) ans et justifiant de la capacité à payer les primes.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 12;
+
+      // Article 3
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 3 : Versement des cotisations', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('La cotisation ne peut être inférieure à 10 000 F CFA par mois et est payable par tout moyen à votre convenance (espèces, chèque, virement bancaire, prélèvement à la source, moyens électroniques). La périodicité peut être mensuelle, trimestrielle, semestrielle, annuelle ou unique. Les frais de dossier unique sont fixés à 5 000 F CFA. Le souscripteur a la possibilité de modifier sa prime à tout moment pendant la durée de cotisation. Il existe deux types de versements :', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 35;
+      doc.text('•  Versements réguliers : les cotisations sont versées suivant la périodicité définie aux conditions particulières jusqu\'au terme du contrat.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 10;
+      doc.text('•  Versements libres : le souscripteur peut effectuer des versements libres complémentaires à tout moment. Il choisit librement les dates et les montants de ses versements.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+
+      // Article 4
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 4 : Rémunération du contrat', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Les cotisations nettes de frais sont capitalisées au taux d\'intérêt annuel de 3,5%. Le contrat prévoit chaque année l\'attribution d\'une participation aux bénéfices (PB) au moins égale à 90% des résultats techniques et 85% des résultats financiers et au minimum à 2% du résultat avant impôt de l\'exercice. La répartition de la participation aux bénéfices entre toutes les catégories de contrats se fait au prorata des provisions mathématiques moyennes de chaque catégorie.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 32;
+
+      // Article 5
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 5 : Renonciation', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le souscripteur peut renoncer au contrat dans le délai de trente (30) jours à compter du paiement de la première cotisation, par lettre recommandée avec avis de réception ou tout autre moyen faisant foi de la réception. Il lui est alors restitué les cotisations versées déduction faite des coûts de police dans un délai maximal de quinze (15) jours à compter de la date de réception de ladite renonciation. Au-delà de ce délai, les sommes non restituées produisent de plein droit un intérêt de retard de 2,5% par mois indépendamment de toute réclamation.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 35;
+
+      // Article 6
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 6 : Rachat - Réduction', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Après deux années effectives de cotisations ou de versement d\'au moins 15% des cotisations prévues sur toute la durée du contrat, le souscripteur peut mettre fin au contrat en contrepartie de la cessation de toutes les garanties. En cas de rachat, la valeur de rachat est égale à 95% de la provision mathématique de la deuxième à la cinquième année, plus 1% par année pour atteindre 100% à la fin de la dixième année.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 30;
+      doc.text('Lorsque le souscripteur cesse de payer ses primes alors que le contrat a une valeur de rachat, les garanties du contrat CORIS RETRAITE sont réévaluées et continuent pour des montants assurés réduits.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+
+      // Article 7
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 7 : Rachat Partiel', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Dans la limite de la valeur de rachat de votre contrat, vous avez la possibilité de racheter une partie de votre épargne constituée, aux conditions cumulatives suivantes :', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 12;
+      doc.text('•  que deux années de primes ou 15% des primes prévues au contrat aient été payées ;', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 9;
+      doc.text('•  que le montant brut demandé n\'excède pas 45% de la valeur votre Compte Individuel Retraite (C.I.R) ;', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 9;
+      doc.text('•  que la valeur résiduelle ne soit pas inférieure au SMIG.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 12;
+
+      // Article 8
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 8 : Avances', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Dans la limite de la valeur de rachat de votre contrat, nous pouvons vous accorder des avances sur contrat. La demande d\'avance se fait au moyen d\'un écrit daté et signé ainsi qu\'une copie de la carte nationale d\'identité ou du passeport en cours de validité du souscripteur. L\'avance demandée n\'excède pas le tiers (1/3) de la valeur votre Compte Individuel Retraite (C.I.R). Les frais de dossier et le taux d\'intérêt de l\'avance sont définis dans le contrat d\'avance.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 30;
+
+      // Article 9
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 9 : Garanties accordées', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('En cas de vie au terme du contrat : l\'assureur verse au souscripteur le capital minimum garanti, plus la participation aux bénéfices.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 10;
+      doc.text('En cas de décès ou Perte Totale et Irréversible d\'Autonomie avant le terme du contrat : l\'assureur verse aux bénéficiaires désignés au contrat la valeur du Compte Individuel Retraite (C.I.R) constituée au moment du décès.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 17;
+
+      // Article 10
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 10 : Paiement des sommes assurées', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le paiement des sommes assurées est effectué à notre siège social, dans les 15 jours suivant la remise des pièces justificatives :', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 10;
+      doc.font('Helvetica-Bold').fontSize(6.5);
+      doc.text('a) En cas de vie :', startX, curY, { width: fullW });
+      curY += 8;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('•  l\'original du contrat ; •  les pièces justificatives de l\'identité de l\'assuré.', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica-Bold').fontSize(6.5);
+      doc.text('b) En cas de décès :', startX, curY, { width: fullW });
+      curY += 8;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('•  l\'original du contrat ; •  l\'extrait d\'acte de décès ; •  le certificat médical constatant votre état de Perte Totale et Irréversible d\'Autonomie ; •  la (ou les) fiche(s) d\'état civil de la (ou des) personnes(s) désignée(s) comme bénéficiaire(s).', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+      doc.text('En cas de pluralité de bénéficiaires notre paiement intervient sur quittance conjointe des intéressés.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 12;
+
+      // Article 11 avec tableau
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 11 : Valeurs minimum de rachats garanties', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Le tableau des valeurs minimum de rachat garanties à l\'anniversaire de la date d\'effet à condition que le souscripteur soit à jour de ses cotisations (cotisation minimum de 10 000 F CFA).', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+
+      // Tableau unique avec toutes les années
+      const tableStartX = startX + (fullW - 380) / 2;
+      const colWidths = [120, 130, 130];
+      const tableRowH = 18;
+      
+      let tableY = curY;
+      
+      // En-têtes
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.rect(tableStartX, tableY, colWidths[0], tableRowH).fillAndStroke('#E8E8E8', '#000');
+      doc.fillColor('#000').text('Année', tableStartX + 2, tableY + 6, { width: colWidths[0] - 4, align: 'center' });
+      doc.rect(tableStartX + colWidths[0], tableY, colWidths[1], tableRowH).fillAndStroke('#E8E8E8', '#000');
+      doc.text('Cumul des cotisations', tableStartX + colWidths[0] + 2, tableY + 6, { width: colWidths[1] - 4, align: 'center' });
+      doc.rect(tableStartX + colWidths[0] + colWidths[1], tableY, colWidths[2], tableRowH).fillAndStroke('#E8E8E8', '#000');
+      doc.text('Valeurs de rachat', tableStartX + colWidths[0] + colWidths[1] + 2, tableY + 6, { width: colWidths[2] - 4, align: 'center' });
+
+      const tableData = [
+        ['1', '120 000', '0'],
+        ['2', '240 000', '188 800'],
+        ['3', '360 000', '305 873'],
+        ['4', '480 000', '427 043'],
+        ['5', '600 000', '552 454'],
+        ['6', '720 000', '682 254'],
+        ['7', '840 000', '816 598'],
+        ['8', '960 000', '955 643']
+      ];
+
+      doc.font('Helvetica').fontSize(7);
+      tableData.forEach((row) => {
+        tableY += tableRowH;
+        doc.rect(tableStartX, tableY, colWidths[0], tableRowH).stroke();
+        doc.text(row[0], tableStartX + 2, tableY + 6, { width: colWidths[0] - 4, align: 'center' });
+        doc.rect(tableStartX + colWidths[0], tableY, colWidths[1], tableRowH).stroke();
+        doc.text(row[1], tableStartX + colWidths[0] + 2, tableY + 6, { width: colWidths[1] - 4, align: 'center' });
+        doc.rect(tableStartX + colWidths[0] + colWidths[1], tableY, colWidths[2], tableRowH).stroke();
+        doc.text(row[2], tableStartX + colWidths[0] + colWidths[1] + 2, tableY + 6, { width: colWidths[2] - 4, align: 'center' });
+      });
+
+      curY = tableY + tableRowH + 12;
+
+      // Article 12
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 12 : Prescription', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6.5);
+      doc.text('Comme le stipule l\'article 28 du Code des assurances de la Conférence Interafricaine des Marchés d\'Assurances (CIMA), toute action dérivant de ce présent contrat est prescrite par dix (10) ans, à compter de la date de survenance de l\'évènement qui y donne naissance.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 20;
+
+      // Article 13
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('Article 13 : Clause données personnelles', startX, curY, { width: fullW });
+      curY += 9;
+      doc.font('Helvetica').fontSize(6);
+      doc.text('CORIS ASSURANCES VIE CI est le responsable des traitements des données à caractère personnel (DCP) du client, collectées et traitées directement ou par le biais d\'un intermédiaire, aux fins de signer et intégrer les cotisations, avenants, renouvellement de contrat d\'assurance. A cet effet, les DCP du client peuvent être communiquées ou transférées :', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 23;
+      doc.text('•  aux entités du groupe CORIS et leurs filiales, à des fins de prospection commerciale ou de conclusion d\'autres contrats ou en cas de mise en commun de moyens ou de regroupements de sociétés ;', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 12;
+      doc.text('•  aux prestataires, partenaires et professionnels règlementés (médecin, avocats, notaire, Commissaire aux Comptes ...) avec lesquels nous travaillons et qui ont l\'obligation de se conformer à la loi 2013-450 relative à la protection des DCP ;', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+      doc.text('•  aux autorités administratives, financières, judicaires, agences d\'Etats, organismes publics, ou agents assermentés de l\'Autorité de protection, sur demande et dans la limite de ce qui est permis par la règlementation.', startX, curY, { width: fullW, lineGap: 0.5 });
+      curY += 15;
+      doc.text('Les traitements de DCP sont réalisés conformément à la loi N°2013-450 du 19 juin 2013 relative à la protection des DCP, et suivant les dispositions de la politique de CORIS ASSURANCES VIE CI sur la protection des DCP. Par ailleurs, les DCP seront conservées uniquement pour la durée nécessaire à l\'accomplissement de ladite finalité, et pendant une durée supplémentaire de dix (10) ans après la fin de la relation avec l\'assuré.', startX, curY, { width: fullW, lineGap: 0.5 });
+      doc.text('En vertu des dispositions des articles 28 à 33 la loi N°2013-450 du 19 juin 2013, le client dispose des droits d\'accès à ses DCP, d\'être informé, de s\'opposer et de demander leur effacement si leur traitement n\'est plus nécessaire pour la finalité décrite, en adressant une demande au correspondant à la protection des DCP à l\'adresse : corisvie-ci@coris-assurances.com.', startX, curY, { width: fullW, lineGap: 0.8 });
+      curY += 28;
+      doc.text('En signant le présent contrat d\'assurance, le client consent au traitement des DCP découlant de la relation contractuelle avec l\'Assureur.', startX, curY, { width: fullW, lineGap: 0.8 });
+
+      console.log('✅ Page 2 ajoutée pour Coris Retraite avec résumé des conditions générales');
+    }
+
+    // Pour Coris Familis : Ajouter une deuxième page avec les conditions générales
+    if (isFamilis) {
+      doc.addPage();
+      curY = 30;
+      
+      // Titre principal
+      doc.font('Helvetica-Bold').fontSize(14);
+      doc.text('CORIS Familis', startX, curY, { width: fullW, align: 'center' });
+      curY += 25;
+
+      // Layout en 2 colonnes
+      const colWidth = fullW * 0.48;
+      const rightColX = startX + fullW * 0.52;
+      let leftY = curY;
+      let rightY = curY;
+
+      // COLONNE GAUCHE
+      // Préambule
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Préambule', startX, leftY, { width: colWidth });
+      leftY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Le présent document constitue la notice d\'information prévue par la législation. Il résume les dispositions du contrat d\'assurance souscrit auprès de Coris Assurances Vie Côte D\'Ivoire. Votre contrat d\'assurance est constitué de conditions générales, de conditions particulières et des formalités d\'adhésion. Le preneur d\'assurance déclare avoir pris connaissance des conditions générales et y adhère. Les conditions générales sont à votre disposition auprès de votre agence ou sur simple demande.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 68;
+
+      // Objet du contrat
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Objet du contrat', startX, leftY, { width: colWidth });
+      leftY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Le contrat Familis vise à garantir l\'assuré selon son âge et la formule de garantie choisie, contre les risques de décès ou de perte totale et irréversible d\'autonomie survenant pendant une durée déterminée dans le certificat d\'adhésion.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 40;
+
+      // Garanties accordées
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Garanties accordées', startX, leftY, { width: colWidth });
+      leftY += 12;
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• La garantie décès :', startX, leftY, { width: colWidth });
+      leftY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('À la suite d\'un décès consécutif à un accident ou à une maladie survenue en cours de contrat et si le décès survient avant le terme du contrat, ou de perte totale et irréversible d\'autonomie de l\'assuré, et au plus tard avant la fin de l\'année au cours de laquelle l\'assuré atteint l\'âge de 65ans, Coris Assurances Vie Burkina garantit le versement d\'un capital défini à la souscription au bénéficiaire désigné.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 68;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• L\'option doublement de capital :', startX, leftY, { width: colWidth });
+      leftY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('cette option permet le doublement du capital garanti en cas de décès de l\'assuré par accident dans la limite de cent millions (100 000 000) FCFA par assuré.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 30;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• L\'option frais funéraires :', startX, leftY, { width: colWidth });
+      leftY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('cette option permet de prendre en charge les dépenses liées aux obsèques de l\'assuré.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 22;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• L\'option frais médicaux :', startX, leftY, { width: colWidth });
+      leftY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('cette option permet de prendre en charge les frais engagés suite à un accident (en dehors des accidents de travail) dans la limite du montant du capital garanti.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 30;
+
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Le paiement du capital garanti en cas de décès entraîne la fin de toutes les garanties pour l\'assuré concerné.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 22;
+
+      // Paiement du capital garanti
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Paiement du capital garanti', startX, leftY, { width: colWidth });
+      leftY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Le décès ou la PTIA de l\'assuré entraine le versement du capital garanti. Ce capital est mis à disposition du bénéficiaire qui produit les pièces justificatives.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 28;
+      doc.text('Tous les règlements s\'effectuent en FCFA. Après le décès de l\'assuré et à compter de la réception des pièces justificatives nécessaires au paiement, Coris s\'engage à verser, dans un délai qui ne doit pas excéder 15 jours ouvrés, le capital au bénéficiaire.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 40;
+      doc.text('Pour ce qui concerne l\'option frais funéraires, le règlement intervient 48h après réception de l\'ensemble des pièces justificatives.', startX, leftY, { width: colWidth, lineGap: 1 });
+      leftY += 28;
+
+      // Renonciation au contrat
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Renonciation au contrat', startX, leftY, { width: colWidth });
+      leftY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('L\'assuré peut renoncer au contrat, par lettre transmise à l\'assureur avec accusé de réception, 30 jours à compter de la date de signature du certificat d\'adhésion. Dès réception de la lettre par l\'Assureur, les effets du contrat cessent.', startX, leftY, { width: colWidth, lineGap: 1 });
+
+      // COLONNE DROITE
+      // Acceptation du bénéfice
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Acceptation du bénéfice', rightColX, rightY, { width: colWidth });
+      rightY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Le bénéficiaire a la possibilité de confirmer à tout moment, avec l\'accord écrit de l\'assuré, qu\'il accepte cette désignation : il la rend ainsi irrévocable. Dans un tel cas de figure, la modification de la désignation de bénéficiaire au profit d\'une autre personne sans l\'accord préalable du bénéficiaire acceptant.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 50;
+
+      // Pièces à fournir en cas de sinistre
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Pièces à fournir en cas de sinistre', rightColX, rightY, { width: colWidth });
+      rightY += 12;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('En cas de réalisation du risque, les pièces suivantes sont à fournir en fonction de votre situation :', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 20;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• Dans tous les cas :', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('  - la déclaration de sinistre à retirer auprès de Coris Assurances Vie Burkina est à remplir et signer par le représentant légal de l\'assuré ;', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 22;
+      doc.text('  - une copie du contrat d\'assurance;', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.text('  - le questionnaire médical à retirer auprès de Coris est à remplir et signer par le médecin traitant ou le médecin ayant constaté le décès.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 25;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• Décès', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('  - un acte de décès de l\'assuré ;', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.text('  - une photocopie datée et signée de la carte nationale d\'identité ou du passeport en cours de validité du bénéficiaire et un acte désignant le ou les bénéficiaires.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 25;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• PTIA', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('  - un certificat médical attestant de l\'invalidité.', rightColX, rightY, { width: colWidth });
+      rightY += 15;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• En cas de décès par accident', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('  - un courrier précisant la nature, les circonstances, la date et le lieu de l\'accident ;', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 18;
+      doc.text('  - les preuves de l\'accident telles que rapport de police, procès-verbal de gendarmerie.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 20;
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      doc.text('• Remboursement des frais médicaux', rightColX, rightY, { width: colWidth });
+      rightY += 10;
+      doc.font('Helvetica').fontSize(7);
+      doc.text('En cas de sinistre, le souscripteur où à défaut l\'assuré doit :', rightColX, rightY, { width: colWidth });
+      rightY += 12;
+      doc.text('  - Donner, sous peine de déchéance, sauf cas fortuit ou de force majeure, dès qu\'il en a connaissance et au plus tard dans les cinq jours ouvrés, l\'avis du sinistre à l\'Assureur ou à son représentant local, par écrit de préférence par lettre recommandée ou verbalement, contre récépissé ;', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 42;
+      doc.text('  - Indiquer dans la déclaration du sinistre ou, en cas d\'impossibilité, dans une déclaration ultérieure faite dans le plus bref délai, les nom, prénoms, âge et domicile de la victime, les date, lieu et circonstances du sinistre, les nom et adresse du médecin appelé à donner les premiers soins et, s\'il y a lieu, les nom et adresse de l\'auteur et, si possible, des témoins de ce sinistre. Cette déclaration doit également indiquer si les représentants de l\'autorité sont intervenus et s\'il a été établi un procès-verbal ou un constat ;', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 72;
+      doc.text('  - Transmettre les reçus d\'achat de médicaments et les tickets de caisse y relatifs.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 18;
+
+      doc.font('Helvetica').fontSize(7);
+      doc.text('Les pièces sont à envoyer sous pli confidentiel à l\'attention du médecin conseil de Coris en cas de pièces médicales.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+      rightY += 18;
+      doc.text('Coris Assurances Vie Burkina se réserve le droit de se livrer à toute enquête, de réclamer des documents complémentaires.', rightColX, rightY, { width: colWidth, lineGap: 1 });
+
+      console.log('✅ Page 2 ajoutée pour Coris Familis avec notice d\'information');
+    }
+
     doc.end();
   } catch (error) {
     console.error('Erreur génération PDF:', error);
     res.status(500).json({ success: false, message: 'Erreur lors de la génération du PDF' });
   }
+  
 };
 
 /**

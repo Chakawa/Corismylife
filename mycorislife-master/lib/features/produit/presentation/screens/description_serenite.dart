@@ -95,7 +95,8 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           children: [
             // Hero Section
@@ -294,6 +295,7 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
             ),
           ],
         ),
+      ),
       ),
     );
   }

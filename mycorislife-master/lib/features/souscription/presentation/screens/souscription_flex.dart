@@ -2736,28 +2736,30 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             ),
           ];
         },
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: NeverScrollableScrollPhysics(),
-                children: _isCommercial
-                    ? [
-                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                        _buildStep1(), // Page 1: Simulation
-                        _buildStep2(), // Page 2: Bénéficiaire/Contact
-                        _buildStep3(), // Page 3: Récapitulatif
-                      ]
-                    : [
-                        _buildStep1(), // Page 0: Simulation
-                        _buildStep2(), // Page 1: Bénéficiaire/Contact
-                        _buildStep3(), // Page 2: Récapitulatif
-                      ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: _isCommercial
+                      ? [
+                          _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                          _buildStep1(), // Page 1: Simulation
+                          _buildStep2(), // Page 2: Bénéficiaire/Contact
+                          _buildStep3(), // Page 3: Récapitulatif
+                        ]
+                      : [
+                          _buildStep1(), // Page 0: Simulation
+                          _buildStep2(), // Page 1: Bénéficiaire/Contact
+                          _buildStep3(), // Page 2: Récapitulatif
+                        ],
+                ),
               ),
-            ),
-            _buildNavigationButtons(),
-          ],
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );

@@ -855,7 +855,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   // =================================================================
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 5 : 4;
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
@@ -868,8 +868,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           canProceed = true;
-        } else if (_currentStep == 4) {
-          canProceed = true;
         }
       } else {
         if (_currentStep == 0 && _validateStep1()) {
@@ -877,8 +875,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          canProceed = true;
-        } else if (_currentStep == 3) {
           canProceed = true;
         }
       }
@@ -1115,32 +1111,32 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             ),
           ];
         },
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: NeverScrollableScrollPhysics(),
-                children: _isCommercial
-                    ? [
-                        _buildStepClientInfo(), // Page 0: Informations client
-                        _buildStep1(), // Page 1: Paramètres de souscription
-                        _buildStep2(), // Page 2: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 3: Mode de paiement
-                        _buildStep3(), // Page 4: Récapitulatif
-                        _buildStep4(), // Page 5: Paiement
-                      ]
-                    : [
-                        _buildStep1(), // Page 0: Paramètres de souscription
-                        _buildStep2(), // Page 1: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 2: Mode de paiement
-                        _buildStep3(), // Page 3: Récapitulatif
-                        _buildStep4(), // Page 4: Paiement
-                      ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: _isCommercial
+                      ? [
+                          _buildStepClientInfo(), // Page 0: Informations client
+                          _buildStep1(), // Page 1: Paramètres de souscription
+                          _buildStep2(), // Page 2: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 3: Mode de paiement
+                          _buildStep3(), // Page 4: Récapitulatif (Finaliser ouvre modal)
+                        ]
+                      : [
+                          _buildStep1(), // Page 0: Paramètres de souscription
+                          _buildStep2(), // Page 1: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 2: Mode de paiement
+                          _buildStep3(), // Page 3: Récapitulatif (Finaliser ouvre modal)
+                        ],
+                ),
               ),
-            ),
-            _buildNavigationButtons(),
-          ],
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -2195,7 +2191,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Comment souhaitez-vous payer vos cotisations ?',
+                                'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
                                   color: blanc.withAlpha(229),
                                   fontSize: 14,
@@ -2480,7 +2476,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserData(),
                       builder: (context, snapshot) {
-                        debugPrint('🔵 FutureBuilder - State: ${snapshot.connectionState}');
+                        debugPrint(
+                            '🔵 FutureBuilder - State: ${snapshot.connectionState}');
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           debugPrint('⏳ Chargement des données utilisateur...');
@@ -2497,7 +2494,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         }
 
                         if (snapshot.hasError) {
-                          debugPrint('❌ Erreur FutureBuilder: ${snapshot.error}');
+                          debugPrint(
+                              '❌ Erreur FutureBuilder: ${snapshot.error}');
                           if (_userData.isNotEmpty) {
                             return _buildRecapContent(userData: _userData);
                           }
@@ -2786,18 +2784,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  int recapStep = _isCommercial ? 4 : 3;
-                  int finalStep = _isCommercial ? 5 : 4;
-
-                  if (_currentStep == recapStep) {
-                    _nextStep();
-                  } else if (_currentStep == finalStep) {
-                    _showPaymentOptions();
-                  } else {
-                    _nextStep();
-                  }
-                },
+                onPressed: _currentStep == (_isCommercial ? 4 : 3)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -2811,17 +2800,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      () {
-                        int recapStep = _isCommercial ? 4 : 3;
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == recapStep) {
-                          return 'Suivant';
-                        } else if (_currentStep == finalStep) {
-                          return 'Finaliser & Payer';
-                        } else {
-                          return 'Suivant';
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? 'Finaliser'
+                          : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -2830,14 +2811,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      () {
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == finalStep) {
-                          return Icons.check_circle;
-                        } else {
-                          return Icons.arrow_forward;
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? Icons.check
+                          : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
                     ),
@@ -2853,10 +2829,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// Page étape 4: Paiement
   Widget _buildStep4() {
-    // Formater le montant pour l'affichage
-    final montantText = _montantCotisationController.text.replaceAll(' ', '');
-    final montant = double.tryParse(montantText) ?? 0;
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
@@ -2913,7 +2885,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   ),
                   SizedBox(height: 24),
 
-                  // Montant à payer (cotisation périodique)
+                  // Montant à payer
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -2944,19 +2916,14 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         ),
                         SizedBox(height: 8),
                         Text(
-                          _formatMontant(montant),
+                          _formatMontant(double.tryParse(
+                                  _montantCotisationController.text
+                                      .replaceAll(' ', '')) ??
+                              0),
                           style: TextStyle(
                             color: vertSucces,
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Périodicité : $_selectedPeriodicite',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 12,
                           ),
                         ),
                       ],

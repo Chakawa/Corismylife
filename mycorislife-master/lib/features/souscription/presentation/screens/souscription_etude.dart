@@ -104,7 +104,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   File? _pieceIdentite;
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
-  
+
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
@@ -128,7 +128,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     'Banque Atlantique',
     'Autre',
   ];
-  
+
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
     'Enfant',
@@ -1328,13 +1328,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
-      
+
       if (data['infos_paiement'] != null) {
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
           _banqueController.text = infos['banque'] ?? '';
           _numeroCompteController.text = infos['numero_compte'] ?? '';
-        } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+        } else if (_selectedModePaiement == 'Wave' ||
+            _selectedModePaiement == 'Orange Money') {
           _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
         }
       }
@@ -1692,10 +1693,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _nextStep() {
-    // maxStep mis à jour pour inclure l'étape mode de paiement
-    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (recap), 4 (paiement)
-    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (recap), 5 (paiement)
-    final maxStep = _isCommercial ? 5 : 4;
+    // maxStep mis à jour: Recap est la dernière étape (pas de Step4 séparé)
+    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (recap)
+    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (recap)
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
@@ -1711,9 +1712,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           // Validation du mode de paiement avant le récap
           canProceed = true;
-        } else if (_currentStep == 4) {
-          // Recap pour commerciaux - aller au paiement
-          canProceed = true;
         }
       } else {
         // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
@@ -1724,9 +1722,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
           // Validation du mode de paiement avant le récap
-          canProceed = true;
-        } else if (_currentStep == 3) {
-          // Recap pour clients - aller au paiement
           canProceed = true;
         }
       }
@@ -1894,13 +1889,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
         return false;
       }
-    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' ||
+        _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
         return false;
       }
-      if (!RegExp(r'^[0-9]{8,10}$').hasMatch(_numeroMobileMoneyController.text.trim())) {
-        _showErrorSnackBar('Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+      if (!RegExp(r'^[0-9]{8,10}$')
+          .hasMatch(_numeroMobileMoneyController.text.trim())) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -2035,7 +2034,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone':
+                        _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
       };
@@ -2468,32 +2468,32 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             ),
           ];
         },
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: NeverScrollableScrollPhysics(),
-                children: _isCommercial
-                    ? [
-                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                        _buildStep1(), // Page 1: Paramètres de souscription
-                        _buildStep2(), // Page 2: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 3: Mode de paiement
-                        _buildStep3(), // Page 4: Récapitulatif
-                        _buildStep4(), // Page 5: Paiement
-                      ]
-                    : [
-                        _buildStep1(), // Page 0: Paramètres de souscription
-                        _buildStep2(), // Page 1: Bénéficiaire/Contact
-                        _buildStepModePaiement(), // Page 2: Mode de paiement
-                        _buildStep3(), // Page 3: Récapitulatif
-                        _buildStep4(), // Page 4: Paiement
-                      ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: _isCommercial
+                      ? [
+                          _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                          _buildStep1(), // Page 1: Paramètres de souscription
+                          _buildStep2(), // Page 2: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 3: Mode de paiement
+                          _buildStep3(), // Page 4: Récapitulatif (Finaliser ouvre modal)
+                        ]
+                      : [
+                          _buildStep1(), // Page 0: Paramètres de souscription
+                          _buildStep2(), // Page 1: Bénéficiaire/Contact
+                          _buildStepModePaiement(), // Page 2: Mode de paiement
+                          _buildStep3(), // Page 3: Récapitulatif (Finaliser ouvre modal)
+                        ],
+                ),
               ),
-            ),
-            _buildNavigationButtons(),
-          ],
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -3530,7 +3530,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }) {
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
-    
+
     return DropdownButtonFormField<String>(
       value: validValue,
       decoration: InputDecoration(
@@ -3704,7 +3704,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             color: blanc.withAlpha(51),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.payment, color: blanc, size: 32),
+                          child:
+                              const Icon(Icons.payment, color: blanc, size: 32),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -3756,7 +3757,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
-                        
+
                         switch (mode) {
                           case 'Virement':
                             icon = Icons.account_balance;
@@ -3788,7 +3789,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isSelected ? bleuCoris.withOpacity(0.1) : Colors.transparent,
+                              color: isSelected
+                                  ? bleuCoris.withOpacity(0.1)
+                                  : Colors.transparent,
                               border: Border(
                                 bottom: BorderSide(
                                   color: _modePaiementOptions.last == mode
@@ -3814,13 +3817,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                     mode,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected ? bleuCoris : Colors.black87,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? bleuCoris
+                                          : Colors.black87,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
-                                  Icon(Icons.check_circle, color: bleuCoris, size: 28),
+                                  Icon(Icons.check_circle,
+                                      color: bleuCoris, size: 28),
                               ],
                             ),
                           ),
@@ -3844,13 +3852,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Nom de la banque
                       DropdownButtonFormField<String>(
                         value: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -3875,7 +3884,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         },
                       ),
                       SizedBox(height: 16),
-                      
+
                       // Champ texte personnalisé si "Autre" est sélectionné
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
@@ -3893,7 +3902,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                         SizedBox(height: 16),
                       ],
-                      
+
                       // Numéro de compte
                       TextField(
                         controller: _numeroCompteController,
@@ -3912,7 +3921,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ],
 
                     // WAVE ou ORANGE MONEY
-                    if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
+                    if (_selectedModePaiement == 'Wave' ||
+                        _selectedModePaiement == 'Orange Money') ...[
                       Text(
                         'Numéro ${_selectedModePaiement}',
                         style: TextStyle(
@@ -3922,7 +3932,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
@@ -3930,8 +3939,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.phone_android,
-                            color: _selectedModePaiement == 'Wave' 
-                                ? Color(0xFF00BFFF) 
+                            color: _selectedModePaiement == 'Wave'
+                                ? Color(0xFF00BFFF)
                                 : Colors.orange,
                           ),
                           border: OutlineInputBorder(
@@ -3957,7 +3966,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
+                        Icon(Icons.info_outline,
+                            color: Colors.blue[700], size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -4339,24 +4349,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  // Déterminer l'étape du récapitulatif selon si commercial ou pas
-                  // Commercial: 0=Client, 1=Souscription, 2=Infos, 3=Paiement, 4=Recap, 5=Finaliser
-                  // Client: 0=Souscription, 1=Infos, 2=Paiement, 3=Recap, 4=Finaliser
-                  int recapStep = _isCommercial ? 4 : 3;
-                  int finalStep = _isCommercial ? 5 : 4;
-
-                  if (_currentStep == recapStep) {
-                    // Depuis le récapitulatif: aller à finaliser
-                    _nextStep();
-                  } else if (_currentStep == finalStep) {
-                    // Étape finaliser - ouvrir les options de paiement
-                    _showPaymentOptions();
-                  } else {
-                    // Autres étapes - avancer
-                    _nextStep();
-                  }
-                },
+                onPressed: _currentStep == (_isCommercial ? 4 : 3)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -4371,17 +4366,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      () {
-                        int recapStep = _isCommercial ? 4 : 3;
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == recapStep) {
-                          return 'Suivant';
-                        } else if (_currentStep == finalStep) {
-                          return 'Finaliser & Payer';
-                        } else {
-                          return 'Suivant';
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? 'Finaliser'
+                          : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4390,14 +4377,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      () {
-                        int finalStep = _isCommercial ? 5 : 4;
-                        if (_currentStep == finalStep) {
-                          return Icons.check_circle;
-                        } else {
-                          return Icons.arrow_forward;
-                        }
-                      }(),
+                      _currentStep == (_isCommercial ? 4 : 3)
+                          ? Icons.check
+                          : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
                     ),
@@ -4468,6 +4450,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
                   SizedBox(height: 24),
+
                   // Montant à payer
                   Container(
                     padding: EdgeInsets.all(16),
@@ -4490,7 +4473,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Montant à payer',
+                          _selectedMode == 'prime'
+                              ? 'Prime ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} à payer'
+                              : 'Rente ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} à payer',
                           style: TextStyle(
                             color: grisTexte,
                             fontSize: 14,
@@ -4499,7 +4484,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                         SizedBox(height: 8),
                         Text(
-                          _formatMontant(_primeCalculee),
+                          _formatMontant(
+                              double.tryParse(_montantController.text) ?? 0),
                           style: TextStyle(
                             color: vertSucces,
                             fontSize: 28,
@@ -4510,7 +4496,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Titre de la section
                   Text(
                     'Que souhaitez-vous faire maintenant ?',
@@ -4521,7 +4507,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
                   SizedBox(height: 20),
-                  
+
                   // Option 1: Payer maintenant
                   InkWell(
                     onTap: () => _showPaymentOptions(),
@@ -4577,9 +4563,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 16),
-                  
+
                   // Option 2: Payer plus tard
                   InkWell(
                     onTap: () => _saveAsProposition(),
@@ -4605,7 +4591,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               color: orangeWarning.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.schedule, color: orangeWarning, size: 32),
+                            child: Icon(Icons.schedule,
+                                color: orangeWarning, size: 32),
                           ),
                           SizedBox(width: 16),
                           Expanded(
@@ -4631,14 +4618,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               ],
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, color: orangeWarning, size: 20),
+                          Icon(Icons.arrow_forward_ios,
+                              color: orangeWarning, size: 20),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Note informative
                   Container(
                     padding: EdgeInsets.all(16),
@@ -4679,6 +4667,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
                   SizedBox(height: 24),
+
                   // Avertissement de sécurité
                   Container(
                     padding: EdgeInsets.all(12),

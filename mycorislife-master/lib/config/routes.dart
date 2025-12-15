@@ -35,6 +35,8 @@ import 'package:mycorislife/features/produit/presentation/screens/description_fl
 import 'package:mycorislife/features/produit/presentation/screens/description_etude.dart';
 // ℹ️ PRODUIT AFFICHÉ (souscription désactivée)
 import 'package:mycorislife/features/produit/presentation/screens/description_prets.dart';
+// ℹ️ NOUVEAU PRODUIT (bientôt disponible)
+import 'package:mycorislife/features/produit/presentation/screens/description_pret_scolaire.dart';
 // ℹ️ NOUVEAUX PRODUITS (souscription désactivée)
 import 'package:mycorislife/features/produit/presentation/screens/description_bon_plan.dart';
 import 'package:mycorislife/features/produit/presentation/screens/description_assure_prestige.dart';
@@ -226,6 +228,9 @@ final Map<String, WidgetBuilder> appRoutes = {
   // PRODUITS AFFICHÉS (souscription désactivée)
   '/flex': (context) => const DescriptionFlexPage(),
   '/prets': (context) => const DescriptionPretsPage(),
+  // PRÊT SCOLAIRE (bientôt disponible)
+  '/description_pret_scolaire': (context) =>
+      const DescriptionPretScolairePage(),
   // NOUVEAUX PRODUITS (souscription désactivée)
   '/bon-plan': (context) => const DescriptionBonPlanPage(),
   '/assure-prestige': (context) => const DescriptionAssurePrestigePage(),

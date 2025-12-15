@@ -53,14 +53,17 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
     _screenLockChannel.setMethodCallHandler((call) async {
       debugPrint('🔔 Événement natif reçu: ${call.method}');
 
-      if (call.method == 'onScreenUnlocked') {
-        debugPrint(
-            '🔓 ÉCRAN DÉVERROUILLÉ (détection native) - reconnexion immédiate');
-        _forceReconnection('Écran déverrouillé - sécurité');
-      }
+      // DÉSACTIVÉ : Ne plus forcer la reconnexion au déverrouillage d'écran
+      // Seul le timeout de 5 minutes en arrière-plan est actif
+      // if (call.method == 'onScreenUnlocked') {
+      //   debugPrint(
+      //       '🔓 ÉCRAN DÉVERROUILLÉ (détection native) - reconnexion immédiate');
+      //   _forceReconnection('Écran déverrouillé - sécurité');
+      // }
     });
 
-    debugPrint('✅ Listener natif initialisé pour verrouillage d\'écran');
+    debugPrint(
+        '✅ Listener natif initialisé pour verrouillage d\'écran (DÉSACTIVÉ)');
   }
 
   void _forceReconnection(String reason) {
