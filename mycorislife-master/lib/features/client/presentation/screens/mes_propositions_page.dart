@@ -1128,6 +1128,8 @@ class _PropositionsPageState extends State<PropositionsPage>
       'CORIS RETRAITE',
       'CORIS SÉRÉNITÉ',
       'CORIS FAMILIS',
+      'CORIS ASSURE PRESTIGE',
+      'MON BON PLAN CORIS',
       'ÉPARGNE BONUS'
     ];
 
