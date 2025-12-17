@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 // Stockage OTP en mémoire (simple, à remplacer par Redis en prod)
-const otpStore = new Map(); // key: userId or identifier, value: { code, expiresAt }
+const otpStore = new Map(); // key: telephone, value: { code, expiresAt, userData }
 const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
+
+// Configuration API SMS
+const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send';
+// const SMS_API_TOKEN = 'fa09e6cef91f77c4b7d8e2c067f1b22c';
+const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c';
+const SMS_SENDER = 'CORIS ASSUR'; // Max 11 caractères requis par l'API
 
 // Import du contrôleur (optionnel)
 let authController;
@@ -12,6 +18,236 @@ try {
 } catch (error) {
   console.log('AuthController non trouvé, utilisation des routes directes');
 }
+
+/**
+ * 📱 FONCTION D'ENVOI DE SMS
+ * Envoie un SMS via l'API SMS CI avec logs détaillés
+ */
+async function sendSMS(phoneNumber, message) {
+  console.log('\n=== 📱 DÉBUT ENVOI SMS ===');
+  console.log('📞 Destinataire:', phoneNumber);
+  console.log('📝 Message:', message);
+  console.log('🔑 API URL:', SMS_API_URL);
+  console.log('👤 Expéditeur:', SMS_SENDER);
+  
+  try {
+    const data = JSON.stringify({
+      from: SMS_SENDER,
+      to: phoneNumber,
+      content: message,
+    });
+    
+    console.log('📦 Données à envoyer:', data);
+    console.log('⏳ Envoi de la requête HTTP POST...');
+
+    const response = await fetch(SMS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SMS_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: data,
+    });
+
+    console.log('📊 Statut HTTP:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      console.error('❌ Erreur HTTP:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('📄 Réponse brute:', errorText);
+      return { 
+        success: false, 
+        error: `HTTP ${response.status}: ${response.statusText}`,
+        details: errorText
+      };
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Réponse API SMS (JSON):', JSON.stringify(responseData, null, 2));
+    
+    // Vérifier si l'API a retourné un succès
+    if (responseData.status === 'success' || responseData.success === true) {
+      console.log('✅✅ SMS ENVOYÉ AVEC SUCCÈS!');
+      console.log('📱 ID Message:', responseData.messageId || responseData.id || 'N/A');
+    } else {
+      console.warn('⚠️ Réponse API reçue mais statut incertain:', responseData);
+    }
+    
+    console.log('=== ✅ FIN ENVOI SMS ===\n');
+    return { success: true, data: responseData };
+    
+  } catch (error) {
+    console.error('\n=== ❌ ERREUR CRITIQUE ENVOI SMS ===');
+    console.error('Type d\'erreur:', error.constructor.name);
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('=== ❌ FIN ERREUR ===\n');
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 📱 ROUTE DE GÉNÉRATION ET ENVOI D'OTP
+ * Génère un code OTP de 5 chiffres et l'envoie par SMS
+ * 
+ * @route POST /auth/send-otp
+ * @param {string} telephone - Le numéro de téléphone
+ * @param {object} userData - Les données du client à enregistrer après vérification
+ * @returns {object} { success: boolean, message: string }
+ */
+router.post('/send-otp', async (req, res) => {
+  console.log('\n╔════════════════════════════════════════╗');
+  console.log('║   DEMANDE D\'ENVOI OTP                 ║');
+  console.log('╚════════════════════════════════════════╝');
+  
+  try {
+    const { telephone, userData } = req.body;
+    
+    console.log('📋 Données reçues:');
+    console.log('  - Téléphone:', telephone);
+    console.log('  - UserData présent:', !!userData);
+    
+    if (!telephone) {
+      console.error('❌ Erreur: Numéro de téléphone manquant');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le numéro de téléphone est requis' 
+      });
+    }
+    
+    // Générer un code OTP de 5 chiffres
+    const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
+    console.log('🔐 Code OTP généré:', otpCode);
+    
+    // Stocker l'OTP avec expiration de 5 minutes
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    otpStore.set(telephone, { 
+      code: otpCode, 
+      expiresAt, 
+      userData // Stocker les données utilisateur pour l'inscription finale
+    });
+    
+    console.log('💾 OTP stocké en mémoire');
+    console.log('⏰ Expiration:', new Date(expiresAt).toLocaleString());
+    console.log('📝 Note: Si un OTP existait déjà pour ce numéro, il a été REMPLACÉ par le nouveau');
+    
+    // Envoyer le SMS avec le code OTP
+    const smsMessage = `Votre code de verification Coris Assurance est: ${otpCode}. Ce code expire dans 5 minutes. Ne le partagez avec personne.`;
+    console.log('📤 Tentative d\'envoi du SMS...');
+    
+    const smsResult = await sendSMS(telephone, smsMessage);
+    
+    if (!smsResult.success) {
+      console.error('╔════════════════════════════════════════╗');
+      console.error('║   ⚠️  ÉCHEC ENVOI SMS                 ║');
+      console.error('╚════════════════════════════════════════╝');
+      console.error('Erreur:', smsResult.error);
+      console.error('Détails:', smsResult.details);
+      console.error('⚠️ OTP stocké mais SMS non envoyé!');
+      
+      // En cas d'échec, retourner une erreur à l'utilisateur
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Impossible d\'envoyer le SMS. Veuillez vérifier votre numéro et réessayer.' 
+      });
+    }
+    
+    console.log('╔════════════════════════════════════════╗');
+    console.log('║   ✅ SMS ENVOYÉ AVEC SUCCÈS           ║');
+    console.log('╚════════════════════════════════════════╝');
+    console.log('✅ Code OTP envoyé au', telephone);
+    console.log('📊 Résumé:');
+    console.log('  - Code OTP: ***', otpCode.slice(-2), '(masqué dans les logs production)');
+    console.log('  - Destinataire:', telephone);
+    console.log('  - Expiration:', new Date(expiresAt).toLocaleString());
+    console.log('  - SMS envoyé: ✅ OUI');
+    console.log('\n');
+    
+    res.json({ 
+      success: true, 
+      message: 'Code OTP envoyé avec succès'
+      // ⚠️ NE JAMAIS retourner le code OTP dans la réponse
+    });
+  } catch (error) {
+    console.error('\n╔════════════════════════════════════════╗');
+    console.error('║   ❌ ERREUR CRITIQUE ROUTE OTP        ║');
+    console.error('╚════════════════════════════════════════╝');
+    console.error('Type d\'erreur:', error.constructor.name);
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('\n');
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de l\'envoi du code OTP' 
+    });
+  }
+});
+
+/**
+ * ✅ ROUTE DE VÉRIFICATION D'OTP ET CRÉATION DU COMPTE
+ * Vérifie le code OTP et crée le compte si le code est correct
+ * 
+ * @route POST /auth/verify-otp
+ * @param {string} telephone - Le numéro de téléphone
+ * @param {string} otpCode - Le code OTP à vérifier
+ * @returns {object} { success: boolean, user: object }
+ */
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { telephone, otpCode } = req.body;
+    
+    if (!telephone || !otpCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le téléphone et le code OTP sont requis' 
+      });
+    }
+    
+    // Récupérer l'OTP stocké
+    const storedOtp = otpStore.get(telephone);
+    
+    if (!storedOtp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Aucun code OTP trouvé. Veuillez demander un nouveau code.' 
+      });
+    }
+    
+    // Vérifier si l'OTP a expiré
+    if (Date.now() > storedOtp.expiresAt) {
+      otpStore.delete(telephone);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le code OTP a expiré. Veuillez demander un nouveau code.' 
+      });
+    }
+    
+    // Vérifier si le code est correct
+    if (storedOtp.code !== otpCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Code OTP incorrect. Veuillez réessayer.' 
+      });
+    }
+    
+    // Code OTP correct, créer le compte
+    const user = await authController.registerClient(storedOtp.userData);
+    
+    // Supprimer l'OTP après utilisation
+    otpStore.delete(telephone);
+    
+    console.log('✅ Compte créé avec succès après vérification OTP:', user.email || telephone);
+    
+    res.status(201).json({ success: true, user });
+  } catch (error) {
+    console.error('Erreur vérification OTP:', error);
+    res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Erreur lors de la vérification du code OTP' 
+    });
+  }
+});
 
 // Route d'inscription
 router.post('/register', async (req, res) => {
@@ -39,7 +275,64 @@ router.post('/register', async (req, res) => {
 });
 
 /**
- * 🔐 ROUTE DE CONNEXION
+ * � ROUTE DE VÉRIFICATION D'UNICITÉ DU TÉLÉPHONE
+ * Vérifie si un numéro de téléphone existe déjà dans la base de données
+ * 
+ * @route POST /auth/check-phone
+ * @param {string} telephone - Le numéro de téléphone à vérifier
+ * @returns {object} { exists: boolean }
+ */
+router.post('/check-phone', async (req, res) => {
+  try {
+    const { telephone } = req.body;
+    
+    if (!telephone) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le numéro de téléphone est requis' 
+      });
+    }
+    
+    const exists = await authController.checkPhoneExists(telephone);
+    res.json({ success: true, exists });
+  } catch (error) {
+    console.error('Erreur vérification téléphone:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la vérification du téléphone' 
+    });
+  }
+});
+
+/**
+ * 📧 ROUTE DE VÉRIFICATION D'UNICITÉ DE L'EMAIL
+ * Vérifie si un email existe déjà dans la base de données
+ * 
+ * @route POST /auth/check-email
+ * @param {string} email - L'email à vérifier
+ * @returns {object} { exists: boolean }
+ */
+router.post('/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.json({ success: true, exists: false });
+    }
+    
+    const exists = await authController.checkEmailExists(email);
+    res.json({ success: true, exists });
+  } catch (error) {
+    console.error('Erreur vérification email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la vérification de l\'email' 
+    });
+  }
+});
+
+/**
+ * �🔐 ROUTE DE CONNEXION
  * Permet à un utilisateur de se connecter avec son téléphone OU son email
  * 
  * @route POST /auth/login

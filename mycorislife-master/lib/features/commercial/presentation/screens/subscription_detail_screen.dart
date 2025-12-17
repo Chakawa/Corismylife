@@ -485,6 +485,61 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       );
     }
 
+    // Pour CORIS SOLIDARITÉ
+    if (productType.contains('solidarite')) {
+      final capital = souscriptionData['capital'] ?? 0;
+      final periodicite = souscriptionData['periodicite'] ?? 'mensuel';
+      final primeTotale = souscriptionData['prime_totale'] ?? souscriptionData['prime'] ?? 0;
+      final dateEffet = souscriptionData['date_effet'];
+      
+      // Récupérer le nombre de membres
+      final conjoints = souscriptionData['conjoints'] as List? ?? [];
+      final enfants = souscriptionData['enfants'] as List? ?? [];
+      final ascendants = souscriptionData['ascendants'] as List? ?? [];
+
+      return _buildRecapSection(
+        'Produit Souscrit - CORIS SOLIDARITÉ',
+        Icons.emoji_people_outlined,
+        vertSucces,
+        [
+          _buildCombinedRecapRow(
+            'Produit',
+            'CORIS SOLIDARITÉ',
+            'N° Police',
+            subscription['numero_police'] ?? 'N/A',
+          ),
+          _buildCombinedRecapRow(
+            'Capital garanti',
+            _formatMontant(capital),
+            'Périodicité',
+            periodicite.toUpperCase(),
+          ),
+          _buildCombinedRecapRow(
+            'Prime totale',
+            _formatMontant(primeTotale),
+            'Date d\'effet',
+            _formatDate(dateEffet?.toString()),
+          ),
+          _buildCombinedRecapRow(
+            'Nombre de conjoints',
+            conjoints.length.toString(),
+            'Nombre d\'enfants',
+            enfants.length.toString(),
+          ),
+          _buildRecapRow(
+            'Nombre d\'ascendants',
+            ascendants.length.toString(),
+          ),
+          _buildCombinedRecapRow(
+            'Date de création',
+            _formatDate(subscription['date_creation']?.toString()),
+            'Statut',
+            isPaid ? 'Contrat' : 'Proposition',
+          ),
+        ],
+      );
+    }
+
     // Section générique pour les autres produits
     return _buildRecapSection(
       'Produit Souscrit',

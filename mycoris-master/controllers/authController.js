@@ -60,8 +60,14 @@ function validateUserData(userData, isCommercial = false) {
   const { email, password, nom, prenom, telephone } = userData;
   
   // Vérifier que tous les champs obligatoires sont remplis
-  if (!email || !password || !nom || !prenom || !telephone) {
+  // L'email est optionnel pour les clients, obligatoire pour les commerciaux
+  if (!password || !nom || !prenom || !telephone) {
     throw new Error('Tous les champs obligatoires doivent être remplis');
+  }
+  
+  // Pour les commerciaux, l'email est obligatoire
+  if (isCommercial && !email) {
+    throw new Error('L\'email est obligatoire pour les commerciaux');
   }
 
   // Si c'est un commercial, le code apporteur est obligatoire
@@ -70,10 +76,45 @@ function validateUserData(userData, isCommercial = false) {
   }
 
   // Vérifier que l'email commercial contient bien "coriscomvi25"
-  const role = detectUserRole(email);
-  if (isCommercial && role !== 'commercial') {
-    throw new Error('L\'email commercial doit contenir "coriscomvi25"');
+  if (isCommercial && email) {
+    const role = detectUserRole(email);
+    if (role !== 'commercial') {
+      throw new Error('L\'email commercial doit contenir "coriscomvi25"');
+    }
   }
+}
+
+/**
+ * ===============================================
+ * VÉRIFICATION D'UNICITÉ DU TÉLÉPHONE
+ * ===============================================
+ * 
+ * Vérifie si un numéro de téléphone existe déjà dans la base de données
+ * 
+ * @param {string} telephone - Le numéro de téléphone à vérifier
+ * @returns {boolean} true si le téléphone existe déjà, false sinon
+ */
+async function checkPhoneExists(telephone) {
+  const query = 'SELECT id FROM users WHERE telephone = $1';
+  const result = await pool.query(query, [telephone]);
+  return result.rows.length > 0;
+}
+
+/**
+ * ===============================================
+ * VÉRIFICATION D'UNICITÉ DE L'EMAIL
+ * ===============================================
+ * 
+ * Vérifie si un email existe déjà dans la base de données
+ * 
+ * @param {string} email - L'email à vérifier
+ * @returns {boolean} true si l'email existe déjà, false sinon
+ */
+async function checkEmailExists(email) {
+  if (!email) return false; // Si pas d'email fourni, pas de problème
+  const query = 'SELECT id FROM users WHERE email = $1';
+  const result = await pool.query(query, [email]);
+  return result.rows.length > 0;
 }
 
 /**
@@ -96,14 +137,28 @@ function validateUserData(userData, isCommercial = false) {
  * @param {string} userData.pays - Pays du client
  * 
  * @returns {object} Les données du client créé (sans le mot de passe)
- * @throws {Error} Si la validation échoue ou si l'email existe déjà
+ * @throws {Error} Si la validation échoue, si le téléphone ou l'email existe déjà
  */
 async function registerClient(userData) {
   // Valider les données avant de continuer
   validateUserData(userData);
   
-  // Détecter automatiquement le rôle basé sur l'email
-  const role = detectUserRole(userData.email);
+  // Vérifier si le numéro de téléphone existe déjà
+  const phoneExists = await checkPhoneExists(userData.telephone);
+  if (phoneExists) {
+    throw new Error('Ce numéro de téléphone est déjà utilisé pour un compte existant');
+  }
+  
+  // Vérifier si l'email existe déjà (seulement si un email est fourni)
+  if (userData.email) {
+    const emailExists = await checkEmailExists(userData.email);
+    if (emailExists) {
+      throw new Error('Cet email est déjà attribué à un autre compte');
+    }
+  }
+  
+  // Détecter automatiquement le rôle basé sur l'email (ou 'client' par défaut)
+  const role = userData.email ? detectUserRole(userData.email) : 'client';
   
   // Hasher le mot de passe (bcrypt avec 10 rounds de salage)
   // Ne JAMAIS stocker les mots de passe en clair !
@@ -120,7 +175,7 @@ async function registerClient(userData) {
   
   // Valeurs à insérer (dans le même ordre que la requête)
   const values = [
-    userData.email,          // $1
+    userData.email || null,  // $1 - Email peut être NULL
     passwordHash,            // $2 - Mot de passe hashé
     role,                    // $3 - Rôle détecté
     userData.nom,            // $4
@@ -323,5 +378,7 @@ module.exports = {
   registerClient,      // Inscription d'un client
   registerCommercial,  // Inscription d'un commercial
   login,               // Connexion (email ou téléphone)
-  detectUserRole       // Détection du rôle
+  detectUserRole,      // Détection du rôle
+  checkPhoneExists,    // Vérification d'unicité du téléphone
+  checkEmailExists     // Vérification d'unicité de l'email
 };

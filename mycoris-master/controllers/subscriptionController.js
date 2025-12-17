@@ -1842,6 +1842,9 @@ exports.getSubscriptionPDF = async (req, res) => {
       else if ((isSolidarite || isFamilis || isEmprunteur) && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
       else if (isEpargne && (d.capital || d.capital_garanti)) caracteristiquesLignes++;
       
+      // Pour Coris Solidarité, ajouter 2 lignes supplémentaires pour les membres (conjoints+enfants, ascendants)
+      if (isSolidarite) caracteristiquesLignes += 2;
+      
       drawRow(startX, curY, fullW, rowH * caracteristiquesLignes);
       
       // Ligne 1: Cotisation Périodique / Taux d'intérêt Net
@@ -1861,6 +1864,22 @@ exports.getSubscriptionPDF = async (req, res) => {
           write('Capital au terme', startX + 5, curY + 3 + 13, 9, '#666', 130);
           write(money(d.capital || d.capital_garanti || 0), startX + 145, curY + 3 + 13, 9, '#000', 150);
         }
+      }
+      
+      // Ligne 3: Nombre de membres pour Coris Solidarité
+      if (isSolidarite) {
+        const nbConjoints = Array.isArray(d.conjoints) ? d.conjoints.length : 0;
+        const nbEnfants = Array.isArray(d.enfants) ? d.enfants.length : 0;
+        const nbAscendants = Array.isArray(d.ascendants) ? d.ascendants.length : 0;
+        
+        write('Nombre de conjoints', startX + 5, curY + 3 + 26, 9, '#666', 130);
+        write(nbConjoints.toString(), startX + 145, curY + 3 + 26, 9, '#000', 150);
+        write('Nombre d\'enfants', startX + 305, curY + 3 + 26, 9, '#666', 100);
+        write(nbEnfants.toString(), startX + 410, curY + 3 + 26, 9, '#000', 125);
+        
+        // Ligne 4: Nombre d'ascendants
+        write('Nombre d\'ascendants', startX + 5, curY + 3 + 39, 9, '#666', 130);
+        write(nbAscendants.toString(), startX + 145, curY + 3 + 39, 9, '#000', 150);
       }
       
       curY += rowH * caracteristiquesLignes + 5;

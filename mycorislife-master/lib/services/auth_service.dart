@@ -112,6 +112,126 @@ class AuthService {
   }
 
   /// ==========================================
+  /// VÉRIFIER SI UN TÉLÉPHONE EXISTE DÉJÀ
+  /// ==========================================
+  /// Vérifie si un numéro de téléphone est déjà utilisé par un autre compte
+  ///
+  /// @param telephone Le numéro de téléphone à vérifier
+  /// @returns true si le téléphone existe déjà, false sinon
+  static Future<bool> checkPhoneExists(String telephone) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/check-phone'),
+        body: jsonEncode({'telephone': telephone}),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['exists'] ?? false;
+      }
+      return false;
+    } catch (e) {
+      // En cas d'erreur, on retourne false pour ne pas bloquer l'inscription
+      return false;
+    }
+  }
+
+  /// ==========================================
+  /// VÉRIFIER SI UN EMAIL EXISTE DÉJÀ
+  /// ==========================================
+  /// Vérifie si un email est déjà utilisé par un autre compte
+  ///
+  /// @param email L'email à vérifier
+  /// @returns true si l'email existe déjà, false sinon
+  static Future<bool> checkEmailExists(String email) async {
+    if (email.isEmpty) return false;
+    
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/check-email'),
+        body: jsonEncode({'email': email}),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['exists'] ?? false;
+      }
+      return false;
+    } catch (e) {
+      // En cas d'erreur, on retourne false pour ne pas bloquer l'inscription
+      return false;
+    }
+  }
+
+  /// ==========================================
+  /// ENVOYER UN CODE OTP PAR SMS
+  /// ==========================================
+  /// Envoie un code OTP de 5 chiffres au numéro de téléphone
+  ///
+  /// @param telephone Le numéro de téléphone
+  /// @param userData Les données utilisateur à stocker temporairement
+  /// @returns Le code OTP (en développement seulement)
+  static Future<String?> sendOtp(String telephone, Map<String, dynamic> userData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/send-otp'),
+        body: jsonEncode({
+          'telephone': telephone,
+          'userData': userData,
+        }),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          // En développement, le serveur peut retourner le code OTP
+          return data['otpCode'];
+        }
+      }
+      
+      throw Exception('Erreur lors de l\'envoi du code OTP');
+    } catch (e) {
+      throw Exception('Impossible d\'envoyer le code OTP: ${e.toString()}');
+    }
+  }
+
+  /// ==========================================
+  /// VÉRIFIER LE CODE OTP ET CRÉER LE COMPTE
+  /// ==========================================
+  /// Vérifie le code OTP et crée le compte si le code est correct
+  ///
+  /// @param telephone Le numéro de téléphone
+  /// @param otpCode Le code OTP à vérifier
+  static Future<void> verifyOtpAndRegister(String telephone, String otpCode) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/verify-otp'),
+        body: jsonEncode({
+          'telephone': telephone,
+          'otpCode': otpCode,
+        }),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201 && data['success']) {
+        return; // Succès
+      } else {
+        throw Exception(data['message'] ?? 'Code OTP incorrect');
+      }
+    } catch (e) {
+      if (e.toString().contains('Code OTP')) {
+        rethrow;
+      }
+      throw Exception('Erreur lors de la vérification du code OTP');
+    }
+  }
+
+  /// ==========================================
   /// INSCRIPTION D'UN NOUVEAU CLIENT
   /// ==========================================
   /// Cette fonction permet d'inscrire un nouveau client dans le système.

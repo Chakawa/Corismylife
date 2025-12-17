@@ -561,8 +561,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       final capital = details['capital'] ?? 0;
       final periodicite = details['periodicite'] ?? 'mensuel';
       final primeTotale = details['prime_totale'] ?? 0;
+      
+      // Récupérer le nombre de membres
+      final conjoints = details['conjoints'] as List? ?? [];
+      final enfants = details['enfants'] as List? ?? [];
+      final ascendants = details['ascendants'] as List? ?? [];
 
-      // Afficher SEULEMENT le produit (sans les membres)
+      // Afficher le produit avec les membres
       return SubscriptionRecapWidgets.buildRecapSection(
         'Produit Souscrit',
         Icons.emoji_people_outlined,
@@ -575,6 +580,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               SubscriptionRecapWidgets.formatMontant(capital),
               'Prime $periodicite',
               SubscriptionRecapWidgets.formatMontant(primeTotale)),
+          SubscriptionRecapWidgets.buildCombinedRecapRow(
+              'Nombre de conjoints',
+              conjoints.length.toString(),
+              'Nombre d\'enfants',
+              enfants.length.toString()),
+          SubscriptionRecapWidgets.buildRecapRow(
+              'Nombre d\'ascendants',
+              ascendants.length.toString()),
         ],
       );
     }

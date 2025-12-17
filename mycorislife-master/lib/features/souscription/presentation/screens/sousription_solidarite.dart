@@ -2781,6 +2781,14 @@ class _SouscriptionSolidaritePageState
                 _formatDate(_dateEffetContrat),
                 'Prime',
                 '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
+            _buildCombinedRecapRow(
+                'Nombre de conjoints',
+                conjoints.length.toString(),
+                'Nombre d\'enfants',
+                enfants.length.toString()),
+            _buildRecapRow(
+                'Nombre d\'ascendants',
+                ascendants.length.toString()),
           ]),
           const SizedBox(height: 12),
 
