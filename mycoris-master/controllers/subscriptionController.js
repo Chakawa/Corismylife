@@ -3537,7 +3537,7 @@ exports.getDocument = async (req, res) => {
     }
 
     // Vérifier que le nom de fichier correspond
-    if (subscription.piece_identite !== filename) {
+    if (subscription.piece_identite !== filename) {ff
       return res.status(404).json({ 
         success: false, 
         message: 'Document non trouvé' 
@@ -3569,3 +3569,227 @@ exports.getDocument = async (req, res) => {
     });
   }
 };
+
+/**
+ * 📋 RÉCUPÉRER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL
+ * Récupère toutes les questions actives depuis la base de données
+ */
+const getQuestionsQuestionnaireMedical = async (req, res) => {
+  try {
+    console.log('📋 Récupération des questions du questionnaire médical');
+
+    const result = await pool.query(
+      `SELECT id, code, libelle, type_question, ordre,
+              champ_detail_1_label, champ_detail_1_type,
+              champ_detail_2_label, champ_detail_2_type,
+              champ_detail_3_label, champ_detail_3_type
+       FROM questionnaire_medical
+       WHERE actif = TRUE
+       ORDER BY ordre ASC`
+    );
+
+    console.log(`✅ ${result.rows.length} questions récupérées`);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur récupération questions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des questions',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 📋 SAUVEGARDER LES RÉPONSES AU QUESTIONNAIRE MÉDICAL
+ * Enregistre ou met à jour les réponses au questionnaire médical
+ * Pour les produits: Coris Sérénité, Coris Familis, Coris Étude
+ */
+const saveQuestionnaireMedical = async (req, res) => {
+  try {
+    const { id } = req.params; // ID de la souscription
+    const userId = req.user.id;
+    const { reponses } = req.body; // Array de réponses: [{question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3}]
+
+    console.log('💾 Sauvegarde questionnaire médical pour souscription:', id);
+    console.log('📝 Nombre de réponses:', reponses?.length);
+
+    if (!reponses || !Array.isArray(reponses)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format de données invalide. Attendu: {reponses: [...]}'
+      });
+    }
+
+    // Vérifier que la souscription existe et appartient à l'utilisateur
+    const subscriptionCheck = await pool.query(
+      'SELECT id, user_id FROM souscriptions WHERE id = $1',
+      [id]
+    );
+
+    if (subscriptionCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée'
+      });
+    }
+
+    const subscription = subscriptionCheck.rows[0];
+
+    // Vérifier les droits (propriétaire ou commercial)
+    const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
+    const userRole = userCheck.rows[0]?.role;
+
+    if (subscription.user_id !== userId && userRole !== 'commercial') {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé'
+      });
+    }
+
+    // Début de la transaction
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Pour chaque réponse, faire un UPSERT (INSERT ou UPDATE)
+      for (const reponse of reponses) {
+        const {
+          question_id,
+          reponse_oui_non,
+          reponse_texte,
+          detail_1,
+          detail_2,
+          detail_3
+        } = reponse;
+
+        // Vérifier si la réponse existe déjà
+        const existingReponse = await client.query(
+          'SELECT id FROM souscription_questionnaire WHERE souscription_id = $1 AND question_id = $2',
+          [id, question_id]
+        );
+
+        if (existingReponse.rows.length > 0) {
+          // Mise à jour
+          await client.query(
+            `UPDATE souscription_questionnaire
+             SET reponse_oui_non = $1,
+                 reponse_texte = $2,
+                 detail_1 = $3,
+                 detail_2 = $4,
+                 detail_3 = $5,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE souscription_id = $6 AND question_id = $7`,
+            [reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3, id, question_id]
+          );
+        } else {
+          // Insertion
+          await client.query(
+            `INSERT INTO souscription_questionnaire
+             (souscription_id, question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [id, question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      console.log('✅ Questionnaire médical sauvegardé');
+
+      res.json({
+        success: true,
+        message: 'Questionnaire médical enregistré avec succès'
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Erreur sauvegarde questionnaire médical:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'enregistrement du questionnaire médical',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 📋 RÉCUPÉRER LES RÉPONSES AU QUESTIONNAIRE MÉDICAL
+ * Récupère les réponses au questionnaire médical d'une souscription
+ */
+const getQuestionnaireMedical = async (req, res) => {
+  try {
+    const { id } = req.params; // ID de la souscription
+    const userId = req.user.id;
+
+    console.log('📖 Récupération réponses questionnaire pour souscription:', id);
+
+    // Vérifier que la souscription existe et appartient à l'utilisateur
+    const subscriptionCheck = await pool.query(
+      'SELECT id, user_id FROM souscriptions WHERE id = $1',
+      [id]
+    );
+
+    if (subscriptionCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée'
+      });
+    }
+
+    const subscription = subscriptionCheck.rows[0];
+
+    // Vérifier les droits (propriétaire ou commercial)
+    const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
+    const userRole = userCheck.rows[0]?.role;
+
+    if (subscription.user_id !== userId && userRole !== 'commercial') {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès non autorisé'
+      });
+    }
+
+    // Récupérer les réponses avec les questions associées
+    const result = await pool.query(
+      `SELECT sq.id, sq.question_id, sq.reponse_oui_non, sq.reponse_texte,
+              sq.detail_1, sq.detail_2, sq.detail_3,
+              qm.code, qm.libelle, qm.type_question, qm.ordre,
+              qm.champ_detail_1_label, qm.champ_detail_2_label, qm.champ_detail_3_label
+       FROM souscription_questionnaire sq
+       JOIN questionnaire_medical qm ON sq.question_id = qm.id
+       WHERE sq.souscription_id = $1
+       ORDER BY qm.ordre ASC`,
+      [id]
+    );
+
+    console.log(`✅ ${result.rows.length} réponses récupérées`);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur récupération réponses questionnaire:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des réponses',
+      error: error.message
+    });
+  }
+};
+
+exports.getQuestionsQuestionnaireMedical = getQuestionsQuestionnaireMedical;
+exports.saveQuestionnaireMedical = saveQuestionnaireMedical;
+exports.getQuestionnaireMedical = getQuestionnaireMedical;ord 

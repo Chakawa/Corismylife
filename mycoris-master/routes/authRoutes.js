@@ -6,9 +6,9 @@ const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
 // Configuration API SMS
-const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send';
-// const SMS_API_TOKEN = 'fa09e6cef91f77c4b7d8e2c067f1b22c';
-const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c';
+const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send'; // URL de l'API SMS CI
+const SMS_API_TOKEN = 'fa09e6cef91f77c4b7d8e2c067f1b22c'; // Token de production
+// const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c'; // Token de test
 const SMS_SENDER = 'CORIS ASSUR'; // Max 11 caractères requis par l'API
 
 // Import du contrôleur (optionnel)

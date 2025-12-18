@@ -15,7 +15,10 @@ const {
   getSubscriptionWithUserDetails,
   getSubscriptionPDF,
   attachProposal,
-  getDocument
+  getDocument,
+  getQuestionsQuestionnaireMedical,
+  saveQuestionnaireMedical,
+  getQuestionnaireMedical
 } = require('../controllers/subscriptionController');
 
 // Routes
@@ -27,8 +30,11 @@ router.post('/:id/upload-document', verifyToken, upload.single('document'), uplo
 router.get('/user/propositions', verifyToken, getUserPropositions);
 router.get('/user/contrats', verifyToken, getUserContracts);
 // Routes spécifiques AVANT les routes génériques
+router.get('/questionnaire-medical/questions', verifyToken, getQuestionsQuestionnaireMedical);
 router.get('/:id/pdf', verifyToken, getSubscriptionPDF);
 router.get('/:id/document/:filename', verifyToken, getDocument);
+router.post('/:id/questionnaire-medical', verifyToken, saveQuestionnaireMedical);
+router.get('/:id/questionnaire-medical', verifyToken, getQuestionnaireMedical);
 // Route générique /:id EN DERNIER
 router.get('/:id', verifyToken, getSubscriptionWithUserDetails);
 router.post('/attach', verifyToken, attachProposal);
