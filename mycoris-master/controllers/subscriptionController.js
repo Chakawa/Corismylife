@@ -362,12 +362,26 @@ exports.updatePaymentStatus = async (req, res) => {
     }
     
     // Message différent selon le résultat du paiement
+    const updatedSub = result.rows[0];
+    if (!payment_success) {
+      return res.json({
+        success: true,
+        message: 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+        data: updatedSub
+      });
+    }
+
+    // Si paiement réussi, personnaliser le message selon le produit
+    const prod = (updatedSub.produit_nom || '').toLowerCase();
+    const isFamilis = prod.includes('familis');
+    const isSerenite = prod.includes('serenite');
+    const isEtude = prod.includes('etude');
+    const productTitle = isFamilis ? 'CORIS FAMILIS' : isSerenite ? 'CORIS SERENITE' : isEtude ? 'CORIS ETUDE' : (updatedSub.produit_nom || 'votre contrat').toUpperCase();
+
     res.json({
       success: true,
-      message: payment_success 
-        ? 'Paiement effectué avec succès, contrat activé' 
-        : 'Paiement échoué, proposition conservée',
-      data: result.rows[0]
+      message: `Félicitations! Votre contrat ${productTitle} est maintenant actif. Vous recevrez un message de confirmation sous peu.`,
+      data: updatedSub
     });
   } catch (error) {
     console.error('Erreur mise à jour statut paiement:', error);
@@ -453,33 +467,39 @@ exports.uploadDocument = async (req, res) => {
       }
     }
     
-    // Mettre à jour avec le nom du fichier ET l'URL
+    // Mettre à jour avec le nom du fichier, l'URL et le nom original (label)
     // Note: Un commercial peut uploader pour une souscription qu'il a créée pour un client
-    const query = `
+    const originalName = req.file.originalname || req.file.filename;
+    const query2 = `
       UPDATE subscriptions 
       SET souscriptiondata = jsonb_set(
         jsonb_set(
-          souscriptiondata,
-          '{piece_identite}',
-          $1
+          jsonb_set(
+            souscriptiondata,
+            '{piece_identite}',
+            $1
+          ),
+          '{piece_identite_url}',
+          $2
         ),
-        '{piece_identite_url}',
-        $2
+        '{piece_identite_label}',
+        $3
       ),
       updated_at = CURRENT_TIMESTAMP
-      WHERE id = $3 
-        AND (user_id = $4 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $4))
+      WHERE id = $4 
+        AND (user_id = $5 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $5))
       RETURNING *;
     `;
-    
+
     const values = [
       JSON.stringify(fileName),
       JSON.stringify(documentUrl),
+      JSON.stringify(originalName),
       id,
       req.user.id
     ];
-    
-    const result = await pool.query(query, values);
+
+    const result = await pool.query(query2, values);
     
     if (result.rows.length === 0) {
       // Supprimer le fichier uploadé si la souscription n'existe pas
@@ -3495,80 +3515,7 @@ exports.getSubscriptionPDF = async (req, res) => {
   
 };
 
-/**
- * ===============================================
- * RÉCUPÉRER UN DOCUMENT (PIÈCE D'IDENTITÉ)
- * ===============================================
- * 
- * Permet de télécharger le document téléchargé lors de la souscription.
- * 
- * @route GET /subscriptions/:id/document/:filename
- * @requires verifyToken
- */
-exports.getDocument = async (req, res) => {
-  try {
-    const { id, filename } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
-
-    // Vérifier que la souscription existe et appartient à l'utilisateur
-    const checkQuery = `
-      SELECT s.id, s.user_id, s.souscriptiondata->>'piece_identite' as piece_identite
-      FROM subscriptions s
-      WHERE s.id = $1
-    `;
-    const checkResult = await pool.query(checkQuery, [id]);
-
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Souscription non trouvée' 
-      });
-    }
-
-    const subscription = checkResult.rows[0];
-
-    // Vérifier les permissions
-    if (userRole !== 'admin' && userRole !== 'commercial' && subscription.user_id !== userId) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Accès non autorisé' 
-      });
-    }
-
-    // Vérifier que le nom de fichier correspond
-    if (subscription.piece_identite !== filename) {ff
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Document non trouvé' 
-      });
-    }
-
-    // Construire le chemin du fichier
-    const path = require('path');
-    const filePath = path.join(__dirname, '../uploads/kyc', filename);
-
-    // Vérifier que le fichier existe
-    const fs = require('fs');
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Fichier non trouvé sur le serveur' 
-      });
-    }
-
-    // Envoyer le fichier
-    res.sendFile(filePath);
-
-  } catch (error) {
-    console.error('Erreur récupération document:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération du document',
-      error: error.message 
-    });
-  }
-};
+// Note: getDocument is implemented earlier in this file (single canonical handler)
 
 /**
  * 📋 RÉCUPÉRER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL
@@ -3580,9 +3527,10 @@ const getQuestionsQuestionnaireMedical = async (req, res) => {
 
     const result = await pool.query(
       `SELECT id, code, libelle, type_question, ordre,
-              champ_detail_1_label, champ_detail_1_type,
-              champ_detail_2_label, champ_detail_2_type,
-              champ_detail_3_label, champ_detail_3_type
+              champ_detail_1_label,
+              champ_detail_2_label,
+              champ_detail_3_label,
+              obligatoire, actif
        FROM questionnaire_medical
        WHERE actif = TRUE
        ORDER BY ordre ASC`
@@ -3592,7 +3540,7 @@ const getQuestionsQuestionnaireMedical = async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows
+      questions: result.rows
     });
 
   } catch (error) {
@@ -3628,7 +3576,7 @@ const saveQuestionnaireMedical = async (req, res) => {
 
     // Vérifier que la souscription existe et appartient à l'utilisateur
     const subscriptionCheck = await pool.query(
-      'SELECT id, user_id FROM souscriptions WHERE id = $1',
+      'SELECT id, user_id FROM subscriptions WHERE id = $1',
       [id]
     );
 
@@ -3670,7 +3618,7 @@ const saveQuestionnaireMedical = async (req, res) => {
 
         // Vérifier si la réponse existe déjà
         const existingReponse = await client.query(
-          'SELECT id FROM souscription_questionnaire WHERE souscription_id = $1 AND question_id = $2',
+          'SELECT id FROM souscription_questionnaire WHERE subscription_id = $1 AND question_id = $2',
           [id, question_id]
         );
 
@@ -3679,19 +3627,19 @@ const saveQuestionnaireMedical = async (req, res) => {
           await client.query(
             `UPDATE souscription_questionnaire
              SET reponse_oui_non = $1,
-                 reponse_texte = $2,
-                 detail_1 = $3,
-                 detail_2 = $4,
-                 detail_3 = $5,
+                 reponse_text = $2,
+                 reponse_detail_1 = $3,
+                 reponse_detail_2 = $4,
+                 reponse_detail_3 = $5,
                  updated_at = CURRENT_TIMESTAMP
-             WHERE souscription_id = $6 AND question_id = $7`,
+             WHERE subscription_id = $6 AND question_id = $7`,
             [reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3, id, question_id]
           );
         } else {
           // Insertion
           await client.query(
             `INSERT INTO souscription_questionnaire
-             (souscription_id, question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3)
+             (subscription_id, question_id, reponse_oui_non, reponse_text, reponse_detail_1, reponse_detail_2, reponse_detail_3)
              VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [id, question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3]
           );
@@ -3736,7 +3684,7 @@ const getQuestionnaireMedical = async (req, res) => {
 
     // Vérifier que la souscription existe et appartient à l'utilisateur
     const subscriptionCheck = await pool.query(
-      'SELECT id, user_id FROM souscriptions WHERE id = $1',
+      'SELECT id, user_id FROM subscriptions WHERE id = $1',
       [id]
     );
 
@@ -3792,4 +3740,5 @@ const getQuestionnaireMedical = async (req, res) => {
 
 exports.getQuestionsQuestionnaireMedical = getQuestionsQuestionnaireMedical;
 exports.saveQuestionnaireMedical = saveQuestionnaireMedical;
-exports.getQuestionnaireMedical = getQuestionnaireMedical;ord 
+exports.getQuestionnaireMedical = getQuestionnaireMedical;
+ 

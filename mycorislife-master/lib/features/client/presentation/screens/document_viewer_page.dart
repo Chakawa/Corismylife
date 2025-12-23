@@ -12,12 +12,14 @@ const Color grisTexte = Color(0xFF64748B);
 class DocumentViewerPage extends StatefulWidget {
   final String? documentName;
   final File? localFile;
+  final String? displayLabel;
   final int? subscriptionId;
 
   const DocumentViewerPage({
     super.key,
     this.documentName,
     this.localFile,
+    this.displayLabel,
     this.subscriptionId,
   });
 
@@ -138,9 +140,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Pièce d\'identité',
-          style: TextStyle(
+        title: Text(
+          widget.displayLabel ?? 'Pièce d\'identité',
+          style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
@@ -310,7 +312,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                widget.documentName ?? _documentFile!.path.split('/').last,
+                widget.displayLabel ?? widget.documentName ?? _documentFile!.path.split('/').last,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,

@@ -1105,7 +1105,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             ),
             SliverToBoxAdapter(
               child: Container(
-                margin: EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                 child: _buildModernProgressIndicator(),
               ),
             ),
@@ -3248,7 +3248,7 @@ class _SuccessDialog extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat MON BON PLAN CORIS est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat MON BON PLAN CORIS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(

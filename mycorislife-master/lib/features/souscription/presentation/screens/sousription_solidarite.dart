@@ -2787,8 +2787,7 @@ class _SouscriptionSolidaritePageState
                 'Nombre d\'enfants',
                 enfants.length.toString()),
             _buildRecapRow(
-                'Nombre d\'ascendants',
-                ascendants.length.toString()),
+                'Nombre d\'ascendants', ascendants.length.toString()),
           ]),
           const SizedBox(height: 12),
 
@@ -3386,15 +3385,18 @@ class _SuccessDialog extends StatelessWidget {
               child: Icon(isPaid ? Icons.check_circle : Icons.schedule,
                   color: isPaid ? vertSucces : orangeWarning, size: 40)),
           const SizedBox(height: 20),
-          const Text('Souscription Réussie!',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF002B6B))),
+          Text(
+            isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF002B6B),
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS SOLIDARITÉ est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS SOLIDARITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: const TextStyle(

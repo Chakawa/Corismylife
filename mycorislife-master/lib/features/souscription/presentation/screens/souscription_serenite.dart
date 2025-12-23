@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
+import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -66,6 +68,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   late Animation<double> _slideAnimation;
 
   int _currentStep = 0;
+  Future<bool> Function()? _questionnaireValidate;
 
   // Contrôleurs pour la simulation
   final TextEditingController _capitalController = TextEditingController();
@@ -154,6 +157,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     'Banque Atlantique',
     'Autre',
   ];
+
+  // 📋 QUESTIONNAIRE MÉDICAL
+  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -2116,13 +2122,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  void _nextStep() {
-    final maxStep = _isCommercial ? 5 : 4;
+  Future<void> _nextStep() async {
+    // Ajout du questionnaire médical: +1 étape avant le récap
+    final maxStep = _isCommercial ? 6 : 5;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap, step 5 = finalisation
+        // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap, step 6 = finalisation
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -2130,28 +2137,53 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          canProceed = true; // Mode paiement validé avant d'aller au récap
+          canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 4) {
-          canProceed =
-              true; // Récap, aller à la page de finalisation (paiement)
+          // Questionnaire médical: trigger widget validation/save
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          canProceed = true;
+        } else if (_currentStep == 5) {
+          canProceed = true; // Récap, aller à la page de finalisation
         }
       } else {
-        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap, step 4 = finalisation
+        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap, step 5 = finalisation
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          canProceed = true; // Mode paiement validé avant d'aller au récap
+          canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 3) {
-          canProceed =
-              true; // Récap, aller à la page de finalisation (paiement)
+          // Questionnaire médical validé avant récap
+          if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          canProceed = true;
+        } else if (_currentStep == 4) {
+          canProceed = true; // Récap, aller à la page de finalisation
         }
       }
 
       if (canProceed) {
         // Recalculer avant le récap
-        final recapStep = _isCommercial ? 4 : 3;
+        final recapStep = _isCommercial ? 5 : 4;
         if (_currentStep + 1 == recapStep) {
           try {
             _effectuerCalcul();
@@ -2386,9 +2418,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   onPressed: () => Navigator.pop(context)),
             ),
             SliverToBoxAdapter(
-                child: Container(
-                    margin: const EdgeInsets.all(20),
-                    child: _buildModernProgressIndicator())),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: _buildModernProgressIndicator())),
           ];
         },
         body: SafeArea(
@@ -2403,14 +2435,17 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
                               _buildStep1(), // Page 1: Simulation
                               _buildStep2(), // Page 2: Bénéficiaire/Contact
-                              _buildStep3(), // Page 3: Récapitulatif
+                              _buildStepModePaiement(), // Page 3: Mode de paiement
+                              _buildStepQuestionnaireMedical(), // Page 4: Questionnaire médical
+                              _buildStep3(), // Page 5: Récapitulatif
                             ]
                           : [
                               _buildStep1(), // Page 0: Simulation
                               _buildStep2(), // Page 1: Bénéficiaire/Contact
                               _buildStepModePaiement(), // Page 2: Mode de paiement
-                              _buildStep3(), // Page 3: Récapitulatif
-                              _buildStep4(), // Page 4: Finaliser
+                              _buildStepQuestionnaireMedical(), // Page 3: Questionnaire médical
+                              _buildStep3(), // Page 4: Récapitulatif
+                              _buildStep4(), // Page 5: Finaliser
                             ])),
               _buildNavigationButtons(),
             ],
@@ -2506,7 +2541,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   Widget _buildModernProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
           color: blanc,
           borderRadius: BorderRadius.circular(16),
@@ -2521,8 +2556,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           Expanded(
               child: Column(children: [
             Container(
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                     color: i <= _currentStep ? bleuCoris : grisLeger,
                     shape: BoxShape.circle,
@@ -2530,59 +2565,67 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         ? [
                             BoxShadow(
                                 color: bleuCoris.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2))
+                                blurRadius: 6,
+                                offset: const Offset(0, 1))
                           ]
                         : null),
                 child: Icon(
-                    _isCommercial
-                        ? (i == 0
-                            ? Icons.person
-                            : i == 1
-                                ? Icons.monetization_on
-                                : i == 2
-                                    ? Icons.person_add
-                                    : i == 3
-                                        ? Icons.payment
-                                        : i == 4
-                                            ? Icons.check_circle
-                                            : Icons.credit_card)
-                        : (i == 0
-                            ? Icons.monetization_on
-                            : i == 1
-                                ? Icons.person_add
-                                : i == 2
-                                    ? Icons.payment
-                                    : i == 3
-                                        ? Icons.check_circle
-                                        : Icons.credit_card),
-                    color: i <= _currentStep ? blanc : grisTexte,
-                    size: 20)),
-            const SizedBox(height: 6),
-            Text(
-                _isCommercial
+                  _isCommercial
                     ? (i == 0
-                        ? 'Client'
-                        : i == 1
-                            ? 'Simulation'
-                            : i == 2
-                                ? 'Informations'
-                                : i == 3
-                                    ? 'Paiement'
-                                    : i == 4
-                                        ? 'Récapitulatif'
-                                        : 'Finaliser')
+                      ? Icons.person
+                      : i == 1
+                        ? Icons.monetization_on
+                        : i == 2
+                          ? Icons.person_add
+                          : i == 3
+                            ? Icons.payment
+                            : i == 4
+                              ? Icons.assignment
+                              : i == 5
+                                ? Icons.check_circle
+                                : Icons.credit_card)
                     : (i == 0
-                        ? 'Simulation'
-                        : i == 1
-                            ? 'Informations'
-                            : i == 2
-                                ? 'Paiement'
-                                : i == 3
-                                    ? 'Récapitulatif'
-                                    : 'Finaliser'),
+                      ? Icons.monetization_on
+                      : i == 1
+                        ? Icons.person_add
+                        : i == 2
+                          ? Icons.payment
+                          : i == 3
+                            ? Icons.assignment
+                            : i == 4
+                              ? Icons.check_circle
+                              : Icons.credit_card),
+                  color: i <= _currentStep ? blanc : grisTexte,
+                  size: 20)),
+            const SizedBox(height: 4),
+            Text(
+              _isCommercial
+                ? (i == 0
+                  ? 'Client'
+                  : i == 1
+                    ? 'Simulation'
+                    : i == 2
+                      ? 'Informations'
+                      : i == 3
+                        ? 'Paiement'
+                        : i == 4
+                          ? 'Questionnaire médical'
+                          : i == 5
+                            ? 'Récapitulatif'
+                            : 'Finaliser')
+                : (i == 0
+                  ? 'Simulation'
+                  : i == 1
+                    ? 'Informations'
+                    : i == 2
+                      ? 'Paiement'
+                      : i == 3
+                        ? 'Questionnaire médical'
+                        : i == 4
+                          ? 'Récapitulatif'
+                          : 'Finaliser'),
                 style: TextStyle(
-                    fontSize: 11,
+                  fontSize: 10,
                     fontWeight:
                         i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                     color: i <= _currentStep ? bleuCoris : grisTexte)),
@@ -2590,9 +2633,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (i < (_isCommercial ? 5 : 4))
             Expanded(
                 child: Container(
-                    height: 2,
-                    margin:
-                        const EdgeInsets.only(bottom: 20, left: 6, right: 6),
+                  height: 2,
+                  margin:
+                    const EdgeInsets.only(bottom: 8, left: 6, right: 6),
                     decoration: BoxDecoration(
                         color: i < _currentStep ? bleuCoris : grisLeger,
                         borderRadius: BorderRadius.circular(1)))),
@@ -4073,6 +4116,49 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
+  /// Étape du questionnaire médical
+  Widget _buildStepQuestionnaireMedical() {
+    return QuestionnaireMedicalDynamicWidget(
+      subscriptionId: widget.subscriptionId,
+        initialReponses: _questionnaireMedicalReponses,
+      showActions: false,
+      registerValidate: (fn) {
+        _questionnaireValidate = fn;
+      },
+      onValidated: (reponses) async {
+        setState(() {
+          _questionnaireMedicalReponses = reponses;
+        });
+
+        // If subscriptionId is present, ensure backend save (service also called by parent validate)
+        if (widget.subscriptionId != null) {
+          try {
+            final questionnaireService = QuestionnaireMedicalService();
+            await questionnaireService.saveReponses(
+              subscriptionId: widget.subscriptionId!,
+              reponses: reponses,
+            );
+            debugPrint('✅ Questionnaire médical sauvegardé');
+          } catch (e) {
+            debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+        }
+
+        // Validation/save complete — parent will advance after validate returns true
+      },
+      onCancel: () {
+        _previousStep();
+      },
+    );
+  }
+
   Widget _buildStep3() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -4609,7 +4695,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: _currentStep == (_isCommercial ? 4 : 3)
+              onPressed: _currentStep == (_isCommercial ? 5 : 4)
                   ? _showPaymentOptions
                   : _nextStep,
               style: ElevatedButton.styleFrom(
@@ -4622,9 +4708,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
-                    _currentStep == (_isCommercial ? 4 : 3)
-                        ? 'Finaliser'
-                        : 'Suivant',
+                  _currentStep == (_isCommercial ? 5 : 4)
+                    ? 'Finaliser'
+                    : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -4946,7 +5032,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS SÉRÉNITÉ est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                    ? 'Félicitations! Votre contrat CORIS SÉRÉNITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(

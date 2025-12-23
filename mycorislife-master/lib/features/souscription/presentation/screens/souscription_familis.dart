@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/services/questionnaire_medical_service.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -114,6 +116,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   File? _pieceIdentite;
 
+  // Questionnaire médical
+  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
+  Future<bool> Function()? _questionnaireValidate;
+
   // Mode de paiement
   String? _selectedModePaiement;
   String? _selectedBanque;
@@ -152,6 +158,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     18: {
       1: 0.272,
       2: 0.552,
+ 
       3: 0.831,
       4: 1.106,
       5: 1.375,
@@ -2971,14 +2978,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
   }
 
-  void _nextStep() {
-    // Recap est la dernière étape, pas de Step4 séparé
-    final maxStep = _isCommercial ? 4 : 3;
+  Future<void> _nextStep() async {
+    // Recap est la dernière étape (ajout du questionnaire médical avant le récap)
+    final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations, step 3 = mode paiement, step 4 = récap
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = récap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -2988,15 +2995,45 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           _calculatePrime();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           canProceed = true;
+        } else if (_currentStep == 4) {
+          // Questionnaire médical: trigger widget validation/save
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = informations, step 2 = mode paiement, step 3 = récap
+        // Pour les clients: step 0 = paramètres, step 1 = informations, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = récap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
+          canProceed = true;
+        } else if (_currentStep == 3) {
+          // Questionnaire médical client
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
           canProceed = true;
         }
       }
@@ -3511,9 +3548,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            SliverToBoxAdapter(
+              SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 child: _buildModernProgressIndicator(),
               ),
             ),
@@ -3532,13 +3569,85 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           _buildStep1(), // Page 1: Paramètres
                           _buildStep2(), // Page 2: Informations
                           _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStep3(), // Page 4: Récapitulatif
+                          QuestionnaireMedicalDynamicWidget(
+                            subscriptionId: widget.subscriptionId,
+                            initialReponses: _questionnaireMedicalReponses,
+                            showActions: false,
+                            registerValidate: (fn) {
+                              _questionnaireValidate = fn;
+                            },
+                            onValidated: (reponses) async {
+                              setState(() {
+                                _questionnaireMedicalReponses = reponses;
+                              });
+
+                              if (widget.subscriptionId != null) {
+                                try {
+                                  final questionnaireService = QuestionnaireMedicalService();
+                                  await questionnaireService.saveReponses(
+                                    subscriptionId: widget.subscriptionId!,
+                                    reponses: reponses,
+                                  );
+                                  debugPrint('✅ Questionnaire médical sauvegardé');
+                                } catch (e) {
+                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+                            },
+                            onCancel: () {
+                              _previousStep();
+                            },
+                          ),
+                          _buildStep3(), // Page 5: Récapitulatif
                         ]
                       : [
                           _buildStep1(), // Page 0: Paramètres
                           _buildStep2(), // Page 1: Informations
                           _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStep3(), // Page 3: Récapitulatif
+                          QuestionnaireMedicalDynamicWidget(
+                            subscriptionId: widget.subscriptionId,
+                            initialReponses: _questionnaireMedicalReponses,
+                            showActions: false,
+                            registerValidate: (fn) {
+                              _questionnaireValidate = fn;
+                            },
+                            onValidated: (reponses) async {
+                              setState(() {
+                                _questionnaireMedicalReponses = reponses;
+                              });
+
+                              if (widget.subscriptionId != null) {
+                                try {
+                                  final questionnaireService = QuestionnaireMedicalService();
+                                  await questionnaireService.saveReponses(
+                                    subscriptionId: widget.subscriptionId!,
+                                    reponses: reponses,
+                                  );
+                                  debugPrint('✅ Questionnaire médical sauvegardé');
+                                } catch (e) {
+                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+                            },
+                            onCancel: () {
+                              _previousStep();
+                            },
+                          ),
+                          _buildStep3(), // Page 4: Récapitulatif
                         ],
                 ),
               ),
@@ -3566,7 +3675,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < (_isCommercial ? 5 : 4); i++) ...[
+          for (int i = 0; i < (_isCommercial ? 6 : 5); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -3596,14 +3705,18 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                       ? Icons.person_add
                                       : i == 3
                                           ? Icons.credit_card
-                                          : Icons.payment)
+                                          : i == 4
+                                              ? Icons.assignment
+                                              : Icons.assignment_turned_in)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
                                   ? Icons.person_add
                                   : i == 2
                                       ? Icons.credit_card
-                                      : Icons.payment),
+                                      : i == 3
+                                          ? Icons.assignment
+                                          : Icons.assignment_turned_in),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
                     ),
@@ -3619,14 +3732,18 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     ? 'Informations'
                                     : i == 3
                                         ? 'Paiement'
-                                        : 'Paie')
+                                        : i == 4
+                                            ? 'Questionnaire'
+                                            : 'Récap')
                         : (i == 0
                             ? 'Paramètres'
                             : i == 1
                                 ? 'Informations'
                                 : i == 2
                                     ? 'Paiement'
-                                    : 'Paie'),
+                                    : i == 3
+                                        ? 'Questionnaire'
+                                        : 'Récap'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -4986,9 +5103,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             if (_currentStep > 0) const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == (_isCommercial ? 4 : 3)
-                    ? _showPaymentOptions
-                    : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 5 : 4)
+                  ? _showPaymentOptions
+                  : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -5002,7 +5119,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == (_isCommercial ? 4 : 3)
+                        _currentStep == (_isCommercial ? 5 : 4)
                           ? 'Finaliser'
                           : 'Suivant',
                       style: const TextStyle(
@@ -5013,7 +5130,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                     const SizedBox(width: 8),
                     Icon(
-                      _currentStep == (_isCommercial ? 4 : 3)
+                        _currentStep == (_isCommercial ? 5 : 4)
                           ? Icons.check
                           : Icons.arrow_forward,
                       color: blanc,
@@ -5851,8 +5968,8 @@ class SuccessDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Souscription Réussie!',
+            Text(
+              isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -5862,7 +5979,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS FAMILIS est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS FAMILIS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: const TextStyle(

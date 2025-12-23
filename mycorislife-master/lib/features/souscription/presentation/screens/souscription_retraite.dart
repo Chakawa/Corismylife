@@ -1726,10 +1726,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 const Icon(Icons.arrow_back_ios, color: blanc),
                             onPressed: () => Navigator.pop(context)),
                       ),
-                      SliverToBoxAdapter(
+                        SliverToBoxAdapter(
                           child: Container(
-                              margin: const EdgeInsets.all(20),
-                              child: _buildModernProgressIndicator())),
+                            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            child: _buildModernProgressIndicator())),
                     ];
                   },
                   body: Column(
@@ -4349,7 +4349,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(

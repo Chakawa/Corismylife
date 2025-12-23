@@ -9,6 +9,8 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
+import 'package:mycorislife/services/questionnaire_medical_service.dart';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -62,6 +64,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
   int _currentStep = 0;
+  Future<bool> Function()? _questionnaireValidate;
 
   // Données utilisateur (pour les clients)
   Map<String, dynamic> _userData = {};
@@ -128,6 +131,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     'Banque Atlantique',
     'Autre',
   ];
+
+  // 📋 QUESTIONNAIRE MÉDICAL
+  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
 
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -1692,16 +1698,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  void _nextStep() {
-    // maxStep mis à jour: Recap est la dernière étape (pas de Step4 séparé)
-    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (recap)
-    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (recap)
-    final maxStep = _isCommercial ? 4 : 3;
+  Future<void> _nextStep() async {
+    // Ajout du questionnaire médical: +1 étape avant le récap
+    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (questionnaire médical), 4 (recap)
+    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (questionnaire médical), 5 (recap)
+    final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -1710,18 +1716,48 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          // Validation du mode de paiement avant le récap
+          // Validation du mode de paiement avant questionnaire médical
+          canProceed = true;
+        } else if (_currentStep == 4) {
+          // Questionnaire médical avant récap — trigger widget validation
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
           canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
+        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          // Validation du mode de paiement avant le récap
+          // Validation du mode de paiement avant questionnaire médical
+          canProceed = true;
+        } else if (_currentStep == 3) {
+          // Questionnaire médical avant récap — trigger widget validation
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (_questionnaireMedicalReponses.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Veuillez compléter le questionnaire médical'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
           canProceed = true;
         }
       }
@@ -2462,7 +2498,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             ),
             SliverToBoxAdapter(
               child: Container(
-                margin: EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                 child: _buildModernProgressIndicator(),
               ),
             ),
@@ -2481,13 +2517,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           _buildStep1(), // Page 1: Paramètres de souscription
                           _buildStep2(), // Page 2: Bénéficiaire/Contact
                           _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStep3(), // Page 4: Récapitulatif (Finaliser ouvre modal)
+                          _buildStepQuestionnaireMedical(), // Page 4: Questionnaire médical
+                          _buildStep3(), // Page 5: Récapitulatif (Finaliser ouvre modal)
                         ]
                       : [
                           _buildStep1(), // Page 0: Paramètres de souscription
                           _buildStep2(), // Page 1: Bénéficiaire/Contact
                           _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStep3(), // Page 3: Récapitulatif (Finaliser ouvre modal)
+                          _buildStepQuestionnaireMedical(), // Page 3: Questionnaire médical
+                          _buildStep3(), // Page 4: Récapitulatif (Finaliser ouvre modal)
                         ],
                 ),
               ),
@@ -2547,8 +2585,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                       : i == 3
                                           ? Icons.payment
                                           : i == 4
-                                              ? Icons.check_circle
-                                              : Icons.credit_card)
+                                              ? Icons.assignment
+                                              : i == 5
+                                                  ? Icons.check_circle
+                                                  : Icons.credit_card)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
@@ -2556,8 +2596,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                   : i == 2
                                       ? Icons.payment
                                       : i == 3
-                                          ? Icons.check_circle
-                                          : Icons.credit_card),
+                                          ? Icons.assignment
+                                          : Icons.check_circle),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 16,
                     ),
@@ -2574,8 +2614,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                     : i == 3
                                         ? 'Paiement'
                                         : i == 4
-                                            ? 'Recap'
-                                            : 'Finaliser')
+                                            ? 'Questionnaire médical'
+                                            : i == 5
+                                                ? 'Recap'
+                                                : 'Finaliser')
                         : (i == 0
                             ? 'Souscription'
                             : i == 1
@@ -2583,8 +2625,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                 : i == 2
                                     ? 'Paiement'
                                     : i == 3
-                                        ? 'Recap'
-                                        : 'Finaliser'),
+                                        ? 'Questionnaire médical'
+                                        : 'Recap'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight:
@@ -2599,7 +2641,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               Expanded(
                 child: Container(
                   height: 2,
-                  margin: EdgeInsets.only(bottom: 15, left: 4, right: 4),
+                  margin: EdgeInsets.only(bottom: 8, left: 4, right: 4),
                   decoration: BoxDecoration(
                     color: i < _currentStep ? bleuCoris : grisLeger,
                     borderRadius: BorderRadius.circular(1),
@@ -3990,6 +4032,50 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
+  /// Étape du questionnaire médical
+  Widget _buildStepQuestionnaireMedical() {
+    return QuestionnaireMedicalDynamicWidget(
+      subscriptionId: widget.subscriptionId,
+      initialReponses: _questionnaireMedicalReponses,
+      showActions: false,
+      registerValidate: (fn) {
+        _questionnaireValidate = fn;
+      },
+      onValidated: (reponses) async {
+        setState(() {
+          _questionnaireMedicalReponses = reponses;
+        });
+
+        // Sauvegarder les réponses du questionnaire avant de passer à l'étape suivante
+        try {
+          if (widget.subscriptionId != null) {
+            final questionnaireService = QuestionnaireMedicalService();
+            await questionnaireService.saveReponses(
+              subscriptionId: widget.subscriptionId!,
+              reponses: reponses,
+            );
+            debugPrint('✅ Questionnaire médical sauvegardé');
+          }
+        } catch (e) {
+          debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Validation/save complete — parent will advance after validate returns true
+      },
+      onCancel: () {
+        _previousStep();
+      },
+    );
+  }
+
   Widget _buildStep3() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -4349,7 +4435,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             if (_currentStep > 0) SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == (_isCommercial ? 4 : 3)
+                onPressed: _currentStep == (_isCommercial ? 5 : 4)
                     ? _showPaymentOptions
                     : _nextStep,
                 style: ElevatedButton.styleFrom(
@@ -4366,7 +4452,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _currentStep == (_isCommercial ? 4 : 3)
+                      _currentStep == (_isCommercial ? 5 : 4)
                           ? 'Finaliser'
                           : 'Suivant',
                       style: TextStyle(
@@ -4377,7 +4463,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                     SizedBox(width: 8),
                     Icon(
-                      _currentStep == (_isCommercial ? 4 : 3)
+                      _currentStep == (_isCommercial ? 5 : 4)
                           ? Icons.check
                           : Icons.arrow_forward,
                       color: blanc,
@@ -4884,7 +4970,7 @@ class _SuccessDialog extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS ÉTUDE est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS ÉTUDE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(

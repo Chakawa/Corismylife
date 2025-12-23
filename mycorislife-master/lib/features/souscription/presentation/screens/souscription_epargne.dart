@@ -1151,7 +1151,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             ),
             SliverToBoxAdapter(
               child: Container(
-                margin: EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 child: _buildModernProgressIndicator(),
               ),
             ),
@@ -3424,7 +3424,7 @@ class SuccessDialog extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS ÉPARGNE BONUS est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS ÉPARGNE BONUS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(

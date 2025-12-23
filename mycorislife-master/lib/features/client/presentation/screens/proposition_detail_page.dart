@@ -995,11 +995,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   Widget _buildDocumentsSection() {
     // Chercher piece_identite dans tous les endroits possibles
     String? pieceIdentite;
+    String? pieceIdentiteLabel; // Nom original du fichier
 
     // 1. Dans souscriptiondata directement (le plus commun)
     final souscriptiondata = _subscriptionData?['souscriptiondata'];
     if (souscriptiondata != null) {
-      // Essayer différentes clés possibles
+      // Priorité au label original (piece_identite_label)
+      pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+      // Fallback au nom stocké si pas de label
       pieceIdentite = souscriptiondata['piece_identite'] ??
           souscriptiondata['pieceIdentite'] ??
           souscriptiondata['document'];
@@ -1020,6 +1023,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     // 3. Dans les détails (via getSubscriptionDetails)
     if (pieceIdentite == null) {
       final details = _getSubscriptionDetails();
+      pieceIdentiteLabel ??= details['piece_identite_label'];
       pieceIdentite = details['piece_identite'] ??
           details['pieceIdentite'] ??
           details['document'];
@@ -1053,13 +1057,18 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     developer.log('hasDocument: $hasDocument');
 
+    // Utiliser le label original si présent, sinon le nom du fichier
+    final displayLabel = pieceIdentiteLabel ?? pieceIdentite;
+    // Lors du tap, on doit passer le nom réel du fichier (piece_identite)
+    final actualFilename = hasDocument ? pieceIdentite : null;
+
     return SubscriptionRecapWidgets.buildDocumentsSection(
-      pieceIdentite: hasDocument ? pieceIdentite : null,
-      onDocumentTap: hasDocument ? () => _viewDocument(pieceIdentite) : null,
+      pieceIdentite: displayLabel,
+      onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, pieceIdentiteLabel) : null,
     );
   }
 
-  void _viewDocument(String? documentName) {
+  void _viewDocument(String? documentName, String? displayLabel) {
     developer.log('_viewDocument called with: $documentName');
 
     if (documentName == null ||
@@ -1093,6 +1102,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
           documentName: documentName,
+          displayLabel: displayLabel,
           subscriptionId: widget.subscriptionId,
         ),
       ),

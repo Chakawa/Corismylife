@@ -30,7 +30,8 @@ router.post('/:id/upload-document', verifyToken, upload.single('document'), uplo
 router.get('/user/propositions', verifyToken, getUserPropositions);
 router.get('/user/contrats', verifyToken, getUserContracts);
 // Routes spécifiques AVANT les routes génériques
-router.get('/questionnaire-medical/questions', verifyToken, getQuestionsQuestionnaireMedical);
+// Endpoint public pour les questions du questionnaire médical
+router.get('/questionnaire-medical/questions', getQuestionsQuestionnaireMedical);
 router.get('/:id/pdf', verifyToken, getSubscriptionPDF);
 router.get('/:id/document/:filename', verifyToken, getDocument);
 router.post('/:id/questionnaire-medical', verifyToken, saveQuestionnaireMedical);
