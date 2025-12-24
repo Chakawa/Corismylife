@@ -1062,13 +1062,43 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     }
     
     // =========================================
-    // ÉTAPE 4 : Retourner les deux ensembles de données
+    // ÉTAPE 4 : Récupérer les réponses au questionnaire médical
     // =========================================
+    let questionnaireReponses = [];
+    try {
+      const questResult = await pool.query(
+        `SELECT sq.id, sq.question_id, sq.reponse_oui_non, sq.reponse_text,
+                sq.reponse_detail_1, sq.reponse_detail_2, sq.reponse_detail_3,
+                qm.code, qm.libelle, qm.type_question, qm.ordre,
+                qm.champ_detail_1_label, qm.champ_detail_2_label, qm.champ_detail_3_label
+         FROM souscription_questionnaire sq
+         JOIN questionnaire_medical qm ON sq.question_id = qm.id
+         WHERE sq.subscription_id = $1
+         ORDER BY qm.ordre ASC`,
+        [id]
+      );
+      questionnaireReponses = questResult.rows;
+      console.log(`📋 QUESTIONNAIRE MÉDICAL: ${questionnaireReponses.length} réponses récupérées pour souscription ${id}`);
+      if (questionnaireReponses.length > 0) {
+        console.log('📝 Détail questionnaire:');
+        questionnaireReponses.forEach((row, idx) => {
+          console.log(`  ${idx + 1}. "${row.libelle}" → ${row.reponse_oui_non || row.reponse_text || 'N/A'}`);
+        });
+      }
+    } catch (e) {
+      console.log('⚠️ Pas de questionnaire médical pour cette souscription ou erreur:', e.message);
+    }
+
+    // =========================================
+    // ÉTAPE 5 : Retourner les deux ensembles de données
+    // =========================================
+    console.log(`\n✅ RETOUR COMPLET: subscription + user + ${questionnaireReponses.length} questionnaire_reponses`);
     res.json({ 
       success: true, 
       data: {
-        subscription: subscription,  // Données de la souscription
-        user: userData              // Données de l'utilisateur formatées (client ou depuis souscription_data)
+        subscription: subscription,           // Données de la souscription
+        user: userData,                       // Données de l'utilisateur formatées
+        questionnaire_reponses: questionnaireReponses  // Réponses au questionnaire médical
       }
     });
   } catch (error) {
@@ -3566,6 +3596,7 @@ const saveQuestionnaireMedical = async (req, res) => {
 
     console.log('💾 Sauvegarde questionnaire médical pour souscription:', id);
     console.log('📝 Nombre de réponses:', reponses?.length);
+    console.log('📋 Réponses reçues:', JSON.stringify(reponses, null, 2));
 
     if (!reponses || !Array.isArray(reponses)) {
       return res.status(400).json({
@@ -3604,17 +3635,20 @@ const saveQuestionnaireMedical = async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      let savedCount = 0;
 
       // Pour chaque réponse, faire un UPSERT (INSERT ou UPDATE)
       for (const reponse of reponses) {
         const {
           question_id,
           reponse_oui_non,
-          reponse_texte,
-          detail_1,
-          detail_2,
-          detail_3
+          reponse_text,
+          reponse_detail_1,
+          reponse_detail_2,
+          reponse_detail_3
         } = reponse;
+
+        console.log(`📝 Traitement question ${question_id}: réponse=${reponse_oui_non || reponse_text}`);
 
         // Vérifier si la réponse existe déjà
         const existingReponse = await client.query(
@@ -3624,7 +3658,7 @@ const saveQuestionnaireMedical = async (req, res) => {
 
         if (existingReponse.rows.length > 0) {
           // Mise à jour
-          await client.query(
+          const updateResult = await client.query(
             `UPDATE souscription_questionnaire
              SET reponse_oui_non = $1,
                  reponse_text = $2,
@@ -3632,26 +3666,40 @@ const saveQuestionnaireMedical = async (req, res) => {
                  reponse_detail_2 = $4,
                  reponse_detail_3 = $5,
                  updated_at = CURRENT_TIMESTAMP
-             WHERE subscription_id = $6 AND question_id = $7`,
-            [reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3, id, question_id]
+             WHERE subscription_id = $6 AND question_id = $7
+             RETURNING id`,
+            [reponse_oui_non, reponse_text, reponse_detail_1, reponse_detail_2, reponse_detail_3, id, question_id]
           );
+          console.log(`✏️ Question ${question_id} MISE À JOUR`);
+          savedCount++;
         } else {
           // Insertion
-          await client.query(
+          const insertResult = await client.query(
             `INSERT INTO souscription_questionnaire
              (subscription_id, question_id, reponse_oui_non, reponse_text, reponse_detail_1, reponse_detail_2, reponse_detail_3)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, question_id, reponse_oui_non, reponse_texte, detail_1, detail_2, detail_3]
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id`,
+            [id, question_id, reponse_oui_non, reponse_text, reponse_detail_1, reponse_detail_2, reponse_detail_3]
           );
+          console.log(`✅ Question ${question_id} INSÉRÉE - ID: ${insertResult.rows[0].id}`);
+          savedCount++;
         }
       }
 
       await client.query('COMMIT');
-      console.log('✅ Questionnaire médical sauvegardé');
+      console.log(`✅ Questionnaire médical sauvegardé - ${savedCount}/${reponses.length} réponses enregistrées`);
+
+      // Vérifier que tout a bien été sauvegardé
+      const verification = await pool.query(
+        `SELECT COUNT(*) as total FROM souscription_questionnaire WHERE subscription_id = $1`,
+        [id]
+      );
+      console.log(`🔍 VÉRIFICATION: ${verification.rows[0].total} réponses totales en BD pour souscription ${id}`);
 
       res.json({
         success: true,
-        message: 'Questionnaire médical enregistré avec succès'
+        message: 'Questionnaire médical enregistré avec succès',
+        saved_count: savedCount
       });
 
     } catch (error) {
@@ -3710,18 +3758,26 @@ const getQuestionnaireMedical = async (req, res) => {
 
     // Récupérer les réponses avec les questions associées
     const result = await pool.query(
-      `SELECT sq.id, sq.question_id, sq.reponse_oui_non, sq.reponse_texte,
-              sq.detail_1, sq.detail_2, sq.detail_3,
+      `SELECT sq.id, sq.question_id, sq.reponse_oui_non, sq.reponse_text,
+              sq.reponse_detail_1, sq.reponse_detail_2, sq.reponse_detail_3,
               qm.code, qm.libelle, qm.type_question, qm.ordre,
               qm.champ_detail_1_label, qm.champ_detail_2_label, qm.champ_detail_3_label
        FROM souscription_questionnaire sq
        JOIN questionnaire_medical qm ON sq.question_id = qm.id
-       WHERE sq.souscription_id = $1
+       WHERE sq.subscription_id = $1
        ORDER BY qm.ordre ASC`,
       [id]
     );
 
-    console.log(`✅ ${result.rows.length} réponses récupérées`);
+    console.log(`✅ ${result.rows.length} réponses récupérées pour souscription ${id}`);
+    if (result.rows.length > 0) {
+      console.log('📋 Détail des réponses:');
+      result.rows.forEach((row, idx) => {
+        console.log(`  ${idx + 1}. Question "${row.libelle}" → Réponse: ${row.reponse_oui_non || row.reponse_text || 'N/A'}`);
+      });
+    } else {
+      console.log('⚠️ Aucune réponse trouvée pour cette souscription');
+    }
 
     res.json({
       success: true,

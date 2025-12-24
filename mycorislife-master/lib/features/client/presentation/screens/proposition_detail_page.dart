@@ -98,7 +98,31 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (!mounted) return;
 
     try {
+      print('📥 Chargement détails proposition ${widget.subscriptionId}...');
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
+
+      print('\n=== DONNÉES REÇUES DU SERVEUR ===');
+      print('✅ Subscription reçue: ${data['subscription'] != null ? 'OUI' : 'NON'}');
+      print('✅ User reçue: ${data['user'] != null ? 'OUI' : 'NON'}');
+      print('✅ questionnaire_reponses reçue: ${data['subscription']?['questionnaire_reponses'] != null ? 'OUI' : 'NON'}');
+      
+      // Afficher les questionnaire_reponses
+      final questReponses = data['subscription']?['questionnaire_reponses'];
+      if (questReponses != null) {
+        print('📋 Détail questionnaire_reponses:');
+        if (questReponses is List) {
+          print('  - Type: List avec ${questReponses.length} éléments');
+          questReponses.forEach((r) {
+            if (r is Map && r['libelle'] != null) {
+              print('    Q: "${r['libelle']}" → ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
+            }
+          });
+        } else {
+          print('  - Type: ${questReponses.runtimeType} (non liste)');
+        }
+      } else {
+        print('⚠️ questionnaire_reponses est null');
+      }
 
       developer.log('=== DONNÉES REÇUES ===');
       developer.log('Subscription: ${data['subscription']}');
@@ -124,6 +148,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       }
     } catch (e) {
       developer.log('Erreur: $e', error: e);
+      print('❌ Erreur chargement: $e');
 
       if (!mounted) return;
 
@@ -1580,24 +1605,51 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
-  /// Récupère les réponses au questionnaire médical depuis souscriptiondata
+  /// Récupère les réponses au questionnaire médical depuis questionnaire_reponses
   List<Map<String, dynamic>> _getQuestionnaireMedicalReponses() {
-    final details = _getSubscriptionDetails();
-    final reponses = details['questionnaire_medical_reponses'];
+    // Essayer d'abord le champ questionnaire_reponses (retourné par le serveur)
+    final reponses = _subscriptionData?['questionnaire_reponses'];
+    
+    print('🔍 _getQuestionnaireMedicalReponses() appelé');
+    print('  - _subscriptionData type: ${_subscriptionData.runtimeType}');
+    print('  - reponses (questionnaire_reponses): $reponses');
     
     if (reponses == null) {
+      print('  ⚠️ questionnaire_reponses est null, cherche dans souscriptiondata...');
+      // Fallback: chercher dans souscriptiondata
+      final souscriptiondata = _subscriptionData?['souscriptiondata'];
+      if (souscriptiondata != null && souscriptiondata['questionnaire_medical_reponses'] != null) {
+        final fallback = souscriptiondata['questionnaire_medical_reponses'];
+        print('  ✅ Trouvé questionnaire_medical_reponses dans souscriptiondata: $fallback');
+        if (fallback is List) {
+          return List<Map<String, dynamic>>.from(
+            fallback.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
+          );
+        }
+      }
+      print('  ❌ Aucun questionnaire trouvé');
       return [];
     }
 
+    print('  ✅ questionnaire_reponses trouvé: ${reponses.runtimeType}');
+
     // Si c'est déjà une liste, la retourner
     if (reponses is List) {
+      print('  ✅ Format liste détecté: ${reponses.length} réponses');
+      reponses.forEach((r) {
+        if (r is Map && r['libelle'] != null) {
+          print('    - Q: "${r['libelle']}" → R: ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
+        }
+      });
       return List<Map<String, dynamic>>.from(
         reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
       );
     }
 
+    print('  ⚠️ Format inattendu: ${reponses.runtimeType}');
     // Parfois le back renvoie un Map (index => objet), convertir en liste
     if (reponses is Map) {
+      print('  🔄 Conversion Map → List...');
       return reponses.values
           .where((v) => v != null)
           .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})

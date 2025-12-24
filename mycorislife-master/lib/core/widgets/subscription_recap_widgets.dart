@@ -745,7 +745,7 @@ class SubscriptionRecapWidgets {
         Icons.assignment,
         bleuSecondaire,
         [
-          buildRecapRow('Questionnaire médical', 'Non rempli'),
+          buildRecapRow('Statut', 'Non rempli'),
         ],
       );
     }
@@ -753,30 +753,70 @@ class SubscriptionRecapWidgets {
     final widgets = <Widget>[];
     for (int i = 0; i < reponses.length; i++) {
       final r = reponses[i];
-      final label = r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
+      final question = r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
 
-      String value = '';
+      // Build answer string based on response type
+      String answer = '';
       if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
-        value = r['reponse_oui_non'].toString();
+        final oui_non = r['reponse_oui_non'];
+        answer = (oui_non == true || oui_non == 'OUI' || oui_non == 'true') ? 'OUI' : 'NON';
+        
+        // Add detail responses if present
+        final details = <String>[];
         final d1 = r['reponse_detail_1'];
         final d2 = r['reponse_detail_2'];
         final d3 = r['reponse_detail_3'];
-        final details = <String>[];
-        for (var d in [d1, d2, d3]) {
-          if (d != null && d.toString().isNotEmpty) {
-            details.add(formatDate(d));
-          }
-        }
+        
+        if (d1 != null && d1.toString().isNotEmpty) details.add(d1.toString());
+        if (d2 != null && d2.toString().isNotEmpty) details.add(d2.toString());
+        if (d3 != null && d3.toString().isNotEmpty) details.add(d3.toString());
+        
         if (details.isNotEmpty) {
-          value = '$value — ${details.join(' / ')}';
+          answer = '$answer — ${details.join(' / ')}';
         }
       } else if (r.containsKey('reponse_text') && r['reponse_text'] != null) {
-        value = r['reponse_text'].toString();
+        answer = r['reponse_text'].toString();
       } else {
-        value = 'Non renseigné';
+        answer = 'Non renseigné';
       }
 
-      widgets.add(buildRecapRow(label, value));
+      // Display question and answer in separate rows for clarity
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: grisLeger,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: bleuSecondaire.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question en gras
+              Text(
+                '${i + 1}. $question',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: bleuCoris,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Réponse
+              Text(
+                answer,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: vertSucces,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return buildRecapSection(
