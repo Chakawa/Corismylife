@@ -647,74 +647,143 @@ class SubscriptionRecapWidgets {
   static Widget buildDocumentsSection({
     String? pieceIdentite,
     VoidCallback? onDocumentTap,
+    List<Map<String, dynamic>>? documents,
+    void Function(String path, String? label)? onDocumentTapWithInfo,
   }) {
+    final children = <Widget>[];
+
+    // Helper to build a single document row
+    Widget buildDocRow(String title, String? filename, VoidCallback? onTap) {
+      final has = filename != null && filename.isNotEmpty && filename != 'Non téléchargée' && filename != 'null';
+      return GestureDetector(
+        onTap: has ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.badge_outlined,
+                    size: 20,
+                    color: has ? bleuCoris : Colors.grey,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: grisTexte,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        has ? filename! : 'Non téléchargée',
+                        style: TextStyle(
+                          color: has ? bleuCoris : Colors.grey,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (has)
+                Icon(
+                  Icons.visibility,
+                  size: 20,
+                  color: bleuCoris,
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Primary identity piece (backwards compatible)
+    if (pieceIdentite != null || (documents == null || documents.isEmpty)) {
+      children.add(buildDocRow('Pièce d\'identité', pieceIdentite, onDocumentTap));
+    }
+
+    // Additional documents list (if provided)
+    if (documents != null && documents.isNotEmpty) {
+      for (var doc in documents) {
+        final label = doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'] ?? 'Document';
+        final path = doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
+        children.add(buildDocRow(label.toString(), path?.toString(), path != null
+            ? () {
+                if (onDocumentTapWithInfo != null) {
+                  onDocumentTapWithInfo(path.toString(), label?.toString());
+                } else if (onDocumentTap != null) {
+                  onDocumentTap();
+                }
+              }
+            : null));
+      }
+    }
+
     return buildRecapSection(
       'Documents',
       Icons.description,
       bleuSecondaire,
-      [
-        GestureDetector(
-          onTap: pieceIdentite != null ? onDocumentTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.badge_outlined,
-                      size: 20,
-                      color: pieceIdentite != null ? bleuCoris : Colors.grey,
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Pièce d\'identité',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (pieceIdentite != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            pieceIdentite,
-                            style: TextStyle(
-                              color: bleuCoris,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Non téléchargée',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-                if (pieceIdentite != null)
-                  Icon(
-                    Icons.visibility,
-                    size: 20,
-                    color: bleuCoris,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      children,
+    );
+  }
+
+  /// Construit le récapitulatif du questionnaire médical (questions + réponses)
+  static Widget buildQuestionnaireMedicalSection(
+      List<Map<String, dynamic>>? reponses) {
+    if (reponses == null || reponses.isEmpty) {
+      return buildRecapSection(
+        'Questionnaire médical',
+        Icons.assignment,
+        bleuSecondaire,
+        [
+          buildRecapRow('Questionnaire médical', 'Non rempli'),
+        ],
+      );
+    }
+
+    final widgets = <Widget>[];
+    for (int i = 0; i < reponses.length; i++) {
+      final r = reponses[i];
+      final label = r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
+
+      String value = '';
+      if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
+        value = r['reponse_oui_non'].toString();
+        final d1 = r['reponse_detail_1'];
+        final d2 = r['reponse_detail_2'];
+        final d3 = r['reponse_detail_3'];
+        final details = <String>[];
+        for (var d in [d1, d2, d3]) {
+          if (d != null && d.toString().isNotEmpty) {
+            details.add(formatDate(d));
+          }
+        }
+        if (details.isNotEmpty) {
+          value = '$value — ${details.join(' / ')}';
+        }
+      } else if (r.containsKey('reponse_text') && r['reponse_text'] != null) {
+        value = r['reponse_text'].toString();
+      } else {
+        value = 'Non renseigné';
+      }
+
+      widgets.add(buildRecapRow(label, value));
+    }
+
+    return buildRecapSection(
+      'Questionnaire médical',
+      Icons.assignment,
+      bleuSecondaire,
+      widgets,
     );
   }
 

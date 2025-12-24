@@ -105,6 +105,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   double _primeCalculee = 0.0;
   double _renteCalculee = 0.0;
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
 
@@ -1722,6 +1723,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           // Questionnaire médical avant récap — trigger widget validation
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
+            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
+            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -2250,6 +2253,29 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         debugPrint('❌ Erreur upload: ${responseData['message']}');
         throw Exception(
             responseData['message'] ?? 'Erreur lors de l\'upload du document');
+      }
+
+      // Si le serveur renvoie le subscription mis à jour, récupérer le label original
+      try {
+        final updated = responseData['data']?['subscription'];
+        if (updated != null) {
+          final souscriptiondata = updated['souscriptiondata'];
+          if (souscriptiondata != null) {
+            // Le champ peut être stocké sous forme d'objet/d'une string JSON
+            if (souscriptiondata is Map) {
+              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+            } else if (souscriptiondata is String) {
+              try {
+                final parsed = jsonDecode(souscriptiondata);
+                _pieceIdentiteLabel = parsed['piece_identite_label'];
+              } catch (_) {
+                // ignore
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -4335,11 +4361,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         if (_selectedModePaiement != null) const SizedBox(height: 20),
 
+        // RÉCAP: Questionnaire médical (questions + réponses)
+        SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+            _questionnaireMedicalReponses),
+
+        const SizedBox(height: 20),
+
         SubscriptionRecapWidgets.buildDocumentsSection(
-          pieceIdentite: _pieceIdentite?.path.split('/').last,
+          pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
           onDocumentTap: _pieceIdentite != null
               ? () => _viewLocalDocument(
-                  _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+                  _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
               : null,
         ),
 

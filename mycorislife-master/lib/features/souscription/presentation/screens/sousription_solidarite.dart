@@ -157,6 +157,7 @@ class _SouscriptionSolidaritePageState
   String _selectedBeneficiaireIndicatif = '+221';
   String _selectedContactIndicatif = '+221';
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // 💳 Variables Mode de Paiement
   String? _selectedModePaiement;
@@ -997,6 +998,26 @@ class _SouscriptionSolidaritePageState
         debugPrint('❌ Erreur upload: ${responseData['message']}');
         throw Exception(
             responseData['message'] ?? 'Erreur lors de l\'upload du document');
+      }
+
+      // Récupérer le label original si présent dans la réponse
+      try {
+        final updated = responseData['data']?['subscription'];
+        if (updated != null) {
+          final souscriptiondata = updated['souscriptiondata'];
+          if (souscriptiondata != null) {
+            if (souscriptiondata is Map) {
+              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+            } else if (souscriptiondata is String) {
+              try {
+                final parsed = jsonDecode(souscriptiondata);
+                _pieceIdentiteLabel = parsed['piece_identite_label'];
+              } catch (_) {}
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');

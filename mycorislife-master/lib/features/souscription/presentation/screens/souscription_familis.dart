@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -115,6 +117,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   String _selectedLienParenteUrgence = 'Parent';
 
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // Questionnaire médical
   List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
@@ -2999,6 +3002,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           // Questionnaire médical: trigger widget validation/save
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
+            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
+            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -3429,6 +3434,27 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         }
       } else {
         debugPrint('✅ Document uploadé avec succès');
+        
+        // Récupérer le label original si présent dans la réponse
+        try {
+          final updated = responseData['data']?['subscription'];
+          if (updated != null) {
+            final souscriptiondata = updated['souscriptiondata'];
+            if (souscriptiondata != null) {
+              if (souscriptiondata is Map) {
+                _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+              } else if (souscriptiondata is String) {
+                try {
+                  final parsed = jsonDecode(souscriptiondata);
+                  _pieceIdentiteLabel = parsed['piece_identite_label'];
+                } catch (_) {}
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        }
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -4886,18 +4912,34 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           ),
         if (_selectedModePaiement != null) const SizedBox(height: 20),
 
-        // Section Documents
-        _buildRecapSection(
-          'Documents',
-          Icons.description,
-          bleuSecondaire,
-          [
-            _buildCombinedRecapRow(
-                'Pièce d\'identité',
-                _pieceIdentite?.path.split('/').last ?? 'Non téléchargée',
-                '',
-                ''),
-          ],
+        // RÉCAP: Questionnaire médical (questions + réponses)
+        SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+            _questionnaireMedicalReponses),
+
+        const SizedBox(height: 20),
+
+        // Section Documents (affiche les documents et permet de les ouvrir)
+        SubscriptionRecapWidgets.buildDocumentsSection(
+          documents: _pieceIdentite != null
+              ? [
+                  {
+                    'label': _pieceIdentiteLabel ?? 'Pièce d\'identité',
+                    'path': _pieceIdentite!.path,
+                  }
+                ]
+              : [],
+          onDocumentTapWithInfo: (path, label) {
+            if (path == null || path.isEmpty) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DocumentViewerPage(
+                  localFile: File(path),
+                  documentName: label ?? path.split('/').last,
+                ),
+              ),
+            );
+          },
         ),
 
         const SizedBox(height: 20),

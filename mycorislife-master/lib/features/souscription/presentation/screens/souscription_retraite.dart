@@ -133,6 +133,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   String _selectedContactIndicatif = '+225';
 
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // Mode de paiement
   String? _selectedModePaiement;

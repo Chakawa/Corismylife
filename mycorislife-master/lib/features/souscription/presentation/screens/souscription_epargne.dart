@@ -79,6 +79,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   DateTime? _dateFinContrat;
 
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // Mode de paiement
   String? _selectedModePaiement;

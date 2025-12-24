@@ -219,6 +219,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       '+225'; // Indicatif téléphonique du contact d'urgence
 
   File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
+  String? _pieceIdentiteLabel;
 
   // ============================================
   // OPTIONS ET LISTES DE SÉLECTION
@@ -4358,10 +4359,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           ),
           SizedBox(height: 20),
           SubscriptionRecapWidgets.buildDocumentsSection(
-            pieceIdentite: _pieceIdentite?.path.split('/').last,
+            pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
             onDocumentTap: _pieceIdentite != null
                 ? () => _viewLocalDocument(
-                    _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+                    _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
                 : null,
           ),
           SizedBox(height: 20),
@@ -4853,6 +4854,27 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
       }
+      
+      // Récupérer le label original si présent dans la réponse
+      try {
+        final updated = responseData['data']?['subscription'];
+        if (updated != null) {
+          final souscriptiondata = updated['souscriptiondata'];
+          if (souscriptiondata != null) {
+            if (souscriptiondata is Map) {
+              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+            } else if (souscriptiondata is String) {
+              try {
+                final parsed = jsonDecode(souscriptiondata);
+                _pieceIdentiteLabel = parsed['piece_identite_label'];
+              } catch (_) {}
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+      }
+      
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');

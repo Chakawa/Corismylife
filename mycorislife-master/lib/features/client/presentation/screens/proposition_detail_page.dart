@@ -387,10 +387,29 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
                   const SizedBox(height: 20),
 
-                  // Documents
-                  _buildDocumentsSection(),
+                    // 📋 RÉCAP: Questionnaire médical (questions + réponses) —
+                    // n'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
+                    Builder(builder: (context) {
+                      final productType = _getProductType().toLowerCase();
+                      if (productType.contains('etude') ||
+                          productType.contains('familis') ||
+                          productType.contains('serenite') ||
+                          productType.contains('sérénité')) {
+                        return Column(
+                          children: [
+                            SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+                                _getQuestionnaireMedicalReponses()),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
 
-                  const SizedBox(height: 20),
+                    // Documents
+                    _buildDocumentsSection(),
+
+                    const SizedBox(height: 20),
 
                   // Avertissement
                   SubscriptionRecapWidgets.buildVerificationWarning(),
@@ -1062,8 +1081,22 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     // Lors du tap, on doit passer le nom réel du fichier (piece_identite)
     final actualFilename = hasDocument ? pieceIdentite : null;
 
+    // Try to collect a documents list from souscriptiondata or details
+    List<Map<String, dynamic>>? docsList;
+    if (souscriptiondata != null) {
+      final docs = souscriptiondata['documents'];
+      if (docs is List) {
+        docsList = docs.map((d) => d is Map ? Map<String, dynamic>.from(d as Map) : <String, dynamic>{}).toList();
+      } else if (docs is Map) {
+        // convert map entries to list
+        docsList = docs.entries.map((e) => {'label': e.key, 'path': e.value}).toList();
+      }
+    }
+
     return SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: displayLabel,
+      documents: docsList,
+      onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
       onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, pieceIdentiteLabel) : null,
     );
   }
@@ -1129,48 +1162,54 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             Row(
               children: [
                 // Bouton Imprimer
-                Expanded(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PdfViewerPage(
-                                  subscriptionId: widget.subscriptionId),
-                            ),
-                          );
-                        },
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
                         borderRadius: BorderRadius.circular(12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.print_outlined,
-                                color: bleuCoris, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Imprimer',
-                              style: TextStyle(
-                                color: bleuCoris,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            final productType = _getProductType().toLowerCase();
+                            final excludeQ = productType.contains('etude') ||
+                                productType.contains('familis') ||
+                                productType.contains('serenite') ||
+                                productType.contains('sérénité');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PdfViewerPage(
+                                    subscriptionId: widget.subscriptionId,
+                                    excludeQuestionnaire: excludeQ),
                               ),
-                            ),
-                          ],
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.print_outlined,
+                                  color: bleuCoris, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Imprimer',
+                                style: TextStyle(
+                                  color: bleuCoris,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
                 const SizedBox(width: 12),
                 // Bouton Modifier
                 Expanded(
@@ -1539,7 +1578,35 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         backgroundColor: vertSucces,
       ),
     );
-
-    // TODO: Implémenter la logique de paiement réelle
   }
+
+  /// Récupère les réponses au questionnaire médical depuis souscriptiondata
+  List<Map<String, dynamic>> _getQuestionnaireMedicalReponses() {
+    final details = _getSubscriptionDetails();
+    final reponses = details['questionnaire_medical_reponses'];
+    
+    if (reponses == null) {
+      return [];
+    }
+
+    // Si c'est déjà une liste, la retourner
+    if (reponses is List) {
+      return List<Map<String, dynamic>>.from(
+        reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
+      );
+    }
+
+    // Parfois le back renvoie un Map (index => objet), convertir en liste
+    if (reponses is Map) {
+      return reponses.values
+          .where((v) => v != null)
+          .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
+          .toList();
+    }
+
+    return [];
+
+  }
+
+  // Fin de la classe PropositionDetailPageState
 }

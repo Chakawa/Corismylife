@@ -12,9 +12,13 @@ class PdfService {
     return '${AppConfig.baseUrl}/subscriptions/$subscriptionId/pdf';
   }
 
-  static Future<File> fetchToTemp(int subscriptionId) async {
+  static Future<File> fetchToTemp(int subscriptionId, {bool excludeQuestionnaire = false}) async {
     final token = await _storage.read(key: 'token');
-    final url = subscriptionPdfUrl(subscriptionId);
+    var url = subscriptionPdfUrl(subscriptionId);
+    if (excludeQuestionnaire) {
+      // Add a query param to request a PDF without the questionnaire if supported by the backend
+      url = '$url?exclude_questionnaire=1';
+    }
     final response = await http.get(Uri.parse(url), headers: {
       'Authorization': 'Bearer $token',
     });

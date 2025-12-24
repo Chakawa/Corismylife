@@ -499,14 +499,15 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                   size: 20,
                                                 ),
                                               ),
-                                              onPressed: () {
+                                                    onPressed: () {
+                                                final prod = (subscription['produit_nom'] ?? subscription['product_type'] ?? '').toString().toLowerCase();
+                                                final excludeQ = prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité');
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        PdfViewerPage(
-                                                      subscriptionId:
-                                                          subscription['id'],
+                                                    builder: (context) => PdfViewerPage(
+                                                      subscriptionId: subscription['id'],
+                                                      excludeQuestionnaire: excludeQ,
                                                     ),
                                                   ),
                                                 );

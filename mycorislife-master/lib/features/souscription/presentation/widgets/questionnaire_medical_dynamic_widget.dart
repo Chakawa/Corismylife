@@ -31,7 +31,17 @@ class _QuestionnaireMedicalDynamicWidgetState
   final _formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> _questions = [];
-  Map<int, Map<String, dynamic>> _reponses = {};
+  Map<String, Map<String, dynamic>> _reponses = {};
+
+  Map<String, dynamic>? _getResp(dynamic questionId) {
+    if (questionId == null) return null;
+    return _reponses[questionId.toString()];
+  }
+
+  void _setResp(dynamic questionId, Map<String, dynamic> value) {
+    if (questionId == null) return;
+    _reponses[questionId.toString()] = value;
+  }
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -72,7 +82,8 @@ class _QuestionnaireMedicalDynamicWidgetState
       // Charger les réponses initiales pré-existantes (du parent)
       if (widget.initialReponses != null) {
         for (var reponse in widget.initialReponses!) {
-          _reponses[reponse['question_id']] = reponse;
+          final qid = reponse['question_id'] ?? reponse['questionId'] ?? reponse['id'];
+          if (qid != null) _setResp(qid, Map<String, dynamic>.from(reponse));
         }
       }
       
@@ -81,7 +92,8 @@ class _QuestionnaireMedicalDynamicWidgetState
         final reponses = await _service.getReponses(widget.subscriptionId!);
         if (reponses != null) {
           for (var reponse in reponses) {
-            _reponses[reponse['question_id']] = reponse;
+            final qid = reponse['question_id'] ?? reponse['questionId'] ?? reponse['id'];
+            if (qid != null) _setResp(qid, Map<String, dynamic>.from(reponse));
           }
         }
       }
@@ -140,7 +152,7 @@ class _QuestionnaireMedicalDynamicWidgetState
     
     for (var question in _questions) {
       final questionId = question['id'];
-      final reponse = _reponses[questionId];
+      final reponse = _getResp(questionId);
       
       if (reponse != null) {
         reponsesFormatted.add({
@@ -161,6 +173,8 @@ class _QuestionnaireMedicalDynamicWidgetState
         return false;
       }
     }
+    // Debug log to help trace validation flow
+    print('✅ Questionnaire valid, réponses: $reponsesFormatted');
     widget.onValidated(reponsesFormatted);
     return true;
   }
@@ -386,7 +400,7 @@ class _QuestionnaireMedicalDynamicWidgetState
   }
 
   Widget _buildTaillePoidsFields(int questionId, Map<String, dynamic> question) {
-    final reponse = _reponses[questionId] ?? {};
+    final reponse = _getResp(questionId) ?? {};
     
     return Row(
       children: [
@@ -408,15 +422,15 @@ class _QuestionnaireMedicalDynamicWidgetState
               }
               return null;
             },
-            onChanged: (value) {
-              setState(() {
-                _reponses[questionId] = {
-                  ..._reponses[questionId] ?? {},
-                  'reponse_detail_1': value,
-                  'reponse_text': '$value cm',
-                };
-              });
-            },
+              onChanged: (value) {
+                setState(() {
+                  _setResp(questionId, {
+                    ...(_getResp(questionId) ?? {}),
+                    'reponse_detail_1': value,
+                    'reponse_text': '$value cm',
+                  });
+                });
+              },
           ),
         ),
         const SizedBox(width: 10),
@@ -440,11 +454,11 @@ class _QuestionnaireMedicalDynamicWidgetState
             },
             onChanged: (value) {
               setState(() {
-                _reponses[questionId] = {
-                  ..._reponses[questionId] ?? {},
+                _setResp(questionId, {
+                  ...(_getResp(questionId) ?? {}),
                   'reponse_detail_2': value,
-                  'reponse_text': (_reponses[questionId]?['reponse_text'] ?? '') + ', $value kg',
-                };
+                  'reponse_text': ((_getResp(questionId)?['reponse_text']) ?? '') + ', $value kg',
+                });
               });
             },
           ),
@@ -455,8 +469,8 @@ class _QuestionnaireMedicalDynamicWidgetState
 
   Widget _buildOuiNonDetailsFields(
       int questionId, Map<String, dynamic> question, bool obligatoire) {
-    final reponse = _reponses[questionId];
-    final reponseOuiNon = reponse?['reponse_oui_non'];
+    final reponse = _getResp(questionId) ?? {};
+    final reponseOuiNon = reponse['reponse_oui_non'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,10 +482,10 @@ class _QuestionnaireMedicalDynamicWidgetState
               child: OutlinedButton(
                 onPressed: () {
                   setState(() {
-                    _reponses[questionId] = {
-                      ..._reponses[questionId] ?? {},
+                    _setResp(questionId, {
+                      ...(_getResp(questionId) ?? {}),
                       'reponse_oui_non': 'OUI',
-                    };
+                    });
                   });
                 },
                 style: OutlinedButton.styleFrom(
@@ -490,13 +504,14 @@ class _QuestionnaireMedicalDynamicWidgetState
               child: OutlinedButton(
                 onPressed: () {
                   setState(() {
-                    _reponses[questionId] = {
+                    _setResp(questionId, {
+                      ...(_getResp(questionId) ?? {}),
                       'reponse_oui_non': 'NON',
                       'reponse_detail_1': null,
                       'reponse_detail_2': null,
                       'reponse_detail_3': null,
                       'reponse_text': null,
-                    };
+                    });
                   });
                 },
                 style: OutlinedButton.styleFrom(
@@ -562,11 +577,11 @@ class _QuestionnaireMedicalDynamicWidgetState
           if (picked != null) {
             final iso = picked.toIso8601String();
             setState(() {
-              _reponses[questionId] = {
-                ..._reponses[questionId] ?? {},
+              _setResp(questionId, {
+                ...(_getResp(questionId) ?? {}),
                 fieldKey: iso,
                 'reponse_text': (label ?? '') + ': ' + '${picked.day.toString().padLeft(2,'0')}/${picked.month.toString().padLeft(2,'0')}/${picked.year}'
-              };
+              });
             });
           }
         },
@@ -601,10 +616,10 @@ class _QuestionnaireMedicalDynamicWidgetState
       validator: obligatoire ? (v) => (v == null || v.isEmpty) ? 'Requis' : null : null,
       onChanged: (v) {
         setState(() {
-          _reponses[questionId] = {
-            ..._reponses[questionId] ?? {},
+          _setResp(questionId, {
+            ...(_getResp(questionId) ?? {}),
             fieldKey: v,
-          };
+          });
         });
       },
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> subscription;
@@ -407,6 +408,28 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Construit la section du questionnaire médical
+  Widget _buildQuestionnaireMedicalSection(Map<String, dynamic> souscriptionData) {
+    final reponses = souscriptionData['questionnaire_medical_reponses'];
+    
+    if (reponses == null || (reponses is List && reponses.isEmpty)) {
+      return Container();
+    }
+    
+    List<Map<String, dynamic>> recapReponses = [];
+    if (reponses is List) {
+      recapReponses = List<Map<String, dynamic>>.from(
+        reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {})
+      );
+    }
+    
+    return SizedBox(
+      width: double.infinity,
+      child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+          recapReponses),
     );
   }
 
@@ -905,6 +928,16 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               ),
             ],
           ),
+
+        // RÉCAP: Questionnaire médical (questions + réponses)
+        // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
+        () {
+          final prod = (souscriptionData['produit_nom'] ?? souscriptionData['product_type'] ?? widget.subscription['product_type'] ?? widget.subscription['produit_nom'] ?? '').toString().toLowerCase();
+          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité')) {
+            return _buildQuestionnaireMedicalSection(souscriptionData);
+          }
+          return const SizedBox.shrink();
+        }(),
 
         // Message de vérification
         Container(

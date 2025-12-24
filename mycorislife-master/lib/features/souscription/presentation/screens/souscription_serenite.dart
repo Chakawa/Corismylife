@@ -133,6 +133,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String _selectedContactIndicatif = '+225';
 
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement;
@@ -2142,6 +2143,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // Questionnaire médical: trigger widget validation/save
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
+            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
+            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -4515,13 +4518,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           ],
         ),
       if (_selectedModePaiement != null) const SizedBox(height: 20),
+      // RÉCAP: Questionnaire médical (questions + réponses)
+      SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+        _questionnaireMedicalReponses),
+
+      const SizedBox(height: 20),
+
       SubscriptionRecapWidgets.buildDocumentsSection(
-        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
         onDocumentTap: _pieceIdentite != null
             ? () => _viewLocalDocument(
-                _pieceIdentite!, _pieceIdentite!.path.split('/').last)
+                _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
             : null,
       ),
+
       const SizedBox(height: 20),
       Container(
         padding: const EdgeInsets.all(16),
@@ -4935,6 +4945,26 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
+      }
+
+      // Récupérer le label original si présent dans la réponse
+      try {
+        final updated = responseData['data']?['subscription'];
+        if (updated != null) {
+          final souscriptiondata = updated['souscriptiondata'];
+          if (souscriptiondata != null) {
+            if (souscriptiondata is Map) {
+              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+            } else if (souscriptiondata is String) {
+              try {
+                final parsed = jsonDecode(souscriptiondata);
+                _pieceIdentiteLabel = parsed['piece_identite_label'];
+              } catch (_) {}
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');

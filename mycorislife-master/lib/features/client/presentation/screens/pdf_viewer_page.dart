@@ -5,7 +5,8 @@ import 'package:mycorislife/services/pdf_service.dart';
 
 class PdfViewerPage extends StatefulWidget {
   final int subscriptionId;
-  const PdfViewerPage({super.key, required this.subscriptionId});
+  final bool excludeQuestionnaire;
+  const PdfViewerPage({super.key, required this.subscriptionId, this.excludeQuestionnaire = false});
 
   @override
   State<PdfViewerPage> createState() => _PdfViewerPageState();
@@ -24,7 +25,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
   Future<void> _load() async {
     try {
-      final f = await PdfService.fetchToTemp(widget.subscriptionId);
+      final f = await PdfService.fetchToTemp(widget.subscriptionId, excludeQuestionnaire: widget.excludeQuestionnaire == true);
       if (!mounted) return;
       setState(() { _file = f; _loading = false; });
     } catch (e) {
