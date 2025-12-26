@@ -69,6 +69,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   int _currentStep = 0;
   Future<bool> Function()? _questionnaireValidate;
+  bool _questionnaireCompleted = false;
 
   // Contrôleurs pour la simulation
   final TextEditingController _capitalController = TextEditingController();
@@ -160,7 +161,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   ];
 
   // 📋 QUESTIONNAIRE MÉDICAL
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
+  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -1084,10 +1086,18 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-      _prefillFromExistingData();
+      // Appeler async après initState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _prefillFromExistingData();
+      });
     } else {
       _prefillSimulationData();
     }
+
+    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadQuestionnaireMedicalQuestions();
+    });
 
     // Listeners pour le calcul automatique
     _capitalController.addListener(() {
@@ -1351,7 +1361,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
-  void _prefillFromExistingData() {
+  Future<void> _prefillFromExistingData() async {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -1575,6 +1585,24 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
       debugPrint('✅ Pré-remplissage SÉRÉNITÉ terminé avec succès');
 
+      // Charger les réponses questionnaire avec libelle du serveur
+      if (widget.subscriptionId != null) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+          if (completReponses != null && completReponses.isNotEmpty) {
+            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
+            if (mounted) {
+              setState(() {
+                _questionnaireMedicalReponses = completReponses;
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
+        }
+      }
+
       if (mounted) {
         setState(() {});
       }
@@ -1608,6 +1636,22 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     _clientNumeroPieceController.dispose();
 
     super.dispose();
+  }
+
+  /// ✅ Charger les questions du questionnaire médical au démarrage
+  Future<void> _loadQuestionnaireMedicalQuestions() async {
+    try {
+      final questionnaireService = QuestionnaireMedicalService();
+      final questions = await questionnaireService.getQuestions();
+      if (questions.isNotEmpty && mounted) {
+        setState(() {
+          _questionnaireMedicalQuestions = questions;
+        });
+        debugPrint('✅ Questions chargées: ${questions.length} questions');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
+    }
   }
 
   // Méthode pour charger les données utilisateur
@@ -2146,7 +2190,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             debugPrint('[_nextStep] questionnaireValidate returned: $ok');
             debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
-          } else if (_questionnaireMedicalReponses.isEmpty) {
+          } else if (!_questionnaireCompleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Veuillez compléter le questionnaire médical'),
@@ -2168,8 +2212,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 3) {
-          // Questionnaire médical validé avant récap
-          if (_questionnaireMedicalReponses.isEmpty) {
+          // Questionnaire médical avant récap — utiliser la validation du widget (modèle Études)
+          if (_questionnaireValidate != null) {
+            final ok = await _questionnaireValidate!();
+            if (!ok) return;
+          } else if (!_questionnaireCompleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Veuillez compléter le questionnaire médical'),
@@ -4133,15 +4180,27 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           _questionnaireMedicalReponses = reponses;
         });
 
-        // If subscriptionId is present, ensure backend save (service also called by parent validate)
+        // If subscriptionId is present, save and then fetch complete responses from server
         if (widget.subscriptionId != null) {
           try {
             final questionnaireService = QuestionnaireMedicalService();
+            
+            // Save responses
             await questionnaireService.saveReponses(
               subscriptionId: widget.subscriptionId!,
               reponses: reponses,
             );
             debugPrint('✅ Questionnaire médical sauvegardé');
+            
+            // Fetch complete responses with libelle from server
+            final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+            if (completReponses != null && completReponses.isNotEmpty) {
+              setState(() {
+                _questionnaireMedicalReponses = completReponses;
+                _questionnaireCompleted = true;
+              });
+              debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+            }
           } catch (e) {
             debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
             ScaffoldMessenger.of(context).showSnackBar(
@@ -4151,6 +4210,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               ),
             );
             return;
+          }
+          // Marquer comme complété au moins côté client, même si le backend renvoie vide
+          if (!_questionnaireCompleted) {
+            setState(() {
+              _questionnaireCompleted = true;
+            });
+            debugPrint('✅ Questionnaire marqué comme complété (client-side)');
           }
         }
 
@@ -4520,7 +4586,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       if (_selectedModePaiement != null) const SizedBox(height: 20),
       // RÉCAP: Questionnaire médical (questions + réponses)
       SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        _questionnaireMedicalReponses),
+        _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
 
       const SizedBox(height: 20),
 
@@ -4881,6 +4947,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
+      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
+      if (_questionnaireMedicalReponses.isNotEmpty) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          await questionnaireService.saveReponses(
+            subscriptionId: subscriptionId,
+            reponses: _questionnaireMedicalReponses,
+          );
+          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+        } catch (e) {
+          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+        }
+      }
+
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
@@ -4915,6 +4995,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
+
+      // Sauvegarder les réponses du questionnaire médical
+      if (_questionnaireMedicalReponses.isNotEmpty) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          await questionnaireService.saveReponses(
+            subscriptionId: subscriptionId,
+            reponses: _questionnaireMedicalReponses,
+          );
+          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+        } catch (e) {
+          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+        }
+      }
 
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {

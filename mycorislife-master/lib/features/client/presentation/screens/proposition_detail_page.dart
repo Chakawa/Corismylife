@@ -55,6 +55,7 @@ class PropositionDetailPage extends StatefulWidget {
   PropositionDetailPageState createState() => PropositionDetailPageState();
 }
 
+
 class PropositionDetailPageState extends State<PropositionDetailPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
@@ -105,6 +106,19 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       print('✅ Subscription reçue: ${data['subscription'] != null ? 'OUI' : 'NON'}');
       print('✅ User reçue: ${data['user'] != null ? 'OUI' : 'NON'}');
       print('✅ questionnaire_reponses reçue: ${data['subscription']?['questionnaire_reponses'] != null ? 'OUI' : 'NON'}');
+      
+      // DEBUG: afficher toute la structure data
+      print('\n🔍 DEBUG: Structure complète data:');
+      print('  Keys au top level: ${data.keys.toList()}');
+      if (data['subscription'] != null) {
+        print('  Keys dans subscription: ${(data['subscription'] as Map).keys.toList()}');
+      }
+      if (data['data'] != null) {
+        print('  Keys dans data.data: ${(data['data'] as Map).keys.toList()}');
+        if ((data['data'] as Map)['subscription'] != null) {
+          print('  Keys dans data.data.subscription: ${((data['data'] as Map)['subscription'] as Map).keys.toList()}');
+        }
+      }
       
       // Afficher les questionnaire_reponses
       final questReponses = data['subscription']?['questionnaire_reponses'];
@@ -422,8 +436,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                           productType.contains('sérénité')) {
                         return Column(
                           children: [
+                            // Passe les questions si disponibles (_getQuestionnaireMedicalQuestions)
                             SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-                                _getQuestionnaireMedicalReponses()),
+                              _getQuestionnaireMedicalReponses(), _getQuestionnaireMedicalQuestions()),
                             const SizedBox(height: 20),
                           ],
                         );
@@ -1101,8 +1116,17 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     developer.log('hasDocument: $hasDocument');
 
-    // Utiliser le label original si présent, sinon le nom du fichier
-    final displayLabel = pieceIdentiteLabel ?? pieceIdentite;
+    // Utiliser le label original si présent, sinon extraire le nom du fichier depuis le chemin
+    String? displayLabel;
+    if (pieceIdentiteLabel != null && pieceIdentiteLabel.toString().isNotEmpty) {
+      displayLabel = pieceIdentiteLabel;
+    } else if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
+      final s = pieceIdentite.toString();
+      // Extraire seulement le nom du fichier depuis un chemin Windows ou Unix
+      displayLabel = s.split(RegExp(r'[\\/]+')).last;
+    } else {
+      displayLabel = null;
+    }
     // Lors du tap, on doit passer le nom réel du fichier (piece_identite)
     final actualFilename = hasDocument ? pieceIdentite : null;
 
@@ -1646,8 +1670,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
+    // Si le backend renvoie un Map (index => objet), le convertir en liste
     print('  ⚠️ Format inattendu: ${reponses.runtimeType}');
-    // Parfois le back renvoie un Map (index => objet), convertir en liste
     if (reponses is Map) {
       print('  🔄 Conversion Map → List...');
       return reponses.values
@@ -1656,8 +1680,23 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           .toList();
     }
 
+    // Pas de format reconnu -> retourner liste vide
     return [];
+  }
 
+  /// Tentative de récupération des questions depuis les données chargées
+  List<Map<String, dynamic>> _getQuestionnaireMedicalQuestions() {
+    try {
+      final questions = _subscriptionData?['questionnaire_questions'] ?? _subscriptionData?['questions'];
+      if (questions is List) {
+        return List<Map<String, dynamic>>.from(
+          questions.map((q) => q is Map ? Map<String, dynamic>.from(q) : {}),
+        );
+      }
+    } catch (e) {
+      print('⚠️ _getQuestionnaireMedicalQuestions erreur: $e');
+    }
+    return [];
   }
 
   // Fin de la classe PropositionDetailPageState

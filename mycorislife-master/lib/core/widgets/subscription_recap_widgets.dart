@@ -652,6 +652,14 @@ class SubscriptionRecapWidgets {
   }) {
     final children = <Widget>[];
 
+    // Helper to extract filename from a path (Windows or Unix)
+    String? _extractNameFromPath(dynamic path) {
+      if (path == null) return null;
+      final s = path.toString();
+      if (s.isEmpty) return null;
+      return s.split(RegExp(r'[\\/]+')).last;
+    }
+
     // Helper to build a single document row
     Widget buildDocRow(String title, String? filename, VoidCallback? onTap) {
       final has = filename != null && filename.isNotEmpty && filename != 'Non téléchargée' && filename != 'null';
@@ -708,18 +716,31 @@ class SubscriptionRecapWidgets {
 
     // Primary identity piece (backwards compatible)
     if (pieceIdentite != null || (documents == null || documents.isEmpty)) {
-      children.add(buildDocRow('Pièce d\'identité', pieceIdentite, onDocumentTap));
+      // If pieceIdentite looks like a full path, extract filename for display
+      String? displayPiece;
+      if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
+        displayPiece = _extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
+      } else {
+        displayPiece = pieceIdentite;
+      }
+
+      children.add(buildDocRow('Pièce d\'identité', displayPiece, onDocumentTap));
     }
 
     // Additional documents list (if provided)
     if (documents != null && documents.isNotEmpty) {
       for (var doc in documents) {
-        final label = doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'] ?? 'Document';
+        final rawLabel = doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'];
         final path = doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
-        children.add(buildDocRow(label.toString(), path?.toString(), path != null
+
+        final label = (rawLabel != null && rawLabel.toString().isNotEmpty)
+            ? rawLabel.toString()
+            : (_extractNameFromPath(path) ?? 'Document');
+
+        children.add(buildDocRow(label, path?.toString(), path != null
             ? () {
                 if (onDocumentTapWithInfo != null) {
-                  onDocumentTapWithInfo(path.toString(), label?.toString());
+                  onDocumentTapWithInfo(path.toString(), label);
                 } else if (onDocumentTap != null) {
                   onDocumentTap();
                 }
@@ -737,44 +758,129 @@ class SubscriptionRecapWidgets {
   }
 
   /// Construit le récapitulatif du questionnaire médical (questions + réponses)
+  /// Helper: Formate une date ISO vers JJ/MM/YYYY
+  static String _formatDateFromISO(dynamic dateValue) {
+    try {
+      if (dateValue == null) return '';
+      
+      DateTime date;
+      if (dateValue is DateTime) {
+        date = dateValue;
+      } else if (dateValue is String) {
+        if (dateValue.isEmpty) return '';
+        date = DateTime.parse(dateValue);
+      } else {
+        return '';
+      }
+      
+      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+    } catch (e) {
+      return '';
+    }
+  }
+
   static Widget buildQuestionnaireMedicalSection(
-      List<Map<String, dynamic>>? reponses) {
-    if (reponses == null || reponses.isEmpty) {
-      return buildRecapSection(
-        'Questionnaire médical',
-        Icons.assignment,
-        bleuSecondaire,
-        [
-          buildRecapRow('Statut', 'Non rempli'),
-        ],
-      );
+      List<Map<String, dynamic>>? reponses,
+      [List<Map<String, dynamic>>? questions]) {
+    // If we have the list of questions from DB, iterate over questions
+    // and merge with responses so we always display all questions.
+    final merged = <Map<String, dynamic>>[];
+    if (questions != null && questions.isNotEmpty) {
+      // Build a map of responses by question_id for quick lookup
+      final respById = <dynamic, Map<String, dynamic>>{};
+      if (reponses != null) {
+        for (final r in reponses) {
+          if (r is Map && r['question_id'] != null) respById[r['question_id']] = r;
+        }
+      }
+
+      for (int i = 0; i < questions.length; i++) {
+        final q = questions[i];
+        final qid = q['id'] ?? q['question_id'] ?? (i + 1);
+        final resp = respById[qid];
+        final mergedItem = <String, dynamic>{
+          'question_index': i,
+          'question_id': qid,
+          'libelle': q['libelle'] ?? q['question_libelle'] ?? 'Question ${i + 1}',
+          'type_question': q['type_question'] ?? q['type'] ?? '',
+        };
+        if (resp != null) {
+          mergedItem.addAll(resp);
+        }
+        merged.add(mergedItem);
+      }
+    } else {
+      // Fallback: use provided responses list as-is (old behavior)
+      if (reponses == null || reponses.isEmpty) {
+        return buildRecapSection(
+          'Questionnaire médical',
+          Icons.assignment,
+          bleuSecondaire,
+          [
+            buildRecapRow('Statut', 'Non rempli'),
+          ],
+        );
+      }
+
+      for (int i = 0; i < reponses.length; i++) {
+        final r = reponses[i];
+        final item = <String, dynamic>{
+          'question_index': i,
+          'question_id': r['question_id'] ?? (i + 1),
+        };
+        if (r is Map) item.addAll(r);
+        merged.add(item);
+      }
     }
 
     final widgets = <Widget>[];
-    for (int i = 0; i < reponses.length; i++) {
-      final r = reponses[i];
+    for (int i = 0; i < merged.length; i++) {
+      final r = merged[i];
       final question = r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
+      final typeQuestion = r['type_question']?.toString() ?? '';
 
       // Build answer string based on response type
       String answer = '';
+      
       if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
         final oui_non = r['reponse_oui_non'];
         answer = (oui_non == true || oui_non == 'OUI' || oui_non == 'true') ? 'OUI' : 'NON';
         
-        // Add detail responses if present
-        final details = <String>[];
-        final d1 = r['reponse_detail_1'];
-        final d2 = r['reponse_detail_2'];
-        final d3 = r['reponse_detail_3'];
-        
-        if (d1 != null && d1.toString().isNotEmpty) details.add(d1.toString());
-        if (d2 != null && d2.toString().isNotEmpty) details.add(d2.toString());
-        if (d3 != null && d3.toString().isNotEmpty) details.add(d3.toString());
-        
-        if (details.isNotEmpty) {
-          answer = '$answer — ${details.join(' / ')}';
+        // Add detail responses if present - but only if they're meaningful
+        if (typeQuestion == 'oui_non_details') {
+          final details = <String>[];
+          final d1 = r['reponse_detail_1'];
+          final d2 = r['reponse_detail_2'];
+          final d3 = r['reponse_detail_3'];
+          
+          // d1 est souvent une date
+          if (d1 != null && d1.toString().isNotEmpty) {
+            final formatted = _formatDateFromISO(d1);
+            details.add(formatted.isNotEmpty ? formatted : d1.toString());
+          }
+          
+          // d2 peut être du texte ou une date
+          if (d2 != null && d2.toString().isNotEmpty) {
+            // Si ça ressemble à une date ISO, formater
+            if (d2.toString().contains('T') && d2.toString().contains('-')) {
+              final formatted = _formatDateFromISO(d2);
+              details.add(formatted.isNotEmpty ? formatted : d2.toString());
+            } else {
+              details.add(d2.toString());
+            }
+          }
+          
+          // d3 généralement du texte libre
+          if (d3 != null && d3.toString().isNotEmpty) {
+            details.add(d3.toString());
+          }
+          
+          if (details.isNotEmpty) {
+            answer = '$answer — ${details.join(' / ')}';
+          }
         }
       } else if (r.containsKey('reponse_text') && r['reponse_text'] != null) {
+        // Pour les réponses texte, afficher tel quel (déjà formaté en backend)
         answer = r['reponse_text'].toString();
       } else {
         answer = 'Non renseigné';

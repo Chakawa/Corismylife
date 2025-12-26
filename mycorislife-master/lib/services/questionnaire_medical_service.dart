@@ -39,6 +39,27 @@ class QuestionnaireMedicalService {
   }) async {
     try {
       final token = await _secureStorage.read(key: 'token');
+      print('🔐 Token présent: ${token != null}');
+      
+      // Convertir les réponses OUI/NON en booléens pour PostgreSQL
+      final reponsesConverties = reponses.map((r) {
+        final converted = Map<String, dynamic>.from(r);
+        
+        // Convertir reponse_oui_non de String à bool
+        if (converted['reponse_oui_non'] != null) {
+          final val = converted['reponse_oui_non'];
+          if (val is String) {
+            converted['reponse_oui_non'] = val.toUpperCase() == 'OUI';
+          } else if (val is bool) {
+            // Déjà un booléen, on garde tel quel
+            converted['reponse_oui_non'] = val;
+          }
+        }
+        
+        return converted;
+      }).toList();
+      
+      print('📤 Envoi des réponses pour souscription $subscriptionId: ${json.encode({'reponses': reponsesConverties})}');
       
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/subscriptions/$subscriptionId/questionnaire-medical'),
@@ -46,9 +67,10 @@ class QuestionnaireMedicalService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({'reponses': reponses}),
+        body: json.encode({'reponses': reponsesConverties}),
       );
 
+      print('📥 Réponse serveur (${response.statusCode}): ${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
         return data['success'] == true;

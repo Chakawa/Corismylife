@@ -1096,9 +1096,12 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     res.json({ 
       success: true, 
       data: {
-        subscription: subscription,           // Données de la souscription
+        subscription: {
+          ...subscription,
+          questionnaire_reponses: questionnaireReponses  // ← Inclure dans subscription
+        },
         user: userData,                       // Données de l'utilisateur formatées
-        questionnaire_reponses: questionnaireReponses  // Réponses au questionnaire médical
+        questionnaire_reponses: questionnaireReponses  // Aussi au top level pour compatibilité
       }
     });
   } catch (error) {
@@ -3779,9 +3782,10 @@ const getQuestionnaireMedical = async (req, res) => {
       console.log('⚠️ Aucune réponse trouvée pour cette souscription');
     }
 
+    // Retourner sous la clé attendue par le frontend
     res.json({
       success: true,
-      data: result.rows
+      reponses: result.rows
     });
 
   } catch (error) {

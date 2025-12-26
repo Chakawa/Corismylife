@@ -426,10 +426,23 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       );
     }
     
+    // Préparer la liste des questions si elle est disponible dans les données chargées
+    List<Map<String, dynamic>>? questions;
+    if (_fullSubscriptionData != null) {
+      final raw = _fullSubscriptionData!['questionnaire_questions'] ?? _fullSubscriptionData!['questions'];
+      if (raw is List) {
+        questions = List<Map<String, dynamic>>.from(
+          raw.map((q) => q is Map ? Map<String, dynamic>.from(q) : {}),
+        );
+      }
+    }
+
     return SizedBox(
       width: double.infinity,
       child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-          recapReponses),
+        recapReponses,
+        questions,
+      ),
     );
   }
 

@@ -175,7 +175,10 @@ class _QuestionnaireMedicalDynamicWidgetState
     }
     // Debug log to help trace validation flow
     print('✅ Questionnaire valid, réponses: $reponsesFormatted');
-    widget.onValidated(reponsesFormatted);
+    
+    // ✅ ATTENDRE que onValidated complète (elle fait le save et fetch)
+    await widget.onValidated(reponsesFormatted);
+    
     return true;
   }
 
@@ -424,10 +427,15 @@ class _QuestionnaireMedicalDynamicWidgetState
             },
               onChanged: (value) {
                 setState(() {
+                  final current = _getResp(questionId) ?? {};
+                  final weight = current['reponse_detail_2'];
+                  final text = weight != null && weight.toString().isNotEmpty
+                      ? '$value cm, ${weight.toString()} kg'
+                      : '$value cm';
                   _setResp(questionId, {
-                    ...(_getResp(questionId) ?? {}),
+                    ...current,
                     'reponse_detail_1': value,
-                    'reponse_text': '$value cm',
+                    'reponse_text': text,
                   });
                 });
               },
@@ -454,10 +462,15 @@ class _QuestionnaireMedicalDynamicWidgetState
             },
             onChanged: (value) {
               setState(() {
+                final current = _getResp(questionId) ?? {};
+                final height = current['reponse_detail_1'];
+                final text = height != null && height.toString().isNotEmpty
+                    ? '${height.toString()} cm, $value kg'
+                    : '$value kg';
                 _setResp(questionId, {
-                  ...(_getResp(questionId) ?? {}),
+                  ...current,
                   'reponse_detail_2': value,
-                  'reponse_text': ((_getResp(questionId)?['reponse_text']) ?? '') + ', $value kg',
+                  'reponse_text': text,
                 });
               });
             },

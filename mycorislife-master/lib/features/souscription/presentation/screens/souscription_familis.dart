@@ -120,7 +120,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   String? _pieceIdentiteLabel;
 
   // Questionnaire médical
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];
+  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
   Future<bool> Function()? _questionnaireValidate;
 
   // Mode de paiement
@@ -2303,11 +2304,19 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-      _prefillFromExistingData();
+      // Appeler async après initState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _prefillFromExistingData();
+      });
     } else {
       _prefillSimulationData();
     }
-
+    
+    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadQuestionnaireMedicalQuestions();
+    });
+    
     // Charger les données utilisateur
     _loadUserData();
   }
@@ -2422,7 +2431,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
-  void _prefillFromExistingData() {
+  Future<void> _prefillFromExistingData() async {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -2605,6 +2614,24 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       }
 
       debugPrint('✅ Pré-remplissage FAMILIS terminé');
+      
+      // Charger les réponses questionnaire avec libelle du serveur
+      if (widget.subscriptionId != null) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+          if (completReponses != null && completReponses.isNotEmpty) {
+            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
+            if (mounted) {
+              setState(() {
+                _questionnaireMedicalReponses = completReponses;
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
+        }
+      }
     } catch (e) {
       debugPrint('❌ Erreur pré-remplissage FAMILIS: $e');
     }
@@ -2779,6 +2806,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         if (mounted) {
           setState(() {
             _pieceIdentite = File(result.files.single.path!);
+            _pieceIdentiteLabel = result.files.single.name; // ✅ Sauvegarder le vrai nom du fichier
           });
           _showSuccessSnackBar('Document ajouté avec succès');
         }
@@ -3347,6 +3375,20 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
+      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
+      if (_questionnaireMedicalReponses.isNotEmpty) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          await questionnaireService.saveReponses(
+            subscriptionId: subscriptionId,
+            reponses: _questionnaireMedicalReponses,
+          );
+          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+        } catch (e) {
+          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+        }
+      }
+
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
@@ -3381,6 +3423,20 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
+
+      // Sauvegarder les réponses du questionnaire médical
+      if (_questionnaireMedicalReponses.isNotEmpty) {
+        try {
+          final questionnaireService = QuestionnaireMedicalService();
+          await questionnaireService.saveReponses(
+            subscriptionId: subscriptionId,
+            reponses: _questionnaireMedicalReponses,
+          );
+          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+        } catch (e) {
+          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+        }
+      }
 
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
@@ -3615,6 +3671,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     reponses: reponses,
                                   );
                                   debugPrint('✅ Questionnaire médical sauvegardé');
+                                  
+                                  // Fetch complete responses with libelle from server
+                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+                                  if (completReponses != null && completReponses.isNotEmpty) {
+                                    setState(() {
+                                      _questionnaireMedicalReponses = completReponses;
+                                    });
+                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+                                  }
                                 } catch (e) {
                                   debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -3657,6 +3722,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     reponses: reponses,
                                   );
                                   debugPrint('✅ Questionnaire médical sauvegardé');
+                                  
+                                  // Fetch complete responses with libelle from server
+                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+                                  if (completReponses != null && completReponses.isNotEmpty) {
+                                    setState(() {
+                                      _questionnaireMedicalReponses = completReponses;
+                                    });
+                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+                                  }
                                 } catch (e) {
                                   debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -4913,8 +4987,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         if (_selectedModePaiement != null) const SizedBox(height: 20),
 
         // RÉCAP: Questionnaire médical (questions + réponses)
+        // Passe la liste des questions pour afficher toutes les questions avec réponses
         SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-            _questionnaireMedicalReponses),
+          _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
 
         const SizedBox(height: 20),
 
@@ -5209,6 +5284,22 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
     super.dispose();
+  }
+
+  /// ✅ Charger les questions du questionnaire médical au démarrage
+  Future<void> _loadQuestionnaireMedicalQuestions() async {
+    try {
+      final questionnaireService = QuestionnaireMedicalService();
+      final questions = await questionnaireService.getQuestions();
+      if (questions.isNotEmpty && mounted) {
+        setState(() {
+          _questionnaireMedicalQuestions = questions;
+        });
+        debugPrint('✅ Questions chargées: ${questions.length} questions');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
+    }
   }
 
   Widget _buildStepModePaiement() {
