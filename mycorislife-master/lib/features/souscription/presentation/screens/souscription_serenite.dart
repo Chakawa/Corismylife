@@ -1925,6 +1925,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // La prime reste celle saisie par l'utilisateur
           _calculatedPrime = prime;
         }
+        
+        // ⚡ Vérifier automatiquement le capital sous risque
+        _verifierCapitalSousRisqueAuto();
       });
     }
   }
@@ -2167,7 +2170,242 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  Future<void> _nextStep() async {
+  /// 🏥 Vérification du capital sous risque et affichage du message médical
+  /// Retourne true si l'utilisateur peut continuer, false sinon
+  Future<bool> _verifierCapitalSousRisque() async {
+    debugPrint('\n╔══════════════════════════════════════════════════════════╗');
+    debugPrint('║  🏥 CORIS SÉRÉNITÉ - Vérification Capital Sous Risque    ║');
+    debugPrint('╚══════════════════════════════════════════════════════════╝');
+    
+    // Pour Coris Sérénité: Capital sous risque = Capital décès
+    final capitalSousRisque = _calculatedCapital;
+    
+    // Déterminer l'âge (client ou commercial)
+    final age = _isCommercial ? _clientAge : _age;
+    
+    debugPrint('📊 Données de calcul:');
+    debugPrint('   - Type utilisateur: ${_isCommercial ? "Commercial" : "Client"}');
+    debugPrint('   - Âge: $age ans');
+    debugPrint('   - Capital décès: ${_formatMontant(capitalSousRisque)}');
+    debugPrint('   - Capital sous risque = Capital décès = ${_formatMontant(capitalSousRisque)}');
+    
+    // Vérifier les conditions
+    bool afficherMessage = false;
+    String raison = '';
+    
+    if (age < 45 && capitalSousRisque > 30000000) {
+      afficherMessage = true;
+      raison = 'Âge < 45 ans ET Capital > 30M FCFA';
+      debugPrint('⚠️  Condition déclenchée: $raison');
+    } else if (age >= 45 && capitalSousRisque > 15000000) {
+      afficherMessage = true;
+      raison = 'Âge ≥ 45 ans ET Capital > 15M FCFA';
+      debugPrint('⚠️  Condition déclenchée: $raison');
+    } else {
+      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
+      if (age < 45) {
+        debugPrint('   - Âge < 45: Capital doit être > 30M (actuellement: ${_formatMontant(capitalSousRisque)})');
+      } else {
+        debugPrint('   - Âge ≥ 45: Capital doit être > 15M (actuellement: ${_formatMontant(capitalSousRisque)})');
+      }
+    }
+    
+    if (!afficherMessage) {
+      debugPrint('══════════════════════════════════════════════════════════\n');
+      return true; // Pas de message, on peut continuer
+    }
+    
+    debugPrint('🔔 Affichage du dialog de confirmation...');
+    
+    // Afficher le dialog
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  const Color(0xFFE8F4FD).withOpacity(0.3),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icône avec fond coloré
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: bleuCoris.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.local_hospital,
+                    color: bleuCoris,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Titre
+                const Text(
+                  'Formulaire Médical',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                // Message principal
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
+                  ),
+                  child: const Text(
+                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: grisTexte,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Souhaitez-vous continuer ?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                // Boutons Oui/Non
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop(false); // Fermer le dialog
+                          // Naviguer vers l'accueil
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          if (mounted) {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              _isCommercial ? '/commercial-home' : '/client-home',
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.grey, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Non',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true); // Oui
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: bleuCoris,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: const Text(
+                          'Oui',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    
+    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
+    if (result == false) {
+      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
+      debugPrint('══════════════════════════════════════════════════════════\n');
+      return false;
+    }
+    
+    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
+    debugPrint('══════════════════════════════════════════════════════════\n');
+    return true; // L'utilisateur a cliqué "Continuer"
+  }
+
+  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
+  void _verifierCapitalSousRisqueAuto() {
+    final age = _isCommercial ? _clientAge : _age;
+    
+    if (age == 0 || _calculatedCapital == 0) {
+      debugPrint('⏳ [AUTO SÉRÉNITÉ] Valeurs incomplètes - Attente saisie complète');
+      return;
+    }
+    
+    debugPrint('\n⚡ [AUTO SÉRÉNITÉ] Vérification automatique déclenchée!');
+    debugPrint('   - Âge: $age ans');
+    debugPrint('   - Capital décès: ${_formatMontant(_calculatedCapital)}');
+    
+    bool depasseSeuil = false;
+    if (age < 45 && _calculatedCapital > 30000000) {
+      depasseSeuil = true;
+      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
+    } else if (age >= 45 && _calculatedCapital > 15000000) {
+      depasseSeuil = true;
+      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
+    } else {
+      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
+    }
+    
+    if (depasseSeuil) {
+      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
+      _verifierCapitalSousRisque();
+    }
+  }
+
+  Future<void> _nextStep() async{
+    debugPrint('\n🔵 [SÉRÉNITÉ] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
     // Ajout du questionnaire médical: +1 étape avant le récap
     final maxStep = _isCommercial ? 6 : 5;
     if (_currentStep < maxStep) {
@@ -2182,6 +2420,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
+          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
+          final canContinue = await _verifierCapitalSousRisque();
+          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 4) {
           // Questionnaire médical: trigger widget validation/save
@@ -2210,6 +2452,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
+          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Lancement vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
+          final canContinue = await _verifierCapitalSousRisque();
+          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 3) {
           // Questionnaire médical avant récap — utiliser la validation du widget (modèle Études)

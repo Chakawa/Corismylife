@@ -3,6 +3,7 @@ import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/core/widgets/country_selector.dart';
 import 'package:mycorislife/core/widgets/phone_input_field.dart';
+import 'package:mycorislife/features/auth/presentation/screens/forgot_password_screen.dart';
 
 /// ============================================
 /// PAGE DE CONNEXION
@@ -570,13 +571,10 @@ class _LoginScreenState extends State<LoginScreen>
                           Center(
                             child: TextButton(
                               onPressed: () {
-                                // TODO: Implémenter la fonctionnalité de réinitialisation du mot de passe
-                                // Navigator.pushNamed(context, '/reset_password');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Fonctionnalité en cours de développement'),
-                                    backgroundColor: Color(0xFFF59E0B),
-                                    duration: Duration(seconds: 2),
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ForgotPasswordScreen(),
                                   ),
                                 );
                               },

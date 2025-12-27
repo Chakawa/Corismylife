@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs'); // Pour hasher les mots de passe
 // Stockage OTP en mémoire (simple, à remplacer par Redis en prod)
 const otpStore = new Map(); // key: telephone, value: { code, expiresAt, userData }
 const pool = require('../db'); // Import de la connexion DB
@@ -8,9 +9,24 @@ const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 // Configuration API SMS
 const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send'; // URL de l'API SMS CI
 const SMS_API_TOKEN = 'fa09e6cef91f77c4b7d8e2c067f1b22c'; // Token de production
-// const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c'; // Token de test
+//const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c'; // Token de test
 const SMS_SENDER = 'CORIS ASSUR'; // Max 11 caractères requis par l'API
 
+/**
+ * 📞 Fonction de normalisation du numéro de téléphone
+ * Ajoute le préfixe +225 s'il manque
+ */
+function normalizeTelephone(phone) {
+  if (!phone) return phone;
+  const cleaned = phone.replace(/\s+/g, ''); // Supprimer les espaces
+  if (!cleaned.startsWith('+')) {
+    return '+225' + cleaned;
+  }
+  if (cleaned.startsWith('+225')) {
+    return cleaned;
+  }
+  return '+225' + cleaned.substring(1); // Remplacer + par +225
+}
 // Import du contrôleur (optionnel)
 let authController;
 try {
@@ -541,6 +557,309 @@ router.post('/verify-otp', async (req, res) => {
   } catch (e) {
     console.error('verify-otp error', e);
     res.status(500).json({ success: false, message: 'Erreur vérification OTP' });
+  }
+});
+
+/**
+ * ===============================================
+ * MOT DE PASSE OUBLIÉ - FLUX COMPLET
+ * ===============================================
+ */
+
+// Store séparé pour OTP de reset de mot de passe
+const resetPasswordOtpStore = new Map(); // key: telephone, value: { code, expiresAt, userId }
+
+/**
+ * 📱 ÉTAPE 1: Demander un reset de mot de passe
+ * Vérifie si le téléphone existe et envoie un OTP
+ * @route POST /auth/forgot-password
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    let { telephone } = req.body;
+    
+    if (!telephone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le numéro de téléphone est requis'
+      });
+    }
+    
+      // Normaliser le numéro de téléphone
+      telephone = normalizeTelephone(telephone);
+    
+    console.log('🔓 Demande reset mot de passe pour téléphone:', telephone);
+    
+    // Vérifier si le téléphone existe dans la base de données
+    const userResult = await pool.query(
+      'SELECT id, email FROM users WHERE telephone = $1',
+      [telephone]
+    );
+    
+    if (userResult.rows.length === 0) {
+      // Ne pas révéler si le téléphone existe ou non (sécurité)
+      return res.status(404).json({
+        success: false,
+        message: 'Aucun compte associé à ce numéro de téléphone'
+      });
+    }
+    
+    const user = userResult.rows[0];
+    console.log('✅ Compte trouvé pour:', user.email);
+    
+    // Générer un code OTP de 5 chiffres
+    const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
+    console.log('🔐 Code OTP généré pour reset:', otpCode);
+    
+    // Stocker l'OTP avec expiration de 5 minutes
+    resetPasswordOtpStore.set(telephone, {
+      code: otpCode,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      userId: user.id
+    });
+    
+    console.log('💾 OTP reset stocké pour:', telephone);
+    
+    // Envoyer le SMS
+    const smsMessage = `Votre code de réinitialisation Coris Assurance est: ${otpCode}. Ce code expire dans 5 minutes. Ne le partagez avec personne.`;
+    
+    try {
+      await sendSMS(telephone, smsMessage);
+      console.log('✅ SMS d\'OTP reset envoyé au', telephone);
+    } catch (smsError) {
+      console.error('⚠️ OTP reset stocké mais SMS non envoyé:', smsError.message);
+      // On continue quand même
+    }
+    
+    // Retourner le succès
+    res.json({
+      success: true,
+      message: 'Un code de vérification a été envoyé à votre numéro de téléphone',
+      telephone: telephone
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur forgot-password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la demande de réinitialisation'
+    });
+  }
+});
+
+/**
+ * ✅ ÉTAPE 2: Vérifier l'OTP du reset
+ * @route POST /auth/verify-reset-otp
+ */
+router.post('/verify-reset-otp', async (req, res) => {
+  try {
+    let { telephone, otpCode } = req.body;
+    
+    if (!telephone || !otpCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le téléphone et le code OTP sont requis'
+      });
+    }
+    
+      // Normaliser le numéro de téléphone
+      telephone = normalizeTelephone(telephone);
+    
+    console.log('✅ Vérification OTP reset pour:', telephone);
+    
+    const storedOtp = resetPasswordOtpStore.get(telephone);
+    
+    if (!storedOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun code OTP trouvé. Veuillez demander un nouveau code.'
+      });
+    }
+    
+    // Vérifier si l'OTP a expiré
+    if (Date.now() > storedOtp.expiresAt) {
+      resetPasswordOtpStore.delete(telephone);
+      return res.status(400).json({
+        success: false,
+        message: 'Le code OTP a expiré. Veuillez demander un nouveau code.'
+      });
+    }
+    
+    // Vérifier si le code est correct
+    if (storedOtp.code !== otpCode) {
+      return res.status(401).json({
+        success: false,
+        message: 'Code OTP incorrect. Veuillez réessayer.'
+      });
+    }
+    
+    console.log('✅ OTP reset vérifié pour userId:', storedOtp.userId);
+    
+    // OTP correct - retourner le userId pour la prochaine étape
+    res.json({
+      success: true,
+      message: 'Code OTP vérifié',
+      userId: storedOtp.userId,
+      telephone: telephone
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur verify-reset-otp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la vérification du code OTP'
+    });
+  }
+});
+
+/**
+ * 🔑 ÉTAPE 3: Réinitialiser le mot de passe
+ * @route POST /auth/reset-password
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    let { telephone, userId, newPassword, confirmPassword } = req.body;
+    
+    if (!telephone || !userId || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tous les champs sont requis'
+      });
+    }
+    
+      // Normaliser le numéro de téléphone
+      telephone = normalizeTelephone(telephone);
+    
+    // Vérifier que les mots de passe correspondent
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Les mots de passe ne correspondent pas'
+      });
+    }
+    
+    // Validation du mot de passe (au moins 6 caractères)
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le mot de passe doit contenir au moins 6 caractères'
+      });
+    }
+    
+    console.log('🔐 Réinitialisation mot de passe pour userId:', userId);
+    
+    // Récupérer l'utilisateur
+    const userResult = await pool.query(
+      'SELECT id, email FROM users WHERE id = $1 AND telephone = $2',
+      [userId, telephone]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Hasher le nouveau mot de passe avec bcrypt
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    
+    // Mettre à jour le mot de passe
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [passwordHash, userId]
+    );
+    
+    console.log('✅ Mot de passe mis à jour pour:', user.email);
+    
+    // Supprimer l'OTP utilisé
+    resetPasswordOtpStore.delete(telephone);
+    
+    res.json({
+      success: true,
+      message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur reset-password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la réinitialisation du mot de passe'
+    });
+  }
+});
+
+/**
+ * 🔄 Renvoyer un OTP (pour reset de mot de passe)
+ * @route POST /auth/resend-reset-otp
+ */
+router.post('/resend-reset-otp', async (req, res) => {
+  try {
+    let { telephone } = req.body;
+    
+    if (!telephone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le numéro de téléphone est requis'
+      });
+    }
+    
+      // Normaliser le numéro de téléphone
+      telephone = normalizeTelephone(telephone);
+    
+    console.log('🔄 Renvoi OTP reset pour:', telephone);
+    
+    // Vérifier si le téléphone existe
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telephone = $1',
+      [telephone]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aucun compte associé à ce numéro'
+      });
+    }
+    
+    const userId = userResult.rows[0].id;
+    
+    // Générer un nouveau code OTP
+    const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
+    console.log('🔐 Nouveau code OTP généré:', otpCode);
+    
+    // Remplacer l'ancien OTP (l'ancien code devient invalide)
+    resetPasswordOtpStore.set(telephone, {
+      code: otpCode,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      userId: userId
+    });
+    
+    console.log('♻️ Ancien code OTP invalidé - seul le nouveau code sera accepté');
+    
+    // Envoyer le SMS
+    const smsMessage = `Votre code de réinitialisation Coris Assurance est: ${otpCode}. Ce code expire dans 5 minutes.`;
+    
+    try {
+      await sendSMS(telephone, smsMessage);
+      console.log('✅ Nouveau SMS d\'OTP reset envoyé');
+    } catch (smsError) {
+      console.error('⚠️ SMS non envoyé:', smsError.message);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Un nouveau code a été envoyé à votre téléphone'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur resend-reset-otp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors du renvoi du code'
+    });
   }
 });
 

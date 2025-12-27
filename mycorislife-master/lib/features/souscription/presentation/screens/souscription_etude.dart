@@ -962,6 +962,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void initState() {
     super.initState();
 
+    // ⚡ LISTENER AUTOMATIQUE pour vérification du capital sous risque
+    _dureeController.addListener(_verifierCapitalSousRisqueAuto);
+    _montantController.addListener(_verifierCapitalSousRisqueAuto);
+
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
       _prefillFromExistingData();
@@ -1744,7 +1748,259 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
+  /// 🏥 Vérification du capital sous risque et affichage du message médical
+  /// Retourne true si l'utilisateur peut continuer, false sinon
+  Future<bool> _verifierCapitalSousRisque() async {
+    debugPrint('\n╔════════════════════════════════════════════════════════════╗');
+    debugPrint('║  🏥 CORIS ÉTUDE - Vérification Capital Sous Risque       ║');
+    debugPrint('╚════════════════════════════════════════════════════════════╝');
+    
+    // Pour Coris Étude: Capital sous risque = (Durée cotisation × 0.5 × Rente) + (5 × Rente)
+    // Durée = (17 - âge enfant) × 12 mois
+    final ageEnfant = int.tryParse(_dureeController.text) ?? 0;
+    final dureeCotisationMois = ((17 - ageEnfant) * 12).toDouble();
+    final rente = _renteCalculee;
+    
+    final capitalSousRisque = (dureeCotisationMois * 0.5 * rente) + (5 * rente);
+    
+    // Déterminer l'âge du parent (_calculatedAgeParent est utilisé pour tous)
+    final age = _calculatedAgeParent ?? 0;
+    
+    debugPrint('📊 Données de calcul:');
+    debugPrint('   - Âge enfant: $ageEnfant ans');
+    debugPrint('   - Durée cotisation: (17 - $ageEnfant) × 12 = $dureeCotisationMois mois');
+    debugPrint('   - Rente annuelle: ${_formatNumber(rente)} FCFA');
+    debugPrint('   - Formule: (Durée × 0.5 × Rente) + (5 × Rente)');
+    debugPrint('   - Calcul: ($dureeCotisationMois × 0.5 × ${_formatNumber(rente)}) + (5 × ${_formatNumber(rente)})');
+    debugPrint('   - Capital sous risque = ${_formatNumber(capitalSousRisque)} FCFA');
+    debugPrint('   - Âge parent (souscripteur): $age ans');
+    
+    // Vérifier les conditions
+    bool afficherMessage = false;
+    String raison = '';
+    
+    if (age < 45 && capitalSousRisque > 30000000) {
+      afficherMessage = true;
+      raison = 'Âge parent < 45 ans ET Capital > 30M FCFA';
+      debugPrint('⚠️  Condition déclenchée: $raison');
+    } else if (age >= 45 && capitalSousRisque > 15000000) {
+      afficherMessage = true;
+      raison = 'Âge parent ≥ 45 ans ET Capital > 15M FCFA';
+      debugPrint('⚠️  Condition déclenchée: $raison');
+    } else {
+      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
+      if (age < 45) {
+        debugPrint('   - Âge parent < 45: Capital doit être > 30M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
+      } else {
+        debugPrint('   - Âge parent ≥ 45: Capital doit être > 15M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
+      }
+    }
+    
+    if (!afficherMessage) {
+      debugPrint('═══════════════════════════════════════════════════════════\n');
+      return true; // Pas de message, on peut continuer
+    }
+    
+    debugPrint('🔔 Affichage du dialog de confirmation...');
+    
+    // Afficher le dialog
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  bleuClair.withOpacity(0.3),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icône avec fond coloré
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: bleuCoris.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.local_hospital,
+                    color: bleuCoris,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Titre
+                const Text(
+                  'Formulaire Médical',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                // Message principal
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
+                  ),
+                  child: const Text(
+                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: grisTexte,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Souhaitez-vous continuer ?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                // Boutons Oui/Non
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop(false); // Fermer le dialog
+                          // Naviguer vers l'accueil
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          if (mounted) {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              _isCommercial ? '/commercial-home' : '/client-home',
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.grey, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Non',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true); // Oui
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: bleuCoris,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: const Text(
+                          'Oui',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    
+    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
+    if (result == false) {
+      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
+      debugPrint('═══════════════════════════════════════════════════════════\n');
+      return false;
+    }
+    
+    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
+    debugPrint('═══════════════════════════════════════════════════════════\n');
+    return true; // L'utilisateur a cliqué "Continuer"
+  }
+
+  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
+  void _verifierCapitalSousRisqueAuto() {
+    // Vérifier seulement si toutes les valeurs nécessaires sont présentes
+    final ageEnfant = int.tryParse(_dureeController.text);
+    final age = _calculatedAgeParent;
+    
+    if (ageEnfant == null || age == null || age == 0 || _renteCalculee == 0) {
+      debugPrint('⏳ [AUTO ÉTUDE] Valeurs incomplètes (Âge enfant: $ageEnfant, Âge parent: $age, Rente: $_renteCalculee)');
+      return;
+    }
+    
+    debugPrint('\n⚡ [AUTO] Vérification automatique déclenchée!');
+    debugPrint('   - Âge enfant: $ageEnfant ans');
+    debugPrint('   - Âge parent: $age ans');
+    debugPrint('   - Rente: ${_formatNumber(_renteCalculee)} FCFA');
+    
+    final dureeCotisationMois = ((17 - ageEnfant) * 12).toDouble();
+    final capitalSousRisque = (dureeCotisationMois * 0.5 * _renteCalculee) + (5 * _renteCalculee);
+    
+    debugPrint('   - Capital sous risque calculé: ${_formatNumber(capitalSousRisque)} FCFA');
+    
+    bool depasseSeuil = false;
+    if (age < 45 && capitalSousRisque > 30000000) {
+      depasseSeuil = true;
+      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
+    } else if (age >= 45 && capitalSousRisque > 15000000) {
+      depasseSeuil = true;
+      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
+    } else {
+      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
+    }
+    
+    if (depasseSeuil) {
+      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
+      // Afficher le dialog immédiatement
+      _verifierCapitalSousRisque();
+    }
+  }
+
   Future<void> _nextStep() async {
+    debugPrint('\n🔵 [ÉTUDE] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
     // Ajout du questionnaire médical: +1 étape avant le récap
     // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (questionnaire médical), 4 (recap)
     // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (questionnaire médical), 5 (recap)
@@ -1762,6 +2018,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
+          debugPrint('\n🔍 [ÉTUDE Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
+          final canContinue = await _verifierCapitalSousRisque();
+          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
           // Validation du mode de paiement avant questionnaire médical
           canProceed = true;
         } else if (_currentStep == 4) {
@@ -1790,6 +2050,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
+          debugPrint('\n🔍 [ÉTUDE Client] Étape 2 validée - Lancement vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
+          final canContinue = await _verifierCapitalSousRisque();
+          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
           // Validation du mode de paiement avant questionnaire médical
           canProceed = true;
         } else if (_currentStep == 3) {
