@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:mycorislife/services/pdf_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PdfViewerPage extends StatefulWidget {
   final int subscriptionId;
@@ -34,18 +35,87 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     }
   }
 
-  Future<void> _download() async {
+  Future<void> _share() async {
     if (_file == null) return;
     try {
-      final saved = await PdfService.saveToDownloads(_file!);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Téléchargé: ${saved.path}')),
+      await Share.shareXFiles(
+        [XFile(_file!.path)],
+        subject: 'Document de proposition',
+        text: 'Voici mon document de proposition CORIS',
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de téléchargement: $e')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Erreur de partage: $e'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _download() async {
+    if (_file == null) return;
+    try {
+      await PdfService.saveToDownloads(_file!);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Document téléchargé avec succès',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      Platform.isAndroid ? 'Dossier: Téléchargements' : 'Dossier: Documents',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Erreur de téléchargement: $e'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -56,7 +126,16 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       appBar: AppBar(
         title: const Text('Aperçu PDF'),
         actions: [
-          IconButton(onPressed: _download, icon: const Icon(Icons.download)),
+          IconButton(
+            onPressed: _share,
+            icon: const Icon(Icons.share),
+            tooltip: 'Partager',
+          ),
+          IconButton(
+            onPressed: _download,
+            icon: const Icon(Icons.download),
+            tooltip: 'Télécharger',
+          ),
         ],
       ),
       body: _loading

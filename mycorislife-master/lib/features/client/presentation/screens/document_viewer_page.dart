@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 const Color bleuCoris = Color(0xFF002B6B);
 const Color grisTexte = Color(0xFF64748B);
@@ -62,6 +64,135 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         _errorMessage = 'Erreur lors du chargement: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _shareDocument() async {
+    if (_documentFile == null) return;
+    try {
+      final fileName = widget.displayLabel ?? widget.documentName ?? _documentFile!.path.split('/').last;
+      await Share.shareXFiles(
+        [XFile(_documentFile!.path)],
+        subject: fileName,
+        text: 'Voici mon document: $fileName',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Erreur de partage: $e'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadToDevice() async {
+    if (_documentFile == null) return;
+
+    try {
+      // Demander les permissions si Android
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+          if (!status.isGranted) {
+            // Essayer avec manageExternalStorage pour Android 11+
+            final manageStatus = await Permission.manageExternalStorage.request();
+            if (!manageStatus.isGranted) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Permission de stockage refusée'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+          }
+        }
+      }
+
+      // Obtenir le dossier Downloads
+      Directory? downloads;
+      if (Platform.isAndroid) {
+        downloads = Directory('/storage/emulated/0/Download');
+        if (!await downloads.exists()) {
+          downloads = await getExternalStorageDirectory();
+        }
+      } else {
+        downloads = await getApplicationDocumentsDirectory();
+      }
+
+      // Créer le nom du fichier
+      final fileName = widget.displayLabel ?? widget.documentName ?? _documentFile!.path.split('/').last;
+      // Assurer l'extension
+      final fileNameWithExtension = fileName.contains('.') ? fileName : '$fileName.${_fileExtension ?? 'pdf'}';
+      
+      final targetPath = '${downloads!.path}/$fileNameWithExtension';
+
+      // Copier le fichier
+      await _documentFile!.copy(targetPath);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Document téléchargé avec succès',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      Platform.isAndroid ? 'Dossier: Téléchargements' : 'Dossier: Documents',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Erreur de téléchargement: $e'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -150,6 +281,20 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         backgroundColor: bleuCoris,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          if (_documentFile != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _shareDocument,
+              tooltip: 'Partager',
+            ),
+          if (_documentFile != null)
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: _downloadToDevice,
+              tooltip: 'Télécharger',
+            ),
+        ],
       ),
       body: _buildBody(),
     );

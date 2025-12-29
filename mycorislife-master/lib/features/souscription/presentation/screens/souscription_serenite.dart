@@ -75,6 +75,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
+  final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la simulation
   int _dureeEnMois = 12;
@@ -102,6 +103,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
+  
+  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
+  bool _messageCapitalAffiche = false;
 
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
@@ -140,7 +144,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -1114,80 +1120,89 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       }
     });
 
-    _dureeController.addListener(() {
-      if (_dureeController.text.isNotEmpty && _age > 0) {
-        int? duree = int.tryParse(_dureeController.text);
-        if (duree != null) {
-          setState(() {
-            _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
-          });
+    // 🔍 Validation de la durée uniquement à la sortie du champ
+    _dureeFocusNode.addListener(() {
+      if (!_dureeFocusNode.hasFocus) {
+        // Utiliser Future.delayed pour éviter les appels multiples
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!mounted) return;
+          
+          // Le champ a perdu le focus - valider maintenant
+          if (_dureeController.text.isNotEmpty && _age > 0) {
+            int? duree = int.tryParse(_dureeController.text);
+            if (duree != null) {
+              setState(() {
+                _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
+              });
 
-          // Validation de la durée minimale
-          if (_selectedUnite == 'années' && duree < 1) {
-            _showProfessionalDialog(
-              title: 'Durée minimale requise',
-              message:
-                  'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0;
-              _calculatedCapital = 0;
-            });
-            return;
-          }
-          if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
-            _showProfessionalDialog(
-              title: 'Durée minimale requise',
-              message:
-                  'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0;
-              _calculatedCapital = 0;
-            });
-            return;
-          }
+              // Validation de la durée minimale
+              if (_selectedUnite == 'années' && duree < 1) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0;
+                  _calculatedCapital = 0;
+                });
+                return;
+              }
+              if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0;
+                  _calculatedCapital = 0;
+                });
+                return;
+              }
 
-          // Validation de la durée maximale
-          if (_selectedUnite == 'années' && duree > 15) {
-            _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
-              message:
-                  'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0;
-              _calculatedCapital = 0;
-            });
-            return;
-          }
-          if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
-            _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
-              message:
-                  'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0;
-              _calculatedCapital = 0;
-            });
-            return;
-          }
+              // Validation de la durée maximale
+              if (_selectedUnite == 'années' && duree > 15) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0;
+                  _calculatedCapital = 0;
+                });
+                return;
+              }
+              if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0;
+                  _calculatedCapital = 0;
+                });
+                return;
+              }
 
-          _effectuerCalcul();
-        }
+              _effectuerCalcul();
+            }
+          }
+        });
       }
     });
 
@@ -1621,6 +1636,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     _capitalController.dispose();
     _primeController.dispose();
     _dureeController.dispose();
+    _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
@@ -2303,11 +2319,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       child: OutlinedButton(
                         onPressed: () async {
                           Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers l'accueil
+                          // Naviguer vers la page de sélection des produits
                           await Future.delayed(const Duration(milliseconds: 100));
                           if (mounted) {
                             Navigator.of(context).pushNamedAndRemoveUntil(
-                              _isCommercial ? '/commercial-home' : '/client-home',
+                              '/souscription',
                               (route) => false,
                             );
                           }
@@ -2376,6 +2392,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
   void _verifierCapitalSousRisqueAuto() {
+    // Si le message a déjà été affiché, ne plus vérifier
+    if (_messageCapitalAffiche) {
+      return;
+    }
+    
     final age = _isCommercial ? _clientAge : _age;
     
     if (age == 0 || _calculatedCapital == 0) {
@@ -2400,6 +2421,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     
     if (depasseSeuil) {
       debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
+      // Marquer que le message va être affiché
+      _messageCapitalAffiche = true;
       _verifierCapitalSousRisque();
     }
   }
@@ -2420,10 +2443,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
-          final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+          if (!_messageCapitalAffiche) {
+            final canContinue = await _verifierCapitalSousRisque();
+            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          }
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 4) {
           // Questionnaire médical: trigger widget validation/save
@@ -2623,12 +2648,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
-        return false;
-      }
-      if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+      if (_banqueController.text.trim().isEmpty ||
+          _codeGuichetController.text.trim().isEmpty ||
+          _numeroCompteController.text.trim().isEmpty ||
+          _cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -3321,6 +3345,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 flex: 3,
                 child: TextField(
                   controller: _dureeController,
+                  focusNode: _dureeFocusNode,
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     // Validation en temps réel pour la durée
@@ -3898,7 +3923,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -4019,12 +4046,41 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -4033,6 +4089,25 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -5094,7 +5169,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')

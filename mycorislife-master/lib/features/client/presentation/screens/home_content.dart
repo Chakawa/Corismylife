@@ -58,6 +58,12 @@ class _HomeContentState extends State<HomeContent> {
       'isIcon': false,
     },
     {
+      'image': 'assets/images/retraitee.png',
+      'title': 'CORIS RETRAITE',
+      'route': '/retraite',
+      'isIcon': false,
+    },
+    {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS ÉPARGNE BONUS',
       'route': '/epargne',

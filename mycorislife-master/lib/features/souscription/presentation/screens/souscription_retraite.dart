@@ -9,6 +9,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
+import '../../../../core/widgets/subscription_recap_widgets.dart';
 
 // Enum pour le type de simulation
 enum SimulationType { parPrime, parCapital }
@@ -73,6 +74,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
+  final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la simulation
   int _dureeEnAnnees = 5;
@@ -151,7 +153,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Banque Atlantique',
     'Autre',
   ];
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -608,48 +612,57 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     });
 
-    _dureeController.addListener(() {
-      if (_dureeController.text.isNotEmpty && _age > 0) {
-        int? duree = int.tryParse(_dureeController.text);
-        if (duree != null) {
-          setState(() {
-            _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
-          });
+    // 🔍 Validation de la durée uniquement à la sortie du champ
+    _dureeFocusNode.addListener(() {
+      if (!_dureeFocusNode.hasFocus) {
+        // Utiliser Future.delayed pour éviter les appels multiples
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!mounted) return;
+          
+          // Le champ a perdu le focus - valider maintenant
+          if (_dureeController.text.isNotEmpty && _age > 0) {
+            int? duree = int.tryParse(_dureeController.text);
+            if (duree != null) {
+              setState(() {
+                _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+              });
 
-          // Validation de la durée en années
-          if (_dureeEnAnnees < 5) {
-            _showProfessionalDialog(
-              title: 'Durée minimale requise',
-              message:
-                  'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0.0;
-              _calculatedCapital = 0.0;
-            });
-            return;
-          }
-          if (_dureeEnAnnees > 50) {
-            _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
-              message:
-                  'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0.0;
-              _calculatedCapital = 0.0;
-            });
-            return;
-          }
+              // Validation de la durée en années
+              if (_dureeEnAnnees < 5) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
+              if (_dureeEnAnnees > 50) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
 
-          _effectuerCalcul();
-        }
+              _effectuerCalcul();
+            }
+          }
+        });
       }
     });
   }
@@ -1630,7 +1643,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     if (_selectedModePaiement == 'Virement') {
       if (_banqueController.text.trim().isEmpty ||
-          _numeroCompteController.text.trim().isEmpty) {
+          _codeGuichetController.text.trim().isEmpty ||
+          _numeroCompteController.text.trim().isEmpty ||
+          _cleRibController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner les informations bancaires');
         return false;
       }
@@ -2253,6 +2268,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 flex: 3,
                 child: TextField(
                   controller: _dureeController,
+                  focusNode: _dureeFocusNode,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     isDense: true,
@@ -2920,7 +2936,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -3041,12 +3059,41 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -3055,6 +3102,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -3133,14 +3199,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       animation: _fadeAnimation,
       builder: (context, child) {
         return Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: Opacity(
-              opacity: _fadeAnimation.value,
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: _isCommercial
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _buildRecapContent(),
-                    )
+                  ? _buildRecapContent()
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
@@ -3157,11 +3222,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               'Erreur chargement données récapitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: _buildRecapContent(userData: _userData),
-                            );
+                            return _buildRecapContent(userData: _userData);
                           }
                           return Center(
                             child: Column(
@@ -3198,13 +3259,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                   CircularProgressIndicator(color: bleuCoris));
                         }
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildRecapContent(userData: userData),
-                        );
+                        return _buildRecapContent(userData: userData);
                       },
                     ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -3235,49 +3295,28 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         : (userData ?? _userData);
 
     return ListView(children: [
-      _buildRecapSection('Informations Personnelles', Icons.person, bleuCoris, [
-        _buildCombinedRecapRow(
-            'Civilité',
-            displayData['civilite'] ?? 'Non renseigné',
-            'Nom',
-            displayData['nom'] ?? 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Prénom',
-            displayData['prenom'] ?? 'Non renseigné',
-            'Email',
-            displayData['email'] ?? 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Téléphone',
-            displayData['telephone'] ?? 'Non renseigné',
-            'Date de naissance',
-            displayData['date_naissance'] != null
-                ? _formatDate(displayData['date_naissance'].toString())
-                : 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Lieu de naissance',
-            displayData['lieu_naissance'] ?? 'Non renseigné',
-            'Adresse',
-            displayData['adresse'] ?? 'Non renseigné'),
-      ]),
+      // Afficher les informations du client (toujours dans "Informations Personnelles")
+      SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
+
       const SizedBox(height: 20),
-      _buildRecapSection(
+      SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit', Icons.emoji_people_outlined, vertSucces, [
         // Produit et Prime
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Produit',
             'CORIS RETRAITE',
             'Prime ${_getPeriodeTextForDisplay()}',
             _formatMontant(_calculatedPrime)),
 
         // Capital au terme et Durée du contrat
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Capital au terme',
             '${_formatNumber(_calculatedCapital)} FCFA',
             'Durée du contrat',
             '$duree ${_selectedUnite == 'années' ? 'ans' : 'mois'}'),
 
         // Date d'effet et Date d'échéance
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             _dateEffetContrat != null
                 ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
@@ -3288,32 +3327,32 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 : 'Non définie'),
       ]),
       const SizedBox(height: 20),
-      _buildRecapSection(
+      SubscriptionRecapWidgets.buildRecapSection(
           'Bénéficiaire et Contact d\'urgence', Icons.contacts, orangeWarning, [
         _buildSubsectionTitle('Bénéficiaire'),
-        _buildRecapRow(
+        SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _beneficiaireNomController.text.isEmpty
                 ? 'Non renseigné'
                 : _beneficiaireNomController.text),
-        _buildRecapRow('Contact',
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParente),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParente),
         const SizedBox(height: 12),
         _buildSubsectionTitle('Contact d\'urgence'),
-        _buildRecapRow(
+        SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _personneContactNomController.text.isEmpty
                 ? 'Non renseigné'
                 : _personneContactNomController.text),
-        _buildRecapRow('Contact',
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
       ]),
       const SizedBox(height: 20),
       // 💳 SECTION MODE DE PAIEMENT
       if (_selectedModePaiement != null)
-        _buildRecapSection(
+        SubscriptionRecapWidgets.buildRecapSection(
           'Mode de Paiement',
           Icons.payment,
           _selectedModePaiement == 'Virement'
@@ -3322,22 +3361,32 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   ? Color(0xFF00BFFF)
                   : orangeCoris,
           [
-            _buildRecapRow('Mode choisi', _selectedModePaiement!),
+            SubscriptionRecapWidgets.buildRecapRow('Mode choisi', _selectedModePaiement!),
             const SizedBox(height: 8),
             if (_selectedModePaiement == 'Virement') ...[
-              _buildRecapRow(
+              SubscriptionRecapWidgets.buildRecapRow(
                   'Banque',
                   _banqueController.text.isNotEmpty
                       ? _banqueController.text
                       : 'Non renseigné'),
-              _buildRecapRow(
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
                   'Numéro de compte',
                   _numeroCompteController.text.isNotEmpty
                       ? _numeroCompteController.text
                       : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
+                      : 'Non renseigné'),
             ] else if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
-              _buildRecapRow(
+              SubscriptionRecapWidgets.buildRecapRow(
                   'Numéro ${_selectedModePaiement}',
                   _numeroMobileMoneyController.text.isNotEmpty
                       ? _numeroMobileMoneyController.text
@@ -3346,56 +3395,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           ],
         ),
       if (_selectedModePaiement != null) const SizedBox(height: 20),
-      _buildRecapSection('Documents', Icons.description, bleuSecondaire, [
-        _buildRecapRow('Pièce d\'identité',
-            _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-        if (_pieceIdentite != null) ...[
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => _viewLocalDocument(),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bleuCoris.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: bleuCoris.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.picture_as_pdf, color: rougeCoris, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Document téléchargé',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: bleuCoris,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Appuyer pour voir',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.visibility, color: bleuCoris, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ]),
+
+      SubscriptionRecapWidgets.buildDocumentsSection(
+        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        onDocumentTap: _pieceIdentite != null
+            ? () => _viewLocalDocument()
+            : null,
+      ),
+
       const SizedBox(height: 20),
       Container(
         padding: const EdgeInsets.all(16),
@@ -4035,7 +4042,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -4250,6 +4259,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _primeController.dispose();
     _capitalController.dispose();
     _dureeController.dispose();
+    _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();

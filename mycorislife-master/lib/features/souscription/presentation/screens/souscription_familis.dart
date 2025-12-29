@@ -90,6 +90,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int? _clientAge;
+  
+  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
+  bool _messageCapitalAffiche = false;
 
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
@@ -140,7 +143,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     'Banque Atlantique',
     'Autre',
   ];
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -3146,11 +3151,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       child: OutlinedButton(
                         onPressed: () async {
                           Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers l'accueil
+                          // Naviguer vers la page de sélection des produits
                           await Future.delayed(const Duration(milliseconds: 100));
                           if (mounted) {
                             Navigator.of(context).pushNamedAndRemoveUntil(
-                              _isCommercial ? '/commercial-home' : '/client-home',
+                              '/souscription',
                               (route) => false,
                             );
                           }
@@ -3219,6 +3224,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
   void _verifierCapitalSousRisqueAuto() {
+    // Si le message a déjà été affiché, ne plus vérifier
+    if (_messageCapitalAffiche) {
+      return;
+    }
+    
     final age = _isCommercial ? (_clientAge ?? 0) : (_age ?? 0);
     final capital = _parseDouble(_capitalController.text);
     
@@ -3244,6 +3254,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     
     if (depasseSeuil) {
       debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
+      // Marquer que le message va être affiché
+      _messageCapitalAffiche = true;
       _verifierCapitalSousRisque();
     }
   }
@@ -3265,10 +3277,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
-          final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          debugPrint('\n🔍 [FAMILIS Commercial] Étape 3 validée - Vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+          if (!_messageCapitalAffiche) {
+            final canContinue = await _verifierCapitalSousRisque();
+            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          }
           canProceed = true;
         } else if (_currentStep == 4) {
           // Questionnaire médical: trigger widget validation/save
@@ -3524,7 +3538,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -3781,6 +3797,19 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         );
       }
     }
+  }
+
+  /// Visualise le document pièce d'identité local
+  void _viewLocalDocument(File document, String filename) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          localFile: document,
+          documentName: filename,
+        ),
+      ),
+    );
   }
 
   void _showSuccessDialog(bool isPaid) {
@@ -5214,9 +5243,23 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     '',
                     ''),
                 _buildCombinedRecapRow(
+                    'Code guichet',
+                    _codeGuichetController.text.isNotEmpty
+                        ? _codeGuichetController.text
+                        : 'Non renseigné',
+                    '',
+                    ''),
+                _buildCombinedRecapRow(
                     'Numéro de compte',
                     _numeroCompteController.text.isNotEmpty
                         ? _numeroCompteController.text
+                        : 'Non renseigné',
+                    '',
+                    ''),
+                _buildCombinedRecapRow(
+                    'Clé RIB',
+                    _cleRibController.text.isNotEmpty
+                        ? _cleRibController.text
                         : 'Non renseigné',
                     '',
                     ''),
@@ -5243,26 +5286,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
         // Section Documents (affiche les documents et permet de les ouvrir)
         SubscriptionRecapWidgets.buildDocumentsSection(
-          documents: _pieceIdentite != null
-              ? [
-                  {
-                    'label': _pieceIdentiteLabel ?? 'Pièce d\'identité',
-                    'path': _pieceIdentite!.path,
-                  }
-                ]
-              : [],
-          onDocumentTapWithInfo: (path, label) {
-            if (path == null || path.isEmpty) return;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DocumentViewerPage(
-                  localFile: File(path),
-                  documentName: label ?? path.split('/').last,
-                ),
-              ),
-            );
-          },
+          pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+          onDocumentTap: _pieceIdentite != null
+              ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+              : null,
         ),
 
         const SizedBox(height: 20),
@@ -5660,7 +5687,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -5781,12 +5810,41 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -5795,6 +5853,25 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 

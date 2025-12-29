@@ -31,6 +31,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _showNewPassword = false;
   bool _showConfirmPassword = false;
 
+  // 📞 Liste des indicatifs téléphoniques
+  final List<String> _indicatifs = [
+    '+225', // Côte d'Ivoire
+    '+226', // Burkina Faso
+    '+237', // Cameroun
+    '+228', // Togo
+    '+229', // Bénin
+    '+234'  // Nigeria
+  ];
+  String _selectedIndicatif = '+225';
 
   // Variables pour le compteur OTP
   late Timer _timer;
@@ -64,6 +74,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
+    // 📞 Combiner indicatif + numéro
+    final phoneComplet = '$_selectedIndicatif$phone';
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -74,14 +87,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/auth/forgot-password'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'telephone': phone}),
+        body: jsonEncode({'telephone': phoneComplet}),
       );
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
         setState(() {
-          _storedTelephone = phone;
+          _storedTelephone = phoneComplet;
           _successMessage = data['message'] ?? 'Code OTP envoyé avec succès';
           _currentStep = STEP_OTP;
           _isLoading = false;
@@ -415,20 +428,62 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           style: TextStyle(color: grisTexte),
         ),
         const SizedBox(height: 24),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            hintText: '+225XXXXXXXXXX',
-            prefixIcon: const Icon(Icons.phone, color: bleuCoris),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        // 📞 Row avec Dropdown indicatif + TextField numéro
+        Row(
+          children: [
+            // Dropdown pour l'indicatif
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey.shade50,
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedIndicatif,
+                  icon: const Icon(Icons.arrow_drop_down, color: bleuCoris),
+                  style: const TextStyle(
+                    color: bleuCoris,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _selectedIndicatif = newValue;
+                      });
+                    }
+                  },
+                  items: _indicatifs.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: bleuCoris, width: 2),
+            const SizedBox(width: 12),
+            // TextField pour le numéro
+            Expanded(
+              child: TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: 'XXXXXXXXXX',
+                  prefixIcon: const Icon(Icons.phone, color: bleuCoris),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: bleuCoris, width: 2),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 24),
         SizedBox(

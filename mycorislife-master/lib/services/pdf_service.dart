@@ -32,15 +32,39 @@ class PdfService {
   }
 
   static Future<File> saveToDownloads(File tempFile) async {
-    Directory? downloads;
-    try {
-      downloads = await getDownloadsDirectory();
-    } catch (_) {}
-    downloads ??= await getExternalStorageDirectory();
+    // Demander les permissions si Android
     if (Platform.isAndroid) {
-      await Permission.storage.request();
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+        if (!status.isGranted) {
+          // Essayer avec manageExternalStorage pour Android 11+
+          final manageStatus = await Permission.manageExternalStorage.request();
+          if (!manageStatus.isGranted) {
+            throw Exception('Permission de stockage refusée');
+          }
+        }
+      }
     }
-    final target = File('${downloads!.path}/${tempFile.uri.pathSegments.last}');
-    return await tempFile.copy(target.path);
+
+    // Obtenir le dossier Downloads
+    Directory? downloads;
+    if (Platform.isAndroid) {
+      // Pour Android, utiliser le dossier Downloads public
+      downloads = Directory('/storage/emulated/0/Download');
+      if (!await downloads.exists()) {
+        downloads = await getExternalStorageDirectory();
+      }
+    } else {
+      // Pour iOS
+      downloads = await getApplicationDocumentsDirectory();
+    }
+
+    final fileName = tempFile.uri.pathSegments.last;
+    final target = File('${downloads!.path}/$fileName');
+    
+    // Copier le fichier
+    await tempFile.copy(target.path);
+    return target;
   }
 }

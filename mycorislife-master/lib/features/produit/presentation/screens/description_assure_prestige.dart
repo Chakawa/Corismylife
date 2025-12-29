@@ -166,46 +166,24 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16.0),
-                    // Badge "Bientôt disponible"
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.orange[700], size: 28),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Ce produit sera bientôt disponible. Restez connecté !',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.orange[900],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: null, // Bouton désactivé
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/souscription_assure_prestige',
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[400],
+                          backgroundColor: const Color(0xFF002B6B),
                           disabledBackgroundColor: Colors.grey[400],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18.0),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
-                          elevation: 0.0,
+                          elevation: 2.0,
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,

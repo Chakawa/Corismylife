@@ -108,12 +108,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   String? _pieceIdentiteLabel;
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
+  
+  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
+  bool _messageCapitalAffiche = false;
 
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -1889,11 +1894,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       child: OutlinedButton(
                         onPressed: () async {
                           Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers l'accueil
+                          // Naviguer vers la page de sélection des produits
                           await Future.delayed(const Duration(milliseconds: 100));
                           if (mounted) {
                             Navigator.of(context).pushNamedAndRemoveUntil(
-                              _isCommercial ? '/commercial-home' : '/client-home',
+                              '/souscription',
                               (route) => false,
                             );
                           }
@@ -1962,6 +1967,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
   void _verifierCapitalSousRisqueAuto() {
+    // Si le message a déjà été affiché, ne plus vérifier
+    if (_messageCapitalAffiche) {
+      return;
+    }
+    
     // Vérifier seulement si toutes les valeurs nécessaires sont présentes
     final ageEnfant = int.tryParse(_dureeController.text);
     final age = _calculatedAgeParent;
@@ -1994,6 +2004,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     
     if (depasseSeuil) {
       debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
+      // Marquer que le message va être affiché
+      _messageCapitalAffiche = true;
       // Afficher le dialog immédiatement
       _verifierCapitalSousRisque();
     }
@@ -2050,10 +2062,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [ÉTUDE Client] Étape 2 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
-          final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          debugPrint('\n🔍 [ÉTUDE Client] Étape 2 validée - Vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+          if (!_messageCapitalAffiche) {
+            final canContinue = await _verifierCapitalSousRisque();
+            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          }
           // Validation du mode de paiement avant questionnaire médical
           canProceed = true;
         } else if (_currentStep == 3) {
@@ -2233,8 +2247,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
+      if (_codeGuichetController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le code guichet (4 chiffres).');
+        return false;
+      }
       if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire (11 chiffres).');
+        return false;
+      }
+      if (_cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer la clé RIB (2 chiffres).');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -2377,7 +2399,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -4187,7 +4211,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -4308,12 +4334,41 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -4322,6 +4377,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -4549,7 +4623,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? {});
+        : (userData ?? _userData);
 
     return ListView(
       children: [
@@ -4688,9 +4762,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       : 'Non renseigné',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
                   'Numéro de compte',
                   _numeroCompteController.text.isNotEmpty
                       ? _numeroCompteController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
                       : 'Non renseigné',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||

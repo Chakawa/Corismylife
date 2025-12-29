@@ -79,6 +79,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   DateTime? _dateFinContrat;
 
   File? _pieceIdentite;
+  // ignore: unused_field
   String? _pieceIdentiteLabel;
 
   // Mode de paiement
@@ -97,7 +98,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Banque Atlantique',
     'Autre',
   ];
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -926,7 +929,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -2015,10 +2020,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      maxLength: maxLength,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
@@ -2306,7 +2313,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             _numeroMobileMoneyController.clear();
                           } else {
                             _banqueController.clear();
+                            _codeGuichetController.clear();
                             _numeroCompteController.clear();
+                            _cleRibController.clear();
                           }
                         });
                       },
@@ -2436,11 +2445,45 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ),
                       const SizedBox(height: 16),
                     ],
+
+                    // Informations du RIB
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildModernTextField(
+                      controller: _codeGuichetController,
+                      label: 'Code guichet (4 chiffres)',
+                      icon: Icons.domain,
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                    ),
+                    const SizedBox(height: 12),
+
                     _buildModernTextField(
                       controller: _numeroCompteController,
-                      label: 'Numéro de compte',
+                      label: 'Numéro de compte (11 chiffres)',
                       icon: Icons.account_box,
                       keyboardType: TextInputType.number,
+                      maxLength: 11,
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildModernTextField(
+                      controller: _cleRibController,
+                      label: 'Clé RIB (2 chiffres)',
+                      icon: Icons.key,
+                      keyboardType: TextInputType.number,
+                      maxLength: 2,
                     ),
                   ] else if (_selectedModePaiement == 'Wave' ||
                       _selectedModePaiement == 'Orange Money') ...[
@@ -2499,6 +2542,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -2899,7 +2943,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? {});
+        : (userData ?? _userData);
 
     return ListView(
       children: [
@@ -3015,9 +3059,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ? _banqueController.text
                         : 'Non renseigné'),
                 _buildRecapRow(
+                    'Code guichet',
+                    _codeGuichetController.text.isNotEmpty
+                        ? _codeGuichetController.text
+                        : 'Non renseigné'),
+                _buildRecapRow(
                     'Numéro de compte',
                     _numeroCompteController.text.isNotEmpty
                         ? _numeroCompteController.text
+                        : 'Non renseigné'),
+                _buildRecapRow(
+                    'Clé RIB',
+                    _cleRibController.text.isNotEmpty
+                        ? _cleRibController.text
                         : 'Non renseigné'),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[

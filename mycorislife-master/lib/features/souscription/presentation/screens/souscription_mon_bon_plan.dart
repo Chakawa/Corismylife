@@ -64,6 +64,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final _montantCotisationController = TextEditingController();
   final _dateEffetController = TextEditingController();
   final _dureeController = TextEditingController();
+  final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la périodicité
   String _selectedPeriodicite =
@@ -111,6 +112,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   ];
 
   File? _pieceIdentite;
+  // ignore: unused_field
   String? _pieceIdentiteLabel;
   bool _isProcessing = false;
 
@@ -119,7 +121,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -145,6 +149,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
+  DateTime? _clientDateNaissance;
   final TextEditingController _clientDateNaissanceController =
       TextEditingController();
   final TextEditingController _clientLieuNaissanceController =
@@ -172,7 +177,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       // Chargez les données utilisateur dès l'initialisation
       _loadUserData().then((data) {
         if (mounted) {
-          setState(() {}); // Rafraîchir l'UI
+          setState(() {
+            _userData = data;
+          });
         }
       }).catchError((e) {
         if (mounted) {
@@ -186,6 +193,52 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
+
+    // 🔍 Validation de la durée uniquement à la sortie du champ
+    // MON BON PLAN CORIS: durée minimale 2 ans, maximale 15 ans
+    _dureeFocusNode.addListener(() {
+      if (!_dureeFocusNode.hasFocus) {
+        // Utiliser Future.delayed pour éviter les appels multiples
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!mounted) return;
+          
+          // Le champ a perdu le focus - valider maintenant
+          if (_dureeController.text.isNotEmpty) {
+            int? duree = int.tryParse(_dureeController.text);
+            if (duree != null) {
+              // Convertir en années si nécessaire
+              int dureeEnAnnees = _selectedDureeType == 'ans' ? duree : (duree ~/ 12);
+
+              // ❌ Validation de la durée minimale (2 ans)
+              if (dureeEnAnnees < 2) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour MON BON PLAN CORIS est de 2 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                return;
+              }
+
+              // ❌ Validation de la durée maximale (15 ans)
+              if (dureeEnAnnees > 15) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour MON BON PLAN CORIS est de 15 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                return;
+              }
+            }
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -194,13 +247,27 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null && args['isCommercial'] == true) {
-      if (!_isCommercial) {
-        setState(() {
-          _isCommercial = true;
-        });
-      }
+    final bool isCommercialArg = args != null && args['isCommercial'] == true;
+    final bool isCommercialProps =
+        widget.clientId != null || widget.clientData != null;
+    final bool isCommercialExistingData =
+        widget.existingData?['client_info'] != null;
+    final bool shouldEnableCommercial =
+        isCommercialArg || isCommercialProps || isCommercialExistingData;
 
+    if (shouldEnableCommercial && !_isCommercial) {
+      setState(() {
+        _isCommercial = true;
+        _currentStep = 0;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _pageController.jumpToPage(0);
+        }
+      });
+    }
+
+    if (isCommercialArg) {
       // Si on est en mode modification (avec existingData), pré-remplir tout
       if (args['existingData'] != null) {
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
@@ -283,6 +350,110 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     } catch (e) {
       debugPrint('Erreur lors du chargement du profil: $e');
       return {};
+    }
+  }
+
+  /// Charge les données utilisateur spécifiquement pour le récapitulatif
+  /// Retourne les données depuis l'API ou depuis _userData en fallback
+  Future<Map<String, dynamic>> _loadUserDataForRecap() async {
+    try {
+      final token = await storage.read(key: 'token');
+      if (token == null) {
+        debugPrint('❌ Token non trouvé pour récap');
+        return _userData.isNotEmpty ? _userData : {};
+      }
+
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+        } else {
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+        }
+      } else {
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+      }
+
+      // Fallback vers _userData si la requête échoue
+      return _userData.isNotEmpty ? _userData : {};
+    } catch (e) {
+      debugPrint(
+          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      // Fallback vers _userData en cas d'erreur
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
     }
   }
 
@@ -414,6 +585,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     _pageController.dispose();
     _montantCotisationController.dispose();
     _dateEffetController.dispose();
+    _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
@@ -637,7 +809,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -659,6 +833,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
           'civilite': _selectedClientCivilite,
+          'date_naissance': _clientDateNaissance?.toIso8601String(),
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
       }
@@ -853,6 +1028,99 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
   }
 
+  /// 📋 Dialog pour les messages de validation (durée, capital, etc.)
+  void _showProfessionalDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 16,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(
+                        backgroundColor.withAlpha(25), Colors.white),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: bleuCoris,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: bleuCoris,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Compris',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _selectDateEffet() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -932,6 +1200,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     }
     if (_clientPrenomController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le prénom du client');
+      return false;
+    }
+    if (_clientDateNaissance == null) {
+      _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
     // Email non obligatoire pour le commercial
@@ -1026,8 +1298,16 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
+      if (_codeGuichetController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le code guichet (4 chiffres).');
+        return false;
+      }
       if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire (11 chiffres).');
+        return false;
+      }
+      if (_cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer la clé RIB (2 chiffres).');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -1316,6 +1596,20 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           controller: _clientPrenomController,
                           label: 'Prénom du client',
                           icon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDatePickerField(
+                          controller: _clientDateNaissanceController,
+                          label: 'Date de naissance du client',
+                          icon: Icons.cake_outlined,
+                          selectedDate: _clientDateNaissance,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _clientDateNaissance = date;
+                              _clientDateNaissanceController.text =
+                                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         _buildModernTextField(
@@ -1665,6 +1959,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
               flex: 2,
               child: TextFormField(
                 controller: _dureeController,
+                focusNode: _dureeFocusNode,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   isDense: true,
@@ -2012,6 +2307,40 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
   }
 
+  Widget _buildDatePickerField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required DateTime? selectedDate,
+    required ValueChanged<DateTime> onDateSelected,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        final DateTime now = DateTime.now();
+        final DateTime initial = selectedDate ?? now.subtract(Duration(days: 365 * 25));
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: initial,
+          firstDate: DateTime(1900),
+          lastDate: now,
+          locale: const Locale('fr', 'FR'),
+        );
+
+        if (picked != null) {
+          onDateSelected(picked);
+        }
+      },
+      child: AbsorbPointer(
+        child: _buildModernTextField(
+          controller: controller,
+          label: label,
+          icon: icon,
+          keyboardType: TextInputType.datetime,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDropdownField({
     required String? value,
     required String label,
@@ -2272,7 +2601,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -2393,12 +2724,41 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2407,6 +2767,25 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -2490,71 +2869,56 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _isCommercial
-                  ? _buildRecapContent()
-                  : FutureBuilder<Map<String, dynamic>>(
-                      future: _loadUserData(),
-                      builder: (context, snapshot) {
+            child: _isCommercial
+                ? Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: _buildRecapContent(),
+                  )
+                : FutureBuilder<Map<String, dynamic>>(
+                    future: _loadUserDataForRecap(),
+                    builder: (context, snapshot) {
+                      // Pour les clients, attendre le chargement des données
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                            child: CircularProgressIndicator(color: bleuCoris));
+                      }
+
+                      if (snapshot.hasError) {
                         debugPrint(
-                            '🔵 FutureBuilder - State: ${snapshot.connectionState}');
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          debugPrint('⏳ Chargement des données utilisateur...');
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(color: bleuCoris),
-                                SizedBox(height: 16),
-                                Text('Chargement du récapitulatif...'),
-                              ],
-                            ),
+                            'Erreur chargement données récapitulatif: ${snapshot.error}');
+                        // En cas d'erreur, essayer d'utiliser _userData si disponible
+                        if (_userData.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: _buildRecapContent(userData: _userData),
                           );
                         }
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error, size: 48, color: rougeCoris),
+                              SizedBox(height: 16),
+                              Text('Erreur lors du chargement des données'),
+                              TextButton(
+                                onPressed: () => setState(() {}),
+                                child: Text('Réessayer'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                        if (snapshot.hasError) {
-                          debugPrint(
-                              '❌ Erreur FutureBuilder: ${snapshot.error}');
-                          if (_userData.isNotEmpty) {
-                            return _buildRecapContent(userData: _userData);
-                          }
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.error, size: 48, color: rougeCoris),
-                                SizedBox(height: 16),
-                                Text('Erreur lors du chargement des données'),
-                                TextButton(
-                                  onPressed: () => setState(() {}),
-                                  child: Text('Réessayer'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        final userData = snapshot.data ?? _userData;
-
-                        if (userData.isEmpty && !_isCommercial) {
-                          _loadUserData().then((data) {
-                            if (mounted && data.isNotEmpty) {
-                              setState(() {
-                                _userData = data;
-                              });
-                            }
-                          });
-                          return Center(
-                              child:
-                                  CircularProgressIndicator(color: bleuCoris));
-                        }
-
-                        return _buildRecapContent(userData: userData);
-                      },
-                    ),
-            ),
+                      // Données chargées avec succès
+                      final userData = snapshot.data ?? {};
+                      debugPrint(
+                          '🟦 Données utilisateur chargées pour récap: ${userData.keys}');
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: _buildRecapContent(userData: userData),
+                      );
+                    },
+                  ),
           ),
         );
       },
@@ -2575,10 +2939,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             'email': _clientEmailController.text,
             'telephone':
                 '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance':
+                _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? {});
+        : (userData ?? _userData);
 
     return ListView(
       children: [
@@ -2589,7 +2955,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
         // 🟦 SECTION SPÉCIFIQUE À MON BON PLAN CORIS
         SubscriptionRecapWidgets.buildRecapSection(
-          'Détails du Contrat - MON BON PLAN CORIS',
+          'Produit Souscrit',
           Icons.savings,
           vertSucces,
           [
@@ -2686,9 +3052,21 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       : 'Non renseigné',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
                   'Numéro de compte',
                   _numeroCompteController.text.isNotEmpty
                       ? _numeroCompteController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
                       : 'Non renseigné',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||
@@ -2849,6 +3227,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   /// Page étape 4: Paiement
+  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,

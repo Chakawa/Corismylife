@@ -109,6 +109,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   ];
 
   File? _pieceIdentite;
+  // ignore: unused_field
   String? _pieceIdentiteLabel;
   bool _isProcessing = false;
 
@@ -117,7 +118,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -143,6 +146,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
+  DateTime? _clientDateNaissance;
   final TextEditingController _clientDateNaissanceController =
       TextEditingController();
   final TextEditingController _clientLieuNaissanceController =
@@ -192,13 +196,27 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null && args['isCommercial'] == true) {
-      if (!_isCommercial) {
-        setState(() {
-          _isCommercial = true;
-        });
-      }
+    final bool isCommercialArg = args != null && args['isCommercial'] == true;
+    final bool isCommercialProps =
+        widget.clientId != null || widget.clientData != null;
+    final bool isCommercialExistingData =
+        widget.existingData?['client_info'] != null;
+    final bool shouldEnableCommercial =
+        isCommercialArg || isCommercialProps || isCommercialExistingData;
 
+    if (shouldEnableCommercial && !_isCommercial) {
+      setState(() {
+        _isCommercial = true;
+        _currentStep = 0;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _pageController.jumpToPage(0);
+        }
+      });
+    }
+
+    if (isCommercialArg) {
       // Si on est en mode modification (avec existingData), pré-remplir tout
       if (args['existingData'] != null) {
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
@@ -690,7 +708,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -712,6 +732,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
           'civilite': _selectedClientCivilite,
+          'date_naissance': _clientDateNaissance?.toIso8601String(),
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
       }
@@ -1030,6 +1051,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
     if (_clientPrenomController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le prénom du client');
+      return false;
+    }
+    if (_clientDateNaissance == null) {
+      _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
     // Email non obligatoire pour le commercial
@@ -1412,6 +1437,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           controller: _clientPrenomController,
                           label: 'Prénom du client',
                           icon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDatePickerField(
+                          controller: _clientDateNaissanceController,
+                          label: 'Date de naissance du client',
+                          icon: Icons.cake_outlined,
+                          selectedDate: _clientDateNaissance,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _clientDateNaissance = date;
+                              _clientDateNaissanceController.text =
+                                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         _buildModernTextField(
@@ -2043,6 +2082,40 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
+  Widget _buildDatePickerField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required DateTime? selectedDate,
+    required ValueChanged<DateTime> onDateSelected,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        final DateTime now = DateTime.now();
+        final DateTime initial = selectedDate ?? now.subtract(Duration(days: 365 * 25));
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: initial,
+          firstDate: DateTime(1900),
+          lastDate: now,
+          locale: const Locale('fr', 'FR'),
+        );
+
+        if (picked != null) {
+          onDateSelected(picked);
+        }
+      },
+      child: AbsorbPointer(
+        child: _buildModernTextField(
+          controller: controller,
+          label: label,
+          icon: icon,
+          keyboardType: TextInputType.datetime,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDropdownField({
     required String? value,
     required String label,
@@ -2303,7 +2376,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
+                              _codeGuichetController.clear();
                               _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -2405,7 +2480,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         },
                       ),
                       SizedBox(height: 16),
-
                       // Champ texte personnalisé si "Autre" est sélectionné
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
@@ -2424,12 +2498,41 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
                       TextField(
                         controller: _numeroCompteController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          hintText: '11 chiffres',
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2438,6 +2541,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -2607,10 +2729,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             'email': _clientEmailController.text,
             'telephone':
                 '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance':
+                _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? {});
+        : (userData ?? _userData);
 
     return ListView(
       children: [
@@ -2621,7 +2745,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
         // 🟦 SECTION SPÉCIFIQUE À CORIS ASSURE PRESTIGE
         SubscriptionRecapWidgets.buildRecapSection(
-          'Détails du Contrat - CORIS ASSURE PRESTIGE',
+          'Produit Souscrit',
           Icons.verified_user,
           vertSucces,
           [
@@ -2725,9 +2849,21 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       : 'Non renseigné',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
                   'Numéro de compte',
                   _numeroCompteController.text.isNotEmpty
                       ? _numeroCompteController.text
+                      : 'Non renseigné',
+                ),
+                SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
                       : 'Non renseigné',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||
@@ -2888,6 +3024,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   /// Page étape 4: Paiement (identique à la page Étude)
+  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,

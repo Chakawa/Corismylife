@@ -70,6 +70,12 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
       'isIcon': false,
     },
     {
+      'image': 'assets/images/retraitee.png',
+      'title': 'CORIS RETRAITE',
+      'route': '/retraite',
+      'isIcon': false,
+    },
+    {
       'image': 'assets/images/epargnee.png',
       'title': 'CORIS EPARGNE BONUS',
       'route': '/epargne',
