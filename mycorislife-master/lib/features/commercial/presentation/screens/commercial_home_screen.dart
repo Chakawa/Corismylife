@@ -537,7 +537,11 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
 
                 return InkWell(
                   onTap: () {
-                    Navigator.pushNamed(context, product['route']);
+                    Navigator.pushNamed(
+                      context,
+                      product['route'],
+                      arguments: const {'isCommercial': true},
+                    );
                   },
                   child: Container(
                     padding: const EdgeInsets.all(12),

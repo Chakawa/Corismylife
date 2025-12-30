@@ -170,10 +170,25 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/souscription_assure_prestige',
-                          );
+                          final args = ModalRoute.of(context)?.settings.arguments
+                              as Map<String, dynamic>?;
+                          final bool isCommercial = args?['isCommercial'] == true;
+
+                          if (isCommercial) {
+                            Navigator.pushNamed(
+                              context,
+                              '/commercial/select_client',
+                              arguments: {
+                                'isCommercial': true,
+                                'productType': 'assure_prestige'
+                              },
+                            );
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/souscription_assure_prestige',
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF002B6B),

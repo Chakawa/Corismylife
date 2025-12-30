@@ -175,10 +175,25 @@ Tout acteur du secteur informel :
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/souscription_mon_bon_plan',
-                          );
+                          final args = ModalRoute.of(context)?.settings.arguments
+                              as Map<String, dynamic>?;
+                          final bool isCommercial = args?['isCommercial'] == true;
+
+                          if (isCommercial) {
+                            Navigator.pushNamed(
+                              context,
+                              '/commercial/select_client',
+                              arguments: {
+                                'isCommercial': true,
+                                'productType': 'mon_bon_plan'
+                              },
+                            );
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/souscription_mon_bon_plan',
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF002B6B),

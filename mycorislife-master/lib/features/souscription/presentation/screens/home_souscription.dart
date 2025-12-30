@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeSouscriptionPage extends StatelessWidget {
   const HomeSouscriptionPage({super.key}); // ✅ super parameter utilisé
@@ -302,7 +303,14 @@ class HomeSouscriptionPage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       constraints: const BoxConstraints(maxWidth: 600),
-      child: Container(
+      child: GestureDetector(
+        onTap: () async {
+          final Uri phoneUri = Uri.parse('tel:0778685858');
+          if (await canLaunchUrl(phoneUri)) {
+            await launchUrl(phoneUri);
+          }
+        },
+        child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -408,6 +416,7 @@ class HomeSouscriptionPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

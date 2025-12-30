@@ -25,8 +25,8 @@ class HelpSupportScreen extends StatelessWidget {
       body: FutureBuilder<Map<String, dynamic>>(
         future: _loadSupportInfo(),
         builder: (context, snapshot) {
-          final phone = snapshot.data?['phone'] ?? '+2250700000000';
-          final email = snapshot.data?['email'] ?? 'support@coris.ci';
+          final phone = snapshot.data?['phone'] ?? '0778685858';
+          final email = snapshot.data?['email'] ?? 'corisvie-ci@coris-assurances.ci';
           
           return ListView(
             padding: const EdgeInsets.all(16),

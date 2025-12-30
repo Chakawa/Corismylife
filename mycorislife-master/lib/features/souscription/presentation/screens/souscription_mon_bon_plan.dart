@@ -5,6 +5,7 @@ import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show min;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
@@ -121,9 +122,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _codeGuichetController = TextEditingController();
-  final _numeroCompteController = TextEditingController();
-  final _cleRibController = TextEditingController();
+  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -565,7 +564,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
           _banqueController.text = infos['banque'] ?? '';
-          _numeroCompteController.text = infos['numero_compte'] ?? '';
+          // Construire le RIB unifié à partir des 3 champs séparés
+          final codeGuichet = infos['code_guichet'] ?? '';
+          final numeroCompte = infos['numero_compte'] ?? '';
+          final cleRib = infos['cle_rib'] ?? '';
+          if (codeGuichet.isNotEmpty && numeroCompte.isNotEmpty && cleRib.isNotEmpty) {
+            _ribUnifiedController.text = '$codeGuichet / $numeroCompte / $cleRib';
+          }
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
           _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
@@ -603,7 +608,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // Dispose des contrôleurs de paiement
     _banqueController.dispose();
-    _numeroCompteController.dispose();
+    _ribUnifiedController.dispose();
     _numeroMobileMoneyController.dispose();
 
     super.dispose();
@@ -632,6 +637,66 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           TextPosition(offset: _montantCotisationController.text.length),
         );
       }
+    }
+  }
+
+  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
+  /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
+  Map<String, String> _parseRibUnified(String rib) {
+    final parts = rib.split('/').map((p) => p.trim()).toList();
+    return {
+      'code_guichet': parts.length > 0 ? parts[0] : '',
+      'numero_compte': parts.length > 1 ? parts[1] : '',
+      'cle_rib': parts.length > 2 ? parts[2] : '',
+    };
+  }
+
+  /// Valide le format du RIB unifié
+  bool _validateRibUnified(String rib) {
+    final parts = _parseRibUnified(rib);
+    final codeGuichet = parts['code_guichet'] ?? '';
+    final numeroCompte = parts['numero_compte'] ?? '';
+    final cleRib = parts['cle_rib'] ?? '';
+    
+    return codeGuichet.length == 4 &&
+        numeroCompte.length == 11 &&
+        cleRib.length == 2 &&
+        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
+        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
+        RegExp(r'^\d{2}$').hasMatch(cleRib);
+  }
+
+  /// Formate l'entrée RIB en temps réel
+  void _formatRibInput() {
+    final text = _ribUnifiedController.text;
+    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    if (onlyDigits.isEmpty) {
+      _ribUnifiedController.text = '';
+      return;
+    }
+
+    // Construire le format: XXXX / XXXXXXXXXXX / XX
+    final buffer = StringBuffer();
+    if (onlyDigits.length > 0) {
+      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 4) {
+      buffer.write(' / ');
+      buffer.write(
+          onlyDigits.substring(4, min(15, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 15) {
+      buffer.write(' / ');
+      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
+    }
+
+    final formatted = buffer.toString();
+    if (formatted != text) {
+      _ribUnifiedController.text = formatted;
+      _ribUnifiedController.selection = TextSelection.fromPosition(
+        TextPosition(offset: formatted.length),
+      );
     }
   }
 
@@ -807,12 +872,15 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
-            ? {
-                'banque': _banqueController.text.trim(),
-                'code_guichet': _codeGuichetController.text.trim(),
-                'numero_compte': _numeroCompteController.text.trim(),
-                'cle_rib': _cleRibController.text.trim(),
-              }
+            ? () {
+                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
+                return {
+                  'banque': _banqueController.text.trim(),
+                  'code_guichet': parsed['code_guichet'] ?? '',
+                  'numero_compte': parsed['numero_compte'] ?? '',
+                  'cle_rib': parsed['cle_rib'] ?? '',
+                };
+              }()
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
@@ -1292,22 +1360,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;
     }
-
     if (_selectedModePaiement == 'Virement') {
       if (_banqueController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
-      if (_codeGuichetController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer le code guichet (4 chiffres).');
+      if (_ribUnifiedController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
         return false;
       }
-      if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire (11 chiffres).');
-        return false;
-      }
-      if (_cleRibController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer la clé RIB (2 chiffres).');
+      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
+        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 4444 / 11111111111 / 22');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -2594,16 +2657,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                             icon = Icons.payment;
                             iconColor = bleuCoris;
                         }
-
                         return InkWell(
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
-                              _codeGuichetController.clear();
-                              _numeroCompteController.clear();
-                              _cleRibController.clear();
+                              _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -2724,7 +2784,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         SizedBox(height: 16),
                       ],
 
-                      // Informations du RIB
+                      // Informations du RIB (champ unifié)
                       Text(
                         'Informations du RIB',
                         style: TextStyle(
@@ -2735,57 +2795,23 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       ),
                       SizedBox(height: 12),
 
-                      // Code guichet (4 chiffres)
+                      // RIB unifié: XXXX / XXXXXXXXXXX / XX
                       TextField(
-                        controller: _codeGuichetController,
+                        controller: _ribUnifiedController,
+                        onChanged: (_) => _formatRibInput(),
                         decoration: InputDecoration(
-                          labelText: 'Code guichet *',
-                          hintText: '4 chiffres',
-                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          labelText: 'Numéro RIB complet *',
+                          hintText: '4444 / 11111111111 / 22',
+                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
+                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
+                          counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 4,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Numéro de compte (11 chiffres)
-                      TextField(
-                        controller: _numeroCompteController,
-                        decoration: InputDecoration(
-                          labelText: 'Numéro de compte *',
-                          hintText: '11 chiffres',
-                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 11,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Clé RIB (2 chiffres)
-                      TextField(
-                        controller: _cleRibController,
-                        decoration: InputDecoration(
-                          labelText: 'Clé RIB *',
-                          hintText: '2 chiffres',
-                          prefixIcon: Icon(Icons.key, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 2,
                       ),
                     ],
 
@@ -3052,21 +3078,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       : 'Non renseigné',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
-                  'Code guichet',
-                  _codeGuichetController.text.isNotEmpty
-                      ? _codeGuichetController.text
-                      : 'Non renseigné',
-                ),
-                SubscriptionRecapWidgets.buildRecapRow(
-                  'Numéro de compte',
-                  _numeroCompteController.text.isNotEmpty
-                      ? _numeroCompteController.text
-                      : 'Non renseigné',
-                ),
-                SubscriptionRecapWidgets.buildRecapRow(
-                  'Clé RIB',
-                  _cleRibController.text.isNotEmpty
-                      ? _cleRibController.text
+                  'Numéro RIB',
+                  _ribUnifiedController.text.isNotEmpty
+                      ? _ribUnifiedController.text
                       : 'Non renseigné',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||

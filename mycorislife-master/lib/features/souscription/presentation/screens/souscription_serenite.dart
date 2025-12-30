@@ -10,6 +10,7 @@ import 'package:mycorislife/features/souscription/presentation/widgets/questionn
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show min;
 
 // Enum pour le type de simulation
 enum SimulationType { parCapital, parPrime }
@@ -144,9 +145,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _codeGuichetController = TextEditingController();
-  final _numeroCompteController = TextEditingController();
-  final _cleRibController = TextEditingController();
+  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -2047,6 +2046,66 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
+  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
+  /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
+  Map<String, String> _parseRibUnified(String rib) {
+    final parts = rib.split('/').map((p) => p.trim()).toList();
+    return {
+      'code_guichet': parts.length > 0 ? parts[0] : '',
+      'numero_compte': parts.length > 1 ? parts[1] : '',
+      'cle_rib': parts.length > 2 ? parts[2] : '',
+    };
+  }
+
+  /// Valide le format du RIB unifié
+  bool _validateRibUnified(String rib) {
+    final parts = _parseRibUnified(rib);
+    final codeGuichet = parts['code_guichet'] ?? '';
+    final numeroCompte = parts['numero_compte'] ?? '';
+    final cleRib = parts['cle_rib'] ?? '';
+    
+    return codeGuichet.length == 4 &&
+        numeroCompte.length == 11 &&
+        cleRib.length == 2 &&
+        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
+        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
+        RegExp(r'^\d{2}$').hasMatch(cleRib);
+  }
+
+  /// Formate l'entrée RIB en temps réel
+  void _formatRibInput() {
+    final text = _ribUnifiedController.text;
+    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    if (onlyDigits.isEmpty) {
+      _ribUnifiedController.text = '';
+      return;
+    }
+
+    // Construire le format: XXXX / XXXXXXXXXXX / XX
+    final buffer = StringBuffer();
+    if (onlyDigits.length > 0) {
+      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 4) {
+      buffer.write(' / ');
+      buffer.write(
+          onlyDigits.substring(4, min(15, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 15) {
+      buffer.write(' / ');
+      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
+    }
+
+    final formatted = buffer.toString();
+    if (formatted != text) {
+      _ribUnifiedController.text = formatted;
+      _ribUnifiedController.selection = TextSelection.fromPosition(
+        TextPosition(offset: formatted.length),
+      );
+    }
+  }
+
   Future<void> _pickDocument() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -2232,6 +2291,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
     
     debugPrint('🔔 Affichage du dialog de confirmation...');
+    
+    // Marquer que le message est affiché
+    _messageCapitalAffiche = true;
     
     // Afficher le dialog
     final result = await showDialog<bool>(
@@ -2477,10 +2539,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
-          final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+          if (!_messageCapitalAffiche) {
+            final canContinue = await _verifierCapitalSousRisque();
+            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          }
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 3) {
           // Questionnaire médical avant récap — utiliser la validation du widget (modèle Études)
@@ -2648,11 +2712,16 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty ||
-          _codeGuichetController.text.trim().isEmpty ||
-          _numeroCompteController.text.trim().isEmpty ||
-          _cleRibController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
+      if (_banqueController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez sélectionner votre banque.');
+        return false;
+      }
+      if (_ribUnifiedController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
+        return false;
+      }
+      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
+        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 4444 / 11111111111 / 22');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -3923,9 +3992,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
-                              _codeGuichetController.clear();
-                              _numeroCompteController.clear();
-                              _cleRibController.clear();
+                              _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -4046,7 +4113,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Informations du RIB
+                      // Informations du RIB (champ unifié)
                       Text(
                         'Informations du RIB',
                         style: TextStyle(
@@ -4057,57 +4124,23 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       ),
                       SizedBox(height: 12),
 
-                      // Code guichet (4 chiffres)
+                      // RIB unifié: XXXX / XXXXXXXXXXX / XX
                       TextField(
-                        controller: _codeGuichetController,
+                        controller: _ribUnifiedController,
+                        onChanged: (_) => _formatRibInput(),
                         decoration: InputDecoration(
-                          labelText: 'Code guichet *',
-                          hintText: '4 chiffres',
-                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          labelText: 'Numéro RIB complet *',
+                          hintText: '4444 / 11111111111 / 22',
+                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
+                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
+                          counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 4,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Numéro de compte (11 chiffres)
-                      TextField(
-                        controller: _numeroCompteController,
-                        decoration: InputDecoration(
-                          labelText: 'Numéro de compte *',
-                          hintText: '11 chiffres',
-                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 11,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Clé RIB (2 chiffres)
-                      TextField(
-                        controller: _cleRibController,
-                        decoration: InputDecoration(
-                          labelText: 'Clé RIB *',
-                          hintText: '2 chiffres',
-                          prefixIcon: Icon(Icons.key, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 2,
                       ),
                     ],
 
@@ -4890,9 +4923,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       ? _banqueController.text
                       : 'Non renseigné'),
               _buildRecapRow(
-                  'Numéro de compte',
-                  _numeroCompteController.text.isNotEmpty
-                      ? _numeroCompteController.text
+                  'RIB complet',
+                  _ribUnifiedController.text.isNotEmpty
+                      ? _ribUnifiedController.text
                       : 'Non renseigné'),
             ] else if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
@@ -5167,12 +5200,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
-            ? {
-                'banque': _banqueController.text.trim(),
-                'code_guichet': _codeGuichetController.text.trim(),
-                'numero_compte': _numeroCompteController.text.trim(),
-                'cle_rib': _cleRibController.text.trim(),
-              }
+            ? () {
+                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
+                return {
+                  'banque': _banqueController.text.trim(),
+                  'code_guichet': parsed['code_guichet'] ?? '',
+                  'numero_compte': parsed['numero_compte'] ?? '',
+                  'cle_rib': parsed['cle_rib'] ?? '',
+                };
+              }()
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {

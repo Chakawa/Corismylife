@@ -1646,7 +1646,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           _codeGuichetController.text.trim().isEmpty ||
           _numeroCompteController.text.trim().isEmpty ||
           _cleRibController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
+        _showErrorSnackBar('Veuillez renseigner correctement les informations bancaires');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -3112,7 +3112,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         decoration: InputDecoration(
                           labelText: 'Clé RIB *',
                           hintText: '2 chiffres',
-                          prefixIcon: Icon(Icons.key, color: bleuCoris),
+                          prefixIcon: Icon(Icons.vpn_key, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

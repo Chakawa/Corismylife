@@ -411,39 +411,67 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
-  /// Construit la section du questionnaire médical
+  /// Construit la section du questionnaire médical (aligné avec l'expérience client)
   Widget _buildQuestionnaireMedicalSection(Map<String, dynamic> souscriptionData) {
-    final reponses = souscriptionData['questionnaire_medical_reponses'];
-    
-    if (reponses == null || (reponses is List && reponses.isEmpty)) {
-      return Container();
-    }
-    
-    List<Map<String, dynamic>> recapReponses = [];
-    if (reponses is List) {
-      recapReponses = List<Map<String, dynamic>>.from(
-        reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {})
-      );
-    }
-    
-    // Préparer la liste des questions si elle est disponible dans les données chargées
-    List<Map<String, dynamic>>? questions;
-    if (_fullSubscriptionData != null) {
-      final raw = _fullSubscriptionData!['questionnaire_questions'] ?? _fullSubscriptionData!['questions'];
-      if (raw is List) {
-        questions = List<Map<String, dynamic>>.from(
-          raw.map((q) => q is Map ? Map<String, dynamic>.from(q) : {}),
-        );
-      }
-    }
+    final List<Map<String, dynamic>> reponses = _getQuestionnaireMedicalReponses(souscriptionData);
+    if (reponses.isEmpty) return const SizedBox.shrink();
+
+    final List<Map<String, dynamic>> questions = _getQuestionnaireMedicalQuestions();
 
     return SizedBox(
       width: double.infinity,
       child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        recapReponses,
+        reponses,
         questions,
       ),
     );
+  }
+
+  List<Map<String, dynamic>> _getQuestionnaireMedicalReponses(Map<String, dynamic> souscriptionData) {
+    final reponses = _fullSubscriptionData?['questionnaire_reponses'];
+
+    // 1) Réponses déjà au niveau racine (format liste ou map)
+    if (reponses != null) {
+      if (reponses is List) {
+        return List<Map<String, dynamic>>.from(
+          reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{}),
+        );
+      }
+      if (reponses is Map) {
+        return reponses.values
+            .where((v) => v != null)
+            .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
+            .toList();
+      }
+    }
+
+    // 2) Fallback: dans les données de souscription (questionnaire_medical_reponses / questionnaire_reponses)
+    final fallback = souscriptionData['questionnaire_medical_reponses'] ??
+        souscriptionData['questionnaire_reponses'];
+    if (fallback is List) {
+      return List<Map<String, dynamic>>.from(
+        fallback.map((r) => r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{}),
+      );
+    }
+    if (fallback is Map) {
+      return fallback.values
+          .where((v) => v != null)
+          .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
+          .toList();
+    }
+
+    return [];
+  }
+
+  List<Map<String, dynamic>> _getQuestionnaireMedicalQuestions() {
+    final rawQuestions = _fullSubscriptionData?['questionnaire_questions'] ??
+        _fullSubscriptionData?['questions'];
+    if (rawQuestions is List) {
+      return List<Map<String, dynamic>>.from(
+        rawQuestions.map((q) => q is Map ? Map<String, dynamic>.from(q) : <String, dynamic>{}),
+      );
+    }
+    return [];
   }
 
   /**
@@ -873,6 +901,16 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ],
           ),
 
+        // RÉCAP: Questionnaire médical (questions + réponses)
+        // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
+        () {
+          final prod = (souscriptionData['produit_nom'] ?? souscriptionData['product_type'] ?? widget.subscription['product_type'] ?? widget.subscription['produit_nom'] ?? '').toString().toLowerCase();
+          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité')) {
+            return _buildQuestionnaireMedicalSection(souscriptionData);
+          }
+          return const SizedBox.shrink();
+        }(),
+
         // Documents
         if (souscriptionData['piece_identite'] != null)
           _buildRecapSection(
@@ -922,7 +960,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            souscriptionData['piece_identite'] ??
+                            souscriptionData['piece_identite_label'] ??
+                                souscriptionData['piece_identite'] ??
                                 'Non téléchargée',
                             style: const TextStyle(
                               color: bleuCoris,
@@ -941,16 +980,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               ),
             ],
           ),
-
-        // RÉCAP: Questionnaire médical (questions + réponses)
-        // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
-        () {
-          final prod = (souscriptionData['produit_nom'] ?? souscriptionData['product_type'] ?? widget.subscription['product_type'] ?? widget.subscription['produit_nom'] ?? '').toString().toLowerCase();
-          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité')) {
-            return _buildQuestionnaireMedicalSection(souscriptionData);
-          }
-          return const SizedBox.shrink();
-        }(),
 
         // Message de vérification
         Container(

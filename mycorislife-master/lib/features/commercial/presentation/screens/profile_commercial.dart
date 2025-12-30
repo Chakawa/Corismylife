@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/user_service.dart';
 import '../../../../services/auth_service.dart';
 
@@ -145,6 +146,11 @@ class _CommercialProfileState extends State<CommercialProfile>
 
                         // Personal Info avec option de modification
                         _buildPersonalInfo(primaryBlue, textDark, darkGrey),
+
+                        const SizedBox(height: 20),
+
+                        // Section Centre d'aide
+                        _buildHelpSection(primaryBlue, textDark),
 
                         const SizedBox(height: 20),
                       ],
@@ -488,6 +494,150 @@ class _CommercialProfileState extends State<CommercialProfile>
             _buildInfoRow(Icons.location_on_rounded, 'Adresse',
                 _userData!['adresse'] ?? '', darkGrey),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpSection(Color primaryBlue, Color textDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 25,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [primaryBlue, primaryBlue.withValues(alpha: 0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.help_outline_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Centre d\'aide',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: textDark,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: () async {
+              final Uri phoneUri = Uri.parse('tel:0778685858');
+              if (await canLaunchUrl(phoneUri)) {
+                await launchUrl(phoneUri);
+              }
+            },
+            child: _buildContactItem(
+              Icons.phone_rounded,
+              'Téléphone',
+              '0778685858',
+              primaryBlue,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () async {
+              final Uri emailUri =
+                  Uri.parse('mailto:corisvie-ci@coris-assurances.ci');
+              if (await canLaunchUrl(emailUri)) {
+                await launchUrl(emailUri);
+              }
+            },
+            child: _buildContactItem(
+              Icons.email_rounded,
+              'Email',
+              'corisvie-ci@coris-assurances.ci',
+              rougeCoris,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(
+      IconData icon, String label, String value, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF94A3B8),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: iconColor,
+            size: 16,
+          ),
         ],
       ),
     );

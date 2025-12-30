@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show min;
 
 class SouscriptionEpargnePage extends StatefulWidget {
   final int? subscriptionId; // ID pour modification
@@ -98,9 +99,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Banque Atlantique',
     'Autre',
   ];
-  final _codeGuichetController = TextEditingController();
-  final _numeroCompteController = TextEditingController();
-  final _cleRibController = TextEditingController();
+  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -451,6 +450,65 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   String _formatMontant(int montant) {
     return "${montant.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
+  }
+
+  /// Parse le RIB unifié en ses 3 composantes
+  Map<String, String> _parseRibUnified(String rib) {
+    final parts = rib.split('/').map((s) => s.trim()).toList();
+    return {
+      'code_guichet': parts.isNotEmpty ? parts[0] : '',
+      'numero_compte': parts.length > 1 ? parts[1] : '',
+      'cle_rib': parts.length > 2 ? parts[2] : '',
+    };
+  }
+
+  /// Valide le format du RIB unifié
+  bool _validateRibUnified(String rib) {
+    final parts = _parseRibUnified(rib);
+    final codeGuichet = parts['code_guichet'] ?? '';
+    final numeroCompte = parts['numero_compte'] ?? '';
+    final cleRib = parts['cle_rib'] ?? '';
+    
+    return codeGuichet.length == 4 &&
+        numeroCompte.length == 11 &&
+        cleRib.length == 2 &&
+        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
+        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
+        RegExp(r'^\d{2}$').hasMatch(cleRib);
+  }
+
+  /// Formate l'entrée RIB en temps réel
+  void _formatRibInput() {
+    final text = _ribUnifiedController.text;
+    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    if (onlyDigits.isEmpty) {
+      _ribUnifiedController.text = '';
+      return;
+    }
+
+    // Construire le format: XXXX / XXXXXXXXXXX / XX
+    final buffer = StringBuffer();
+    if (onlyDigits.length > 0) {
+      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 4) {
+      buffer.write(' / ');
+      buffer.write(
+          onlyDigits.substring(4, min(15, onlyDigits.length)));
+    }
+    if (onlyDigits.length > 15) {
+      buffer.write(' / ');
+      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
+    }
+
+    final formatted = buffer.toString();
+    if (formatted != text) {
+      _ribUnifiedController.text = formatted;
+      _ribUnifiedController.selection = TextSelection.fromPosition(
+        TextPosition(offset: formatted.length),
+      );
+    }
   }
 
   Future<void> _pickDocument() async {
@@ -855,9 +913,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty ||
-          _numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
+      if (_banqueController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le nom de la banque');
+        return false;
+      }
+      if (_ribUnifiedController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner votre RIB complet');
+        return false;
+      }
+      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
+        _showErrorSnackBar('Format RIB invalide. Format attendu: 4444 / 11111111111 / 22');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -929,9 +994,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                'code_guichet': _codeGuichetController.text.trim(),
-                'numero_compte': _numeroCompteController.text.trim(),
-                'cle_rib': _cleRibController.text.trim(),
+                ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -2021,11 +2084,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     required IconData icon,
     TextInputType? keyboardType,
     int? maxLength,
+    Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLength: maxLength,
+      onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
@@ -2313,9 +2378,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             _numeroMobileMoneyController.clear();
                           } else {
                             _banqueController.clear();
-                            _codeGuichetController.clear();
-                            _numeroCompteController.clear();
-                            _cleRibController.clear();
+                            _ribUnifiedController.clear();
                           }
                         });
                       },
@@ -2461,29 +2524,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     const SizedBox(height: 12),
 
                     _buildModernTextField(
-                      controller: _codeGuichetController,
-                      label: 'Code guichet (4 chiffres)',
-                      icon: Icons.domain,
+                      controller: _ribUnifiedController,
+                      label: 'Numéro RIB complet (XXXX / XXXXXXXXXXX / XX)',
+                      icon: Icons.account_balance,
                       keyboardType: TextInputType.number,
-                      maxLength: 4,
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildModernTextField(
-                      controller: _numeroCompteController,
-                      label: 'Numéro de compte (11 chiffres)',
-                      icon: Icons.account_box,
-                      keyboardType: TextInputType.number,
-                      maxLength: 11,
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildModernTextField(
-                      controller: _cleRibController,
-                      label: 'Clé RIB (2 chiffres)',
-                      icon: Icons.key,
-                      keyboardType: TextInputType.number,
-                      maxLength: 2,
+                      onChanged: (_) => _formatRibInput(),
                     ),
                   ] else if (_selectedModePaiement == 'Wave' ||
                       _selectedModePaiement == 'Orange Money') ...[
@@ -3059,19 +3104,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ? _banqueController.text
                         : 'Non renseigné'),
                 _buildRecapRow(
-                    'Code guichet',
-                    _codeGuichetController.text.isNotEmpty
-                        ? _codeGuichetController.text
-                        : 'Non renseigné'),
-                _buildRecapRow(
-                    'Numéro de compte',
-                    _numeroCompteController.text.isNotEmpty
-                        ? _numeroCompteController.text
-                        : 'Non renseigné'),
-                _buildRecapRow(
-                    'Clé RIB',
-                    _cleRibController.text.isNotEmpty
-                        ? _cleRibController.text
+                    'Numéro RIB',
+                    _ribUnifiedController.text.isNotEmpty
+                        ? _ribUnifiedController.text
                         : 'Non renseigné'),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[

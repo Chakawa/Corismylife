@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProduitsPage extends StatelessWidget {
   const ProduitsPage({super.key}); // ✅ super paramètre moderne
@@ -251,7 +252,14 @@ class ProduitsPage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       constraints: const BoxConstraints(maxWidth: 600),
-      child: Container(
+      child: GestureDetector(
+        onTap: () async {
+          final Uri phoneUri = Uri.parse('tel:0778685858');
+          if (await canLaunchUrl(phoneUri)) {
+            await launchUrl(phoneUri);
+          }
+        },
+        child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -344,6 +352,7 @@ class ProduitsPage extends StatelessWidget {
               child: const Icon(Icons.phone, color: Colors.white, size: 18),
             ),
           ],
+        ),
         ),
       ),
     );

@@ -3065,6 +3065,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     
     debugPrint('🔔 Affichage du dialog de confirmation...');
     
+    // Marquer que le message est affiché
+    _messageCapitalAffiche = true;
+    
     // Afficher le dialog
     final result = await showDialog<bool>(
       context: context,
@@ -3310,10 +3313,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Client] Étape 2 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
-          final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          debugPrint('\n🔍 [FAMILIS Client] Étape 2 validée - Vérification capital sous risque...');
+          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+          if (!_messageCapitalAffiche) {
+            final canContinue = await _verifierCapitalSousRisque();
+            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          }
           canProceed = true;
         } else if (_currentStep == 3) {
           // Questionnaire médical client
@@ -5946,6 +5951,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Page étape 4: Paiement
+  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -6255,6 +6261,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Widget pour afficher les méthodes de paiement
+  // ignore: unused_element
   Widget _buildPaymentMethodCard({
     required IconData icon,
     required String title,

@@ -1808,6 +1808,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     
     debugPrint('🔔 Affichage du dialog de confirmation...');
     
+    // Marquer que le message est affiché
+    _messageCapitalAffiche = true;
+    
     // Afficher le dialog
     final result = await showDialog<bool>(
       context: context,
@@ -2247,16 +2250,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
-      if (_codeGuichetController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer le code guichet (4 chiffres).');
-        return false;
-      }
-      if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire (11 chiffres).');
-        return false;
-      }
-      if (_cleRibController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer la clé RIB (2 chiffres).');
+      if (_codeGuichetController.text.trim().isEmpty ||
+          _numeroCompteController.text.trim().isEmpty ||
+          _cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez remplir toutes les informations bancaires.');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
