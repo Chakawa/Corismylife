@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/config/app_config.dart';
-import 'package:mycorislife/features/auth/presentation/screens/two_fa_screen.dart';
+import 'package:mycorislife/features/auth/presentation/screens/two_fa_settings_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/kyc_documents_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/attach_proposal_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
@@ -135,28 +135,6 @@ class _ProfilPageState extends State<ProfilPage> {
               children: [
                 _buildUserProfileCard(context),
                 const SizedBox(height: 24),
-                _buildSettingsSection(
-                  context,
-                  title: 'Gestion des Contrats',
-                  icon: Icons.assignment_outlined,
-                  items: [
-                    ProfileMenuItem(
-                      icon: Icons.add_circle_outline,
-                      title: 'Rattacher un contrat',
-                      subtitle: 'Associer un nouveau contrat à votre profil',
-                      iconColor: vertAccent,
-                      onTap: () => _showContractDialog(context),
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.description_outlined,
-                      title: 'Rattacher une proposition',
-                      subtitle: 'Lier une proposition d\'assurance',
-                      iconColor: orangeAccent,
-                      onTap: () => _showPropositionDialog(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
                 _buildSettingsSection(
                   context,
                   title: 'Informations personnelles',
@@ -677,7 +655,7 @@ class _ProfilPageState extends State<ProfilPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TwoFactorAuthScreen(identifier: _email),
+        builder: (_) => const TwoFASettingsScreen(),
       ),
     );
   }

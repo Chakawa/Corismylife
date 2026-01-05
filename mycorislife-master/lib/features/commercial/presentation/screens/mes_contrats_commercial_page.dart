@@ -623,46 +623,30 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _loadContrats(),
-              icon: const Icon(Icons.refresh, size: 20),
-              label: const Text('Actualiser'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF002B6B),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: const BorderSide(color: Color(0xFF002B6B), width: 2),
-                ),
-              ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.pushNamed(context, '/contrats_actifs');
+          },
+          icon: const Icon(Icons.bar_chart, size: 20),
+          label: const Text(
+            'Contrats Actifs',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/contrats_actifs');
-              },
-              icon: const Icon(Icons.bar_chart, size: 20),
-              label: const Text('Contrats Actifs'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF002B6B),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF10B981),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

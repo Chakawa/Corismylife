@@ -71,6 +71,11 @@ class AuthService {
         // Sauvegarder les données utilisateur de manière sécurisée
         await _storage.write(key: _userKey, value: jsonEncode(data['user']));
 
+        // Sauvegarder le code_apporteur si présent (pour les commerciaux)
+        if (data['user'] != null && data['user']['code_apporteur'] != null) {
+          await _storage.write(key: 'code_apporteur', value: data['user']['code_apporteur'].toString());
+        }
+
         return data;
       } else {
         // Gérer les différents codes d'erreur du serveur

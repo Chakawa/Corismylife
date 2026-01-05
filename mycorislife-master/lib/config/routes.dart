@@ -48,6 +48,7 @@ import 'package:mycorislife/features/produit/presentation/screens/description_re
 import 'package:mycorislife/features/produit/presentation/screens/description_prevoyance_collective.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/profile_commercial.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/select_client_screen.dart';
+import 'package:mycorislife/features/commercial/presentation/screens/commissions_page.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/create_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/register_client_screen.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/mes_contrats_commercial_page.dart';
@@ -184,6 +185,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/commercialHome': (context) => CommercialHomePage(),
   '/profileCommercial': (context) => CommercialProfile(),
   '/mes_contrats_commercial': (context) => const MesContratsCommercialPage(),
+  '/commissions': (context) => const CommissionsPage(),
   '/liste_clients': (context) => const ListeClientsPage(),
   '/contrats_actifs': (context) => const ContratsActifsPage(),
   '/details_client': (context) => const DetailsClientPage(),

@@ -863,5 +863,311 @@ router.post('/resend-reset-otp', async (req, res) => {
   }
 });
 
+// =========================
+// ROUTES 2FA (AUTHENTIFICATION À DEUX FACTEURS)
+// =========================
+
+// Store temporaire pour les OTP de 2FA (à remplacer par Redis en prod)
+const twoFAOtpStore = new Map(); // key: userId, value: { code, expiresAt, secondaryPhone }
+
+/**
+ * 📊 GET /auth/2fa-status
+ * Récupère le statut 2FA de l'utilisateur connecté
+ */
+router.get('/2fa-status', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const result = await pool.query(
+      'SELECT enabled, secondary_phone FROM two_factor_auth WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      // Pas de config 2FA, retourner désactivé par défaut
+      return res.json({
+        success: true,
+        enabled: false,
+        secondaryPhone: null
+      });
+    }
+    
+    const twoFA = result.rows[0];
+    res.json({
+      success: true,
+      enabled: twoFA.enabled,
+      secondaryPhone: twoFA.secondary_phone
+    });
+  } catch (error) {
+    console.error('Erreur récupération statut 2FA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
+  }
+});
+
+/**
+ * 📱 POST /auth/activate-2fa
+ * Active la 2FA et envoie un OTP au numéro secondaire
+ */
+router.post('/activate-2fa', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { secondaryPhone } = req.body;
+    
+    if (!secondaryPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le numéro secondaire est requis'
+      });
+    }
+    
+    // Normaliser le numéro
+    const normalizedPhone = normalizeTelephone(secondaryPhone);
+    
+    // Générer le code OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    
+    // Stocker l'OTP temporairement
+    twoFAOtpStore.set(userId, { code, expiresAt, secondaryPhone: normalizedPhone });
+    
+    // Envoyer le code par SMS
+    const smsMessage = `Code de vérification CORIS: ${code}. Ce code expire dans 5 minutes.`;
+    const smsResult = await sendSMS(normalizedPhone, smsMessage);
+    
+    if (!smsResult.success) {
+      console.log('⚠️ Échec envoi SMS, mais code enregistré pour test');
+      console.log('📨 Code OTP (développement):', code);
+    } else {
+      console.log('✅ Code OTP envoyé avec succès');
+    }
+    
+    res.json({
+      success: true,
+      message: 'Code OTP envoyé à votre numéro secondaire'
+    });
+  } catch (error) {
+    console.error('Erreur activation 2FA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'activation'
+    });
+  }
+});
+
+/**
+ * ✅ POST /auth/verify-2fa-activation
+ * Vérifie l'OTP et active définitivement la 2FA
+ */
+router.post('/verify-2fa-activation', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le code est requis'
+      });
+    }
+    
+    // Récupérer l'OTP stocké
+    const stored = twoFAOtpStore.get(userId);
+    
+    if (!stored) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun code OTP en attente. Veuillez recommencer.'
+      });
+    }
+    
+    // Vérifier l'expiration
+    if (Date.now() > stored.expiresAt) {
+      twoFAOtpStore.delete(userId);
+      return res.status(400).json({
+        success: false,
+        message: 'Le code a expiré. Veuillez recommencer.'
+      });
+    }
+    
+    // Vérifier le code
+    if (stored.code !== code) {
+      return res.status(401).json({
+        success: false,
+        message: 'Code invalide'
+      });
+    }
+    
+    // Code correct, activer la 2FA dans la base de données
+    await pool.query(`
+      INSERT INTO two_factor_auth (user_id, enabled, secondary_phone)
+      VALUES ($1, true, $2)
+      ON CONFLICT (user_id)
+      DO UPDATE SET enabled = true, secondary_phone = $2, updated_at = CURRENT_TIMESTAMP
+    `, [userId, stored.secondaryPhone]);
+    
+    // Supprimer l'OTP temporaire
+    twoFAOtpStore.delete(userId);
+    
+    res.json({
+      success: true,
+      message: 'Authentification à deux facteurs activée avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur vérification 2FA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la vérification'
+    });
+  }
+});
+
+/**
+ * ❌ POST /auth/disable-2fa
+ * Désactive la 2FA pour l'utilisateur
+ */
+router.post('/disable-2fa', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    await pool.query(
+      'UPDATE two_factor_auth SET enabled = false, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1',
+      [userId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Authentification à deux facteurs désactivée'
+    });
+  } catch (error) {
+    console.error('Erreur désactivation 2FA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la désactivation'
+    });
+  }
+});
+
+/**
+ * 🔐 POST /auth/request-2fa-otp
+ * Envoie un code OTP lors de la connexion si 2FA est activée
+ * (Utilisé pendant le processus de connexion)
+ */
+router.post('/request-2fa-otp', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId requis'
+      });
+    }
+    
+    // Vérifier si la 2FA est activée pour cet utilisateur
+    const result = await pool.query(
+      'SELECT enabled, secondary_phone FROM two_factor_auth WHERE user_id = $1 AND enabled = true',
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA non activée pour cet utilisateur'
+      });
+    }
+    
+    const twoFA = result.rows[0];
+    
+    // Générer le code OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    
+    // Stocker l'OTP temporairement
+    twoFAOtpStore.set(userId, { code, expiresAt, secondaryPhone: twoFA.secondary_phone });
+    
+    // Envoyer le code par SMS
+    const smsMessage = `Code de connexion CORIS: ${code}. Ce code expire dans 5 minutes.`;
+    const smsResult = await sendSMS(twoFA.secondary_phone, smsMessage);
+    
+    if (!smsResult.success) {
+      console.log('⚠️ Échec envoi SMS, mais code enregistré pour test');
+      console.log('📨 Code OTP (développement):', code);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Code OTP envoyé',
+      secondaryPhone: twoFA.secondary_phone
+    });
+  } catch (error) {
+    console.error('Erreur request-2fa-otp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
+  }
+});
+
+/**
+ * ✅ POST /auth/verify-2fa-otp
+ * Vérifie le code OTP lors de la connexion
+ */
+router.post('/verify-2fa-otp', async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+    
+    if (!userId || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId et code requis'
+      });
+    }
+    
+    // Récupérer l'OTP stocké
+    const stored = twoFAOtpStore.get(parseInt(userId));
+    
+    if (!stored) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun code OTP en attente'
+      });
+    }
+    
+    // Vérifier l'expiration
+    if (Date.now() > stored.expiresAt) {
+      twoFAOtpStore.delete(parseInt(userId));
+      return res.status(400).json({
+        success: false,
+        message: 'Le code a expiré'
+      });
+    }
+    
+    // Vérifier le code
+    if (stored.code !== code) {
+      return res.status(401).json({
+        success: false,
+        message: 'Code invalide'
+      });
+    }
+    
+    // Code correct, supprimer l'OTP
+    twoFAOtpStore.delete(parseInt(userId));
+    
+    res.json({
+      success: true,
+      message: 'Code vérifié avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur verify-2fa-otp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
+  }
+});
+
 module.exports = router;
  
