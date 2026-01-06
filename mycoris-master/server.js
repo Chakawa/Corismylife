@@ -14,8 +14,8 @@ const app = express();
 
 // Middleware critiques
 app.use(cors({
-  origin: ['http://localhost', 'http://10.0.2.2',  'http://192.168.1.32'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: ['http://localhost', 'http://localhost:3000', 'http://10.0.2.2', 'http://192.168.1.32'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true
 }));
 
@@ -37,6 +37,7 @@ app.get('/', (_, res) => res.json({
 /// - /api/subscriptions : Souscriptions et propositions
 /// - /api/users : Profil utilisateur
 /// - /api/notifications : Notifications
+/// - /api/admin : Administration (Dashboard Web)
 /// ============================================
 app.use('/api/auth', authRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -46,6 +47,7 @@ app.use('/api/kyc', require('./routes/kycRoutes'));
 app.use('/api/commercial', require('./routes/commercialRoutes'));
 app.use('/api/password-reset', require('./routes/passwordResetRoutes'));
 app.use('/api/commissions', require('./routes/commissionRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.get('/api/config/support', (_, res) => {
   res.json({ success: true, phone: process.env.SUPPORT_PHONE || '+2250700000000' });
 });
