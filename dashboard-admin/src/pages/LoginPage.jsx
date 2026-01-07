@@ -16,7 +16,8 @@ export default function LoginPage({ onLogin }) {
 
     try {
       const result = await authService.login(email, password)
-      if (result.user.role !== 'admin') {
+      const adminRoles = ['super_admin', 'admin', 'moderation']
+      if (!adminRoles.includes(result.user.role)) {
         throw new Error('Accès non autorisé. Seuls les administrateurs peuvent se connecter.')
       }
       onLogin()

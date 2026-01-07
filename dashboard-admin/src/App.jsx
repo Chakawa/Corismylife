@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
+import AdminDashboard from './pages/AdminDashboard'
+import AccessDeniedPage from './pages/AccessDeniedPage'
 import UsersPage from './pages/UsersPage'
 import ContractsPage from './pages/ContractsPage'
 import SubscriptionsPage from './pages/SubscriptionsPage'
@@ -10,6 +12,8 @@ import CommissionsPage from './pages/CommissionsPage'
 import ProductsPage from './pages/ProductsPage'
 import SettingsPage from './pages/SettingsPage'
 import ActivitiesPage from './pages/ActivitiesPage'
+import ProtectedRoute from './components/ProtectedRoute'
+import permissionsService from './services/permissions.service'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -20,16 +24,21 @@ function App() {
     const token = localStorage.getItem('adminToken')
     if (token) {
       setIsAuthenticated(true)
+      // Charger les permissions
+      permissionsService.fetchPermissions()
     }
     setIsLoading(false)
   }, [])
 
   const handleLogin = () => {
     setIsAuthenticated(true)
+    // Charger les permissions après connexion
+    permissionsService.fetchPermissions()
   }
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
+    permissionsService.clearCache()
     setIsAuthenticated(false)
   }
 
@@ -65,16 +74,45 @@ function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="contracts" element={<ContractsPage />} />
-          <Route path="subscriptions" element={<SubscriptionsPage />} />
-          <Route path="commissions" element={<CommissionsPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="activities" element={<ActivitiesPage />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={
+            <ProtectedRoute requiredPage="users">
+              <UsersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="contracts" element={
+            <ProtectedRoute requiredPage="contracts">
+              <ContractsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="subscriptions" element={
+            <ProtectedRoute requiredPage="contracts">
+              <SubscriptionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="commissions" element={
+            <ProtectedRoute requiredPage="contracts">
+              <CommissionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="products" element={
+            <ProtectedRoute requiredPage="products">
+              <ProductsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="settings" element={
+            <ProtectedRoute requiredAdminTypes={['super_admin']}>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="activities" element={
+            <ProtectedRoute requiredPage="stats">
+              <ActivitiesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="access-denied" element={<AccessDeniedPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
       </Routes>
     </Router>
   )

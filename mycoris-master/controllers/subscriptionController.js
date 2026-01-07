@@ -144,6 +144,41 @@ exports.createSubscription = async (req, res) => {
     // Exécuter la requête
     const result = await pool.query(query, values);
     
+    // Créer une notification pour tous les admins
+    try {
+      const adminQuery = "SELECT id FROM users WHERE role = 'admin'";
+      const adminResult = await pool.query(adminQuery);
+      
+      if (adminResult.rows.length > 0) {
+        const productName = product_type.replace(/_/g, ' ').toUpperCase();
+        const clientName = client_info 
+          ? `${client_info.prenom} ${client_info.nom}` 
+          : 'Client';
+        
+        const notificationMessage = `Nouvelle souscription ${productName} pour ${clientName} - Police: ${numeroPolice}`;
+        
+        for (const admin of adminResult.rows) {
+          await pool.query(`
+            INSERT INTO notifications 
+              (admin_id, type, title, message, reference_id, reference_type, action_url, created_at)
+            VALUES 
+              ($1, $2, $3, $4, $5, $6, $7, NOW())
+          `, [
+            admin.id,
+            'new_subscription',
+            `Nouvelle souscription ${productName}`,
+            notificationMessage,
+            result.rows[0].id,
+            'subscription',
+            `/souscriptions?id=${result.rows[0].id}`
+          ]);
+        }
+      }
+    } catch (notifError) {
+      console.error('Erreur création notification:', notifError.message);
+      // Ne pas bloquer la création de souscription
+    }
+    
     // Retourner la souscription créée
     res.status(201).json({
       success: true,

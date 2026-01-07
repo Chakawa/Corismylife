@@ -338,7 +338,7 @@ async function login(identifier, password) {
     {
       id: user.id,                    // ID de l'utilisateur
       email: user.email,              // Email de l'utilisateur
-      role: user.role,                // Rôle (client, commercial, admin)
+      role: user.role,                // Rôle (super_admin, admin, moderation, commercial, client)
       code_apporteur: user.code_apporteur  // Code apporteur (si commercial)
     },
     process.env.JWT_SECRET,           // Clé secrète (depuis .env)

@@ -104,3 +104,20 @@ export const commissionsService = {
     return response.data
   }
 }
+
+export const notificationsService = {
+  getNotifications: async (params) => {
+    const response = await api.get('/admin/notifications', { params })
+    return response.data
+  },
+
+  markAsRead: async (id) => {
+    const response = await api.put(`/admin/notifications/${id}/mark-read`)
+    return response.data
+  },
+
+  create: async (notificationData) => {
+    const response = await api.post('/admin/notifications/create', notificationData)
+    return response.data
+  }
+}
