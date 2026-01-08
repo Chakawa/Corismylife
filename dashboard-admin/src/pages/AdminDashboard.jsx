@@ -143,9 +143,16 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
-            <p className="text-gray-600 mt-1">Vue d'ensemble de votre plateforme</p>
+          <div className="flex items-center gap-4">
+            <img 
+              src="/logo.png" 
+              alt="CORIS Logo" 
+              className="w-12 h-12 object-contain"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+              <p className="text-gray-600 mt-1">Vue d'ensemble de votre plateforme</p>
+            </div>
           </div>
           <button
             onClick={handleRefresh}

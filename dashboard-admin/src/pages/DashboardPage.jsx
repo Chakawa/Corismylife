@@ -300,7 +300,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Évolution mensuelle */}
         {monthlyData.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               Évolution Mensuelle
             </h3>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
 
         {/* Distribution par produit */}
         {productDistribution.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               Distribution par Produit
             </h3>
@@ -370,7 +370,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Revenus mensuels */}
         {monthlyData.length > 0 && (
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
                 Revenus Mensuels (FCFA)
@@ -414,7 +414,7 @@ export default function DashboardPage() {
 
         {/* Statut des contrats */}
         {statusData.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               Statut des Contrats
             </h3>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Activités récentes */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Activités Récentes</h3>
           <Link to="/activities" className="text-sm text-coris-blue hover:underline">Voir tout</Link>
@@ -471,7 +471,7 @@ function StatCard({ title, value, change, changeType, icon: Icon, color }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
           <Icon className="w-6 h-6" />

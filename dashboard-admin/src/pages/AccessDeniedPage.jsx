@@ -12,7 +12,7 @@ export default function AccessDeniedPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
         <div className="flex justify-center mb-4">
           <div className="p-4 bg-red-100 rounded-full">
             <AlertTriangle className="w-8 h-8 text-red-600" />

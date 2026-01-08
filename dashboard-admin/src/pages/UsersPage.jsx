@@ -7,6 +7,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -30,6 +32,10 @@ export default function UsersPage() {
   useEffect(() => {
     loadUsers()
   }, [filterRole])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterRole])
 
   const loadUsers = async () => {
     setLoading(true)
@@ -124,6 +130,9 @@ export default function UsersPage() {
     user.telephone?.includes(searchTerm)
   )
 
+  const displayedUsers = filteredUsers.slice(0, pageSize * currentPage)
+  const hasMoreUsers = displayedUsers.length < filteredUsers.length
+
   // Calcul des statistiques
   const totalClients = users.filter(u => u.role === 'client').length
   const totalCommerciaux = users.filter(u => u.role === 'commercial').length
@@ -147,7 +156,7 @@ export default function UsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -174,7 +183,7 @@ export default function UsersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium">Total Clients</p>
@@ -185,7 +194,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium">Commerciaux Actifs</p>
@@ -196,7 +205,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium">Administrateurs</p>
@@ -207,7 +216,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium">Comptes Suspendus</p>
@@ -221,14 +230,14 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden max-w-full">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coris-blue"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-auto max-h-[70vh] w-full">
+            <table className="min-w-[1200px] w-full table-auto divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -243,13 +252,13 @@ export default function UsersPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Inscription
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-white z-10">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {displayedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
@@ -290,7 +299,7 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
                       {new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right sticky right-0 bg-white z-10">
                       <div className="flex items-center justify-end gap-1">
                         <button 
                           onClick={() => handleViewUser(user)}
@@ -321,6 +330,47 @@ export default function UsersPage() {
                 <p className="text-gray-500 text-sm">Aucun utilisateur trouvé</p>
               </div>
             )}
+            {filteredUsers.length > 0 && (
+              <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50">
+                <p className="text-sm text-gray-600">
+                  Affichage de {displayedUsers.length} sur {filteredUsers.length} utilisateurs filtrés
+                </p>
+                <div className="flex items-center gap-2">
+                  {currentPage > 1 && (
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                  {hasMoreUsers && (
+                    <>
+                      <button
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        className="px-4 py-2 text-sm bg-coris-blue text-white rounded-lg hover:bg-coris-blue-light transition"
+                      >
+                        Voir plus
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(Math.ceil(filteredUsers.length / pageSize))}
+                        className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                      >
+                        Voir tout
+                      </button>
+                    </>
+                  )}
+                  {!hasMoreUsers && filteredUsers.length > pageSize && (
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      Revenir en haut
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -328,7 +378,7 @@ export default function UsersPage() {
       {/* Modal Création Utilisateur */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Créer un nouvel utilisateur</h2>
               <button
@@ -511,7 +561,7 @@ export default function UsersPage() {
       {/* Modal Voir Utilisateur */}
       {showViewModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Détails utilisateur</h2>
               <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -561,7 +611,7 @@ export default function UsersPage() {
       {/* Modal Modifier Utilisateur */}
       {showEditModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Modifier utilisateur</h2>
               <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700">

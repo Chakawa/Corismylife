@@ -69,18 +69,20 @@ export default function SidebarNav() {
       </button>
 
       {/* Sidebar */}
-      <aside className={`fixed md:static left-0 top-0 h-screen w-64 bg-coris-blue text-white transition-transform duration-300 z-30 ${
+      <aside className={`fixed top-0 left-0 h-screen w-64 bg-coris-blue text-white transition-transform duration-300 z-30 ${
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      } md:flex md:flex-col overflow-y-auto`}>
+      } flex flex-col`}>
         {/* Header */}
         <div className="p-6 border-b border-blue-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-coris-blue rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">C</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.png" 
+              alt="CORIS Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <div>
               <h1 className="font-bold text-lg">CORIS</h1>
-              <p className="text-xs text-gray-400">Admin Dashboard</p>
+              <p className="text-xs text-blue-200">Admin Dashboard</p>
             </div>
           </div>
           

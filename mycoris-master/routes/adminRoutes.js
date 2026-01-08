@@ -225,7 +225,7 @@ router.post('/users', async (req, res) => {
     // Créer une notification pour tous les admins
     try {
       const adminEmails = await client.query(
-        "SELECT id FROM users WHERE role = 'admin'"
+        "SELECT id FROM users WHERE role IN ('super_admin', 'admin', 'moderation')"
       );
       
       if (adminEmails.rows.length > 0) {
@@ -472,11 +472,20 @@ router.get('/contracts', async (req, res) => {
 
     const result = await pool.query(query, params);
     const countResult = await pool.query('SELECT COUNT(*) FROM contrats');
+    const byStatusResult = await pool.query('SELECT etat, COUNT(*) as count FROM contrats GROUP BY etat');
+
+    const byStatus = {};
+    for (const row of byStatusResult.rows) {
+      byStatus[row.etat] = parseInt(row.count, 10);
+    }
 
     res.json({
       success: true,
       contracts: result.rows,
-      total: parseInt(countResult.rows[0].count)
+      total: parseInt(countResult.rows[0].count, 10),
+      stats: {
+        by_status: byStatus
+      }
     });
   } catch (error) {
     console.error('Erreur liste contrats:', error);
@@ -488,33 +497,218 @@ router.get('/contracts', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/contracts/:id
+ * Détails d'un contrat
+ */
+router.get('/contracts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM contrats WHERE id = $1', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Contrat introuvable' });
+    }
+
+    res.json({ success: true, contract: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur détails contrat:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/contracts/:id
+ * Supprimer un contrat
+ */
+router.delete('/contracts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM contrats WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Contrat introuvable' });
+    }
+
+    res.json({ success: true, message: 'Contrat supprimé avec succès', contract: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur suppression contrat:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la suppression' });
+  }
+});
+
+/**
+ * PATCH /api/admin/contracts/:id/status
+ * Mettre à jour le statut d'un contrat
+ */
+router.patch('/contracts/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowed = ['actif', 'suspendu', 'en_attente', 'resilie'];
+    if (!allowed.includes((status || '').toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    const result = await pool.query(
+      'UPDATE contrats SET etat = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Contrat introuvable' });
+    }
+
+    res.json({ success: true, contract: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur mise à jour statut contrat:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * POST /api/admin/contracts
+ * Créer un nouveau contrat
+ */
+router.post('/contracts', async (req, res) => {
+  try {
+    const {
+      numepoli,
+      nom_prenom,
+      codeprod,
+      dateeffet,
+      etat,
+      email,
+      telephone
+    } = req.body;
+
+    if (!numepoli || !nom_prenom || !codeprod || !dateeffet) {
+      return res.status(400).json({
+        success: false,
+        message: 'Champs requis manquants: numepoli, nom_prenom, codeprod, dateeffet'
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO contrats (numepoli, nom_prenom, codeprod, dateeffet, etat, email, telephone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [numepoli, nom_prenom, codeprod, dateeffet, etat || 'en_attente', email, telephone]
+    );
+
+    res.json({
+      success: true,
+      message: 'Contrat créé avec succès',
+      contract: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur création contrat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création du contrat',
+      error: error.message
+    });
+  }
+});
+
+/**
  * GET /api/admin/subscriptions
- * Liste de toutes les souscriptions
+ * Liste de toutes les souscriptions avec infos de création depuis souscriptiondata
+ * 
+ * LOGIQUE :
+ * 1. Récupère les souscriptions de subscriptions (pas souscriptions)
+ * 2. Joue les users pour avoir le nom/prénom du créateur
+ * 3. Extrait du souscriptiondata JSONB pour voir client_info (= commercial pour client)
+ * 4. Détermine l'origine : Client ou Commercial: [nom]
  */
 router.get('/subscriptions', async (req, res) => {
   try {
     const { statut, limit = 50, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM souscriptions WHERE 1=1';
+    let query = `
+      SELECT 
+        s.id,
+        s.user_id,
+        s.numero_police,
+        s.produit_nom,
+        s.statut,
+        s.date_creation as created_at,
+        s.date_validation,
+        s.souscriptiondata,
+        s.code_apporteur,
+        s.updated_at,
+        u.nom as creator_nom,
+        u.prenom as creator_prenom,
+        u.role as creator_role,
+        u.email as creator_email
+      FROM subscriptions s
+      LEFT JOIN users u ON u.id = s.user_id
+      WHERE 1=1
+    `;
     const params = [];
     let paramCount = 1;
 
     if (statut) {
-      query += ` AND statut = $${paramCount}`;
+      query += ` AND s.statut = $${paramCount}`;
       params.push(statut);
       paramCount++;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY s.date_creation DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
-    const countResult = await pool.query('SELECT COUNT(*) FROM souscriptions');
+        const countResult = await pool.query('SELECT COUNT(*) FROM subscriptions');
+        const byStatusResult = await pool.query('SELECT statut, COUNT(*) as count FROM subscriptions GROUP BY statut');
+
+    const byStatus = {};
+    for (const row of byStatusResult.rows) {
+      byStatus[row.statut] = parseInt(row.count, 10);
+    }
+
+    // Enrichir avec infos d'origine depuis souscriptiondata et user_id
+    const subscriptions = result.rows.map(r => {
+      let origin = 'Client';
+      let client_name = null;
+      
+      // Si la souscription a des infos client dans souscriptiondata, c'est un commercial
+      const data = r.souscriptiondata || {};
+      if (data.client_info) {
+        // Commercial a créé pour un client
+        const client = data.client_info;
+        client_name = `${client.prenom || ''} ${client.nom || ''}`.trim();
+        const commercial_name = `${r.creator_prenom || ''} ${r.creator_nom || ''}`.trim();
+        origin = `Commercial (${commercial_name}) pour ${client_name}`;
+      } else if (r.code_apporteur) {
+        // C'est un commercial (code_apporteur indique un commercial)
+        origin = `Commercial: ${r.creator_prenom || ''} ${r.creator_nom || ''}`.trim();
+      }
+      
+      return {
+        id: r.id,
+        numero_police: r.numero_police,
+        produit_nom: r.produit_nom,
+        statut: r.statut,
+        created_at: r.created_at,
+        date_validation: r.date_validation,
+        code_apporteur: r.code_apporteur,
+        creator_nom: r.creator_nom,
+        creator_prenom: r.creator_prenom,
+        creator_role: r.creator_role,
+        creator_email: r.creator_email,
+        origin,
+        client_info: data.client_info || null,
+        souscriptiondata: r.souscriptiondata
+      };
+    });
 
     res.json({
       success: true,
-      subscriptions: result.rows,
-      total: parseInt(countResult.rows[0].count)
+      subscriptions,
+      total: parseInt(countResult.rows[0].count, 10),
+      stats: {
+        by_status: byStatus
+      }
     });
   } catch (error) {
     console.error('Erreur liste souscriptions:', error);
@@ -531,6 +725,8 @@ router.get('/subscriptions', async (req, res) => {
  */
 router.get('/commissions', async (req, res) => {
   try {
+    const { limit = 50, offset = 0 } = req.query;
+
     const result = await pool.query(`
       SELECT 
         ci.*,
@@ -540,12 +736,15 @@ router.get('/commissions', async (req, res) => {
       FROM commission_instance ci
       LEFT JOIN users u ON u.code_apporteur = ci.code_apporteur
       ORDER BY ci.date_calcul DESC
-      LIMIT 100
-    `);
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+
+    const countResult = await pool.query('SELECT COUNT(*) FROM commission_instance');
 
     res.json({
       success: true,
-      commissions: result.rows
+      commissions: result.rows,
+      total: parseInt(countResult.rows[0].count, 10)
     });
   } catch (error) {
     console.error('Erreur liste commissions:', error);
@@ -579,6 +778,215 @@ router.get('/commissions/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des statistiques'
+    });
+  }
+});
+
+/**
+ * GET /api/admin/subscriptions/:id
+ * Détails d'une souscription
+ */
+router.get('/subscriptions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT s.*, u.nom as creator_nom, u.prenom as creator_prenom, u.role as creator_role
+      FROM subscriptions s
+      LEFT JOIN users u ON u.id = s.user_id
+      WHERE s.id = $1
+    `, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Souscription introuvable' });
+    }
+
+    res.json({ success: true, subscription: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur détails souscription:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/subscriptions/:id
+ * Supprimer une souscription
+ */
+router.delete('/subscriptions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM subscriptions WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Souscription introuvable' });
+    }
+
+    res.json({ success: true, message: 'Souscription supprimée avec succès', subscription: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur suppression souscription:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la suppression' });
+  }
+});
+
+/**
+ * POST /api/admin/subscriptions
+ * Créer une nouvelle souscription
+ */
+router.post('/subscriptions', async (req, res) => {
+  try {
+    const {
+      user_id,
+      produit_nom,
+      souscriptiondata,
+      code_apporteur
+      statut
+    } = req.body;
+
+  if (!user_id || !produit_nom || !souscriptiondata) {
+      return res.status(400).json({
+        success: false,
+        message: 'Champs requis manquants: user_id, produit_nom, souscriptiondata'
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO subscriptions (user_id, produit_nom, souscriptiondata, code_apporteur, statut)
+       VALUES ($1, $2, $3, $4, 'proposition')
+       RETURNING *`,
+      [user_id, produit_nom, souscriptiondata, code_apporteur || null]
+    );
+
+    res.json({
+      success: true,
+      message: 'Souscription créée avec succès',
+      subscription: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur création souscription:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création de la souscription',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/subscriptions/:id/status
+ * Mettre à jour le statut d'une souscription
+ */
+router.patch('/subscriptions/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+  const validStatuses = ['proposition', 'contrat', 'annulé', 'payé', 'activé'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    const result = await pool.query(
+      'UPDATE subscriptions SET statut = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Souscription introuvable' });
+    }
+
+    res.json({ success: true, message: 'Statut mis à jour', subscription: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur mise à jour statut:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * GET /api/admin/commissions/:id
+ * Détails d'une commission
+ */
+router.get('/commissions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT 
+        ci.*,
+        u.nom,
+        u.prenom,
+        u.email
+      FROM commission_instance ci
+      LEFT JOIN users u ON u.code_apporteur = ci.code_apporteur
+      WHERE ci.id = $1`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Commission introuvable' });
+    }
+
+    res.json({ success: true, commission: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur détails commission:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/commissions/:id
+ * Supprimer une commission
+ */
+router.delete('/commissions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM commission_instance WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Commission introuvable' });
+    }
+
+    res.json({ success: true, message: 'Commission supprimée avec succès', commission: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur suppression commission:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la suppression' });
+  }
+});
+
+/**
+ * POST /api/admin/commissions
+ * Créer une nouvelle commission
+ */
+router.post('/commissions', async (req, res) => {
+  try {
+    const {
+      code_apporteur,
+      montant_commission,
+      date_calcul
+    } = req.body;
+
+    if (!code_apporteur || montant_commission === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Champs requis manquants: code_apporteur, montant_commission'
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO commission_instance (code_apporteur, montant_commission, date_calcul)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [code_apporteur, montant_commission, date_calcul || new Date()]
+    );
+
+    res.json({
+      success: true,
+      message: 'Commission créée avec succès',
+      commission: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur création commission:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création de la commission',
+      error: error.message
     });
   }
 });
@@ -695,6 +1103,29 @@ router.put('/notifications/:id/mark-read', async (req, res) => {
     res.json({ success: true, notification: result.rows[0] });
   } catch (error) {
     console.error('Erreur marquer lue:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/notifications/:id
+ * Supprimer une notification de l'admin connecté
+ */
+router.delete('/notifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'DELETE FROM notifications WHERE id = $1 AND admin_id = $2 RETURNING *',
+      [id, req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Notification introuvable' });
+    }
+
+    res.json({ success: true, message: 'Notification supprimée', notification: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur suppression notification:', error);
     res.status(500).json({ success: false, message: 'Erreur' });
   }
 });

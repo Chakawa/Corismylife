@@ -70,8 +70,18 @@ export const contractsService = {
     return response.data
   },
 
+  create: async (contractData) => {
+    const response = await api.post('/admin/contracts', contractData)
+    return response.data
+  },
+
   updateStatus: async (id, status) => {
     const response = await api.patch(`/admin/contracts/${id}/status`, { status })
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/admin/contracts/${id}`)
     return response.data
   }
 }
@@ -79,6 +89,26 @@ export const contractsService = {
 export const subscriptionsService = {
   getAll: async (params) => {
     const response = await api.get('/admin/subscriptions', { params })
+    return response.data
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/admin/subscriptions/${id}`)
+    return response.data
+  },
+
+  create: async (subscriptionData) => {
+    const response = await api.post('/admin/subscriptions', subscriptionData)
+    return response.data
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/admin/subscriptions/${id}/status`, { status })
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/admin/subscriptions/${id}`)
     return response.data
   },
 
@@ -99,6 +129,21 @@ export const commissionsService = {
     return response.data
   },
 
+  getById: async (id) => {
+    const response = await api.get(`/admin/commissions/${id}`)
+    return response.data
+  },
+
+  create: async (commissionData) => {
+    const response = await api.post('/admin/commissions', commissionData)
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/admin/commissions/${id}`)
+    return response.data
+  },
+
   getStats: async () => {
     const response = await api.get('/admin/commissions/stats')
     return response.data
@@ -113,6 +158,11 @@ export const notificationsService = {
 
   markAsRead: async (id) => {
     const response = await api.put(`/admin/notifications/${id}/mark-read`)
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/admin/notifications/${id}`)
     return response.data
   },
 

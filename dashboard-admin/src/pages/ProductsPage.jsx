@@ -27,7 +27,7 @@ export default function ProductsPage() {
       {/* Grid of Products */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map(product => (
-          <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+          <div key={product.id} className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition">
             {/* Header */}
             <div className="h-24 bg-gradient-to-r from-coris-blue to-coris-blue-light flex items-center justify-center">
               <div className="text-center">
@@ -67,7 +67,7 @@ export default function ProductsPage() {
 
       {/* Statistics */}
       <div className="grid grid-cols-4 gap-4 mt-8">
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-2xl shadow p-4">
           <p className="text-gray-600 text-sm mb-1">Total Produits</p>
           <p className="text-2xl font-bold text-coris-blue">{products.length}</p>
         </div>

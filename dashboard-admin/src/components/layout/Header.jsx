@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Search, User, LogOut, ChevronDown } from 'lucide-react'
+import { Bell, Search, User, LogOut, ChevronDown, Trash2 } from 'lucide-react'
 import { notificationsService } from '../../services/api.service'
 
 export default function Header({ onLogout }) {
@@ -31,6 +31,15 @@ export default function Header({ onLogout }) {
       loadNotifications()
     } catch (error) {
       console.error('Erreur:', error)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await notificationsService.delete(id)
+      loadNotifications()
+    } catch (error) {
+      console.error('Erreur suppression notification:', error)
     }
   }
 
@@ -85,8 +94,7 @@ export default function Header({ onLogout }) {
                     {notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`p-4 hover:bg-gray-50 cursor-pointer transition ${!notif.is_read ? 'bg-blue-50' : ''}`}
-                        onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                        className={`p-4 hover:bg-gray-50 transition ${!notif.is_read ? 'bg-blue-50' : ''}`}
                       >
                         <div className="flex items-start gap-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(notif.type)}`}>
@@ -95,11 +103,28 @@ export default function Header({ onLogout }) {
                             {notif.type === 'contract_update' && 'Mise à jour contrat'}
                             {notif.type === 'commercial_action' && 'Action commercial'}
                           </span>
+                          <div className="ml-auto flex items-center gap-2">
+                            {!notif.is_read && (
+                              <button
+                                onClick={() => handleMarkAsRead(notif.id)}
+                                className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                              >
+                                Marquer lu
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(notif.id)}
+                              className="text-gray-400 hover:text-red-600"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         <p className="mt-1 font-medium text-sm text-gray-900">{notif.title}</p>
                         <p className="mt-1 text-sm text-gray-600">{notif.message}</p>
                         <p className="mt-2 text-xs text-gray-500">
-                          {new Date(notif.created_at).toLocaleString('fr-FR')}
+                          {new Date(notif.created_at).toLocaleString('fr-FR', { timeZone: 'Africa/Abidjan' })}
                         </p>
                       </div>
                     ))}
