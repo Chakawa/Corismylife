@@ -612,14 +612,25 @@ router.post('/contracts', async (req, res) => {
 });
 
 /**
- * GET /api/admin/subscriptions
- * Liste de toutes les souscriptions avec infos de création depuis souscriptiondata
+ * ROUTE : GET /api/admin/subscriptions
+ * Liste toutes les souscriptions avec informations de création et origine.
  * 
- * LOGIQUE :
- * 1. Récupère les souscriptions de subscriptions (pas souscriptions)
- * 2. Joue les users pour avoir le nom/prénom du créateur
- * 3. Extrait du souscriptiondata JSONB pour voir client_info (= commercial pour client)
- * 4. Détermine l'origine : Client ou Commercial: [nom]
+ * FONCTIONNEMENT :
+ * 1. Récupère les souscriptions de la table subscriptions
+ * 2. JOIN avec users pour obtenir nom/prénom/email du créateur
+ * 3. Extrait souscriptiondata (JSONB) pour déterminer l'origine :
+ *    - Si client_info existe => Commercial pour un client
+ *    - Si code_apporteur existe => Commercial direct
+ *    - Sinon => Client direct
+ * 4. Retourne aussi :
+ *    - total : nombre total de souscriptions (table subscriptions)
+ *    - stats.by_status : décompte par statut (proposition, payé, contrat, activé, annulé)
+ *    - stats.total_contrats : nombre total de contrats réels (table contrats)
+ * 
+ * QUERY PARAMS :
+ * - statut (optionnel) : filtre par statut
+ * - limit (défaut: 50) : nombre de résultats par page
+ * - offset (défaut: 0) : pagination
  */
 router.get('/subscriptions', async (req, res) => {
   try {
@@ -658,8 +669,12 @@ router.get('/subscriptions', async (req, res) => {
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
+        // Compter le total de souscriptions (table subscriptions)
         const countResult = await pool.query('SELECT COUNT(*) FROM subscriptions');
+        // Compter par statut dans subscriptions
         const byStatusResult = await pool.query('SELECT statut, COUNT(*) as count FROM subscriptions GROUP BY statut');
+        // Compter le total de contrats réels (table contrats)
+        const contratsCountResult = await pool.query('SELECT COUNT(*) as total FROM contrats');
 
     const byStatus = {};
     for (const row of byStatusResult.rows) {
@@ -707,7 +722,8 @@ router.get('/subscriptions', async (req, res) => {
       subscriptions,
       total: parseInt(countResult.rows[0].count, 10),
       stats: {
-        by_status: byStatus
+        by_status: byStatus,
+        total_contrats: parseInt(contratsCountResult.rows[0].total, 10)
       }
     });
   } catch (error) {
@@ -783,8 +799,18 @@ router.get('/commissions/stats', async (req, res) => {
 });
 
 /**
- * GET /api/admin/subscriptions/:id
- * Détails d'une souscription
+ * ROUTE : GET /api/admin/subscriptions/:id
+ * Récupère les détails complets d'une souscription spécifique.
+ * 
+ * FONCTIONNEMENT :
+ * 1. JOIN avec users pour obtenir creator_nom, creator_prenom, creator_role
+ * 2. Retourne toutes les colonnes de subscriptions + infos créateur
+ * 
+ * PARAM :
+ * - id (route param) : ID de la souscription
+ * 
+ * RETOUR :
+ * - subscription : objet avec tous les champs + creator_nom, creator_prenom, creator_role
  */
 router.get('/subscriptions/:id', async (req, res) => {
   try {
@@ -808,8 +834,16 @@ router.get('/subscriptions/:id', async (req, res) => {
 });
 
 /**
- * DELETE /api/admin/subscriptions/:id
- * Supprimer une souscription
+ * ROUTE : DELETE /api/admin/subscriptions/:id
+ * Supprime une souscription de la base de données.
+ * 
+ * ATTENTION : Cette action est irréversible.
+ * 
+ * PARAM :
+ * - id (route param) : ID de la souscription à supprimer
+ * 
+ * RETOUR :
+ * - subscription : objet de la souscription supprimée (RETURNING *)
  */
 router.delete('/subscriptions/:id', async (req, res) => {
   try {
@@ -828,8 +862,23 @@ router.delete('/subscriptions/:id', async (req, res) => {
 });
 
 /**
- * POST /api/admin/subscriptions
- * Créer une nouvelle souscription
+ * ROUTE : POST /api/admin/subscriptions
+ * Crée une nouvelle souscription dans la table subscriptions.
+ * 
+ * FONCTIONNEMENT :
+ * 1. Valide les champs requis (user_id, produit_nom, souscriptiondata)
+ * 2. Insère une nouvelle ligne avec statut = 'proposition' par défaut
+ * 3. Retourne la souscription créée
+ * 
+ * BODY PARAMS :
+ * - user_id (requis) : ID de l'utilisateur créateur (client ou commercial)
+ * - produit_nom (requis) : Nom du produit souscrit
+ * - souscriptiondata (requis) : JSONB contenant toutes les données du formulaire
+ *   (infos client si commercial, montant, durée, options, etc.)
+ * - code_apporteur (optionnel) : Code du commercial apporteur
+ * 
+ * RETOUR :
+ * - subscription : objet nouvellement créé (id, user_id, produit_nom, statut='proposition', etc.)
  */
 router.post('/subscriptions', async (req, res) => {
   try {
@@ -838,7 +887,6 @@ router.post('/subscriptions', async (req, res) => {
       produit_nom,
       souscriptiondata,
       code_apporteur
-      statut
     } = req.body;
 
   if (!user_id || !produit_nom || !souscriptiondata) {
@@ -871,8 +919,24 @@ router.post('/subscriptions', async (req, res) => {
 });
 
 /**
- * PATCH /api/admin/subscriptions/:id/status
- * Mettre à jour le statut d'une souscription
+ * ROUTE : PATCH /api/admin/subscriptions/:id/status
+ * Met à jour le statut d'une souscription.
+ * 
+ * FLUX DE STATUTS :
+ * - proposition : souscription initiale (non payée)
+ * - payé : paiement reçu (Wave, Orange Money, Virement, Espèce)
+ * - contrat : validé et enregistré comme contrat (peut être stocké dans table contrats aussi)
+ * - activé : contrat actif et en cours
+ * - annulé : souscription annulée/rejetée
+ * 
+ * PARAM :
+ * - id (route param) : ID de la souscription
+ * 
+ * BODY PARAMS :
+ * - status (requis) : Nouveau statut (énum: proposition, payé, contrat, activé, annulé)
+ * 
+ * RETOUR :
+ * - subscription : objet mis à jour avec nouveau statut et updated_at
  */
 router.patch('/subscriptions/:id/status', async (req, res) => {
   try {

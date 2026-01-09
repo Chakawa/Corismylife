@@ -40,287 +40,288 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     'annuel': 120000,
   };
 
-  // Tableau tarifaire (à insérer manuellement)
-  final Map<int, Map<String, double>> premiumValues = {
+  // Nouvelles valeurs: CAPITAL À TERME pour une prime de 10000 FCFA (mensuel)
+  // ou équivalent (30000 tri, 60000 sem, 120000 ann)
+  final Map<int, Map<String, double>> capitalValues = {
     5: {
-      'mensuel': 17385.55245,
-      'trimestriel': 51343.16466,
-      'semestriel': 101813.14352,
-      'annuel': 201890.00380
+      'mensuel': 605463.405379,
+      'trimestriel': 615056.504123,
+      'semestriel': 620331.447928,
+      'annuel': 625666.388106
     },
     6: {
-      'mensuel': 14238.32819,
-      'trimestriel': 41978.94598,
-      'semestriel': 83298.26868,
-      'annuel': 165175.99987
+      'mensuel': 739294.364577,
+      'trimestriel': 752266.795228,
+      'semestriel': 758213.774878,
+      'annuel': 764734.523010
     },
     7: {
-      'mensuel': 11992.86563,
-      'trimestriel': 35424.10172,
-      'semestriel': 70323.54417,
-      'annuel': 139011.72433
+      'mensuel': 877714.810967,
+      'trimestriel': 891453.723199,
+      'semestriel': 898104.646416,
+      'annuel': 908670.042636
     },
     8: {
-      'mensuel': 10311.00079,
-      'trimestriel': 30413.27008,
-      'semestriel': 60397.20310,
-      'annuel': 119431.37050
+      'mensuel': 1020882.065727,
+      'trimestriel': 1038327.916972,
+      'semestriel': 1045708.931812,
+      'annuel': 1057643.305449
     },
     9: {
-      'mensuel': 9004.86435,
-      'trimestriel': 26529.29040,
-      'semestriel': 52698.35344,
-      'annuel': 104235.51451
+      'mensuel': 1168958.840396,
+      'trimestriel': 1190342.707527,
+      'semestriel': 1190479.470698,
+      'annuel': 1211830.632461
     },
     10: {
-      'mensuel': 7563.64759,
-      'trimestriel': 22312.00493,
-      'semestriel': 44228.31611,
-      'annuel': 87500.89678
+      'mensuel': 1322113.421481,
+      'trimestriel': 1344587.648202,
+      'semestriel': 1356596.978444,
+      'annuel': 1371414.515917
     },
     11: {
-      'mensuel': 6754.38423,
-      'trimestriel': 19903.12711,
-      'semestriel': 39467.22927,
-      'annuel': 78095.31588
+      'mensuel': 1480519.861382,
+      'trimestriel': 1507300.829349,
+      'semestriel': 1520248.598961,
+      'annuel': 1536583.835295
     },
     12: {
-      'mensuel': 6081.40012,
-      'trimestriel': 17902.64892,
-      'semestriel': 35510.77460,
-      'annuel': 70276.78179
+      'mensuel': 1644358.175855,
+      'trimestriel': 1675729.671837,
+      'semestriel': 1689628.026197,
+      'annuel': 1707534.080851
     },
     13: {
-      'mensuel': 5513.24280,
-      'trimestriel': 16246.02984,
-      'semestriel': 32232.54909,
-      'annuel': 63796.71982
+      'mensuel': 1813844.548229,
+      'trimestriel': 1846605.003713,
+      'semestriel': 1861472.384183,
+      'annuel': 1880974.450438
     },
     14: {
-      'mensuel': 5027.44598,
-      'trimestriel': 14800.85821,
-      'semestriel': 29371.52796,
-      'annuel': 58140.14424
+      'mensuel': 1989081.640624,
+      'trimestriel': 2026309.492304,
+      'semestriel': 2042794.643842,
+      'annuel': 2063978.367524
     },
     15: {
-      'mensuel': 4607.53413,
-      'trimestriel': 13553.04544,
-      'semestriel': 26900.24228,
-      'annuel': 53253.15960
+      'mensuel': 2170358.312385,
+      'trimestriel': 2213524.637995,
+      'semestriel': 2230463.182648,
+      'annuel': 2253387.421708
     },
     16: {
-      'mensuel': 4234.30376,
-      'trimestriel': 12485.18488,
-      'semestriel': 24745.32809,
-      'annuel': 48991.07389
+      'mensuel': 2361663.347047,
+      'trimestriel': 2402847.877909,
+      'semestriel': 2424700.120313,
+      'annuel': 2449425.792789
     },
     17: {
-      'mensuel': 3906.76267,
-      'trimestriel': 11526.84218,
-      'semestriel': 22850.74160,
-      'annuel': 45243.31561
+      'mensuel': 2559654.057923,
+      'trimestriel': 2602620.867097,
+      'semestriel': 2625735.350796,
+      'annuel': 2652329.506857
     },
     18: {
-      'mensuel': 3617.16662,
-      'trimestriel': 10678.49023,
-      'semestriel': 21172.93236,
-      'annuel': 41923.93536
+      'mensuel': 2764594.793679,
+      'trimestriel': 2809385.910906,
+      'semestriel': 2833806.814345,
+      'annuel': 2862326.710918
     },
     19: {
-      'mensuel': 3359.42700,
-      'trimestriel': 9936.57609,
-      'semestriel': 19705.05837,
-      'annuel': 38965.11313
+      'mensuel': 2976698.105187,
+      'trimestriel': 3019148.619548,
+      'semestriel': 3044903.438595,
+      'annuel': 3079677.957121
     },
     20: {
-      'mensuel': 3128.69085,
-      'trimestriel': 9257.85305,
-      'semestriel': 18361.84334,
-      'annuel': 36312.61717
+      'mensuel': 3196225.032957,
+      'trimestriel': 3240492.134693,
+      'semestriel': 3267645.786918,
+      'annuel': 3304636.466941
     },
     21: {
-      'mensuel': 2921.04241,
-      'trimestriel': 8646.57304,
-      'semestriel': 17151.75590,
-      'annuel': 33922.56273
+      'mensuel': 3423435.402467,
+      'trimestriel': 3469582.672868,
+      'semestriel': 3498184.113972,
+      'annuel': 3537468.588654
     },
     22: {
-      'mensuel': 2733.28735,
-      'trimestriel': 8103.74654,
-      'semestriel': 16056.55640,
-      'annuel': 31759.05634
+      'mensuel': 3658598.135282,
+      'trimestriel': 3701991.400963,
+      'semestriel': 3736791.284233,
+      'annuel': 3778449.797473
     },
     23: {
-      'mensuel': 2562.79385,
-      'trimestriel': 7600.25802,
-      'semestriel': 15061.18718,
-      'annuel': 29792.45569
+      'mensuel': 3901991.563746,
+      'trimestriel': 3947234.413457,
+      'semestriel': 3983749.705453,
+      'annuel': 4027865.351705
     },
     24: {
-      'mensuel': 2407.37402,
-      'trimestriel': 7141.05329,
-      'semestriel': 14153.10752,
-      'annuel': 27998.06519
+      'mensuel': 4153903.762206,
+      'trimestriel': 4201060.933389,
+      'semestriel': 4239351.671416,
+      'annuel': 4286010.450336
     },
     25: {
-      'mensuel': 2265.19402,
-      'trimestriel': 6728.62923,
-      'semestriel': 13337.28607,
-      'annuel': 26385.73330
+      'mensuel': 4414632.887612,
+      'trimestriel': 4458560.426312,
+      'semestriel': 4498666.347671,
+      'annuel': 4547912.261262
     },
     26: {
-      'mensuel': 2134.70522,
-      'trimestriel': 6342.11478,
-      'semestriel': 12572.57942,
-      'annuel': 24874.28638
+      'mensuel': 4684487.532408,
+      'trimestriel': 4730283.355211,
+      'semestriel': 4772290.396112,
+      'annuel': 4824259.001727
     },
     27: {
-      'mensuel': 2014.59084,
-      'trimestriel': 5986.21186,
-      'semestriel': 11868.28274,
-      'annuel': 23482.08901
+      'mensuel': 4963787.683771,
+      'trimestriel': 5011516.586104,
+      'semestriel': 5055491.266247,
+      'annuel': 5110277.878109
     },
     28: {
-      'mensuel': 1903.72406,
-      'trimestriel': 5663.78043,
-      'semestriel': 11217.87997,
-      'annuel': 22196.29606
+      'mensuel': 5252862.131642,
+      'trimestriel': 5296815.505562,
+      'semestriel': 5348604.207638,
+      'annuel': 5406307.415163
     },
     29: {
-      'mensuel': 1801.13496,
-      'trimestriel': 5359.17421,
-      'semestriel': 10615.75618,
-      'annuel': 21005.83652
+      'mensuel': 5552054.799978,
+      'trimestriel': 5597877.362131,
+      'semestriel': 5651976.081074,
+      'annuel': 5712697.986015
     },
     30: {
-      'mensuel': 1705.98414,
-      'trimestriel': 5076.59191,
-      'semestriel': 10057.04697,
-      'annuel': 19901.11723
+      'mensuel': 5861719.211707,
+      'trimestriel': 5909476.383267,
+      'semestriel': 5965965.970183,
+      'annuel': 6029812.226846
     },
     31: {
-      'mensuel': 1617.54143,
-      'trimestriel': 4818.83139,
-      'semestriel': 9547.28012,
-      'annuel': 18873.78411
+      'mensuel': 6182221.877845,
+      'trimestriel': 6225575.781317,
+      'semestriel': 6284512.371581,
+      'annuel': 6358025.466106
     },
     32: {
-      'mensuel': 1535.16869,
-      'trimestriel': 4573.76738,
-      'semestriel': 9062.56656,
-      'annuel': 17916.52823
+      'mensuel': 6513942.137299,
+      'trimestriel': 6559144.247123,
+      'semestriel': 6620641.030858,
+      'annuel': 6697726.168741
     },
     33: {
-      'mensuel': 1458.30574,
-      'trimestriel': 4345.06312,
-      'semestriel': 8610.13211,
-      'annuel': 17022.92723
+      'mensuel': 6857272.605833,
+      'trimestriel': 6904387.609234,
+      'semestriel': 6968534.193210,
+      'annuel': 7049316.395967
     },
     34: {
-      'mensuel': 1386.45880,
-      'trimestriel': 4135.30013,
-      'semestriel': 8187.09854,
-      'annuel': 16187.31468
+      'mensuel': 7212619.840766,
+      'trimestriel': 7264612.498187,
+      'semestriel': 7328603.616244,
+      'annuel': 7413212.281147
     },
     35: {
-      'mensuel': 1319.19093,
-      'trimestriel': 3934.84048,
-      'semestriel': 7790.91726,
-      'annuel': 15404.67203
+      'mensuel': 7580403.821922,
+      'trimestriel': 7624197.249084,
+      'semestriel': 7701275.469085,
+      'annuel': 7789844.522308
     },
     36: {
-      'mensuel': 1256.11406,
-      'trimestriel': 3746.85383,
-      'semestriel': 7419.32336,
-      'annuel': 14670.53842
+      'mensuel': 7961060.449418,
+      'trimestriel': 8006717.466263,
+      'semestriel': 8086990.836775,
+      'annuel': 8179658.891909
     },
     37: {
-      'mensuel': 1196.88235,
-      'trimestriel': 3573.66135,
-      'semestriel': 7076.89185,
-      'annuel': 13993.93933
+      'mensuel': 8355040.058877,
+      'trimestriel': 8394751.786861,
+      'semestriel': 8478298.278308,
+      'annuel': 8575140.790787
     },
     38: {
-      'mensuel': 1141.18658,
-      'trimestriel': 3407.44859,
-      'semestriel': 6748.23829,
-      'annuel': 13344.54196
+      'mensuel': 8762808.954867,
+      'trimestriel': 8804241.412862,
+      'semestriel': 8891209.444321,
+      'annuel': 8992440.529785
     },
     39: {
-      'mensuel': 1088.74944,
-      'trimestriel': 3250.95304,
-      'semestriel': 6438.75443,
-      'annuel': 12732.97936
+      'mensuel': 9184849.761809,
+      'trimestriel': 9228063.175773,
+      'semestriel': 9318572.501144,
+      'annuel': 9424345.759649
     },
     40: {
-      'mensuel': 1039.32148,
-      'trimestriel': 3106.23686,
-      'semestriel': 6146.97839,
-      'annuel': 12156.37022
+      'mensuel': 9621661.997201,
+      'trimestriel': 9657988.540329,
+      'semestriel': 9760893.264956,
+      'annuel': 9871367.672557
     },
     41: {
-      'mensuel': 992.67774,
-      'trimestriel': 2966.86268,
-      'semestriel': 5871.59109,
-      'annuel': 11612.11433
+      'mensuel': 10073762.660832,
+      'trimestriel': 10111691.452702,
+      'semestriel': 10218695.255501,
+      'annuel': 10334035.352417
     },
     42: {
-      'mensuel': 948.61478,
-      'trimestriel': 2835.19736,
-      'semestriel': 5611.39921,
-      'annuel': 11097.85903
+      'mensuel': 10541686.847690,
+      'trimestriel': 10581273.967007,
+      'semestriel': 10692520.315715,
+      'annuel': 10812896.401073
     },
     43: {
-      'mensuel': 906.94817,
-      'trimestriel': 2713.06304,
-      'semestriel': 5369.98847,
-      'annuel': 10611.47043
+      'mensuel': 11025988.381088,
+      'trimestriel': 11057612.584807,
+      'semestriel': 11173208.346138,
+      'annuel': 11308517.586431
     },
     44: {
-      'mensuel': 867.51031,
-      'trimestriel': 2595.08784,
-      'semestriel': 5136.79219,
-      'annuel': 10151.00851
+      'mensuel': 11527240.468155,
+      'trimestriel': 11560302.338736,
+      'semestriel': 11680441.364525,
+      'annuel': 11821485.513277
     },
     45: {
-      'mensuel': 830.14858,
-      'trimestriel': 2483.32319,
-      'semestriel': 4915.84582,
-      'annuel': 9714.70556
+      'mensuel': 12046036.378270,
+      'trimestriel': 12080582.334053,
+      'semestriel': 12205427.538555,
+      'annuel': 12352407.317562
     },
     46: {
-      'mensuel': 794.72366,
-      'trimestriel': 2377.35238,
-      'semestriel': 4706.32965,
-      'annuel': 9300.94747
+      'mensuel': 12582990.145238,
+      'trimestriel': 12619080.006705,
+      'semestriel': 12748788.228676,
+      'annuel': 12901911.384998
     },
     47: {
-      'mensuel': 761.10815,
-      'trimestriel': 2276.79425,
-      'semestriel': 4507.49375,
-      'annuel': 8908.25736
+      'mensuel': 13138737.294051,
+      'trimestriel': 13176421.181466,
+      'semestriel': 13311166.542952,
+      'annuel': 13470648.094793
     },
     48: {
-      'mensuel': 729.18528,
-      'trimestriel': 2181.29955,
-      'semestriel': 4318.65075,
-      'annuel': 8535.28130
+      'mensuel': 13713935.593071,
+      'trimestriel': 13753269.236278,
+      'semestriel': 13893228.098227,
+      'annuel': 14059290.589432
     },
     49: {
-      'mensuel': 698.84787,
-      'trimestriel': 2090.54761,
-      'semestriel': 4142.58435,
-      'annuel': 8187.50292
+      'mensuel': 14309265.832568,
+      'trimestriel': 14350306.973009,
+      'semestriel': 14483712.331354,
+      'annuel': 14668483.327573
     },
     50: {
-      'mensuel': 669.99733,
-      'trimestriel': 2004.24351,
-      'semestriel': 3971.71793,
-      'annuel': 7849.99700
+      'mensuel': 14925432.630426,
+      'trimestriel': 14968241.030525,
+      'semestriel': 15106812.989223,
+      'annuel': 15286630.055359
     },
   };
 
-  final Map<String, double> capitalValues = {
+  final Map<String, double> primeReferenceValues = {
     'mensuel': 10000.00000,
     'trimestriel': 30000.00000,
     'semestriel': 60000.00000,
@@ -609,21 +610,24 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         '\n   📍 ÉTAPE 2: Tentative utilisation FALLBACK (données hardcodées)...');
 
     // Vérifier si les données hardcodées sont disponibles
-    final hasHardcodedData = premiumValues.containsKey(duration) &&
-        premiumValues[duration]!.containsKey(periodicity);
+    final hasHardcodedData = capitalValues.containsKey(duration) &&
+        capitalValues[duration]!.containsKey(periodicity);
 
     if (hasHardcodedData) {
-      double primePour1Million =
-          premiumValues[duration]![periodicity]!.toDouble();
+      double capitalPour10K =
+          capitalValues[duration]![periodicity]!.toDouble();
+      double primeReference = primeReferenceValues[periodicity]!;
+      
       print('   ✅ Données hardcodées disponibles');
-      print('      Prime pour 1M: $primePour1Million FCFA');
+      print('      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
-      double primeCalculee = (desiredCapital * primePour1Million) / 1000000;
+      // NOUVELLE MÉTHODE: Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference
+      double primeCalculee = (desiredCapital * primeReference) / capitalPour10K;
 
-      print('   💰 CALCUL:');
-      print('      Prime = (Capital × PrimePour1M) / 1,000,000');
+      print('   💰 CALCUL (nouvelle méthode):');
+      print('      Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference');
       print(
-          '      Prime = (${desiredCapital.toStringAsFixed(0)} × $primePour1Million) / 1,000,000');
+          '      Prime = (${desiredCapital.toStringAsFixed(0)} × ${primeReference.toStringAsFixed(0)}) / ${capitalPour10K.toStringAsFixed(2)}');
       print('      Prime = ${primeCalculee.toStringAsFixed(2)} FCFA');
 
       print(
@@ -636,10 +640,10 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     } else {
       print('   ❌ Données hardcodées NON disponibles');
       print(
-          '      - premiumValues contient la durée $duration? ${premiumValues.containsKey(duration)}');
-      if (premiumValues.containsKey(duration)) {
+          '      - capitalValues contient la durée $duration? ${capitalValues.containsKey(duration)}');
+      if (capitalValues.containsKey(duration)) {
         print(
-            '      - premiumValues[$duration] contient $periodicity? ${premiumValues[duration]!.containsKey(periodicity)}');
+            '      - capitalValues[$duration] contient $periodicity? ${capitalValues[duration]!.containsKey(periodicity)}');
       }
       print('   ⚠️  IMPOSSIBLE DE CALCULER: Aucune donnée disponible');
       print('      → Ni base de données, ni données hardcodées');
@@ -729,28 +733,30 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
                     100); // Éviter les faux positifs pour les petites valeurs
 
         if (hasLostDecimals &&
-            premiumValues.containsKey(duration) &&
-            premiumValues[duration]!.containsKey(periodicity)) {
-          double localPrimePour1M = premiumValues[duration]![periodicity]!;
+            capitalValues.containsKey(duration) &&
+            capitalValues[duration]!.containsKey(periodicity)) {
+          double localCapitalPour10K = capitalValues[duration]![periodicity]!;
           // Vérifier que la valeur locale a effectivement plus de précision
-          if ((localPrimePour1M - localPrimePour1M.roundToDouble()).abs() >
+          if ((localCapitalPour10K - localCapitalPour10K.roundToDouble()).abs() >
               0.01) {
             print(
                 '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
             print('      Valeur DB: $primePour1Million (arrondie)');
-            print('      Valeur locale: $localPrimePour1M (précise)');
+            print('      Valeur locale: $localCapitalPour10K (précise)');
             print(
                 '      → Utilisation des données locales pour plus de précision');
-            primePour1Million = localPrimePour1M;
+            primePour1Million = localCapitalPour10K;
           }
         }
 
-        double capitalCalcule = (paidPremium * 1000000) / primePour1Million;
+        // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
+        double primeReference = primeReferenceValues[periodicity]!;
+        double capitalCalcule = (paidPremium * primePour1Million) / primeReference;
 
-        print('   💰 CALCUL:');
-        print('      Capital = (Prime × 1,000,000) / PrimePour1M');
+        print('   💰 CALCUL (nouvelle méthode):');
+        print('      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
         print(
-            '      Capital = (${paidPremium.toStringAsFixed(0)} × 1,000,000) / $primePour1Million');
+            '      Capital = (${paidPremium.toStringAsFixed(0)} × $primePour1Million) / ${primeReference.toStringAsFixed(0)}');
         print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
 
         print(
@@ -775,21 +781,24 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         '\n   📍 ÉTAPE 2: Tentative utilisation FALLBACK (données hardcodées)...');
 
     // Vérifier si les données hardcodées sont disponibles
-    final hasHardcodedData = premiumValues.containsKey(duration) &&
-        premiumValues[duration]!.containsKey(periodicity);
+    final hasHardcodedData = capitalValues.containsKey(duration) &&
+        capitalValues[duration]!.containsKey(periodicity);
 
     if (hasHardcodedData) {
-      double primePour1Million =
-          premiumValues[duration]![periodicity]!.toDouble();
+      double capitalPour10K =
+          capitalValues[duration]![periodicity]!.toDouble();
+      double primeReference = primeReferenceValues[periodicity]!;
+      
       print('   ✅ Données hardcodées disponibles');
-      print('      Prime pour 1M: $primePour1Million FCFA');
+      print('      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
-      double capitalCalcule = (paidPremium * 1000000) / primePour1Million;
+      // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
+      double capitalCalcule = (paidPremium * capitalPour10K) / primeReference;
 
-      print('   💰 CALCUL:');
-      print('      Capital = (Prime × 1,000,000) / PrimePour1M');
+      print('   💰 CALCUL (nouvelle méthode):');
+      print('      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
       print(
-          '      Capital = (${paidPremium.toStringAsFixed(0)} × 1,000,000) / $primePour1Million');
+          '      Capital = (${paidPremium.toStringAsFixed(0)} × ${capitalPour10K.toStringAsFixed(2)}) / ${primeReference.toStringAsFixed(0)}');
       print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
 
       print(
@@ -802,10 +811,10 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     } else {
       print('   ❌ Données hardcodées NON disponibles');
       print(
-          '      - premiumValues contient la durée $duration? ${premiumValues.containsKey(duration)}');
-      if (premiumValues.containsKey(duration)) {
+          '      - capitalValues contient la durée $duration? ${capitalValues.containsKey(duration)}');
+      if (capitalValues.containsKey(duration)) {
         print(
-            '      - premiumValues[$duration] contient $periodicity? ${premiumValues[duration]!.containsKey(periodicity)}');
+            '      - capitalValues[$duration] contient $periodicity? ${capitalValues[duration]!.containsKey(periodicity)}');
       }
       print('   ⚠️  IMPOSSIBLE DE CALCULER: Aucune donnée disponible');
       print('      → Ni base de données, ni données hardcodées');

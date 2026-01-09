@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   BarChart3, Users, FileText, ShoppingCart, Briefcase, Settings, 
-  Activity, Menu, X, ChevronDown, Lock
+  Activity, Menu, X, ChevronDown, Lock, Crown, Shield
 } from 'lucide-react'
 import permissionsService from '../../services/permissions.service'
 
@@ -87,10 +87,23 @@ export default function SidebarNav() {
           </div>
           
           {/* Admin Type Badge */}
-          <div className="mt-3 px-2 py-1 bg-blue-900 rounded text-xs font-semibold">
-            <span className={userRole === 'super_admin' ? 'text-purple-400' : userRole === 'admin' ? 'text-blue-400' : 'text-green-400'}>
-              {userRole === 'super_admin' ? '👑 Super Admin' : userRole === 'admin' ? '🔧 Admin' : '🔒 Modérateur'}
-            </span>
+          <div className="mt-3 px-3 py-2 bg-blue-900 rounded text-xs font-semibold flex items-center gap-2">
+            {userRole === 'super_admin' ? (
+              <>
+                <Crown className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                <span className="text-yellow-300">Super Admin</span>
+              </>
+            ) : userRole === 'admin' ? (
+              <>
+                <Shield className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                <span className="text-blue-300">Admin</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4 text-green-300 flex-shrink-0" />
+                <span className="text-green-300">Modérateur</span>
+              </>
+            )}
           </div>
         </div>
 

@@ -28,6 +28,15 @@ import {
 } from 'recharts'
 
 const COLORS = ['#002B6B', '#E30613', '#10B981', '#F59E0B', '#8B5CF6']
+const PRODUCT_LABELS = {
+  200: 'CORIS FAMILIS',
+  202: 'CORIS SERENITE',
+  205: 'FLEX EMPRUNTEUR',
+  225: 'CORIS SOLIDARITE',
+  240: 'CORIS RETRAITE',
+  242: 'CORIS EPARGNE BONUS',
+  246: 'CORIS ETUDE'
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null)
@@ -179,10 +188,14 @@ export default function DashboardPage() {
 
   const monthlyData = buildMonthlySeries(periodMonths)
 
-  const productDistribution = stats?.produits ? stats.produits.map(item => ({
-    name: item.produit || item.name,
-    value: item.count || item.total || 0
-  })) : []
+  const productDistribution = stats?.produits
+    ? stats.produits.map((item) => {
+        const code = item.produit || item.codeprod || item.code || item.name
+        const name = PRODUCT_LABELS[code] || item.name || code || 'Non defini'
+        const value = Number(item.count ?? item.total ?? item.montant_total ?? 0)
+        return { name, value }
+      })
+    : []
 
   const statusData = stats?.contractsByStatus
     ? Object.entries(stats.contractsByStatus).map(([k, v]) => ({
@@ -350,6 +363,7 @@ export default function DashboardPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
+                  nameKey="name"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={100}
                   fill="#8884d8"
