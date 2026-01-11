@@ -145,6 +145,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
   Future<void> _loadContratDetails() async {
     print('🔍 [DETAILS] ========== DÉBUT CHARGEMENT ==========');
+    setState(() => isLoading = true);
 
     try {
       final token = await storage.read(key: 'token');
@@ -155,10 +156,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
       if (token == null) throw Exception('Token non trouvé');
 
-      setState(() {
-        userRole = role;
-        isLoading = true;
-      });
+      setState(() => userRole = role);
 
       final numepoli = widget.contrat['numepoli'];
       print('📄 [DETAILS] Numéro de police: $numepoli');
@@ -960,9 +958,43 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     );
   }
 
-  Widget? _buildFloatingActions(Color color) {
-    // Plus de boutons dans les détails de contrats
-    return null;
+  Widget _buildFloatingActions(Color color) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              'Télécharger',
+              Icons.download,
+              color,
+              false,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildActionButton(
+              'Partager',
+              Icons.share,
+              color,
+              true,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildActionButton(

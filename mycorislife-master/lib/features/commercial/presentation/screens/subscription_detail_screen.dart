@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
-import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> subscription;
@@ -411,69 +410,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
-  /// Construit la section du questionnaire médical (aligné avec l'expérience client)
-  Widget _buildQuestionnaireMedicalSection(Map<String, dynamic> souscriptionData) {
-    final List<Map<String, dynamic>> reponses = _getQuestionnaireMedicalReponses(souscriptionData);
-    if (reponses.isEmpty) return const SizedBox.shrink();
-
-    final List<Map<String, dynamic>> questions = _getQuestionnaireMedicalQuestions();
-
-    return SizedBox(
-      width: double.infinity,
-      child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        reponses,
-        questions,
-      ),
-    );
-  }
-
-  List<Map<String, dynamic>> _getQuestionnaireMedicalReponses(Map<String, dynamic> souscriptionData) {
-    final reponses = _fullSubscriptionData?['questionnaire_reponses'];
-
-    // 1) Réponses déjà au niveau racine (format liste ou map)
-    if (reponses != null) {
-      if (reponses is List) {
-        return List<Map<String, dynamic>>.from(
-          reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{}),
-        );
-      }
-      if (reponses is Map) {
-        return reponses.values
-            .where((v) => v != null)
-            .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
-            .toList();
-      }
-    }
-
-    // 2) Fallback: dans les données de souscription (questionnaire_medical_reponses / questionnaire_reponses)
-    final fallback = souscriptionData['questionnaire_medical_reponses'] ??
-        souscriptionData['questionnaire_reponses'];
-    if (fallback is List) {
-      return List<Map<String, dynamic>>.from(
-        fallback.map((r) => r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{}),
-      );
-    }
-    if (fallback is Map) {
-      return fallback.values
-          .where((v) => v != null)
-          .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
-          .toList();
-    }
-
-    return [];
-  }
-
-  List<Map<String, dynamic>> _getQuestionnaireMedicalQuestions() {
-    final rawQuestions = _fullSubscriptionData?['questionnaire_questions'] ??
-        _fullSubscriptionData?['questions'];
-    if (rawQuestions is List) {
-      return List<Map<String, dynamic>>.from(
-        rawQuestions.map((q) => q is Map ? Map<String, dynamic>.from(q) : <String, dynamic>{}),
-      );
-    }
-    return [];
-  }
-
   /**
    * ============================================
    * WIDGET _buildProductSection
@@ -538,61 +474,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             _formatDate(dateEffet?.toString()),
             'Date d\'échéance',
             _formatDate(dateEcheance?.toString()),
-          ),
-          _buildCombinedRecapRow(
-            'Date de création',
-            _formatDate(subscription['date_creation']?.toString()),
-            'Statut',
-            isPaid ? 'Contrat' : 'Proposition',
-          ),
-        ],
-      );
-    }
-
-    // Pour CORIS SOLIDARITÉ
-    if (productType.contains('solidarite')) {
-      final capital = souscriptionData['capital'] ?? 0;
-      final periodicite = souscriptionData['periodicite'] ?? 'mensuel';
-      final primeTotale = souscriptionData['prime_totale'] ?? souscriptionData['prime'] ?? 0;
-      final dateEffet = souscriptionData['date_effet'];
-      
-      // Récupérer le nombre de membres
-      final conjoints = souscriptionData['conjoints'] as List? ?? [];
-      final enfants = souscriptionData['enfants'] as List? ?? [];
-      final ascendants = souscriptionData['ascendants'] as List? ?? [];
-
-      return _buildRecapSection(
-        'Produit Souscrit - CORIS SOLIDARITÉ',
-        Icons.emoji_people_outlined,
-        vertSucces,
-        [
-          _buildCombinedRecapRow(
-            'Produit',
-            'CORIS SOLIDARITÉ',
-            'N° Police',
-            subscription['numero_police'] ?? 'N/A',
-          ),
-          _buildCombinedRecapRow(
-            'Capital garanti',
-            _formatMontant(capital),
-            'Périodicité',
-            periodicite.toUpperCase(),
-          ),
-          _buildCombinedRecapRow(
-            'Prime totale',
-            _formatMontant(primeTotale),
-            'Date d\'effet',
-            _formatDate(dateEffet?.toString()),
-          ),
-          _buildCombinedRecapRow(
-            'Nombre de conjoints',
-            conjoints.length.toString(),
-            'Nombre d\'enfants',
-            enfants.length.toString(),
-          ),
-          _buildRecapRow(
-            'Nombre d\'ascendants',
-            ascendants.length.toString(),
           ),
           _buildCombinedRecapRow(
             'Date de création',
@@ -901,16 +782,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ],
           ),
 
-        // RÉCAP: Questionnaire médical (questions + réponses)
-        // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
-        () {
-          final prod = (souscriptionData['produit_nom'] ?? souscriptionData['product_type'] ?? widget.subscription['product_type'] ?? widget.subscription['produit_nom'] ?? '').toString().toLowerCase();
-          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité')) {
-            return _buildQuestionnaireMedicalSection(souscriptionData);
-          }
-          return const SizedBox.shrink();
-        }(),
-
         // Documents
         if (souscriptionData['piece_identite'] != null)
           _buildRecapSection(
@@ -960,8 +831,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            souscriptionData['piece_identite_label'] ??
-                                souscriptionData['piece_identite'] ??
+                            souscriptionData['piece_identite'] ??
                                 'Non téléchargée',
                             style: const TextStyle(
                               color: bleuCoris,

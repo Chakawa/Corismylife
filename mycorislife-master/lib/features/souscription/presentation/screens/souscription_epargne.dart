@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show min;
 
 class SouscriptionEpargnePage extends StatefulWidget {
   final int? subscriptionId; // ID pour modification
@@ -80,8 +79,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   DateTime? _dateFinContrat;
 
   File? _pieceIdentite;
-  // ignore: unused_field
-  String? _pieceIdentiteLabel;
 
   // Mode de paiement
   String? _selectedModePaiement;
@@ -99,13 +96,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Banque Atlantique',
     'Autre',
   ];
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
+  final _numeroCompteController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
-  final List<String> _modePaiementOptions = [
-    'Virement',
-    'Wave',
-    'Orange Money'
-  ];
+  final List<String> _modePaiementOptions = ['Virement', 'Wave', 'Orange Money'];
 
   String _selectedBeneficiaireIndicatif = '+225'; // Côte d\'Ivoire par défaut
   String _selectedContactIndicatif = '+225'; // Côte d\'Ivoire par défaut
@@ -452,65 +445,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     return "${montant.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
-  /// Parse le RIB unifié en ses 3 composantes
-  Map<String, String> _parseRibUnified(String rib) {
-    final parts = rib.split('/').map((s) => s.trim()).toList();
-    return {
-      'code_guichet': parts.isNotEmpty ? parts[0] : '',
-      'numero_compte': parts.length > 1 ? parts[1] : '',
-      'cle_rib': parts.length > 2 ? parts[2] : '',
-    };
-  }
-
-  /// Valide le format du RIB unifié
-  bool _validateRibUnified(String rib) {
-    final parts = _parseRibUnified(rib);
-    final codeGuichet = parts['code_guichet'] ?? '';
-    final numeroCompte = parts['numero_compte'] ?? '';
-    final cleRib = parts['cle_rib'] ?? '';
-    
-    return codeGuichet.length == 4 &&
-        numeroCompte.length == 11 &&
-        cleRib.length == 2 &&
-        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
-        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
-        RegExp(r'^\d{2}$').hasMatch(cleRib);
-  }
-
-  /// Formate l'entrée RIB en temps réel
-  void _formatRibInput() {
-    final text = _ribUnifiedController.text;
-    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    if (onlyDigits.isEmpty) {
-      _ribUnifiedController.text = '';
-      return;
-    }
-
-    // Construire le format: XXXX / XXXXXXXXXXX / XX
-    final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
-      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 4) {
-      buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(4, min(15, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 15) {
-      buffer.write(' / ');
-      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
-    }
-
-    final formatted = buffer.toString();
-    if (formatted != text) {
-      _ribUnifiedController.text = formatted;
-      _ribUnifiedController.selection = TextSelection.fromPosition(
-        TextPosition(offset: formatted.length),
-      );
-    }
-  }
-
   Future<void> _pickDocument() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -769,12 +703,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 4 : 3;
+    final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = capital, step 2 = contrat, step 3 = mode paiement, step 4 = recap
+        // Pour les commerciaux: step 0 = infos client, step 1 = capital, step 2 = contrat, step 3 = mode paiement, step 4 = recap, step 5 = finalisation
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -782,16 +716,20 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          canProceed = true;
+          canProceed = true; // Mode paiement validé avant d'aller au récap
+        } else if (_currentStep == 4) {
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       } else {
-        // Pour les clients: step 0 = capital, step 1 = contrat, step 2 = mode paiement, step 3 = recap
+        // Pour les clients: step 0 = capital, step 1 = contrat, step 2 = mode paiement, step 3 = recap, step 4 = finalisation
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          canProceed = true;
+          canProceed = true; // Mode paiement validé avant d'aller au récap
+        } else if (_currentStep == 3) {
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       }
 
@@ -899,8 +837,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-      _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;
@@ -913,28 +850,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le nom de la banque');
+      if (_banqueController.text.trim().isEmpty || _numeroCompteController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
         return false;
       }
-      if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner votre RIB complet');
-        return false;
-      }
-      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Format RIB invalide. Format attendu: 4444 / 11111111111 / 22');
-        return false;
-      }
-    } else if (_selectedModePaiement == 'Wave' ||
-        _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
       if (phone.length < 8) {
-        _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+        _showErrorSnackBar('Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -994,13 +921,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                ..._parseRibUnified(_ribUnifiedController.text.trim()),
+                'numero_compte': _numeroCompteController.text.trim(),
               }
-            : (_selectedModePaiement == 'Wave' ||
-                    _selectedModePaiement == 'Orange Money')
+            : (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone':
-                        _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
       };
@@ -1220,38 +1145,38 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             ),
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                margin: EdgeInsets.all(20),
                 child: _buildModernProgressIndicator(),
               ),
             ),
           ];
         },
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: _isCommercial
-                      ? [
-                          _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                          _buildStep1(), // Page 1: Sélection capital/prime
-                          _buildStep2(), // Page 2: Informations contrat
-                          _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStep3(), // Page 4: Récapitulatif
-                        ]
-                      : [
-                          _buildStep1(), // Page 0: Sélection capital/prime
-                          _buildStep2(), // Page 1: Informations contrat
-                          _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStep3(), // Page 3: Récapitulatif
-                        ],
-                ),
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: NeverScrollableScrollPhysics(),
+                children: _isCommercial
+                    ? [
+                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                        _buildStep1(), // Page 1: Sélection capital/prime
+                        _buildStep2(), // Page 2: Informations contrat
+                        _buildStepModePaiement(), // Page 3: Mode de paiement
+                        _buildStep3(), // Page 4: Récapitulatif
+                        _buildStep4(), // Page 5: Finalisation
+                      ]
+                    : [
+                        _buildStep1(), // Page 0: Sélection capital/prime
+                        _buildStep2(), // Page 1: Informations contrat
+                        _buildStepModePaiement(), // Page 2: Mode de paiement
+                        _buildStep3(), // Page 3: Récapitulatif
+                        _buildStep4(), // Page 4: Finalisation
+                      ],
               ),
-              _buildNavigationButtons(),
-            ],
-          ),
+            ),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );
@@ -2083,14 +2008,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
-    int? maxLength,
-    Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      maxLength: maxLength,
-      onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
@@ -2136,7 +2057,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }) {
     // Vérifier si la valeur est dans la liste
     final validValue = items.contains(value) ? value : null;
-
+    
     return DropdownButtonFormField<String>(
       value: validValue,
       decoration: InputDecoration(
@@ -2309,8 +2230,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             color: blanc.withAlpha(51),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child:
-                              const Icon(Icons.payment, color: blanc, size: 32),
+                          child: const Icon(Icons.payment, color: blanc, size: 32),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -2357,7 +2277,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     final isSelected = _selectedModePaiement == mode;
                     IconData icon;
                     Color color;
-
+                    
                     if (mode == 'Virement') {
                       icon = Icons.account_balance;
                       color = Colors.blue;
@@ -2378,7 +2298,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             _numeroMobileMoneyController.clear();
                           } else {
                             _banqueController.clear();
-                            _ribUnifiedController.clear();
+                            _numeroCompteController.clear();
                           }
                         });
                       },
@@ -2401,9 +2321,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 color: isSelected ? color : grisLeger,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(icon,
-                                  color: isSelected ? blanc : grisTexte,
-                                  size: 24),
+                              child: Icon(icon, color: isSelected ? blanc : grisTexte, size: 24),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -2411,9 +2329,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 mode,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                                   color: isSelected ? color : grisTexte,
                                 ),
                               ),
@@ -2421,8 +2337,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             if (isSelected)
                               Icon(Icons.check_circle, color: color, size: 24)
                             else
-                              Icon(Icons.circle_outlined,
-                                  color: grisLeger, size: 24),
+                              Icon(Icons.circle_outlined, color: grisLeger, size: 24),
                           ],
                         ),
                       ),
@@ -2453,8 +2368,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             color: bleuCoris.withAlpha(26),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.account_balance,
-                              color: bleuCoris, size: 20),
+                          child: Icon(Icons.account_balance, color: bleuCoris, size: 20),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -2470,8 +2384,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ),
                         filled: true,
                         fillColor: fondCarte,
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       ),
                       hint: Text('Sélectionnez votre banque'),
                       items: _banques.map((String banque) {
@@ -2498,7 +2411,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       },
                     ),
                     const SizedBox(height: 16),
-
+                    
                     // Champ texte personnalisé si "Autre" est sélectionné
                     if (_selectedBanque == 'Autre') ...[
                       _buildModernTextField(
@@ -2508,30 +2421,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ),
                       const SizedBox(height: 16),
                     ],
-
-                    // Informations du RIB
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        'Informations du RIB',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: bleuCoris,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
                     _buildModernTextField(
-                      controller: _ribUnifiedController,
-                      label: 'Numéro RIB complet (XXXX / XXXXXXXXXXX / XX)',
-                      icon: Icons.account_balance,
+                      controller: _numeroCompteController,
+                      label: 'Numéro de compte',
+                      icon: Icons.account_box,
                       keyboardType: TextInputType.number,
-                      onChanged: (_) => _formatRibInput(),
                     ),
-                  ] else if (_selectedModePaiement == 'Wave' ||
-                      _selectedModePaiement == 'Orange Money') ...[
+                  ] else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
                     Text(
                       'Numéro Mobile Money',
                       style: TextStyle(
@@ -2562,8 +2458,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline,
-                            color: Colors.blue.shade700, size: 24),
+                        Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -2587,7 +2482,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
   }
 
-  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -2596,287 +2490,181 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: ListView(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // En-tête de finalisation
+                  // En-tête
                   Container(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [vertSucces, vertSucces.withOpacity(0.8)],
+                        colors: [bleuCoris, bleuSecondaire],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: vertSucces.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.check_circle, color: blanc, size: 56),
-                        SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: blanc.withAlpha(51),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.check_circle_outline, color: blanc, size: 48),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
-                          'Souscription Prête !',
-                          style: TextStyle(
+                          'Finalisation',
+                          style: const TextStyle(
                             color: blanc,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Votre souscription est prête',
                           style: TextStyle(
-                            color: blanc.withOpacity(0.9),
-                            fontSize: 14,
+                            color: blanc.withAlpha(229),
+                            fontSize: 16,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
 
-                  // Montant à payer
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: blanc,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: vertSucces,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: vertSucces.withAlpha(26),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cotisation mensuelle à payer',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          _formatMontant(_selectedPrime ?? 0),
-                          style: TextStyle(
-                            color: vertSucces,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
-
-                  // Titre de la section
-                  Text(
-                    'Que souhaitez-vous faire maintenant ?',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: bleuCoris,
-                    ),
-                  ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 32),
 
                   // Option 1: Payer maintenant
-                  InkWell(
+                  GestureDetector(
                     onTap: () => _showPaymentOptions(),
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: bleuCoris,
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [bleuCoris, bleuSecondaire],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: bleuCoris.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                            color: bleuCoris.withAlpha(77),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: blanc.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
+                              color: blanc.withAlpha(51),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.payment, color: blanc, size: 32),
+                            child: const Icon(Icons.payment, color: blanc, size: 40),
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Maintenant',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: blanc,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: blanc.withOpacity(0.9),
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Payer Maintenant',
+                            style: const TextStyle(
+                              color: blanc,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, color: blanc, size: 20),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Procéder au paiement immédiat de la première prime',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: blanc.withAlpha(229),
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   // Option 2: Payer plus tard
-                  InkWell(
+                  GestureDetector(
                     onTap: () => _saveAsProposition(),
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: blanc,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: orangeWarning, width: 2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: orangeCoris, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                            color: Colors.black.withAlpha(13),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: orangeWarning.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: orangeCoris.withAlpha(26),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.schedule,
-                                color: orangeWarning, size: 32),
+                            child: Icon(Icons.schedule, color: orangeCoris, size: 40),
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Plus Tard',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: orangeWarning,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: grisTexte,
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Payer Plus Tard',
+                            style: TextStyle(
+                              color: grisTexte,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios,
-                              color: orangeWarning, size: 20),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Enregistrer comme proposition et payer ultérieurement',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: grisTexte,
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
                   // Note informative
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: Colors.amber.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(color: Colors.amber.shade200),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: bleuCoris, size: 24),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Information importante',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: bleuCoris,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[900],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
-
-                  // Avertissement de sécurité
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha(26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
+                        Icon(Icons.info_outline, color: Colors.amber.shade700, size: 24),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            'Si vous choisissez "Payer Plus Tard", votre souscription sera enregistrée comme proposition. Vous pourrez la retrouver dans vos propositions et finaliser le paiement quand vous le souhaitez.',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: grisTexte,
+                              color: Colors.amber.shade900,
+                              fontSize: 13,
                               height: 1.4,
                             ),
                           ),
@@ -2884,7 +2672,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
                 ],
               ),
             ),
@@ -2988,7 +2775,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-        : (userData ?? _userData);
+        : (userData ?? {});
 
     return ListView(
       children: [
@@ -3098,23 +2885,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               _buildRecapRow('Mode choisi', _selectedModePaiement!),
               SizedBox(height: 8),
               if (_selectedModePaiement == 'Virement') ...[
-                _buildRecapRow(
-                    'Banque',
-                    _banqueController.text.isNotEmpty
-                        ? _banqueController.text
-                        : 'Non renseigné'),
-                _buildRecapRow(
-                    'Numéro RIB',
-                    _ribUnifiedController.text.isNotEmpty
-                        ? _ribUnifiedController.text
-                        : 'Non renseigné'),
+                _buildRecapRow('Banque',
+                    _banqueController.text.isNotEmpty ? _banqueController.text : 'Non renseigné'),
+                _buildRecapRow('Numéro de compte',
+                    _numeroCompteController.text.isNotEmpty ? _numeroCompteController.text : 'Non renseigné'),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[
-                _buildRecapRow(
-                    'Numéro ${_selectedModePaiement}',
-                    _numeroMobileMoneyController.text.isNotEmpty
-                        ? _numeroMobileMoneyController.text
-                        : 'Non renseigné'),
+                _buildRecapRow('Numéro ${_selectedModePaiement}',
+                    _numeroMobileMoneyController.text.isNotEmpty ? _numeroMobileMoneyController.text : 'Non renseigné'),
               ],
             ],
           ),
@@ -3514,7 +3292,7 @@ class SuccessDialog extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS ÉPARGNE BONUS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS ÉPARGNE BONUS est maintenant actif. Vous recevrez un email de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(

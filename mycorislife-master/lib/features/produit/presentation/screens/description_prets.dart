@@ -141,206 +141,203 @@ Avec notre solution, vous investissez dans l'avenir de vos enfants tout en bén�
           ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Hero Section
-              Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF002B6B), Color(0xFF1e3c72)],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 48.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 12.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6),
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                        child: const Text(
-                          'FINANCEMENT ÉTUDES',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16.0),
-                      const Icon(
-                        Icons.school,
-                        size: 48.0,
-                        color: Colors.white70,
-                      ),
-                      const SizedBox(height: 16.0),
-                      const Text(
-                        'L\'avenir de vos enfants commence ici',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.w300,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Hero Section
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF002B6B), Color(0xFF1e3c72)],
                 ),
               ),
-
-              // Main Content
-              Container(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: MarkdownBody(
-                    data: markdownContent,
-                    styleSheet: MarkdownStyleSheet(
-                      h3: const TextStyle(
-                        fontSize: 28.0,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF002B6B),
-                        height: 1.3,
-                      ),
-                      h4: const TextStyle(
-                        fontSize: 22.0,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF002B6B),
-                        height: 1.4,
-                      ),
-                      p: const TextStyle(
-                        fontSize: 16.0,
-                        height: 1.6,
-                        color: Color(0xFF333333),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      strong: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF002B6B),
-                      ),
-                      listBullet: const TextStyle(
-                        fontSize: 16.0,
-                        color: Color(0xFF3B82F6),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      horizontalRuleDecoration: const BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: Color(0xFFE0E0E0),
-                            width: 2.0,
-                          ),
-                        ),
-                      ),
-                      code: const TextStyle(
-                        backgroundColor: Colors.transparent,
-                        color: Color(0xFF3B82F6),
-                        fontSize: 16.0,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Call to Action Footer
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.grey[100]!,
-                      Colors.grey[50]!,
-                    ],
-                  ),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 48.0),
                 child: Column(
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 12.0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6),
+                        borderRadius: BorderRadius.circular(25.0),
+                      ),
+                      child: const Text(
+                        'FINANCEMENT ÉTUDES',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.0,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Icon(
+                      Icons.school,
+                      size: 48.0,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(height: 16.0),
                     const Text(
-                      'Financez l\'éducation de vos enfants',
+                      'L\'avenir de vos enfants commence ici',
                       style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF002B6B),
+                        color: Colors.white70,
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.w300,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16.0),
-                    // Badge "Bientôt disponible"
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange[200]!),
+                  ],
+                ),
+              ),
+            ),
+
+            // Main Content
+            Container(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: MarkdownBody(
+                  data: markdownContent,
+                  styleSheet: MarkdownStyleSheet(
+                    h3: const TextStyle(
+                      fontSize: 28.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF002B6B),
+                      height: 1.3,
+                    ),
+                    h4: const TextStyle(
+                      fontSize: 22.0,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                      height: 1.4,
+                    ),
+                    p: const TextStyle(
+                      fontSize: 16.0,
+                      height: 1.6,
+                      color: Color(0xFF333333),
+                      fontWeight: FontWeight.w400,
+                    ),
+                    strong: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                    ),
+                    listBullet: const TextStyle(
+                      fontSize: 16.0,
+                      color: Color(0xFF3B82F6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    horizontalRuleDecoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Color(0xFFE0E0E0),
+                          width: 2.0,
+                        ),
                       ),
-                      child: Row(
+                    ),
+                    code: const TextStyle(
+                      backgroundColor: Colors.transparent,
+                      color: Color(0xFF3B82F6),
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Call to Action Footer
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.grey[100]!,
+                    Colors.grey[50]!,
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Financez l\'éducation de vos enfants',
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16.0),
+                  // Badge "Bientôt disponible"
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ce produit sera bientôt disponible. Restez connecté !',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: null, // Bouton désactivé
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[400],
+                        disabledBackgroundColor: Colors.grey[400],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0.0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.orange[700], size: 28),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Ce produit sera bientôt disponible. Restez connecté !',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.orange[900],
-                               fontWeight: FontWeight.w500,
-                              ),
+                          Icon(Icons.school_outlined, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            'SOUSCRIRE MAINTENANT',
+                            style: TextStyle(
+                              fontSize: 17.0,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: null, // Bouton désactivé
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[400],
-                          disabledBackgroundColor: Colors.grey[400],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          elevation: 0.0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.school_outlined, size: 24),
-                            SizedBox(width: 12),
-                            Text(
-                              'SOUSCRIRE MAINTENANT',
-                              style: TextStyle(
-                                fontSize: 17.0,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

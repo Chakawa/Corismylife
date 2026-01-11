@@ -157,7 +157,6 @@ class _SouscriptionSolidaritePageState
   String _selectedBeneficiaireIndicatif = '+221';
   String _selectedContactIndicatif = '+221';
   File? _pieceIdentite;
-  String? _pieceIdentiteLabel;
 
   // 💳 Variables Mode de Paiement
   String? _selectedModePaiement;
@@ -998,26 +997,6 @@ class _SouscriptionSolidaritePageState
         debugPrint('❌ Erreur upload: ${responseData['message']}');
         throw Exception(
             responseData['message'] ?? 'Erreur lors de l\'upload du document');
-      }
-
-      // Récupérer le label original si présent dans la réponse
-      try {
-        final updated = responseData['data']?['subscription'];
-        if (updated != null) {
-          final souscriptiondata = updated['souscriptiondata'];
-          if (souscriptiondata != null) {
-            if (souscriptiondata is Map) {
-              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-            } else if (souscriptiondata is String) {
-              try {
-                final parsed = jsonDecode(souscriptiondata);
-                _pieceIdentiteLabel = parsed['piece_identite_label'];
-              } catch (_) {}
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -2802,13 +2781,6 @@ class _SouscriptionSolidaritePageState
                 _formatDate(_dateEffetContrat),
                 'Prime',
                 '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
-            _buildCombinedRecapRow(
-                'Nombre de conjoints',
-                conjoints.length.toString(),
-                'Nombre d\'enfants',
-                enfants.length.toString()),
-            _buildRecapRow(
-                'Nombre d\'ascendants', ascendants.length.toString()),
           ]),
           const SizedBox(height: 12),
 
@@ -3406,18 +3378,15 @@ class _SuccessDialog extends StatelessWidget {
               child: Icon(isPaid ? Icons.check_circle : Icons.schedule,
                   color: isPaid ? vertSucces : orangeWarning, size: 40)),
           const SizedBox(height: 20),
-          Text(
-            isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF002B6B),
-            ),
-          ),
+          const Text('Souscription Réussie!',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF002B6B))),
           const SizedBox(height: 12),
           Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS SOLIDARITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS SOLIDARITÉ est maintenant actif. Vous recevrez un email de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: const TextStyle(

@@ -90,127 +90,149 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
           ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Image d'en-tête
-              Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF002B6B).withOpacity(0.1),
-                      Colors.white,
-                    ],
-                  ),
-                ),
-                child: Image.asset(
-                  'assets/images/retraitee.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.elderly,
-                          size: 80, color: Color(0xFF002B6B)),
-                    );
-                  },
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Image d'en-tête
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF002B6B).withOpacity(0.1),
+                    Colors.white,
+                  ],
                 ),
               ),
-              // Contenu Markdown
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                child: MarkdownBody(
-                  data: markdownContent,
-                  styleSheet: MarkdownStyleSheet(
-                    h3: const TextStyle(
-                      fontSize: 26.0,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF002B6B),
-                    ),
-                    h4: const TextStyle(
+              child: Image.asset(
+                'assets/images/retraitee.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.elderly, size: 80, color: Color(0xFF002B6B)),
+                  );
+                },
+              ),
+            ),
+            // Contenu Markdown
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              child: MarkdownBody(
+                data: markdownContent,
+                styleSheet: MarkdownStyleSheet(
+                  h3: const TextStyle(
+                    fontSize: 26.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF002B6B),
+                  ),
+                  h4: const TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF002B6B),
+                  ),
+                  p: TextStyle(
+                    fontSize: 16.0,
+                    height: 1.6,
+                    color: Colors.grey[800],
+                  ),
+                  listBullet: const TextStyle(
+                    fontSize: 16.0,
+                    color: Color(0xFFE30613),
+                  ),
+                ),
+              ),
+            ),
+            // Section Souscription
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.grey[100]!,
+                    Colors.grey[50]!,
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Préparez votre retraite dès maintenant',
+                    style: TextStyle(
                       fontSize: 20.0,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
-                    p: TextStyle(
-                      fontSize: 16.0,
-                      height: 1.6,
-                      color: Colors.grey[800],
-                    ),
-                    listBullet: const TextStyle(
-                      fontSize: 16.0,
-                      color: Color(0xFFE30613),
-                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ),
-              // Section Souscription
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.grey[100]!,
-                      Colors.grey[50]!,
-                    ],
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Préparez votre retraite dès maintenant',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF002B6B),
-                      ),
-                      textAlign: TextAlign.center,
+                  const SizedBox(height: 16.0),
+                  // Badge "Bientôt disponible"
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange[200]!),
                     ),
-                    const SizedBox(height: 16.0),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/souscription_retraite');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF002B6B),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          elevation: 3.0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.elderly, size: 24),
-                            SizedBox(width: 12),
-                            Text(
-                              'SOUSCRIRE MAINTENANT',
-                              style: TextStyle(
-                                fontSize: 17.0,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ce produit sera bientôt disponible. Restez connecté !',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: null, // Bouton désactivé
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[400],
+                        disabledBackgroundColor: Colors.grey[400],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0.0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.elderly, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            'SOUSCRIRE MAINTENANT',
+                            style: TextStyle(
+                              fontSize: 17.0,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

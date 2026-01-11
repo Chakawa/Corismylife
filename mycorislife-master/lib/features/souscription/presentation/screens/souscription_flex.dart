@@ -219,7 +219,6 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       '+225'; // Indicatif téléphonique du contact d'urgence
 
   File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
-  String? _pieceIdentiteLabel;
 
   // ============================================
   // OPTIONS ET LISTES DE SÉLECTION
@@ -2731,36 +2730,34 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             ),
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                margin: EdgeInsets.all(20),
                 child: _buildModernProgressIndicator(),
               ),
             ),
           ];
         },
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: _isCommercial
-                      ? [
-                          _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                          _buildStep1(), // Page 1: Simulation
-                          _buildStep2(), // Page 2: Bénéficiaire/Contact
-                          _buildStep3(), // Page 3: Récapitulatif
-                        ]
-                      : [
-                          _buildStep1(), // Page 0: Simulation
-                          _buildStep2(), // Page 1: Bénéficiaire/Contact
-                          _buildStep3(), // Page 2: Récapitulatif
-                        ],
-                ),
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: NeverScrollableScrollPhysics(),
+                children: _isCommercial
+                    ? [
+                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                        _buildStep1(), // Page 1: Simulation
+                        _buildStep2(), // Page 2: Bénéficiaire/Contact
+                        _buildStep3(), // Page 3: Récapitulatif
+                      ]
+                    : [
+                        _buildStep1(), // Page 0: Simulation
+                        _buildStep2(), // Page 1: Bénéficiaire/Contact
+                        _buildStep3(), // Page 2: Récapitulatif
+                      ],
               ),
-              _buildNavigationButtons(),
-            ],
-          ),
+            ),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );
@@ -4359,10 +4356,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           ),
           SizedBox(height: 20),
           SubscriptionRecapWidgets.buildDocumentsSection(
-            pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+            pieceIdentite: _pieceIdentite?.path.split('/').last,
             onDocumentTap: _pieceIdentite != null
                 ? () => _viewLocalDocument(
-                    _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+                    _pieceIdentite!, _pieceIdentite!.path.split('/').last)
                 : null,
           ),
           SizedBox(height: 20),
@@ -4854,27 +4851,6 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
       }
-      
-      // Récupérer le label original si présent dans la réponse
-      try {
-        final updated = responseData['data']?['subscription'];
-        if (updated != null) {
-          final souscriptiondata = updated['souscriptiondata'];
-          if (souscriptiondata != null) {
-            if (souscriptiondata is Map) {
-              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-            } else if (souscriptiondata is String) {
-              try {
-                final parsed = jsonDecode(souscriptiondata);
-                _pieceIdentiteLabel = parsed['piece_identite_label'];
-              } catch (_) {}
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
-      }
-      
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
@@ -5026,7 +5002,7 @@ class SuccessDialog extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat FLEX EMPRUNTEUR est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat FLEX EMPRUNTEUR est maintenant actif. Vous recevrez un email de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(

@@ -137,132 +137,130 @@ La mise en place se fait en plusieurs étapes :
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image d'en-tête réduite
-              Container(
-                width: double.infinity,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                ),
-                child: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/retraite_complementaire_entreprise.jpg',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF5E35B1).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.account_balance,
-                            size: 60,
-                            color: Color(0xFF5E35B1),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image d'en-tête réduite
+            Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
               ),
-
-              // Contenu principal
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: MarkdownBody(
-                  data: markdownContent,
-                  styleSheet: MarkdownStyleSheet(
-                    h3: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF002B6B),
-                    ),
-                    h4: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1e3c72),
-                    ),
-                    p: const TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Colors.black87,
-                    ),
-                    listBullet: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFF002B6B),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Badge "Bientôt disponible"
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  border: Border.all(color: Colors.orange[200]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.orange[700]),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Ce produit sera bientôt disponible. Restez connecté !',
-                        style: TextStyle(
-                          color: Colors.orange[700],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/retraite_complementaire_entreprise.jpg',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF5E35B1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    ),
-                  ],
+                        child: Icon(
+                          Icons.account_balance,
+                          size: 60,
+                          color: Color(0xFF5E35B1),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
 
-              // Bouton de souscription désactivé
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: null, // Bouton désactivé
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[400],
-                      disabledBackgroundColor: Colors.grey[400],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+            // Contenu principal
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: MarkdownBody(
+                data: markdownContent,
+                styleSheet: MarkdownStyleSheet(
+                  h3: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF002B6B),
+                  ),
+                  h4: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1e3c72),
+                  ),
+                  p: const TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: Colors.black87,
+                  ),
+                  listBullet: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF002B6B),
+                  ),
+                ),
+              ),
+            ),
+
+            // Badge "Bientôt disponible"
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                border: Border.all(color: Colors.orange[200]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ce produit sera bientôt disponible. Restez connecté !',
+                      style: TextStyle(
+                        color: Colors.orange[700],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    child: const Text(
-                      'Souscrire maintenant',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white70,
-                      ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Bouton de souscription désactivé
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: null, // Bouton désactivé
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    disabledBackgroundColor: Colors.grey[400],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Souscrire maintenant',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

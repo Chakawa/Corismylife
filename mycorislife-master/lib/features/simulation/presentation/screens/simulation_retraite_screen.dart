@@ -552,40 +552,41 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé dans BASE DE DONNÉES');
         print('      Source: ${isFromServer ? "SERVEUR" : "CACHE LOCAL"}');
-        print('      Prime pour 1M: ${tarifFromDB.prime} FCFA');
+        print('      Capital pour prime ref: ${tarifFromDB.prime} FCFA');
 
-        double primePour1Million = tarifFromDB.prime!;
+        double capitalForRefPrime = tarifFromDB.prime!;
 
-        // Vérifier si les décimales ont été perdues (ex: 6081.0 au lieu de 6081.40012)
+        // Vérifier si les décimales ont été perdues
         // Si la valeur se termine par .0 et que nous avons des données locales plus précises, les utiliser
         bool hasLostDecimals =
-            (primePour1Million == primePour1Million.roundToDouble()) &&
-                (primePour1Million >
+            (capitalForRefPrime == capitalForRefPrime.roundToDouble()) &&
+                (capitalForRefPrime >
                     100); // Éviter les faux positifs pour les petites valeurs
 
         if (hasLostDecimals &&
-            premiumValues.containsKey(duration) &&
-            premiumValues[duration]!.containsKey(periodicity)) {
-          double localPrimePour1M = premiumValues[duration]![periodicity]!;
+            capitalValues.containsKey(duration) &&
+            capitalValues[duration]!.containsKey(periodicity)) {
+          double localCapitalForRef = capitalValues[duration]![periodicity]!;
           // Vérifier que la valeur locale a effectivement plus de précision
-          if ((localPrimePour1M - localPrimePour1M.roundToDouble()).abs() >
+          if ((localCapitalForRef - localCapitalForRef.roundToDouble()).abs() >
               0.01) {
             print(
                 '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
-            print('      Valeur DB: $primePour1Million (arrondie)');
-            print('      Valeur locale: $localPrimePour1M (précise)');
+            print('      Valeur DB: $capitalForRefPrime (arrondie)');
+            print('      Valeur locale: $localCapitalForRef (précise)');
             print(
                 '      → Utilisation des données locales pour plus de précision');
-            primePour1Million = localPrimePour1M;
+            capitalForRefPrime = localCapitalForRef;
           }
         }
 
-        double primeCalculee = (desiredCapital * primePour1Million) / 1000000;
+        double primeReference = primeReferenceValues[periodicity]!;
+        double primeCalculee = (desiredCapital * primeReference) / capitalForRefPrime;
 
-        print('   💰 CALCUL:');
-        print('      Prime = (Capital × PrimePour1M) / 1,000,000');
+        print('   💰 CALCUL (nouvelle méthode):');
+        print('      Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference');
         print(
-            '      Prime = (${desiredCapital.toStringAsFixed(0)} × $primePour1Million) / 1,000,000');
+            '      Prime = (${desiredCapital.toStringAsFixed(0)} × ${primeReference.toStringAsFixed(0)}) / $capitalForRefPrime');
         print('      Prime = ${primeCalculee.toStringAsFixed(2)} FCFA');
 
         print(
@@ -721,42 +722,42 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé dans BASE DE DONNÉES');
         print('      Source: ${isFromServer ? "SERVEUR" : "CACHE LOCAL"}');
-        print('      Prime pour 1M: ${tarifFromDB.prime} FCFA');
+        print('      Capital pour prime ref: ${tarifFromDB.prime} FCFA');
 
-        double primePour1Million = tarifFromDB.prime!;
+        double capitalForRefPrime = tarifFromDB.prime!;
 
-        // Vérifier si les décimales ont été perdues (ex: 6081.0 au lieu de 6081.40012)
+        // Vérifier si les décimales ont été perdues
         // Si la valeur se termine par .0 et que nous avons des données locales plus précises, les utiliser
         bool hasLostDecimals =
-            (primePour1Million == primePour1Million.roundToDouble()) &&
-                (primePour1Million >
+            (capitalForRefPrime == capitalForRefPrime.roundToDouble()) &&
+                (capitalForRefPrime >
                     100); // Éviter les faux positifs pour les petites valeurs
 
         if (hasLostDecimals &&
             capitalValues.containsKey(duration) &&
             capitalValues[duration]!.containsKey(periodicity)) {
-          double localCapitalPour10K = capitalValues[duration]![periodicity]!;
+          double localCapitalForRef = capitalValues[duration]![periodicity]!;
           // Vérifier que la valeur locale a effectivement plus de précision
-          if ((localCapitalPour10K - localCapitalPour10K.roundToDouble()).abs() >
+          if ((localCapitalForRef - localCapitalForRef.roundToDouble()).abs() >
               0.01) {
             print(
                 '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
-            print('      Valeur DB: $primePour1Million (arrondie)');
-            print('      Valeur locale: $localCapitalPour10K (précise)');
+            print('      Valeur DB: $capitalForRefPrime (arrondie)');
+            print('      Valeur locale: $localCapitalForRef (précise)');
             print(
                 '      → Utilisation des données locales pour plus de précision');
-            primePour1Million = localCapitalPour10K;
+            capitalForRefPrime = localCapitalForRef;
           }
         }
 
         // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
         double primeReference = primeReferenceValues[periodicity]!;
-        double capitalCalcule = (paidPremium * primePour1Million) / primeReference;
+        double capitalCalcule = (paidPremium * capitalForRefPrime) / primeReference;
 
         print('   💰 CALCUL (nouvelle méthode):');
         print('      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
         print(
-            '      Capital = (${paidPremium.toStringAsFixed(0)} × $primePour1Million) / ${primeReference.toStringAsFixed(0)}');
+            '      Capital = (${paidPremium.toStringAsFixed(0)} × $capitalForRefPrime) / ${primeReference.toStringAsFixed(0)}');
         print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
 
         print(

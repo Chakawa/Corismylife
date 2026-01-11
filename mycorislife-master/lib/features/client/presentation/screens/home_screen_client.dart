@@ -97,11 +97,9 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.grey[100],
         // L'AppBar est maintenant spécifique à chaque page pour plus de flexibilité
         // Nous la retirons d'ici et la plaçons dans chaque page respective.
-        body: SafeArea(
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: _pages,
-          ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,

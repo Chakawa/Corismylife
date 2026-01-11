@@ -308,34 +308,6 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                     ),
                   ],
                 ),
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.85,
-          height: 64,
-          child: FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.pushNamed(context, '/commissions');
-            },
-            backgroundColor: bleuCoris,
-            elevation: 6,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            icon: const Icon(Icons.calculate_outlined, color: blanc, size: 28),
-            label: const Text(
-              'Mes Commissions en Instance',
-              style: TextStyle(
-                color: blanc,
-                fontWeight: FontWeight.w600,
-                fontSize: 17,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
