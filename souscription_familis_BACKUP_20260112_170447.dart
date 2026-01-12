@@ -4,10 +4,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/services/questionnaire_medical_service.dart';
-import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
-import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
-import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -90,9 +86,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int? _clientAge;
-  
-  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
-  bool _messageCapitalAffiche = false;
 
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
@@ -120,12 +113,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   String _selectedLienParenteUrgence = 'Parent';
 
   File? _pieceIdentite;
-  String? _pieceIdentiteLabel;
-
-  // Questionnaire médical
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
-  Future<bool> Function()? _questionnaireValidate;
 
   // Mode de paiement
   String? _selectedModePaiement;
@@ -143,15 +130,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     'Banque Atlantique',
     'Autre',
   ];
-  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
-  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
-  final List<String> _modePaiementOptions = [
-    'Virement',
-    'Wave',
-    'Orange Money'
-  ];
+  final List<String> _modePaiementOptions = ['Virement', 'Wave', 'Orange Money'];
 
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -167,7 +148,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     18: {
       1: 0.272,
       2: 0.552,
- 
       3: 0.831,
       4: 1.106,
       5: 1.375,
@@ -2288,10 +2268,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   @override
   void initState() {
     super.initState();
-    
-    // ⚡ LISTENER AUTOMATIQUE pour vérification du capital sous risque
-    _capitalController.addListener(_verifierCapitalSousRisqueAuto);
-    
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -2313,19 +2289,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-      // Appeler async après initState
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _prefillFromExistingData();
-      });
+      _prefillFromExistingData();
     } else {
       _prefillSimulationData();
     }
-    
-    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadQuestionnaireMedicalQuestions();
-    });
-    
+
     // Charger les données utilisateur
     _loadUserData();
   }
@@ -2440,7 +2408,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
-  Future<void> _prefillFromExistingData() async {
+  void _prefillFromExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -2623,24 +2591,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       }
 
       debugPrint('✅ Pré-remplissage FAMILIS terminé');
-      
-      // Charger les réponses questionnaire avec libelle du serveur
-      if (widget.subscriptionId != null) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-          if (completReponses != null && completReponses.isNotEmpty) {
-            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
-            if (mounted) {
-              setState(() {
-                _questionnaireMedicalReponses = completReponses;
-              });
-            }
-          }
-        } catch (e) {
-          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
-        }
-      }
     } catch (e) {
       debugPrint('❌ Erreur pré-remplissage FAMILIS: $e');
     }
@@ -2815,7 +2765,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         if (mounted) {
           setState(() {
             _pieceIdentite = File(result.files.single.path!);
-            _pieceIdentiteLabel = result.files.single.name; // ✅ Sauvegarder le vrai nom du fichier
           });
           _showSuccessSnackBar('Document ajouté avec succès');
         }
@@ -3018,260 +2967,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
-  Future<bool> _verifierCapitalSousRisque() async {
-    debugPrint('\n╔══════════════════════════════════════════════════════════╗');
-    debugPrint('║  🏥 CORIS FAMILIS - Vérification Capital Sous Risque     ║');
-    debugPrint('╚══════════════════════════════════════════════════════════╝');
-    
-    // Pour Familis: Capital sous risque = Capital décès
-    final capitalSousRisque = _parseDouble(_capitalController.text);
-    
-    // Déterminer l'âge (client ou commercial)
-    final age = _isCommercial ? (_clientAge ?? 0) : (_age ?? 0);
-    
-    debugPrint('📊 Données de calcul:');
-    debugPrint('   - Type utilisateur: ${_isCommercial ? "Commercial" : "Client"}');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatNumber(capitalSousRisque)} FCFA');
-    debugPrint('   - Capital sous risque = Capital décès = ${_formatNumber(capitalSousRisque)} FCFA');
-    
-    // Vérifier les conditions
-    bool afficherMessage = false;
-    String raison = '';
-    
-    if (age < 45 && capitalSousRisque > 30000000) {
-      afficherMessage = true;
-      raison = 'Âge < 45 ans ET Capital > 30M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else if (age >= 45 && capitalSousRisque > 15000000) {
-      afficherMessage = true;
-      raison = 'Âge ≥ 45 ans ET Capital > 15M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else {
-      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
-      if (age < 45) {
-        debugPrint('   - Âge < 45: Capital doit être > 30M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
-      } else {
-        debugPrint('   - Âge ≥ 45: Capital doit être > 15M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
-      }
-    }
-    
-    if (!afficherMessage) {
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return true; // Pas de message, on peut continuer
-    }
-    
-    debugPrint('🔔 Affichage du dialog de confirmation...');
-    
-    // Marquer que le message est affiché
-    _messageCapitalAffiche = true;
-    
-    // Afficher le dialog
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  const Color(0xFFE8F4FD).withOpacity(0.3),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icône avec fond coloré
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: bleuCoris.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.local_hospital,
-                    color: bleuCoris,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Titre
-                const Text(
-                  'Formulaire Médical',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                // Message principal
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
-                  ),
-                  child: const Text(
-                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: grisTexte,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Souhaitez-vous continuer ?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                // Boutons Oui/Non
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers la page de sélection des produits
-                          await Future.delayed(const Duration(milliseconds: 100));
-                          if (mounted) {
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              '/souscription',
-                              (route) => false,
-                            );
-                          }
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.grey, width: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Non',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(true); // Oui
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: bleuCoris,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Oui',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    
-    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
-    if (result == false) {
-      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return false;
-    }
-    
-    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
-    debugPrint('══════════════════════════════════════════════════════════\n');
-    return true; // L'utilisateur a cliqué "Continuer"
-  }
-
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
-  void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    final age = _isCommercial ? (_clientAge ?? 0) : (_age ?? 0);
-    final capital = _parseDouble(_capitalController.text);
-    
-    if (age == 0 || capital == 0) {
-      debugPrint('⏳ [AUTO FAMILIS] Valeurs incomplètes - Attente saisie complète');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO FAMILIS] Vérification automatique déclenchée!');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatNumber(capital)} FCFA');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && capital > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && capital > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      _verifierCapitalSousRisque();
-    }
-  }
-
-  Future<void> _nextStep() async {
-    debugPrint('\n🔵 [FAMILIS] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
-    // Recap est la dernière étape (ajout du questionnaire médical avant le récap)
+  void _nextStep() {
+    // Include payment step: clients 0..4, commercials 0..5
     final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = récap
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = informations, step 3 = mode paiement, step 4 = récap, step 5 = paiement
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -3280,61 +2983,21 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Commercial] Étape 3 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true;
+          canProceed = true; // Mode paiement validé avant d'aller au récap
         } else if (_currentStep == 4) {
-          // Questionnaire médical: trigger widget validation/save
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
-            if (!ok) return;
-          } else if (_questionnaireMedicalReponses.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          canProceed = true;
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = informations, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = récap
+        // Pour les clients: step 0 = paramètres, step 1 = informations, step 2 = mode paiement, step 3 = récap, step 4 = paiement
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Client] Étape 2 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true;
+          canProceed = true; // Mode paiement validé avant d'aller au récap
         } else if (_currentStep == 3) {
-          // Questionnaire médical client
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            if (!ok) return;
-          } else if (_questionnaireMedicalReponses.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          canProceed = true;
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       }
 
@@ -3446,8 +3109,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-      _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;
@@ -3460,21 +3122,18 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty ||
-          _numeroCompteController.text.trim().isEmpty) {
+      if (_banqueController.text.trim().isEmpty || _numeroCompteController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner les informations bancaires');
         return false;
       }
-    } else if (_selectedModePaiement == 'Wave' ||
-        _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
       if (phone.length < 8) {
-        _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+        _showErrorSnackBar('Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -3543,15 +3202,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
-                'cle_rib': _cleRibController.text.trim(),
               }
-            : (_selectedModePaiement == 'Wave' ||
-                    _selectedModePaiement == 'Orange Money')
+            : (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone':
-                        _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -3644,20 +3299,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
-
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
@@ -3692,20 +3333,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
-
-      // Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
 
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
@@ -3759,27 +3386,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         }
       } else {
         debugPrint('✅ Document uploadé avec succès');
-        
-        // Récupérer le label original si présent dans la réponse
-        try {
-          final updated = responseData['data']?['subscription'];
-          if (updated != null) {
-            final souscriptiondata = updated['souscriptiondata'];
-            if (souscriptiondata != null) {
-              if (souscriptiondata is Map) {
-                _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-              } else if (souscriptiondata is String) {
-                try {
-                  final parsed = jsonDecode(souscriptiondata);
-                  _pieceIdentiteLabel = parsed['piece_identite_label'];
-                } catch (_) {}
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
-        }
-        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -3802,19 +3408,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         );
       }
     }
-  }
-
-  /// Visualise le document pièce d'identité local
-  void _viewLocalDocument(File document, String filename) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocumentViewerPage(
-          localFile: document,
-          documentName: filename,
-        ),
-      ),
-    );
   }
 
   void _showSuccessDialog(bool isPaid) {
@@ -3912,130 +3505,40 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-              SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                margin: const EdgeInsets.all(20),
                 child: _buildModernProgressIndicator(),
               ),
             ),
           ];
         },
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: _isCommercial
-                      ? [
-                          _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                          _buildStep1(), // Page 1: Paramètres
-                          _buildStep2(), // Page 2: Informations
-                          _buildStepModePaiement(), // Page 3: Mode de paiement
-                          QuestionnaireMedicalDynamicWidget(
-                            subscriptionId: widget.subscriptionId,
-                            initialReponses: _questionnaireMedicalReponses,
-                            showActions: false,
-                            registerValidate: (fn) {
-                              _questionnaireValidate = fn;
-                            },
-                            onValidated: (reponses) async {
-                              setState(() {
-                                _questionnaireMedicalReponses = reponses;
-                              });
-
-                              if (widget.subscriptionId != null) {
-                                try {
-                                  final questionnaireService = QuestionnaireMedicalService();
-                                  await questionnaireService.saveReponses(
-                                    subscriptionId: widget.subscriptionId!,
-                                    reponses: reponses,
-                                  );
-                                  debugPrint('✅ Questionnaire médical sauvegardé');
-                                  
-                                  // Fetch complete responses with libelle from server
-                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-                                  if (completReponses != null && completReponses.isNotEmpty) {
-                                    setState(() {
-                                      _questionnaireMedicalReponses = completReponses;
-                                    });
-                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
-                                  }
-                                } catch (e) {
-                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                              }
-                            },
-                            onCancel: () {
-                              _previousStep();
-                            },
-                          ),
-                          _buildStep3(), // Page 5: Récapitulatif
-                        ]
-                      : [
-                          _buildStep1(), // Page 0: Paramètres
-                          _buildStep2(), // Page 1: Informations
-                          _buildStepModePaiement(), // Page 2: Mode de paiement
-                          QuestionnaireMedicalDynamicWidget(
-                            subscriptionId: widget.subscriptionId,
-                            initialReponses: _questionnaireMedicalReponses,
-                            showActions: false,
-                            registerValidate: (fn) {
-                              _questionnaireValidate = fn;
-                            },
-                            onValidated: (reponses) async {
-                              setState(() {
-                                _questionnaireMedicalReponses = reponses;
-                              });
-
-                              if (widget.subscriptionId != null) {
-                                try {
-                                  final questionnaireService = QuestionnaireMedicalService();
-                                  await questionnaireService.saveReponses(
-                                    subscriptionId: widget.subscriptionId!,
-                                    reponses: reponses,
-                                  );
-                                  debugPrint('✅ Questionnaire médical sauvegardé');
-                                  
-                                  // Fetch complete responses with libelle from server
-                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-                                  if (completReponses != null && completReponses.isNotEmpty) {
-                                    setState(() {
-                                      _questionnaireMedicalReponses = completReponses;
-                                    });
-                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
-                                  }
-                                } catch (e) {
-                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                              }
-                            },
-                            onCancel: () {
-                              _previousStep();
-                            },
-                          ),
-                          _buildStep3(), // Page 4: Récapitulatif
-                        ],
-                ),
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: _isCommercial
+                    ? [
+                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                        _buildStep1(), // Page 1: Paramètres
+                        _buildStep2(), // Page 2: Informations
+                        _buildStepModePaiement(), // Page 3: Mode de paiement
+                        _buildStep3(), // Page 4: Récapitulatif
+                        _buildStep4(), // Page 5: Paiement
+                      ]
+                    : [
+                        _buildStep1(), // Page 0: Paramètres
+                        _buildStep2(), // Page 1: Informations
+                        _buildStepModePaiement(), // Page 2: Mode de paiement
+                        _buildStep3(), // Page 3: Récapitulatif
+                        _buildStep4(), // Page 4: Paiement
+                      ],
               ),
-              _buildNavigationButtons(),
-            ],
-          ),
+            ),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );
@@ -4057,7 +3560,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       ),
       child: Row(
         children: [
-          for (int i = 0; i < (_isCommercial ? 6 : 5); i++) ...[
+          for (int i = 0; i < (_isCommercial ? 5 : 4); i++) ...[
             Expanded(
               child: Column(
                 children: [
@@ -4087,18 +3590,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                       ? Icons.person_add
                                       : i == 3
                                           ? Icons.credit_card
-                                          : i == 4
-                                              ? Icons.assignment
-                                              : Icons.assignment_turned_in)
+                                          : Icons.payment)
                           : (i == 0
                               ? Icons.account_balance_wallet
                               : i == 1
                                   ? Icons.person_add
                                   : i == 2
                                       ? Icons.credit_card
-                                      : i == 3
-                                          ? Icons.assignment
-                                          : Icons.assignment_turned_in),
+                                      : Icons.payment),
                       color: i <= _currentStep ? blanc : grisTexte,
                       size: 20,
                     ),
@@ -4114,18 +3613,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     ? 'Informations'
                                     : i == 3
                                         ? 'Paiement'
-                                        : i == 4
-                                            ? 'Questionnaire'
-                                            : 'Récap')
+                                        : 'Paie')
                         : (i == 0
                             ? 'Paramètres'
                             : i == 1
                                 ? 'Informations'
                                 : i == 2
                                     ? 'Paiement'
-                                    : i == 3
-                                        ? 'Questionnaire'
-                                        : 'Récap'),
+                                    : 'Paie'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -4896,7 +4391,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }) {
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
-
+    
     return DropdownButtonFormField<String>(
       value: validValue,
       decoration: InputDecoration(
@@ -5236,65 +4731,34 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ? Color(0xFF00BFFF)
                     : orangeCoris,
             [
-              _buildCombinedRecapRow(
-                  'Mode choisi', _selectedModePaiement!, '', ''),
+              _buildCombinedRecapRow('Mode choisi', _selectedModePaiement!, '', ''),
               const SizedBox(height: 8),
               if (_selectedModePaiement == 'Virement') ...[
-                _buildCombinedRecapRow(
-                    'Banque',
-                    _banqueController.text.isNotEmpty
-                        ? _banqueController.text
-                        : 'Non renseigné',
-                    '',
-                    ''),
-                _buildCombinedRecapRow(
-                    'Code guichet',
-                    _codeGuichetController.text.isNotEmpty
-                        ? _codeGuichetController.text
-                        : 'Non renseigné',
-                    '',
-                    ''),
-                _buildCombinedRecapRow(
-                    'Numéro de compte',
-                    _numeroCompteController.text.isNotEmpty
-                        ? _numeroCompteController.text
-                        : 'Non renseigné',
-                    '',
-                    ''),
-                _buildCombinedRecapRow(
-                    'Clé RIB',
-                    _cleRibController.text.isNotEmpty
-                        ? _cleRibController.text
-                        : 'Non renseigné',
-                    '',
-                    ''),
+                _buildCombinedRecapRow('Banque',
+                    _banqueController.text.isNotEmpty ? _banqueController.text : 'Non renseigné', '', ''),
+                _buildCombinedRecapRow('Numéro de compte',
+                    _numeroCompteController.text.isNotEmpty ? _numeroCompteController.text : 'Non renseigné', '', ''),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[
-                _buildCombinedRecapRow(
-                    'Numéro ${_selectedModePaiement}',
-                    _numeroMobileMoneyController.text.isNotEmpty
-                        ? _numeroMobileMoneyController.text
-                        : 'Non renseigné',
-                    '',
-                    ''),
+                _buildCombinedRecapRow('Numéro ${_selectedModePaiement}',
+                    _numeroMobileMoneyController.text.isNotEmpty ? _numeroMobileMoneyController.text : 'Non renseigné', '', ''),
               ],
             ],
           ),
         if (_selectedModePaiement != null) const SizedBox(height: 20),
 
-        // RÉCAP: Questionnaire médical (questions + réponses)
-        // Passe la liste des questions pour afficher toutes les questions avec réponses
-        SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-          _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
-
-        const SizedBox(height: 20),
-
-        // Section Documents (affiche les documents et permet de les ouvrir)
-        SubscriptionRecapWidgets.buildDocumentsSection(
-          pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
-          onDocumentTap: _pieceIdentite != null
-              ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
-              : null,
+        // Section Documents
+        _buildRecapSection(
+          'Documents',
+          Icons.description,
+          bleuSecondaire,
+          [
+            _buildCombinedRecapRow(
+                'Pièce d\'identité',
+                _pieceIdentite?.path.split('/').last ?? 'Non téléchargée',
+                '',
+                ''),
+          ],
         ),
 
         const SizedBox(height: 20),
@@ -5500,9 +4964,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             if (_currentStep > 0) const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _currentStep == (_isCommercial ? 5 : 4)
-                  ? _showPaymentOptions
-                  : _nextStep,
+                onPressed: _currentStep == (_isCommercial ? 4 : 3)
+                    ? _showPaymentOptions
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -5516,7 +4980,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                        _currentStep == (_isCommercial ? 5 : 4)
+                      _currentStep == (_isCommercial ? 4 : 3)
                           ? 'Finaliser'
                           : 'Suivant',
                       style: const TextStyle(
@@ -5527,7 +4991,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                     const SizedBox(width: 8),
                     Icon(
-                        _currentStep == (_isCommercial ? 5 : 4)
+                      _currentStep == (_isCommercial ? 4 : 3)
                           ? Icons.check
                           : Icons.arrow_forward,
                       color: blanc,
@@ -5566,22 +5030,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     super.dispose();
   }
 
-  /// ✅ Charger les questions du questionnaire médical au démarrage
-  Future<void> _loadQuestionnaireMedicalQuestions() async {
-    try {
-      final questionnaireService = QuestionnaireMedicalService();
-      final questions = await questionnaireService.getQuestions();
-      if (questions.isNotEmpty && mounted) {
-        setState(() {
-          _questionnaireMedicalQuestions = questions;
-        });
-        debugPrint('✅ Questions chargées: ${questions.length} questions');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
-    }
-  }
-
   Widget _buildStepModePaiement() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -5591,7 +5039,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -5611,11 +5059,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: blanc.withAlpha(51),
+                            color: blanc.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child:
-                              const Icon(Icons.payment, color: blanc, size: 32),
+                          child: const Icon(Icons.payment, color: blanc, size: 32),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -5634,7 +5081,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
-                                  color: blanc.withAlpha(229),
+                                  color: blanc.withValues(alpha: 0.9),
                                   fontSize: 14,
                                 ),
                               ),
@@ -5644,297 +5091,214 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
                   // Sélection du mode de paiement
                   Text(
-                    'Mode de paiement *',
+                    'Sélectionnez votre mode de paiement',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Column(
-                      children: _modePaiementOptions.map((mode) {
-                        final isSelected = _selectedModePaiement == mode;
-                        IconData icon;
-                        Color iconColor;
+                  const SizedBox(height: 16),
 
-                        switch (mode) {
-                          case 'Virement':
-                            icon = Icons.account_balance;
-                            iconColor = Colors.blue;
-                            break;
-                          case 'Wave':
-                            icon = Icons.water_drop;
-                            iconColor = Color(0xFF00BFFF);
-                            break;
-                          case 'Orange Money':
-                            icon = Icons.phone_android;
-                            iconColor = Colors.orange;
-                            break;
-                          default:
-                            icon = Icons.payment;
-                            iconColor = bleuCoris;
-                        }
+                  // Options de paiement (style radio moderne)
+                  ...(_modePaiementOptions.map((mode) {
+                    final isSelected = _selectedModePaiement == mode;
+                    IconData icon;
+                    Color color;
+                    
+                    if (mode == 'Virement') {
+                      icon = Icons.account_balance;
+                      color = Colors.blue;
+                    } else if (mode == 'Wave') {
+                      icon = Icons.water_drop;
+                      color = const Color(0xFF00BFFF);
+                    } else {
+                      icon = Icons.phone_android;
+                      color = Colors.orange;
+                    }
 
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedModePaiement = mode;
-                              // Réinitialiser les champs
-                              _banqueController.clear();
-                              _codeGuichetController.clear();
-                              _numeroCompteController.clear();
-                              _cleRibController.clear();
-                              _numeroMobileMoneyController.clear();
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? bleuCoris.withOpacity(0.1)
-                                  : Colors.transparent,
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: _modePaiementOptions.last == mode
-                                      ? Colors.transparent
-                                      : Colors.grey[300]!,
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedModePaiement = mode;
+                          // Réinitialiser les champs non utilisés
+                          if (mode == 'Virement') {
+                            _numeroMobileMoneyController.clear();
+                          } else {
+                            _banqueController.clear();
+                            _numeroCompteController.clear();
+                          }
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isSelected ? color.withValues(alpha: 0.1) : blanc,
+                          border: Border.all(
+                            color: isSelected ? color : grisLeger,
+                            width: isSelected ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? color : grisLeger,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(icon, color: isSelected ? blanc : grisTexte, size: 24),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                mode,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  color: isSelected ? color : grisTexte,
                                 ),
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: iconColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(icon, color: iconColor, size: 28),
-                                ),
-                                SizedBox(width: 16),
-                                Expanded(
-                                  child: Text(
-                                    mode,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
-                                      color: isSelected
-                                          ? bleuCoris
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Icon(Icons.check_circle,
-                                      color: bleuCoris, size: 28),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                            if (isSelected)
+                              Icon(Icons.check_circle, color: color, size: 24)
+                            else
+                              Icon(Icons.circle_outlined, color: grisLeger, size: 24),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList()),
+
+                  const SizedBox(height: 24),
 
                   // Champs conditionnels selon le mode sélectionné
-                  if (_selectedModePaiement != null) ...[
-                    SizedBox(height: 30),
-
-                    // VIREMENT
-                    if (_selectedModePaiement == 'Virement') ...[
-                      Text(
-                        'Informations Bancaires',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: grisTexte,
+                  if (_selectedModePaiement == 'Virement') ...[
+                    Text(
+                      'Informations Bancaires',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: grisTexte,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedBanque,
+                      decoration: InputDecoration(
+                        labelText: 'Nom de la banque',
+                        prefixIcon: Container(
+                          margin: EdgeInsets.all(8),
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: bleuCoris.withAlpha(26),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.account_balance, color: bleuCoris, size: 20),
                         ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: grisLeger),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: grisLeger),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: bleuCoris, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: fondCarte,
+                        contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      hint: Text('Sélectionnez votre banque'),
+                      items: _banques.map((String banque) {
+                        return DropdownMenuItem<String>(
+                          value: banque,
+                          child: Text(banque),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedBanque = newValue;
+                          if (newValue != null && newValue != 'Autre') {
+                            _banqueController.text = newValue;
+                          } else if (newValue == 'Autre') {
+                            _banqueController.text = '';
+                          }
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez sélectionner une banque';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Champ texte personnalisé si "Autre" est sélectionné
+                    if (_selectedBanque == 'Autre') ...[
+                      _buildModernTextField(
+                        controller: _banqueController,
+                        label: 'Nom de votre banque',
+                        icon: Icons.edit,
                       ),
                       const SizedBox(height: 16),
-
-                      // Nom de la banque
-                      DropdownButtonFormField<String>(
-                        value: _selectedBanque,
-                        decoration: InputDecoration(
-                          labelText: 'Nom de la banque *',
-                          prefixIcon:
-                              Icon(Icons.account_balance, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        items: _banques.map((String banque) {
-                          return DropdownMenuItem<String>(
-                            value: banque,
-                            child: Text(banque),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedBanque = newValue;
-                            if (newValue != null && newValue != 'Autre') {
-                              _banqueController.text = newValue;
-                            } else if (newValue == 'Autre') {
-                              _banqueController.text = '';
-                            }
-                          });
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Champ texte personnalisé si "Autre" est sélectionné
-                      if (_selectedBanque == 'Autre') ...[
-                        TextField(
-                          controller: _banqueController,
-                          decoration: InputDecoration(
-                            labelText: 'Nom de votre banque *',
-                            hintText: 'Entrez le nom de votre banque',
-                            prefixIcon: Icon(Icons.edit, color: bleuCoris),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                      ],
-
-                      // Informations du RIB
-                      Text(
-                        'Informations du RIB',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: bleuCoris,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-
-                      // Code guichet (4 chiffres)
-                      TextField(
-                        controller: _codeGuichetController,
-                        decoration: InputDecoration(
-                          labelText: 'Code guichet *',
-                          hintText: '4 chiffres',
-                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Numéro de compte (11 chiffres)
-                      TextField(
-                        controller: _numeroCompteController,
-                        decoration: InputDecoration(
-                          labelText: 'Numéro de compte *',
-                          hintText: '11 chiffres',
-                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 11,
-                      ),
-                      SizedBox(height: 16),
-
-                      // Clé RIB (2 chiffres)
-                      TextField(
-                        controller: _cleRibController,
-                        decoration: InputDecoration(
-                          labelText: 'Clé RIB *',
-                          hintText: '2 chiffres',
-                          prefixIcon: Icon(Icons.key, color: bleuCoris),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 2,
-                      ),
                     ],
-
-                    // WAVE ou ORANGE MONEY
-                    if (_selectedModePaiement == 'Wave' ||
-                        _selectedModePaiement == 'Orange Money') ...[
-                      Text(
-                        'Numéro ${_selectedModePaiement}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: grisTexte,
-                        ),
+                    _buildModernTextField(
+                      controller: _numeroCompteController,
+                      label: 'Numéro de compte',
+                      icon: Icons.account_box,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ] else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
+                    Text(
+                      'Numéro Mobile Money',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: grisTexte,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _numeroMobileMoneyController,
-                        decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone *',
-                          hintText: 'Ex: 0707070707',
-                          prefixIcon: Icon(
-                            Icons.phone_android,
-                            color: _selectedModePaiement == 'Wave'
-                                ? Color(0xFF00BFFF)
-                                : Colors.orange,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildModernTextField(
+                      controller: _numeroMobileMoneyController,
+                      label: 'Numéro de téléphone',
+                      icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
                   ],
 
-                  SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
                   // Note informative
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(color: Colors.blue.shade200),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline,
-                            color: Colors.blue[700], size: 24),
-                        SizedBox(width: 12),
+                        Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
                             style: TextStyle(
+                              color: Colors.blue.shade900,
                               fontSize: 14,
-                              color: Colors.blue[900],
+                              height: 1.4,
                             ),
                           ),
                         ),
@@ -5951,7 +5315,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Page étape 4: Paiement
-  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -5964,19 +5327,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
-                  // En-tête de finalisation
                   Container(
-                    padding: EdgeInsets.all(24),
+                    padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [vertSucces, vertSucces.withOpacity(0.8)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Color(0xFF002B6B),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: vertSucces.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -5984,22 +5342,22 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.check_circle, color: blanc, size: 56),
+                        Icon(Icons.payment, color: Colors.white, size: 48),
                         SizedBox(height: 16),
                         Text(
-                          'Souscription Prête !',
+                          'Finalisation du Paiement',
                           style: TextStyle(
-                            color: blanc,
-                            fontSize: 24,
+                            color: Colors.white,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Choisissez votre méthode de paiement',
                           style: TextStyle(
-                            color: blanc.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
@@ -6008,20 +5366,19 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                   ),
                   SizedBox(height: 24),
-
                   // Montant à payer
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: blanc,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: vertSucces,
+                        color: Color(0xFF10B981),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: vertSucces.withAlpha(26),
+                          color: Color(0xFF10B981).withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -6031,20 +5388,20 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Cotisation ${_selectedPeriodicite.toLowerCase()} à payer',
+                          'Montant à payer',
                           style: TextStyle(
-                            color: grisTexte,
+                            color: Color(0xFF64748B),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
-                          _formatNumber(double.tryParse(_capitalController.text
-                                  .replaceAll(' ', '')) ??
-                              0),
+                          _calculatedPrime != null
+                              ? '${_calculatedPrime!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA'
+                              : '0 FCFA',
                           style: TextStyle(
-                            color: vertSucces,
+                            color: Color(0xFF10B981),
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                           ),
@@ -6053,183 +5410,102 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ),
                   ),
                   SizedBox(height: 24),
-
-                  // Titre de la section
+                  // Méthodes de paiement
                   Text(
-                    'Que souhaitez-vous faire maintenant ?',
+                    'Méthodes de paiement disponibles',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: bleuCoris,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF002B6B),
                     ),
                   ),
-                  SizedBox(height: 20),
-
-                  // Option 1: Payer maintenant
-                  InkWell(
-                    onTap: () => _showPaymentOptions(),
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: bleuCoris,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: bleuCoris.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: blanc.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.payment, color: blanc, size: 32),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Maintenant',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: blanc,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: blanc.withOpacity(0.9),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.arrow_forward_ios, color: blanc, size: 20),
-                        ],
-                      ),
-                    ),
+                  SizedBox(height: 12),
+                  // Wave
+                  _buildPaymentMethodCard(
+                    icon: Icons.phone_android,
+                    title: 'Wave',
+                    description: 'Paiement par SMS',
+                    onTap: () => _processPayment('Wave'),
                   ),
-
-                  SizedBox(height: 16),
-
-                  // Option 2: Payer plus tard
-                  InkWell(
-                    onTap: () => _saveAsProposition(),
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: blanc,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: orangeWarning, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: orangeWarning.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.schedule,
-                                color: orangeWarning, size: 32),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Plus Tard',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: orangeWarning,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: grisTexte,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.arrow_forward_ios,
-                              color: orangeWarning, size: 20),
-                        ],
-                      ),
-                    ),
+                  SizedBox(height: 12),
+                  // Orange Money
+                  _buildPaymentMethodCard(
+                    icon: Icons.monetization_on,
+                    title: 'Orange Money',
+                    description: 'Portefeuille Orange Money',
+                    onTap: () => _processPayment('Orange Money'),
                   ),
-
-                  SizedBox(height: 24),
-
-                  // Note informative
+                  SizedBox(height: 12),
+                  // Payer plus tard
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: Color(0xFFF59E0B).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(
+                        color: Color(0xFFF59E0B).withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: bleuCoris, size: 24),
+                        Icon(Icons.schedule,
+                            color: Color(0xFFF59E0B), size: 20),
                         SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Information importante',
+                                'Payer plus tard',
                                 style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFF59E0B),
                                   fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: bleuCoris,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: 2),
                               Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
+                                'Enregistrez la proposition et payez ultérieurement',
                                 style: TextStyle(
+                                  color: Color(0xFF64748B),
                                   fontSize: 12,
-                                  color: Colors.blue[900],
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            _processPayment('later');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFF59E0B),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                   SizedBox(height: 24),
-
                   // Avertissement de sécurité
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha(26),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -6242,7 +5518,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                             'Vos informations de paiement sont sécurisées et chiffrées.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: grisTexte,
+                              color: Color(0xFF64748B),
                               height: 1.4,
                             ),
                           ),
@@ -6261,7 +5537,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   /// Widget pour afficher les méthodes de paiement
-  // ignore: unused_element
   Widget _buildPaymentMethodCard({
     required IconData icon,
     required String title,
@@ -6433,8 +5708,8 @@ class SuccessDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Text(
-              isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+            const Text(
+              'Souscription Réussie!',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -6444,7 +5719,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS FAMILIS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  ? 'Félicitations! Votre contrat CORIS FAMILIS est maintenant actif. Vous recevrez un email de confirmation sous peu.'
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -6665,4 +5940,5 @@ class PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
+
 }

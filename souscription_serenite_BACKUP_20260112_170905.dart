@@ -6,11 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
-import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
-import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show min;
 
 // Enum pour le type de simulation
 enum SimulationType { parCapital, parPrime }
@@ -69,14 +66,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   late Animation<double> _slideAnimation;
 
   int _currentStep = 0;
-  Future<bool> Function()? _questionnaireValidate;
-  bool _questionnaireCompleted = false;
 
   // Contrôleurs pour la simulation
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
-  final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la simulation
   int _dureeEnMois = 12;
@@ -104,9 +98,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
-  
-  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
-  bool _messageCapitalAffiche = false;
 
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
@@ -139,13 +130,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String _selectedContactIndicatif = '+225';
 
   File? _pieceIdentite;
-  String? _pieceIdentiteLabel;
 
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
+  final _numeroCompteController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -164,10 +154,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     'Banque Atlantique',
     'Autre',
   ];
-
-  // 📋 QUESTIONNAIRE MÉDICAL
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -1091,18 +1077,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-      // Appeler async après initState
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _prefillFromExistingData();
-      });
+      _prefillFromExistingData();
     } else {
       _prefillSimulationData();
     }
-
-    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadQuestionnaireMedicalQuestions();
-    });
 
     // Listeners pour le calcul automatique
     _capitalController.addListener(() {
@@ -1119,89 +1097,80 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       }
     });
 
-    // 🔍 Validation de la durée uniquement à la sortie du champ
-    _dureeFocusNode.addListener(() {
-      if (!_dureeFocusNode.hasFocus) {
-        // Utiliser Future.delayed pour éviter les appels multiples
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (!mounted) return;
-          
-          // Le champ a perdu le focus - valider maintenant
-          if (_dureeController.text.isNotEmpty && _age > 0) {
-            int? duree = int.tryParse(_dureeController.text);
-            if (duree != null) {
-              setState(() {
-                _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
-              });
+    _dureeController.addListener(() {
+      if (_dureeController.text.isNotEmpty && _age > 0) {
+        int? duree = int.tryParse(_dureeController.text);
+        if (duree != null) {
+          setState(() {
+            _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
+          });
 
-              // Validation de la durée minimale
-              if (_selectedUnite == 'années' && duree < 1) {
-                _showProfessionalDialog(
-                  title: 'Durée minimale requise',
-                  message:
-                      'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-              if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
-                _showProfessionalDialog(
-                  title: 'Durée minimale requise',
-                  message:
-                      'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-
-              // Validation de la durée maximale
-              if (_selectedUnite == 'années' && duree > 15) {
-                _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
-                  message:
-                      'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-              if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
-                _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
-                  message:
-                      'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-
-              _effectuerCalcul();
-            }
+          // Validation de la durée minimale
+          if (_selectedUnite == 'années' && duree < 1) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message:
+                  'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
           }
-        });
+          if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
+            _showProfessionalDialog(
+              title: 'Durée minimale requise',
+              message:
+                  'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+
+          // Validation de la durée maximale
+          if (_selectedUnite == 'années' && duree > 15) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message:
+                  'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+          if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
+            _showProfessionalDialog(
+              title: 'Durée maximale dépassée',
+              message:
+                  'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
+              iconColor: orangeWarning,
+              backgroundColor: orangeWarning,
+            );
+            setState(() {
+              _calculatedPrime = 0;
+              _calculatedCapital = 0;
+            });
+            return;
+          }
+
+          _effectuerCalcul();
+        }
       }
     });
 
@@ -1375,7 +1344,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
-  Future<void> _prefillFromExistingData() async {
+  void _prefillFromExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -1599,24 +1568,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
       debugPrint('✅ Pré-remplissage SÉRÉNITÉ terminé avec succès');
 
-      // Charger les réponses questionnaire avec libelle du serveur
-      if (widget.subscriptionId != null) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-          if (completReponses != null && completReponses.isNotEmpty) {
-            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
-            if (mounted) {
-              setState(() {
-                _questionnaireMedicalReponses = completReponses;
-              });
-            }
-          }
-        } catch (e) {
-          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
-        }
-      }
-
       if (mounted) {
         setState(() {});
       }
@@ -1635,7 +1586,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     _capitalController.dispose();
     _primeController.dispose();
     _dureeController.dispose();
-    _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
@@ -1651,22 +1601,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     _clientNumeroPieceController.dispose();
 
     super.dispose();
-  }
-
-  /// ✅ Charger les questions du questionnaire médical au démarrage
-  Future<void> _loadQuestionnaireMedicalQuestions() async {
-    try {
-      final questionnaireService = QuestionnaireMedicalService();
-      final questions = await questionnaireService.getQuestions();
-      if (questions.isNotEmpty && mounted) {
-        setState(() {
-          _questionnaireMedicalQuestions = questions;
-        });
-        debugPrint('✅ Questions chargées: ${questions.length} questions');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
-    }
   }
 
   // Méthode pour charger les données utilisateur
@@ -1940,9 +1874,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // La prime reste celle saisie par l'utilisateur
           _calculatedPrime = prime;
         }
-        
-        // ⚡ Vérifier automatiquement le capital sous risque
-        _verifierCapitalSousRisqueAuto();
       });
     }
   }
@@ -2044,66 +1975,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   // Méthodes pour la souscription
   String _formatMontant(double montant) {
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
-  }
-
-  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
-  /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
-  Map<String, String> _parseRibUnified(String rib) {
-    final parts = rib.split('/').map((p) => p.trim()).toList();
-    return {
-      'code_guichet': parts.length > 0 ? parts[0] : '',
-      'numero_compte': parts.length > 1 ? parts[1] : '',
-      'cle_rib': parts.length > 2 ? parts[2] : '',
-    };
-  }
-
-  /// Valide le format du RIB unifié
-  bool _validateRibUnified(String rib) {
-    final parts = _parseRibUnified(rib);
-    final codeGuichet = parts['code_guichet'] ?? '';
-    final numeroCompte = parts['numero_compte'] ?? '';
-    final cleRib = parts['cle_rib'] ?? '';
-    
-    return codeGuichet.length == 4 &&
-        numeroCompte.length == 11 &&
-        cleRib.length == 2 &&
-        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
-        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
-        RegExp(r'^\d{2}$').hasMatch(cleRib);
-  }
-
-  /// Formate l'entrée RIB en temps réel
-  void _formatRibInput() {
-    final text = _ribUnifiedController.text;
-    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    if (onlyDigits.isEmpty) {
-      _ribUnifiedController.text = '';
-      return;
-    }
-
-    // Construire le format: XXXX / XXXXXXXXXXX / XX
-    final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
-      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 4) {
-      buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(4, min(15, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 15) {
-      buffer.write(' / ');
-      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
-    }
-
-    final formatted = buffer.toString();
-    if (formatted != text) {
-      _ribUnifiedController.text = formatted;
-      _ribUnifiedController.selection = TextSelection.fromPosition(
-        TextPosition(offset: formatted.length),
-      );
-    }
   }
 
   Future<void> _pickDocument() async {
@@ -2245,259 +2116,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
-  Future<bool> _verifierCapitalSousRisque() async {
-    debugPrint('\n╔══════════════════════════════════════════════════════════╗');
-    debugPrint('║  🏥 CORIS SÉRÉNITÉ - Vérification Capital Sous Risque    ║');
-    debugPrint('╚══════════════════════════════════════════════════════════╝');
-    
-    // Pour Coris Sérénité: Capital sous risque = Capital décès
-    final capitalSousRisque = _calculatedCapital;
-    
-    // Déterminer l'âge (client ou commercial)
-    final age = _isCommercial ? _clientAge : _age;
-    
-    debugPrint('📊 Données de calcul:');
-    debugPrint('   - Type utilisateur: ${_isCommercial ? "Commercial" : "Client"}');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatMontant(capitalSousRisque)}');
-    debugPrint('   - Capital sous risque = Capital décès = ${_formatMontant(capitalSousRisque)}');
-    
-    // Vérifier les conditions
-    bool afficherMessage = false;
-    String raison = '';
-    
-    if (age < 45 && capitalSousRisque > 30000000) {
-      afficherMessage = true;
-      raison = 'Âge < 45 ans ET Capital > 30M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else if (age >= 45 && capitalSousRisque > 15000000) {
-      afficherMessage = true;
-      raison = 'Âge ≥ 45 ans ET Capital > 15M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else {
-      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
-      if (age < 45) {
-        debugPrint('   - Âge < 45: Capital doit être > 30M (actuellement: ${_formatMontant(capitalSousRisque)})');
-      } else {
-        debugPrint('   - Âge ≥ 45: Capital doit être > 15M (actuellement: ${_formatMontant(capitalSousRisque)})');
-      }
-    }
-    
-    if (!afficherMessage) {
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return true; // Pas de message, on peut continuer
-    }
-    
-    debugPrint('🔔 Affichage du dialog de confirmation...');
-    
-    // Marquer que le message est affiché
-    _messageCapitalAffiche = true;
-    
-    // Afficher le dialog
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  const Color(0xFFE8F4FD).withOpacity(0.3),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icône avec fond coloré
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: bleuCoris.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.local_hospital,
-                    color: bleuCoris,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Titre
-                const Text(
-                  'Formulaire Médical',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                // Message principal
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
-                  ),
-                  child: const Text(
-                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: grisTexte,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Souhaitez-vous continuer ?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                // Boutons Oui/Non
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers la page de sélection des produits
-                          await Future.delayed(const Duration(milliseconds: 100));
-                          if (mounted) {
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              '/souscription',
-                              (route) => false,
-                            );
-                          }
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.grey, width: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Non',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(true); // Oui
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: bleuCoris,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Oui',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    
-    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
-    if (result == false) {
-      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return false;
-    }
-    
-    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
-    debugPrint('══════════════════════════════════════════════════════════\n');
-    return true; // L'utilisateur a cliqué "Continuer"
-  }
-
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
-  void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    final age = _isCommercial ? _clientAge : _age;
-    
-    if (age == 0 || _calculatedCapital == 0) {
-      debugPrint('⏳ [AUTO SÉRÉNITÉ] Valeurs incomplètes - Attente saisie complète');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO SÉRÉNITÉ] Vérification automatique déclenchée!');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatMontant(_calculatedCapital)}');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && _calculatedCapital > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && _calculatedCapital > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      _verifierCapitalSousRisque();
-    }
-  }
-
-  Future<void> _nextStep() async{
-    debugPrint('\n🔵 [SÉRÉNITÉ] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
-    // Ajout du questionnaire médical: +1 étape avant le récap
-    final maxStep = _isCommercial ? 6 : 5;
+  void _nextStep() {
+    final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap, step 6 = finalisation
+        // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap, step 5 = finalisation
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -2505,70 +2130,26 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true; // Mode paiement validé avant questionnaire médical
+          canProceed = true; // Mode paiement validé avant d'aller au récap
         } else if (_currentStep == 4) {
-          // Questionnaire médical: trigger widget validation/save
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
-            if (!ok) return;
-          } else if (!_questionnaireCompleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          canProceed = true;
-        } else if (_currentStep == 5) {
-          canProceed = true; // Récap, aller à la page de finalisation
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       } else {
-        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap, step 5 = finalisation
+        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap, step 4 = finalisation
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true; // Mode paiement validé avant questionnaire médical
+          canProceed = true; // Mode paiement validé avant d'aller au récap
         } else if (_currentStep == 3) {
-          // Questionnaire médical avant récap — utiliser la validation du widget (modèle Études)
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            if (!ok) return;
-          } else if (!_questionnaireCompleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          canProceed = true;
-        } else if (_currentStep == 4) {
-          canProceed = true; // Récap, aller à la page de finalisation
+          canProceed = true; // Récap, aller à la page de finalisation (paiement)
         }
       }
 
       if (canProceed) {
         // Recalculer avant le récap
-        final recapStep = _isCommercial ? 5 : 4;
+        final recapStep = _isCommercial ? 4 : 3;
         if (_currentStep + 1 == recapStep) {
           try {
             _effectuerCalcul();
@@ -2697,8 +2278,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-      _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;
@@ -2713,28 +2293,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
     if (_selectedModePaiement == 'Virement') {
       if (_banqueController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez sélectionner votre banque.');
+        _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
-      if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
+      if (_numeroCompteController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
         return false;
       }
-      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 4444 / 11111111111 / 22');
-        return false;
-      }
-    } else if (_selectedModePaiement == 'Wave' ||
-        _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-        _showErrorSnackBar(
-            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+        _showErrorSnackBar('Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
         return false;
       }
-      if (!RegExp(r'^[0-9]{8,10}$')
-          .hasMatch(_numeroMobileMoneyController.text.trim())) {
-        _showErrorSnackBar(
-            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+      if (!RegExp(r'^[0-9]{8,10}$').hasMatch(_numeroMobileMoneyController.text.trim())) {
+        _showErrorSnackBar('Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -2807,38 +2379,33 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   onPressed: () => Navigator.pop(context)),
             ),
             SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: _buildModernProgressIndicator())),
+                child: Container(
+                    margin: const EdgeInsets.all(20),
+                    child: _buildModernProgressIndicator())),
           ];
         },
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                  child: PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: _isCommercial
-                          ? [
-                              _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                              _buildStep1(), // Page 1: Simulation
-                              _buildStep2(), // Page 2: Bénéficiaire/Contact
-                              _buildStepModePaiement(), // Page 3: Mode de paiement
-                              _buildStepQuestionnaireMedical(), // Page 4: Questionnaire médical
-                              _buildStep3(), // Page 5: Récapitulatif
-                            ]
-                          : [
-                              _buildStep1(), // Page 0: Simulation
-                              _buildStep2(), // Page 1: Bénéficiaire/Contact
-                              _buildStepModePaiement(), // Page 2: Mode de paiement
-                              _buildStepQuestionnaireMedical(), // Page 3: Questionnaire médical
-                              _buildStep3(), // Page 4: Récapitulatif
-                              _buildStep4(), // Page 5: Finaliser
-                            ])),
-              _buildNavigationButtons(),
-            ],
-          ),
+        body: Column(
+          children: [
+            Expanded(
+                child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: _isCommercial
+                        ? [
+                            _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                            _buildStep1(), // Page 1: Simulation
+                            _buildStep2(), // Page 2: Bénéficiaire/Contact
+                            _buildStep3(), // Page 3: Récapitulatif
+                          ]
+                        : [
+                            _buildStep1(), // Page 0: Simulation
+                            _buildStep2(), // Page 1: Bénéficiaire/Contact
+                            _buildStepModePaiement(), // Page 2: Mode de paiement
+                            _buildStep3(), // Page 3: Récapitulatif
+                            _buildStep4(), // Page 4: Finaliser
+                          ])),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );
@@ -2930,7 +2497,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   Widget _buildModernProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
           color: blanc,
           borderRadius: BorderRadius.circular(16),
@@ -2945,8 +2512,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           Expanded(
               child: Column(children: [
             Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                     color: i <= _currentStep ? bleuCoris : grisLeger,
                     shape: BoxShape.circle,
@@ -2954,67 +2521,59 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         ? [
                             BoxShadow(
                                 color: bleuCoris.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 1))
+                                blurRadius: 8,
+                                offset: const Offset(0, 2))
                           ]
                         : null),
                 child: Icon(
-                  _isCommercial
-                    ? (i == 0
-                      ? Icons.person
-                      : i == 1
-                        ? Icons.monetization_on
-                        : i == 2
-                          ? Icons.person_add
-                          : i == 3
-                            ? Icons.payment
-                            : i == 4
-                              ? Icons.assignment
-                              : i == 5
-                                ? Icons.check_circle
-                                : Icons.credit_card)
-                    : (i == 0
-                      ? Icons.monetization_on
-                      : i == 1
-                        ? Icons.person_add
-                        : i == 2
-                          ? Icons.payment
-                          : i == 3
-                            ? Icons.assignment
-                            : i == 4
-                              ? Icons.check_circle
-                              : Icons.credit_card),
-                  color: i <= _currentStep ? blanc : grisTexte,
-                  size: 20)),
-            const SizedBox(height: 4),
+                    _isCommercial
+                        ? (i == 0
+                            ? Icons.person
+                            : i == 1
+                                ? Icons.monetization_on
+                                : i == 2
+                                    ? Icons.person_add
+                                    : i == 3
+                                        ? Icons.payment
+                                        : i == 4
+                                            ? Icons.check_circle
+                                            : Icons.credit_card)
+                        : (i == 0
+                            ? Icons.monetization_on
+                            : i == 1
+                                ? Icons.person_add
+                                : i == 2
+                                    ? Icons.payment
+                                    : i == 3
+                                        ? Icons.check_circle
+                                        : Icons.credit_card),
+                    color: i <= _currentStep ? blanc : grisTexte,
+                    size: 20)),
+            const SizedBox(height: 6),
             Text(
-              _isCommercial
-                ? (i == 0
-                  ? 'Client'
-                  : i == 1
-                    ? 'Simulation'
-                    : i == 2
-                      ? 'Informations'
-                      : i == 3
-                        ? 'Paiement'
-                        : i == 4
-                          ? 'Questionnaire médical'
-                          : i == 5
-                            ? 'Récapitulatif'
-                            : 'Finaliser')
-                : (i == 0
-                  ? 'Simulation'
-                  : i == 1
-                    ? 'Informations'
-                    : i == 2
-                      ? 'Paiement'
-                      : i == 3
-                        ? 'Questionnaire médical'
-                        : i == 4
-                          ? 'Récapitulatif'
-                          : 'Finaliser'),
+                _isCommercial
+                    ? (i == 0
+                        ? 'Client'
+                        : i == 1
+                            ? 'Simulation'
+                            : i == 2
+                                ? 'Informations'
+                                : i == 3
+                                    ? 'Paiement'
+                                    : i == 4
+                                        ? 'Récapitulatif'
+                                        : 'Finaliser')
+                    : (i == 0
+                        ? 'Simulation'
+                        : i == 1
+                            ? 'Informations'
+                            : i == 2
+                                ? 'Paiement'
+                                : i == 3
+                                    ? 'Récapitulatif'
+                                    : 'Finaliser'),
                 style: TextStyle(
-                  fontSize: 10,
+                    fontSize: 11,
                     fontWeight:
                         i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                     color: i <= _currentStep ? bleuCoris : grisTexte)),
@@ -3022,9 +2581,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (i < (_isCommercial ? 5 : 4))
             Expanded(
                 child: Container(
-                  height: 2,
-                  margin:
-                    const EdgeInsets.only(bottom: 8, left: 6, right: 6),
+                    height: 2,
+                    margin:
+                        const EdgeInsets.only(bottom: 20, left: 6, right: 6),
                     decoration: BoxDecoration(
                         color: i < _currentStep ? bleuCoris : grisLeger,
                         borderRadius: BorderRadius.circular(1)))),
@@ -3414,7 +2973,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 flex: 3,
                 child: TextField(
                   controller: _dureeController,
-                  focusNode: _dureeFocusNode,
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     // Validation en temps réel pour la durée
@@ -3775,7 +3333,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       required ValueChanged<String?> onChanged}) {
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
-
+    
     return DropdownButtonFormField<String>(
       value: validValue,
       onChanged: onChanged,
@@ -3895,47 +3453,52 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec gradient
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [bleuCoris, bleuSecondaire],
+                        colors: [bleuCoris, bleuCoris.withOpacity(0.8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: bleuCoris.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: blanc.withAlpha(51),
-                            borderRadius: BorderRadius.circular(12),
+                            color: blanc.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          child:
-                              const Icon(Icons.payment, color: blanc, size: 32),
+                          child: Icon(Icons.payment, color: blanc, size: 32),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Mode de Paiement',
-                                style: const TextStyle(
+                                'Informations de Paiement',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                   color: blanc,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
-                                  color: blanc.withAlpha(229),
                                   fontSize: 14,
+                                  color: blanc.withOpacity(0.9),
                                 ),
                               ),
                             ],
@@ -3944,15 +3507,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-
-                  // Sélection du mode de paiement
+                  SizedBox(height: 30),
                   Text(
                     'Mode de paiement *',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: grisTexte,
+                      color: bleuCoris,
                     ),
                   ),
                   SizedBox(height: 12),
@@ -3967,7 +3528,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
-
+                        
                         switch (mode) {
                           case 'Virement':
                             icon = Icons.account_balance;
@@ -3990,18 +3551,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
-                              // Réinitialiser les champs
                               _banqueController.clear();
-                              _ribUnifiedController.clear();
+                              _numeroCompteController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? bleuCoris.withOpacity(0.1)
-                                  : Colors.transparent,
+                              color: isSelected ? bleuCoris.withOpacity(0.1) : Colors.transparent,
                               border: Border(
                                 bottom: BorderSide(
                                   color: _modePaiementOptions.last == mode
@@ -4027,18 +3585,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                                     mode,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
-                                      color: isSelected
-                                          ? bleuCoris
-                                          : Colors.black87,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? bleuCoris : Colors.black87,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
-                                  Icon(Icons.check_circle,
-                                      color: bleuCoris, size: 28),
+                                  Icon(Icons.check_circle, color: bleuCoris, size: 28),
                               ],
                             ),
                           ),
@@ -4047,35 +3600,32 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                     ),
                   ),
 
-                  // Champs conditionnels selon le mode sélectionné
                   if (_selectedModePaiement != null) ...[
                     SizedBox(height: 30),
 
-                    // VIREMENT
                     if (_selectedModePaiement == 'Virement') ...[
                       Text(
-                        'Informations Bancaires',
+                        'Informations bancaires',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: grisTexte,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Nom de la banque
+                      SizedBox(height: 16),
+                      
                       DropdownButtonFormField<String>(
                         value: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
-                          prefixIcon:
-                              Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
                         ),
+                        hint: Text('Sélectionnez votre banque'),
                         items: _banques.map((String banque) {
                           return DropdownMenuItem<String>(
                             value: banque,
@@ -4085,16 +3635,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         onChanged: (String? newValue) {
                           setState(() {
                             _selectedBanque = newValue;
-                            if (newValue != null && newValue != 'Autre') {
+                            if (newValue != null) {
                               _banqueController.text = newValue;
-                            } else if (newValue == 'Autre') {
-                              _banqueController.text = '';
                             }
                           });
                         },
                       ),
                       SizedBox(height: 16),
-
+                      
                       // Champ texte personnalisé si "Autre" est sélectionné
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
@@ -4109,53 +3657,40 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
+                          onChanged: (value) {
+                            // Le texte est automatiquement enregistré dans _banqueController
+                          },
                         ),
                         SizedBox(height: 16),
                       ],
-
-                      // Informations du RIB (champ unifié)
-                      Text(
-                        'Informations du RIB',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: bleuCoris,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-
-                      // RIB unifié: XXXX / XXXXXXXXXXX / XX
+                      
                       TextField(
-                        controller: _ribUnifiedController,
-                        onChanged: (_) => _formatRibInput(),
+                        controller: _numeroCompteController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro RIB complet *',
-                          hintText: '4444 / 11111111111 / 22',
-                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          labelText: 'Numéro de compte *',
+                          hintText: 'Entrez votre numéro de compte',
+                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          counterText: '',
                         ),
                         keyboardType: TextInputType.number,
                       ),
                     ],
 
-                    // WAVE ou ORANGE MONEY
-                    if (_selectedModePaiement == 'Wave' ||
-                        _selectedModePaiement == 'Orange Money') ...[
+                    if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
                       Text(
                         'Numéro ${_selectedModePaiement}',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: grisTexte,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
+                      
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
@@ -4163,8 +3698,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.phone_android,
-                            color: _selectedModePaiement == 'Wave'
-                                ? Color(0xFF00BFFF)
+                            color: _selectedModePaiement == 'Wave' 
+                                ? Color(0xFF00BFFF) 
                                 : Colors.orange,
                           ),
                           border: OutlineInputBorder(
@@ -4180,7 +3715,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
                   SizedBox(height: 30),
 
-                  // Note informative
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -4190,8 +3724,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline,
-                            color: Colors.blue[700], size: 24),
+                        Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -4222,287 +3755,181 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: ListView(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // En-tête de finalisation
+                  // En-tête
                   Container(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [vertSucces, vertSucces.withOpacity(0.8)],
+                        colors: [bleuCoris, bleuSecondaire],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: vertSucces.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.check_circle, color: blanc, size: 56),
-                        SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: blanc.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.check_circle_outline, color: blanc, size: 48),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
-                          'Souscription Prête !',
-                          style: TextStyle(
+                          'Finalisation',
+                          style: const TextStyle(
                             color: blanc,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Votre souscription est prête',
                           style: TextStyle(
-                            color: blanc.withOpacity(0.9),
-                            fontSize: 14,
+                            color: blanc.withValues(alpha: 0.9),
+                            fontSize: 16,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
 
-                  // Montant à payer
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: blanc,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: vertSucces,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: vertSucces.withAlpha(26),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cotisation ${_selectedPeriode.toString().split('.').last.toLowerCase()} à payer',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          _formatMontant(_calculatedPrime),
-                          style: TextStyle(
-                            color: vertSucces,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
-
-                  // Titre de la section
-                  Text(
-                    'Que souhaitez-vous faire maintenant ?',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: bleuCoris,
-                    ),
-                  ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 32),
 
                   // Option 1: Payer maintenant
-                  InkWell(
+                  GestureDetector(
                     onTap: () => _showPaymentOptions(),
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: bleuCoris,
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [bleuCoris, bleuSecondaire],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: bleuCoris.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                            color: bleuCoris.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: blanc.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
+                              color: blanc.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.payment, color: blanc, size: 32),
+                            child: const Icon(Icons.payment, color: blanc, size: 40),
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Maintenant',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: blanc,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: blanc.withOpacity(0.9),
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Payer Maintenant',
+                            style: const TextStyle(
+                              color: blanc,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, color: blanc, size: 20),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Procéder au paiement immédiat de la première prime',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: blanc.withValues(alpha: 0.9),
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   // Option 2: Payer plus tard
-                  InkWell(
+                  GestureDetector(
                     onTap: () => _saveAsProposition(),
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: blanc,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: orangeWarning, width: 2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFFF6B00), width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: orangeWarning.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.schedule,
-                                color: orangeWarning, size: 32),
+                            child: Icon(Icons.schedule, color: const Color(0xFFFF6B00), size: 40),
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payer Plus Tard',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: orangeWarning,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: grisTexte,
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Payer Plus Tard',
+                            style: TextStyle(
+                              color: grisTexte,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios,
-                              color: orangeWarning, size: 20),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Enregistrer comme proposition et payer ultérieurement',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: grisTexte,
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
                   // Note informative
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: Colors.amber.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(color: Colors.amber.shade200),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: bleuCoris, size: 24),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Information importante',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: bleuCoris,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[900],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
-
-                  // Avertissement de sécurité
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha(26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
+                        Icon(Icons.info_outline, color: Colors.amber.shade700, size: 24),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            'Si vous choisissez "Payer Plus Tard", votre souscription sera enregistrée comme proposition. Vous pourrez la retrouver dans vos propositions et finaliser le paiement quand vous le souhaitez.',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: grisTexte,
+                              color: Colors.amber.shade900,
+                              fontSize: 13,
                               height: 1.4,
                             ),
                           ),
@@ -4510,74 +3937,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
                 ],
               ),
             ),
           ),
         );
-      },
-    );
-  }
-
-  /// Étape du questionnaire médical
-  Widget _buildStepQuestionnaireMedical() {
-    return QuestionnaireMedicalDynamicWidget(
-      subscriptionId: widget.subscriptionId,
-        initialReponses: _questionnaireMedicalReponses,
-      showActions: false,
-      registerValidate: (fn) {
-        _questionnaireValidate = fn;
-      },
-      onValidated: (reponses) async {
-        setState(() {
-          _questionnaireMedicalReponses = reponses;
-        });
-
-        // If subscriptionId is present, save and then fetch complete responses from server
-        if (widget.subscriptionId != null) {
-          try {
-            final questionnaireService = QuestionnaireMedicalService();
-            
-            // Save responses
-            await questionnaireService.saveReponses(
-              subscriptionId: widget.subscriptionId!,
-              reponses: reponses,
-            );
-            debugPrint('✅ Questionnaire médical sauvegardé');
-            
-            // Fetch complete responses with libelle from server
-            final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-            if (completReponses != null && completReponses.isNotEmpty) {
-              setState(() {
-                _questionnaireMedicalReponses = completReponses;
-                _questionnaireCompleted = true;
-              });
-              debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
-            }
-          } catch (e) {
-            debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          // Marquer comme complété au moins côté client, même si le backend renvoie vide
-          if (!_questionnaireCompleted) {
-            setState(() {
-              _questionnaireCompleted = true;
-            });
-            debugPrint('✅ Questionnaire marqué comme complété (client-side)');
-          }
-        }
-
-        // Validation/save complete — parent will advance after validate returns true
-      },
-      onCancel: () {
-        _previousStep();
       },
     );
   }
@@ -4917,41 +4281,25 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             _buildRecapRow('Mode choisi', _selectedModePaiement!),
             const SizedBox(height: 8),
             if (_selectedModePaiement == 'Virement') ...[
-              _buildRecapRow(
-                  'Banque',
-                  _banqueController.text.isNotEmpty
-                      ? _banqueController.text
-                      : 'Non renseigné'),
-              _buildRecapRow(
-                  'RIB complet',
-                  _ribUnifiedController.text.isNotEmpty
-                      ? _ribUnifiedController.text
-                      : 'Non renseigné'),
+              _buildRecapRow('Banque',
+                  _banqueController.text.isNotEmpty ? _banqueController.text : 'Non renseigné'),
+              _buildRecapRow('Numéro de compte',
+                  _numeroCompteController.text.isNotEmpty ? _numeroCompteController.text : 'Non renseigné'),
             ] else if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
-              _buildRecapRow(
-                  'Numéro ${_selectedModePaiement}',
-                  _numeroMobileMoneyController.text.isNotEmpty
-                      ? _numeroMobileMoneyController.text
-                      : 'Non renseigné'),
+              _buildRecapRow('Numéro ${_selectedModePaiement}',
+                  _numeroMobileMoneyController.text.isNotEmpty ? _numeroMobileMoneyController.text : 'Non renseigné'),
             ],
           ],
         ),
       if (_selectedModePaiement != null) const SizedBox(height: 20),
-      // RÉCAP: Questionnaire médical (questions + réponses)
-      SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
-
-      const SizedBox(height: 20),
-
       SubscriptionRecapWidgets.buildDocumentsSection(
-        pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+        pieceIdentite: _pieceIdentite?.path.split('/').last,
         onDocumentTap: _pieceIdentite != null
             ? () => _viewLocalDocument(
-                _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+                _pieceIdentite!, _pieceIdentite!.path.split('/').last)
             : null,
       ),
-
       const SizedBox(height: 20),
       Container(
         padding: const EdgeInsets.all(16),
@@ -5125,7 +4473,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: _currentStep == (_isCommercial ? 5 : 4)
+              onPressed: _currentStep == (_isCommercial ? 4 : 3)
                   ? _showPaymentOptions
                   : _nextStep,
               style: ElevatedButton.styleFrom(
@@ -5138,9 +4486,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
-                  _currentStep == (_isCommercial ? 5 : 4)
-                    ? 'Finaliser'
-                    : 'Suivant',
+                    _currentStep == (_isCommercial ? 4 : 3)
+                        ? 'Finaliser'
+                        : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -5200,20 +4548,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
-            ? () {
-                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
-                return {
-                  'banque': _banqueController.text.trim(),
-                  'code_guichet': parsed['code_guichet'] ?? '',
-                  'numero_compte': parsed['numero_compte'] ?? '',
-                  'cle_rib': parsed['cle_rib'] ?? '',
-                };
-              }()
+            ? {
+                'banque': _banqueController.text.trim(),
+                'numero_compte': _numeroCompteController.text.trim(),
+              }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone':
-                        _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -5306,20 +4648,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
-
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
@@ -5355,20 +4683,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
-
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
@@ -5398,26 +4712,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
-      }
-
-      // Récupérer le label original si présent dans la réponse
-      try {
-        final updated = responseData['data']?['subscription'];
-        if (updated != null) {
-          final souscriptiondata = updated['souscriptiondata'];
-          if (souscriptiondata != null) {
-            if (souscriptiondata is Map) {
-              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-            } else if (souscriptiondata is String) {
-              try {
-                final parsed = jsonDecode(souscriptiondata);
-                _pieceIdentiteLabel = parsed['piece_identite_label'];
-              } catch (_) {}
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -5515,7 +4809,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS SÉRÉNITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                    ? 'Félicitations! Votre contrat CORIS SÉRÉNITÉ est maintenant actif. Vous recevrez un email de confirmation sous peu.'
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(

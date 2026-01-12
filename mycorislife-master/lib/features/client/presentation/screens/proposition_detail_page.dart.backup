@@ -55,7 +55,6 @@ class PropositionDetailPage extends StatefulWidget {
   PropositionDetailPageState createState() => PropositionDetailPageState();
 }
 
-
 class PropositionDetailPageState extends State<PropositionDetailPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
@@ -99,44 +98,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (!mounted) return;
 
     try {
-      print('📥 Chargement détails proposition ${widget.subscriptionId}...');
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
-
-      print('\n=== DONNÉES REÇUES DU SERVEUR ===');
-      print('✅ Subscription reçue: ${data['subscription'] != null ? 'OUI' : 'NON'}');
-      print('✅ User reçue: ${data['user'] != null ? 'OUI' : 'NON'}');
-      print('✅ questionnaire_reponses reçue: ${data['subscription']?['questionnaire_reponses'] != null ? 'OUI' : 'NON'}');
-      
-      // DEBUG: afficher toute la structure data
-      print('\n🔍 DEBUG: Structure complète data:');
-      print('  Keys au top level: ${data.keys.toList()}');
-      if (data['subscription'] != null) {
-        print('  Keys dans subscription: ${(data['subscription'] as Map).keys.toList()}');
-      }
-      if (data['data'] != null) {
-        print('  Keys dans data.data: ${(data['data'] as Map).keys.toList()}');
-        if ((data['data'] as Map)['subscription'] != null) {
-          print('  Keys dans data.data.subscription: ${((data['data'] as Map)['subscription'] as Map).keys.toList()}');
-        }
-      }
-      
-      // Afficher les questionnaire_reponses
-      final questReponses = data['subscription']?['questionnaire_reponses'];
-      if (questReponses != null) {
-        print('📋 Détail questionnaire_reponses:');
-        if (questReponses is List) {
-          print('  - Type: List avec ${questReponses.length} éléments');
-          questReponses.forEach((r) {
-            if (r is Map && r['libelle'] != null) {
-              print('    Q: "${r['libelle']}" → ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
-            }
-          });
-        } else {
-          print('  - Type: ${questReponses.runtimeType} (non liste)');
-        }
-      } else {
-        print('⚠️ questionnaire_reponses est null');
-      }
 
       developer.log('=== DONNÉES REÇUES ===');
       developer.log('Subscription: ${data['subscription']}');
@@ -162,7 +124,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       }
     } catch (e) {
       developer.log('Erreur: $e', error: e);
-      print('❌ Erreur chargement: $e');
 
       if (!mounted) return;
 
@@ -426,30 +387,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
                   const SizedBox(height: 20),
 
-                    // 📋 RÉCAP: Questionnaire médical (questions + réponses) —
-                    // n'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
-                    Builder(builder: (context) {
-                      final productType = _getProductType().toLowerCase();
-                      if (productType.contains('etude') ||
-                          productType.contains('familis') ||
-                          productType.contains('serenite') ||
-                          productType.contains('sérénité')) {
-                        return Column(
-                          children: [
-                            // Passe les questions si disponibles (_getQuestionnaireMedicalQuestions)
-                            SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-                              _getQuestionnaireMedicalReponses(), _getQuestionnaireMedicalQuestions()),
-                            const SizedBox(height: 20),
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
+                  // Documents
+                  _buildDocumentsSection(),
 
-                    // Documents
-                    _buildDocumentsSection(),
-
-                    const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Avertissement
                   SubscriptionRecapWidgets.buildVerificationWarning(),
@@ -620,13 +561,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       final capital = details['capital'] ?? 0;
       final periodicite = details['periodicite'] ?? 'mensuel';
       final primeTotale = details['prime_totale'] ?? 0;
-      
-      // Récupérer le nombre de membres
-      final conjoints = details['conjoints'] as List? ?? [];
-      final enfants = details['enfants'] as List? ?? [];
-      final ascendants = details['ascendants'] as List? ?? [];
 
-      // Afficher le produit avec les membres
+      // Afficher SEULEMENT le produit (sans les membres)
       return SubscriptionRecapWidgets.buildRecapSection(
         'Produit Souscrit',
         Icons.emoji_people_outlined,
@@ -639,14 +575,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               SubscriptionRecapWidgets.formatMontant(capital),
               'Prime $periodicite',
               SubscriptionRecapWidgets.formatMontant(primeTotale)),
-          SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Nombre de conjoints',
-              conjoints.length.toString(),
-              'Nombre d\'enfants',
-              enfants.length.toString()),
-          SubscriptionRecapWidgets.buildRecapRow(
-              'Nombre d\'ascendants',
-              ascendants.length.toString()),
         ],
       );
     }
@@ -1054,14 +982,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   Widget _buildDocumentsSection() {
     // Chercher piece_identite dans tous les endroits possibles
     String? pieceIdentite;
-    String? pieceIdentiteLabel; // Nom original du fichier
 
     // 1. Dans souscriptiondata directement (le plus commun)
     final souscriptiondata = _subscriptionData?['souscriptiondata'];
     if (souscriptiondata != null) {
-      // Priorité au label original (piece_identite_label)
-      pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-      // Fallback au nom stocké si pas de label
+      // Essayer différentes clés possibles
       pieceIdentite = souscriptiondata['piece_identite'] ??
           souscriptiondata['pieceIdentite'] ??
           souscriptiondata['document'];
@@ -1082,7 +1007,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     // 3. Dans les détails (via getSubscriptionDetails)
     if (pieceIdentite == null) {
       final details = _getSubscriptionDetails();
-      pieceIdentiteLabel ??= details['piece_identite_label'];
       pieceIdentite = details['piece_identite'] ??
           details['pieceIdentite'] ??
           details['document'];
@@ -1116,41 +1040,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     developer.log('hasDocument: $hasDocument');
 
-    // Utiliser le label original si présent, sinon extraire le nom du fichier depuis le chemin
-    String? displayLabel;
-    if (pieceIdentiteLabel != null && pieceIdentiteLabel.toString().isNotEmpty) {
-      displayLabel = pieceIdentiteLabel;
-    } else if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
-      final s = pieceIdentite.toString();
-      // Extraire seulement le nom du fichier depuis un chemin Windows ou Unix
-      displayLabel = s.split(RegExp(r'[\\/]+')).last;
-    } else {
-      displayLabel = null;
-    }
-    // Lors du tap, on doit passer le nom réel du fichier (piece_identite)
-    final actualFilename = hasDocument ? pieceIdentite : null;
-
-    // Try to collect a documents list from souscriptiondata or details
-    List<Map<String, dynamic>>? docsList;
-    if (souscriptiondata != null) {
-      final docs = souscriptiondata['documents'];
-      if (docs is List) {
-        docsList = docs.map((d) => d is Map ? Map<String, dynamic>.from(d as Map) : <String, dynamic>{}).toList();
-      } else if (docs is Map) {
-        // convert map entries to list
-        docsList = docs.entries.map((e) => {'label': e.key, 'path': e.value}).toList();
-      }
-    }
-
     return SubscriptionRecapWidgets.buildDocumentsSection(
-      pieceIdentite: displayLabel,
-      documents: docsList,
-      onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
-      onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, pieceIdentiteLabel) : null,
+      pieceIdentite: hasDocument ? pieceIdentite : null,
+      onDocumentTap: hasDocument ? () => _viewDocument(pieceIdentite) : null,
     );
   }
 
-  void _viewDocument(String? documentName, String? displayLabel) {
+  void _viewDocument(String? documentName) {
     developer.log('_viewDocument called with: $documentName');
 
     if (documentName == null ||
@@ -1184,7 +1080,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
           documentName: documentName,
-          displayLabel: displayLabel,
           subscriptionId: widget.subscriptionId,
         ),
       ),
@@ -1211,54 +1106,48 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             Row(
               children: [
                 // Bouton Imprimer
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: bleuCoris.withValues(alpha: 0.3), width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PdfViewerPage(
+                                  subscriptionId: widget.subscriptionId),
+                            ),
+                          );
+                        },
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            final productType = _getProductType().toLowerCase();
-                            final excludeQ = productType.contains('etude') ||
-                                productType.contains('familis') ||
-                                productType.contains('serenite') ||
-                                productType.contains('sérénité');
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PdfViewerPage(
-                                    subscriptionId: widget.subscriptionId,
-                                    excludeQuestionnaire: excludeQ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.print_outlined,
+                                color: bleuCoris, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Imprimer',
+                              style: TextStyle(
+                                color: bleuCoris,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.print_outlined,
-                                  color: bleuCoris, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Imprimer',
-                                style: TextStyle(
-                                  color: bleuCoris,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
+                ),
                 const SizedBox(width: 12),
                 // Bouton Modifier
                 Expanded(
@@ -1627,77 +1516,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         backgroundColor: vertSucces,
       ),
     );
+
+    // TODO: Implémenter la logique de paiement réelle
   }
-
-  /// Récupère les réponses au questionnaire médical depuis questionnaire_reponses
-  List<Map<String, dynamic>> _getQuestionnaireMedicalReponses() {
-    // Essayer d'abord le champ questionnaire_reponses (retourné par le serveur)
-    final reponses = _subscriptionData?['questionnaire_reponses'];
-    
-    print('🔍 _getQuestionnaireMedicalReponses() appelé');
-    print('  - _subscriptionData type: ${_subscriptionData.runtimeType}');
-    print('  - reponses (questionnaire_reponses): $reponses');
-    
-    if (reponses == null) {
-      print('  ⚠️ questionnaire_reponses est null, cherche dans souscriptiondata...');
-      // Fallback: chercher dans souscriptiondata
-      final souscriptiondata = _subscriptionData?['souscriptiondata'];
-      if (souscriptiondata != null && souscriptiondata['questionnaire_medical_reponses'] != null) {
-        final fallback = souscriptiondata['questionnaire_medical_reponses'];
-        print('  ✅ Trouvé questionnaire_medical_reponses dans souscriptiondata: $fallback');
-        if (fallback is List) {
-          return List<Map<String, dynamic>>.from(
-            fallback.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
-          );
-        }
-      }
-      print('  ❌ Aucun questionnaire trouvé');
-      return [];
-    }
-
-    print('  ✅ questionnaire_reponses trouvé: ${reponses.runtimeType}');
-
-    // Si c'est déjà une liste, la retourner
-    if (reponses is List) {
-      print('  ✅ Format liste détecté: ${reponses.length} réponses');
-      reponses.forEach((r) {
-        if (r is Map && r['libelle'] != null) {
-          print('    - Q: "${r['libelle']}" → R: ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
-        }
-      });
-      return List<Map<String, dynamic>>.from(
-        reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
-      );
-    }
-
-    // Si le backend renvoie un Map (index => objet), le convertir en liste
-    print('  ⚠️ Format inattendu: ${reponses.runtimeType}');
-    if (reponses is Map) {
-      print('  🔄 Conversion Map → List...');
-      return reponses.values
-          .where((v) => v != null)
-          .map((v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{})
-          .toList();
-    }
-
-    // Pas de format reconnu -> retourner liste vide
-    return [];
-  }
-
-  /// Tentative de récupération des questions depuis les données chargées
-  List<Map<String, dynamic>> _getQuestionnaireMedicalQuestions() {
-    try {
-      final questions = _subscriptionData?['questionnaire_questions'] ?? _subscriptionData?['questions'];
-      if (questions is List) {
-        return List<Map<String, dynamic>>.from(
-          questions.map((q) => q is Map ? Map<String, dynamic>.from(q) : {}),
-        );
-      }
-    } catch (e) {
-      print('⚠️ _getQuestionnaireMedicalQuestions erreur: $e');
-    }
-    return [];
-  }
-
-  // Fin de la classe PropositionDetailPageState
 }

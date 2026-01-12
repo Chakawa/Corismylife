@@ -3,41 +3,28 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
-import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
-import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
-import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
-import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show min;
+import 'package:mycorislife/services/subscription_service.dart';
+import '../../../client/presentation/screens/document_viewer_page.dart';
+import '../../../../services/connectivity_service.dart';
+import '../../../../services/local_data_service.dart';
+import '../../../../core/widgets/subscription_recap_widgets.dart';
 
 // Enum pour le type de simulation
-enum SimulationType { parCapital, parPrime }
+enum SimulationType { parPrime, parCapital }
 
 enum Periode { mensuel, trimestriel, semestriel, annuel }
 
-// Couleurs partagées (top-level pour accessibilité globale)
-const Color bleuCoris = Color(0xFF002B6B);
-const Color rougeCoris = Color(0xFFE30613);
-const Color bleuSecondaire = Color(0xFF1E4A8C);
-const Color blanc = Colors.white;
-const Color fondCarte = Color(0xFFF8FAFC);
-const Color grisTexte = Color(0xFF64748B);
-const Color grisLeger = Color(0xFFF1F5F9);
-const Color vertSucces = Color(0xFF10B981);
-const Color orangeWarning = Color(0xFFF59E0B);
-const Color orangeCoris = Color(0xFFFF6B00);
-
-/// Page de souscription pour le produit CORIS SÉRÉNITÉ
-/// Permet de souscrire à une assurance vie avec garantie décès
+/// Page de souscription pour le produit CORIS RETRAITE
+/// Permet de souscrire à une assurance retraite
 ///
 /// [simulationData] : Données de simulation (capital, prime, durée, périodicité)
 /// [clientId] : ID du client si souscription par commercial (optionnel)
 /// [clientData] : Données du client si souscription par commercial (optionnel)
 /// [subscriptionId] : ID de la souscription si modification d'une proposition existante
 /// [existingData] : Données existantes de la proposition à modifier
-class SouscriptionSerenitePage extends StatefulWidget {
+class SouscriptionRetraitePage extends StatefulWidget {
   final Map<String, dynamic>? simulationData;
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
@@ -46,7 +33,7 @@ class SouscriptionSerenitePage extends StatefulWidget {
   final Map<String, dynamic>?
       existingData; // Données existantes pour modification
 
-  const SouscriptionSerenitePage({
+  const SouscriptionRetraitePage({
     super.key,
     this.simulationData,
     this.clientId,
@@ -56,12 +43,24 @@ class SouscriptionSerenitePage extends StatefulWidget {
   });
 
   @override
-  SouscriptionSerenitePageState createState() =>
-      SouscriptionSerenitePageState();
+  SouscriptionRetraitePageState createState() =>
+      SouscriptionRetraitePageState();
 }
 
-class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
+class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     with TickerProviderStateMixin {
+  // Charte graphique CORIS
+  static const Color bleuCoris = Color(0xFF002B6B);
+  static const Color rougeCoris = Color(0xFFE30613);
+  static const Color bleuSecondaire = Color(0xFF1E4A8C);
+  static const Color blanc = Colors.white;
+  static const Color fondCarte = Color(0xFFF8FAFC);
+  static const Color grisTexte = Color(0xFF64748B);
+  static const Color grisLeger = Color(0xFFF1F5F9);
+  static const Color vertSucces = Color(0xFF10B981);
+  static const Color orangeWarning = Color(0xFFF59E0B);
+  static const Color orangeCoris = Color(0xFFFF6B00);
+
   final PageController _pageController = PageController();
   late AnimationController _animationController;
   late AnimationController _progressController;
@@ -69,21 +68,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   late Animation<double> _slideAnimation;
 
   int _currentStep = 0;
-  Future<bool> Function()? _questionnaireValidate;
-  bool _questionnaireCompleted = false;
+  bool _useLocalData = false;
 
   // Contrôleurs pour la simulation
-  final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _primeController = TextEditingController();
+  final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
   final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la simulation
-  int _dureeEnMois = 12;
-  String _selectedUnite = 'mois';
-  Periode _selectedPeriode = Periode.annuel;
-  SimulationType _currentSimulation = SimulationType.parCapital;
-  String _selectedSimulationType = 'Par Capital';
+  int _dureeEnAnnees = 5;
+  String _selectedUnite = 'années';
+  Periode? _selectedPeriode; // Initialisé dans initState
+  SimulationType _currentSimulation = SimulationType.parPrime;
+  String _selectedSimulationType = 'Par Prime';
   double _calculatedPrime = 0.0;
   double _calculatedCapital = 0.0;
   final List<String> _indicatifs = [
@@ -104,9 +102,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
-  
-  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
-  bool _messageCapitalAffiche = false;
 
   // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
@@ -132,6 +127,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String _selectedLienParente = 'Enfant';
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
+  final _dateEffetController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
@@ -141,17 +137,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
 
-  // 💳 VARIABLES MODE DE PAIEMENT
+  // Mode de paiement
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
-  final _numeroMobileMoneyController = TextEditingController();
-  final List<String> _modePaiementOptions = [
-    'Virement',
-    'Wave',
-    'Orange Money'
-  ];
   final List<String> _banques = [
     'CORIS BANK',
     'SGCI',
@@ -164,10 +153,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     'Banque Atlantique',
     'Autre',
   ];
-
-  // 📋 QUESTIONNAIRE MÉDICAL
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
+  final _codeGuichetController = TextEditingController();
+  final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
+  final _numeroMobileMoneyController = TextEditingController();
+  final List<String> _modePaiementOptions = [
+    'Virement',
+    'Wave',
+    'Orange Money'
+  ];
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -180,897 +174,528 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   ];
   final storage = FlutterSecureStorage();
 
-  // Tableau tarifaire (identique à la simulation)
-  final Map<int, Map<int, double>> _tarifaire = {
+  // Primes minimales par périodicité (prime de référence)
+  final Map<String, int> minPrimes = {
+    'mensuel': 10000,
+    'trimestriel': 30000,
+    'semestriel': 60000,
+    'annuel': 120000,
+  };
+
+  // Valeurs du capital à terme pour une prime de référence (10k / 30k / 60k / 120k)
+  final Map<int, Map<String, double>> capitalValues = {
+    5: {
+      'mensuel': 605463.405379,
+      'trimestriel': 615056.504123,
+      'semestriel': 620331.447928,
+      'annuel': 625666.388106
+    },
+    6: {
+      'mensuel': 739294.364577,
+      'trimestriel': 752266.795228,
+      'semestriel': 758213.774878,
+      'annuel': 764734.523010
+    },
+    7: {
+      'mensuel': 877714.810967,
+      'trimestriel': 891453.723199,
+      'semestriel': 898104.646416,
+      'annuel': 908670.042636
+    },
+    8: {
+      'mensuel': 1020882.065727,
+      'trimestriel': 1038327.916972,
+      'semestriel': 1045708.931812,
+      'annuel': 1057643.305449
+    },
+    9: {
+      'mensuel': 1168958.840396,
+      'trimestriel': 1190342.707527,
+      'semestriel': 1190479.470698,
+      'annuel': 1211830.632461
+    },
+    10: {
+      'mensuel': 1322113.421481,
+      'trimestriel': 1344587.648202,
+      'semestriel': 1356596.978444,
+      'annuel': 1371414.515917
+    },
+    11: {
+      'mensuel': 1480519.861382,
+      'trimestriel': 1507300.829349,
+      'semestriel': 1520248.598961,
+      'annuel': 1536583.835295
+    },
+    12: {
+      'mensuel': 1644358.175855,
+      'trimestriel': 1675729.671837,
+      'semestriel': 1689628.026197,
+      'annuel': 1707534.080851
+    },
+    13: {
+      'mensuel': 1813844.548229,
+      'trimestriel': 1846605.003713,
+      'semestriel': 1861472.384183,
+      'annuel': 1880974.450438
+    },
+    14: {
+      'mensuel': 1989081.640624,
+      'trimestriel': 2026309.492304,
+      'semestriel': 2042794.643842,
+      'annuel': 2063978.367524
+    },
+    15: {
+      'mensuel': 2170358.312385,
+      'trimestriel': 2213524.637995,
+      'semestriel': 2230463.182648,
+      'annuel': 2253387.421708
+    },
+    16: {
+      'mensuel': 2361663.347047,
+      'trimestriel': 2402847.877909,
+      'semestriel': 2424700.120313,
+      'annuel': 2449425.792789
+    },
+    17: {
+      'mensuel': 2559654.057923,
+      'trimestriel': 2602620.867097,
+      'semestriel': 2625735.350796,
+      'annuel': 2652329.506857
+    },
     18: {
-      12: 211.068,
-      24: 107.682,
-      36: 73.248,
-      48: 56.051,
-      60: 45.749,
-      72: 38.895,
-      84: 34.010,
-      96: 30.356,
-      108: 27.524,
-      120: 25.266,
-      132: 23.426,
-      144: 21.900,
-      156: 20.616,
-      168: 19.521,
-      180: 18.578
+      'mensuel': 2764594.793679,
+      'trimestriel': 2809385.910906,
+      'semestriel': 2833806.814345,
+      'annuel': 2862326.710918
     },
     19: {
-      12: 216.612,
-      24: 110.520,
-      36: 75.183,
-      48: 57.535,
-      60: 46.962,
-      72: 39.927,
-      84: 34.913,
-      96: 31.163,
-      108: 28.256,
-      120: 25.939,
-      132: 24.051,
-      144: 22.485,
-      156: 21.166,
-      168: 20.043,
-      180: 19.075
+      'mensuel': 2976698.105187,
+      'trimestriel': 3019148.619548,
+      'semestriel': 3044903.438595,
+      'annuel': 3079677.957121
     },
     20: {
-      12: 222.215,
-      24: 113.384,
-      36: 77.134,
-      48: 59.030,
-      60: 48.183,
-      72: 40.966,
-      84: 35.822,
-      96: 31.976,
-      108: 28.993,
-      120: 26.616,
-      132: 24.679,
-      144: 23.073,
-      156: 21.721,
-      168: 20.568,
-      180: 19.576
+      'mensuel': 3196225.032957,
+      'trimestriel': 3240492.134693,
+      'semestriel': 3267645.786918,
+      'annuel': 3304636.466941
     },
     21: {
-      12: 227.940,
-      24: 116.309,
-      36: 79.126,
-      48: 60.555,
-      60: 49.429,
-      72: 42.026,
-      84: 36.750,
-      96: 32.804,
-      108: 29.745,
-      120: 27.307,
-      132: 25.320,
-      144: 23.673,
-      156: 22.286,
-      168: 21.104,
-      180: 20.086
+      'mensuel': 3423435.402467,
+      'trimestriel': 3469582.672868,
+      'semestriel': 3498184.113972,
+      'annuel': 3537468.588654
     },
     22: {
-      12: 233.824,
-      24: 119.313,
-      36: 81.171,
-      48: 62.121,
-      60: 50.708,
-      72: 43.114,
-      84: 37.703,
-      96: 33.655,
-      108: 30.518,
-      120: 28.017,
-      132: 25.979,
-      144: 24.289,
-      156: 22.867,
-      168: 21.655,
-      180: 20.612
+      'mensuel': 3658598.135282,
+      'trimestriel': 3701991.400963,
+      'semestriel': 3736791.284233,
+      'annuel': 3778449.797473
     },
     23: {
-      12: 239.895,
-      24: 122.413,
-      36: 83.281,
-      48: 63.737,
-      60: 52.028,
-      72: 44.238,
-      84: 38.686,
-      96: 34.534,
-      108: 31.315,
-      120: 28.749,
-      132: 26.659,
-      144: 24.926,
-      156: 23.467,
-      168: 22.224,
-      180: 21.154
+      'mensuel': 3901991.563746,
+      'trimestriel': 3947234.413457,
+      'semestriel': 3983749.705453,
+      'annuel': 4027865.351705
     },
     24: {
-      12: 246.167,
-      24: 125.616,
-      36: 85.461,
-      48: 65.407,
-      60: 53.393,
-      72: 45.399,
-      84: 39.702,
-      96: 35.442,
-      108: 32.139,
-      120: 29.507,
-      132: 27.363,
-      144: 25.584,
-      156: 24.088,
-      168: 22.813,
-      180: 21.716
+      'mensuel': 4153903.762206,
+      'trimestriel': 4201060.933389,
+      'semestriel': 4239351.671416,
+      'annuel': 4286010.450336
     },
     25: {
-      12: 252.640,
-      24: 128.921,
-      36: 87.712,
-      48: 67.131,
-      60: 54.802,
-      72: 46.598,
-      84: 40.752,
-      96: 36.380,
-      108: 32.991,
-      120: 30.290,
-      132: 28.090,
-      144: 26.265,
-      156: 24.730,
-      168: 23.423,
-      180: 22.298
+      'mensuel': 4414632.887612,
+      'trimestriel': 4458560.426312,
+      'semestriel': 4498666.347671,
+      'annuel': 4547912.261262
     },
     26: {
-      12: 259.322,
-      24: 132.334,
-      36: 90.037,
-      48: 68.912,
-      60: 56.257,
-      72: 47.837,
-      84: 41.837,
-      96: 37.349,
-      108: 33.871,
-      120: 31.099,
-      132: 28.841,
-      144: 26.970,
-      156: 25.395,
-      168: 24.054,
-      180: 22.900
+      'mensuel': 4684487.532408,
+      'trimestriel': 4730283.355211,
+      'semestriel': 4772290.396112,
+      'annuel': 4824259.001727
     },
     27: {
-      12: 266.209,
-      24: 135.852,
-      36: 92.433,
-      48: 70.748,
-      60: 57.757,
-      72: 49.114,
-      84: 42.955,
-      96: 38.349,
-      108: 34.779,
-      120: 31.934,
-      132: 29.617,
-      144: 27.697,
-      156: 26.081,
-      168: 24.705,
-      180: 23.522
+      'mensuel': 4963787.683771,
+      'trimestriel': 5011516.586104,
+      'semestriel': 5055491.266247,
+      'annuel': 5110277.878109
     },
     28: {
-      12: 273.306,
-      24: 139.478,
-      36: 94.903,
-      48: 72.640,
-      60: 59.303,
-      72: 50.430,
-      84: 44.107,
-      96: 39.380,
-      108: 35.715,
-      120: 32.796,
-      132: 30.419,
-      144: 28.448,
-      156: 26.791,
-      168: 25.379,
-      180: 24.166
+      'mensuel': 5252862.131642,
+      'trimestriel': 5296815.505562,
+      'semestriel': 5348604.207638,
+      'annuel': 5406307.415163
     },
     29: {
-      12: 280.625,
-      24: 143.217,
-      36: 97.449,
-      48: 74.592,
-      60: 60.898,
-      72: 51.788,
-      84: 45.297,
-      96: 40.444,
-      108: 36.683,
-      120: 33.687,
-      132: 31.247,
-      144: 29.225,
-      156: 27.525,
-      168: 26.077,
-      180: 24.833
+      'mensuel': 5552054.799978,
+      'trimestriel': 5597877.362131,
+      'semestriel': 5651976.081074,
+      'annuel': 5712697.986015
     },
     30: {
-      12: 288.169,
-      24: 147.071,
-      36: 100.074,
-      48: 76.603,
-      60: 62.543,
-      72: 53.190,
-      84: 46.526,
-      96: 41.544,
-      108: 37.683,
-      120: 34.608,
-      132: 32.104,
-      144: 30.029,
-      156: 28.284,
-      168: 26.800,
-      180: 25.524
+      'mensuel': 5861719.211707,
+      'trimestriel': 5909476.383267,
+      'semestriel': 5965965.970183,
+      'annuel': 6029812.226846
     },
     31: {
-      12: 295.952,
-      24: 151.047,
-      36: 102.783,
-      48: 78.680,
-      60: 64.242,
-      72: 54.638,
-      84: 47.796,
-      96: 42.681,
-      108: 38.718,
-      120: 35.561,
-      132: 32.991,
-      144: 30.862,
-      156: 29.073,
-      168: 27.550,
-      180: 26.242
+      'mensuel': 6182221.877845,
+      'trimestriel': 6225575.781317,
+      'semestriel': 6284512.371581,
+      'annuel': 6358025.466106
     },
     32: {
-      12: 303.987,
-      24: 155.154,
-      36: 105.583,
-      48: 80.828,
-      60: 66.001,
-      72: 56.138,
-      84: 49.112,
-      96: 43.860,
-      108: 39.790,
-      120: 36.550,
-      132: 33.912,
-      144: 31.728,
-      156: 29.892,
-      168: 28.330,
-      180: 26.988
+      'mensuel': 6513942.137299,
+      'trimestriel': 6559144.247123,
+      'semestriel': 6620641.030858,
+      'annuel': 6697726.168741
     },
     33: {
-      12: 312.260,
-      24: 159.385,
-      36: 108.470,
-      48: 83.044,
-      60: 67.816,
-      72: 57.686,
-      84: 50.471,
-      96: 45.077,
-      108: 40.900,
-      120: 37.573,
-      132: 34.866,
-      144: 32.624,
-      156: 30.741,
-      168: 29.139,
-      180: 27.763
+      'mensuel': 6857272.605833,
+      'trimestriel': 6904387.609234,
+      'semestriel': 6968534.193210,
+      'annuel': 7049316.395967
     },
     34: {
-      12: 320.759,
-      24: 163.736,
-      36: 111.439,
-      48: 85.324,
-      60: 69.684,
-      72: 59.280,
-      84: 51.871,
-      96: 46.333,
-      108: 42.044,
-      120: 38.629,
-      132: 35.851,
-      144: 33.551,
-      156: 31.619,
-      168: 29.976,
-      180: 28.565
+      'mensuel': 7212619.840766,
+      'trimestriel': 7264612.498187,
+      'semestriel': 7328603.616244,
+      'annuel': 7413212.281147
     },
     35: {
-      12: 329.461,
-      24: 168.191,
-      36: 114.481,
-      48: 87.661,
-      60: 71.599,
-      72: 60.916,
-      84: 53.308,
-      96: 47.623,
-      108: 43.220,
-      120: 39.716,
-      132: 36.865,
-      144: 34.505,
-      156: 32.523,
-      168: 30.839,
-      180: 29.392
+      'mensuel': 7580403.821922,
+      'trimestriel': 7624197.249084,
+      'semestriel': 7701275.469085,
+      'annuel': 7789844.522308
     },
     36: {
-      12: 338.379,
-      24: 172.759,
-      36: 117.601,
-      48: 90.059,
-      60: 73.566,
-      72: 62.597,
-      84: 54.787,
-      96: 48.951,
-      108: 44.432,
-      120: 40.836,
-      132: 37.911,
-      144: 35.490,
-      156: 33.457,
-      168: 31.730,
-      180: 30.247
+      'mensuel': 7961060.449418,
+      'trimestriel': 8006717.466263,
+      'semestriel': 8086990.836775,
+      'annuel': 8179658.891909
     },
     37: {
-      12: 347.501,
-      24: 177.433,
-      36: 120.795,
-      48: 92.516,
-      60: 75.582,
-      72: 64.322,
-      84: 56.305,
-      96: 50.315,
-      108: 45.678,
-      120: 41.988,
-      132: 38.987,
-      144: 36.504,
-      156: 34.420,
-      168: 32.648,
-      180: 31.128
+      'mensuel': 8355040.058877,
+      'trimestriel': 8394751.786861,
+      'semestriel': 8478298.278308,
+      'annuel': 8575140.790787
     },
     38: {
-      12: 356.831,
-      24: 182.217,
-      36: 124.067,
-      48: 95.035,
-      60: 77.651,
-      72: 66.093,
-      84: 57.865,
-      96: 51.718,
-      108: 46.960,
-      120: 43.174,
-      132: 40.096,
-      144: 37.550,
-      156: 35.412,
-      168: 33.595,
-      180: 32.036
+      'mensuel': 8762808.954867,
+      'trimestriel': 8804241.412862,
+      'semestriel': 8891209.444321,
+      'annuel': 8992440.529785
     },
     39: {
-      12: 366.360,
-      24: 187.107,
-      36: 127.414,
-      48: 97.614,
-      60: 79.772,
-      72: 67.910,
-      84: 59.466,
-      96: 53.159,
-      108: 48.278,
-      120: 44.394,
-      132: 41.237,
-      144: 38.625,
-      156: 36.433,
-      168: 34.570,
-      180: 32.972
+      'mensuel': 9184849.761809,
+      'trimestriel': 9228063.175773,
+      'semestriel': 9318572.501144,
+      'annuel': 9424345.759649
     },
     40: {
-      12: 376.073,
-      24: 192.096,
-      36: 130.834,
-      48: 100.251,
-      60: 81.942,
-      72: 69.770,
-      84: 61.107,
-      96: 54.636,
-      108: 49.629,
-      120: 45.646,
-      132: 42.408,
-      144: 39.729,
-      156: 37.481,
-      168: 35.572,
-      180: 33.934
+      'mensuel': 9621661.997201,
+      'trimestriel': 9657988.540329,
+      'semestriel': 9760893.264956,
+      'annuel': 9871367.672557
     },
     41: {
-      12: 385.954,
-      24: 197.179,
-      36: 134.320,
-      48: 102.942,
-      60: 84.157,
-      72: 71.671,
-      84: 62.784,
-      96: 56.147,
-      108: 51.011,
-      120: 46.926,
-      132: 43.606,
-      144: 40.860,
-      156: 38.555,
-      168: 36.599,
-      180: 34.921
+      'mensuel': 10073762.660832,
+      'trimestriel': 10111691.452702,
+      'semestriel': 10218695.255501,
+      'annuel': 10334035.352417
     },
     42: {
-      12: 395.974,
-      24: 202.335,
-      36: 137.859,
-      48: 105.675,
-      60: 86.410,
-      72: 73.604,
-      84: 64.491,
-      96: 57.685,
-      108: 52.419,
-      120: 48.231,
-      132: 44.827,
-      144: 42.012,
-      156: 39.650,
-      168: 37.646,
-      180: 35.927
+      'mensuel': 10541686.847690,
+      'trimestriel': 10581273.967007,
+      'semestriel': 10692520.315715,
+      'annuel': 10812896.401073
     },
     43: {
-      12: 406.137,
-      24: 207.570,
-      36: 141.455,
-      48: 108.454,
-      60: 88.701,
-      72: 75.572,
-      84: 66.228,
-      96: 59.251,
-      108: 53.853,
-      120: 49.560,
-      132: 46.071,
-      144: 43.187,
-      156: 40.768,
-      168: 38.715,
-      180: 36.956
+      'mensuel': 11025988.381088,
+      'trimestriel': 11057612.584807,
+      'semestriel': 11173208.346138,
+      'annuel': 11308517.586431
     },
     44: {
-      12: 416.435,
-      24: 212.878,
-      36: 145.103,
-      48: 111.276,
-      60: 91.028,
-      72: 77.570,
-      84: 67.993,
-      96: 60.842,
-      108: 55.310,
-      120: 50.911,
-      132: 47.337,
-      144: 44.383,
-      156: 41.906,
-      168: 39.804,
-      180: 38.004
+      'mensuel': 11527240.468155,
+      'trimestriel': 11560302.338736,
+      'semestriel': 11680441.364525,
+      'annuel': 11821485.513277
     },
     45: {
-      12: 426.866,
-      24: 218.258,
-      36: 148.803,
-      48: 114.138,
-      60: 93.388,
-      72: 79.598,
-      84: 69.785,
-      96: 62.458,
-      108: 56.790,
-      120: 52.285,
-      132: 48.625,
-      144: 45.600,
-      156: 43.065,
-      168: 40.915,
-      180: 39.074
+      'mensuel': 12046036.378270,
+      'trimestriel': 12080582.334053,
+      'semestriel': 12205427.538555,
+      'annuel': 12352407.317562
     },
     46: {
-      12: 437.430,
-      24: 223.709,
-      36: 152.552,
-      48: 117.037,
-      60: 95.780,
-      72: 81.653,
-      84: 71.601,
-      96: 64.097,
-      108: 58.293,
-      120: 53.680,
-      132: 49.933,
-      144: 46.838,
-      156: 44.244,
-      168: 42.046,
-      180: 40.167
+      'mensuel': 12582990.145238,
+      'trimestriel': 12619080.006705,
+      'semestriel': 12748788.228676,
+      'annuel': 12901911.384998
     },
     47: {
-      12: 448.143,
-      24: 229.236,
-      36: 156.353,
-      48: 119.978,
-      60: 98.206,
-      72: 83.738,
-      84: 73.445,
-      96: 65.762,
-      108: 59.821,
-      120: 55.099,
-      132: 51.265,
-      144: 48.099,
-      156: 45.448,
-      168: 43.203,
-      180: 41.285
+      'mensuel': 13138737.294051,
+      'trimestriel': 13176421.181466,
+      'semestriel': 13311166.542952,
+      'annuel': 13470648.094793
     },
     48: {
-      12: 459.029,
-      24: 234.853,
-      36: 160.217,
-      48: 122.968,
-      60: 100.675,
-      72: 85.861,
-      84: 75.324,
-      96: 67.459,
-      108: 61.379,
-      120: 56.547,
-      132: 52.626,
-      144: 49.390,
-      156: 46.682,
-      168: 44.391,
-      180: 42.436
+      'mensuel': 13713935.593071,
+      'trimestriel': 13753269.236278,
+      'semestriel': 13893228.098227,
+      'annuel': 14059290.589432
     },
     49: {
-      12: 470.112,
-      24: 240.573,
-      36: 164.153,
-      48: 126.015,
-      60: 103.192,
-      72: 88.028,
-      84: 77.242,
-      96: 69.194,
-      108: 62.972,
-      120: 58.031,
-      132: 54.022,
-      144: 50.716,
-      156: 47.952,
-      168: 45.616,
-      180: 43.625
+      'mensuel': 14309265.832568,
+      'trimestriel': 14350306.973009,
+      'semestriel': 14483712.331354,
+      'annuel': 14668483.327573
     },
     50: {
-      12: 481.407,
-      24: 246.404,
-      36: 168.168,
-      48: 129.126,
-      60: 105.764,
-      72: 90.243,
-      84: 79.206,
-      96: 70.970,
-      108: 64.606,
-      120: 59.554,
-      132: 55.459,
-      144: 52.084,
-      156: 49.265,
-      168: 46.886,
-      180: 44.859
+      'mensuel': 14925432.630426,
+      'trimestriel': 14968241.030525,
+      'semestriel': 15106812.989223,
+      'annuel': 15286630.055359
     },
-    51: {
-      12: 492.933,
-      24: 252.360,
-      36: 172.273,
-      48: 132.309,
-      60: 108.398,
-      72: 92.514,
-      84: 81.219,
-      96: 72.795,
-      108: 66.288,
-      120: 61.126,
-      132: 56.945,
-      144: 53.501,
-      156: 50.629,
-      168: 48.206,
-      180: 46.145
+  };    14: {
+      'mensuel': 5027.44598,
+      'trimestriel': 14800.85821,
+      'semestriel': 29371.52796,
+      'annuel': 58140.14424
     },
-    52: {
-      12: 504.687,
-      24: 258.439,
-      36: 176.465,
-      48: 135.563,
-      60: 111.092,
-      72: 94.839,
-      84: 83.284,
-      96: 74.670,
-      108: 68.021,
-      120: 62.749,
-      132: 58.482,
-      144: 54.971,
-      156: 52.045,
-      168: 49.581,
-      180: 47.487
+    15: {
+      'mensuel': 4607.53413,
+      'trimestriel': 13553.04544,
+      'semestriel': 26900.24228,
+      'annuel': 53253.15960
     },
-    53: {
-      12: 516.671,
-      24: 264.642,
-      36: 180.747,
-      48: 138.890,
-      60: 113.849,
-      72: 97.221,
-      84: 85.406,
-      96: 76.602,
-      108: 69.809,
-      120: 64.428,
-      132: 60.077,
-      144: 56.500,
-      156: 53.522,
-      168: 51.017,
-      180: 48.892
+    16: {
+      'mensuel': 4234.30376,
+      'trimestriel': 12485.18488,
+      'semestriel': 24745.32809,
+      'annuel': 48991.07389
     },
-    54: {
-      12: 528.894,
-      24: 270.975,
-      36: 185.123,
-      48: 142.291,
-      60: 116.674,
-      72: 99.670,
-      84: 87.592,
-      96: 78.598,
-      108: 71.663,
-      120: 66.174,
-      132: 61.738,
-      144: 58.096,
-      156: 55.066,
-      168: 52.522,
-      180: 50.366
+    17: {
+      'mensuel': 3906.76267,
+      'trimestriel': 11526.84218,
+      'semestriel': 22850.74160,
+      'annuel': 45243.31561
     },
-    55: {
-      12: 541.357,
-      24: 277.437,
-      36: 189.591,
-      48: 145.774,
-      60: 119.575,
-      72: 102.192,
-      84: 89.851,
-      96: 80.666,
-      108: 73.589,
-      120: 67.991,
-      132: 63.472,
-      144: 59.765,
-      156: 56.686,
-      168: 54.102,
-      180: 51.917
+    18: {
+      'mensuel': 3617.16662,
+      'trimestriel': 10678.49023,
+      'semestriel': 21172.93236,
+      'annuel': 41923.93536
     },
-    56: {
-      12: 554.072,
-      24: 284.035,
-      36: 194.170,
-      48: 149.355,
-      60: 122.569,
-      72: 104.803,
-      84: 92.197,
-      96: 82.820,
-      108: 75.600,
-      120: 69.893,
-      132: 65.291,
-      144: 61.520,
-      156: 58.391,
-      168: 55.768,
-      180: 53.555
+    19: {
+      'mensuel': 3359.42700,
+      'trimestriel': 9936.57609,
+      'semestriel': 19705.05837,
+      'annuel': 38965.11313
     },
-    57: {
-      12: 567.054,
-      24: 290.806,
-      36: 198.885,
-      48: 153.059,
-      60: 125.676,
-      72: 107.522,
-      84: 94.647,
-      96: 85.074,
-      108: 77.709,
-      120: 71.893,
-      132: 67.208,
-      144: 63.372,
-      156: 60.193,
-      168: 57.532,
-      180: 55.289
+    20: {
+      'mensuel': 3128.69085,
+      'trimestriel': 9257.85305,
+      'semestriel': 18361.84334,
+      'annuel': 36312.61717
     },
-    58: {
-      12: 580.212,
-      24: 297.691,
-      36: 203.704,
-      48: 156.855,
-      60: 128.872,
-      72: 110.327,
-      84: 97.180,
-      96: 87.413,
-      108: 79.904,
-      120: 73.979,
-      132: 69.209,
-      144: 65.309,
-      156: 62.080,
-      168: 59.383,
-      180: 57.113
+    21: {
+      'mensuel': 2921.04241,
+      'trimestriel': 8646.57304,
+      'semestriel': 17151.75590,
+      'annuel': 33922.56273
     },
-    59: {
-      12: 593.509,
-      24: 304.693,
-      36: 208.618,
-      48: 160.744,
-      60: 132.156,
-      72: 113.217,
-      84: 99.798,
-      96: 89.836,
-      108: 82.183,
-      120: 76.148,
-      132: 71.295,
-      144: 67.331,
-      156: 64.054,
-      168: 61.322,
-      180: 59.028
+    22: {
+      'mensuel': 2733.28735,
+      'trimestriel': 8103.74654,
+      'semestriel': 16056.55640,
+      'annuel': 31759.05634
     },
-    60: {
-      12: 606.852,
-      24: 311.731,
-      36: 213.582,
-      48: 164.684,
-      60: 135.492,
-      72: 116.163,
-      84: 102.476,
-      96: 92.321,
-      108: 84.524,
-      120: 78.382,
-      132: 73.447,
-      144: 69.421,
-      156: 66.100,
-      168: 63.336,
-      180: 61.021
+    23: {
+      'mensuel': 2562.79385,
+      'trimestriel': 7600.25802,
+      'semestriel': 15061.18718,
+      'annuel': 29792.45569
     },
-    61: {
-      12: 620.256,
-      24: 318.848,
-      36: 218.619,
-      48: 168.693,
-      60: 138.900,
-      72: 119.183,
-      84: 105.228,
-      96: 94.880,
-      108: 86.940,
-      120: 80.691,
-      132: 75.676,
-      144: 71.592,
-      156: 68.228,
-      168: 65.435,
-      180: 63.104
+    24: {
+      'mensuel': 2407.37402,
+      'trimestriel': 7141.05329,
+      'semestriel': 14153.10752,
+      'annuel': 27998.06519
     },
-    62: {
-      12: 633.637,
-      24: 325.971,
-      36: 223.673,
-      48: 172.734,
-      60: 142.348,
-      72: 122.247,
-      84: 108.027,
-      96: 97.488,
-      108: 89.409,
-      120: 83.056,
-      132: 77.966,
-      144: 73.827,
-      156: 70.425,
-      168: 67.609,
-      180: 65.264
+    25: {
+      'mensuel': 2265.19402,
+      'trimestriel': 6728.62923,
+      'semestriel': 13337.28607,
+      'annuel': 26385.73330
     },
-    63: {
-      12: 647.006,
-      24: 333.107,
-      36: 228.764,
-      48: 176.822,
-      60: 145.849,
-      72: 125.365,
-      84: 110.881,
-      96: 100.154,
-      108: 91.938,
-      120: 85.486,
-      132: 80.324,
-      144: 76.136,
-      156: 72.701,
-      168: 69.865,
-      180: 67.515
+    26: {
+      'mensuel': 2134.70522,
+      'trimestriel': 6342.11478,
+      'semestriel': 12572.57942,
+      'annuel': 24874.28638
     },
-    64: {
-      12: 660.380,
-      24: 340.302,
-      36: 233.920,
-      48: 180.977,
-      60: 149.412,
-      72: 128.545,
-      84: 113.799,
-      96: 102.887,
-      108: 94.539,
-      120: 87.993,
-      132: 82.764,
-      144: 78.530,
-      156: 75.068,
-      168: 72.219,
-      180: 69.868
+    27: {
+      'mensuel': 2014.59084,
+      'trimestriel': 5986.21186,
+      'semestriel': 11868.28274,
+      'annuel': 23482.08901
     },
-    65: {
-      12: 673.678,
-      24: 347.480,
-      36: 239.085,
-      48: 185.144,
-      60: 152.995,
-      72: 131.752,
-      84: 116.752,
-      96: 105.663,
-      108: 97.189,
-      120: 90.555,
-      132: 85.266,
-      144: 80.994,
-      156: 77.512,
-      168: 74.658,
-      180: 72.315
+    28: {
+      'mensuel': 1903.72406,
+      'trimestriel': 5663.78043,
+      'semestriel': 11217.87997,
+      'annuel': 22196.29606
     },
-    66: {
-      12: 687.096,
-      24: 354.662,
-      36: 244.254,
-      48: 189.326,
-      60: 156.602,
-      72: 134.993,
-      84: 119.748,
-      96: 108.489,
-      108: 99.898,
-      120: 93.183,
-      132: 87.841,
-      144: 83.539,
-      156: 80.045,
-      168: 77.196,
-      180: 74.871
+    29: {
+      'mensuel': 1801.13496,
+      'trimestriel': 5359.17421,
+      'semestriel': 10615.75618,
+      'annuel': 21005.83652
     },
-    67: {
-      12: 700.093,
-      24: 361.797,
-      36: 249.407,
-      48: 193.511,
-      60: 160.228,
-      72: 138.267,
-      84: 122.786,
-      96: 111.367,
-      108: 102.667,
-      120: 95.880,
-      132: 90.496,
-      144: 86.173,
-      156: 82.678,
-      168: 79.844,
-      180: 77.549
+    30: {
+      'mensuel': 1705.98414,
+      'trimestriel': 5076.59191,
+      'semestriel': 10057.04697,
+      'annuel': 19901.11723
     },
-    68: {
-      12: 713.310,
-      24: 368.993,
-      36: 254.629,
-      48: 197.774,
-      60: 163.940,
-      72: 141.631,
-      84: 125.922,
-      96: 114.349,
-      108: 105.547,
-      120: 98.697,
-      132: 93.278,
-      144: 88.945,
-      156: 85.459,
-      168: 82.653,
-      180: 80.403
+    31: {
+      'mensuel': 1617.54143,
+      'trimestriel': 4818.83139,
+      'semestriel': 9547.28012,
+      'annuel': 18873.78411
     },
-    69: {
-      12: 725.580,
-      24: 376.248,
-      36: 259.924,
-      48: 202.119,
-      60: 167.741,
-      72: 145.092,
-      84: 129.161,
-      96: 117.443,
-      108: 108.548,
-      120: 101.644,
-      132: 96.202,
-      144: 91.870,
-      156: 88.409,
-      168: 85.646,
-      180: 83.457
+    32: {
+      'mensuel': 1535.16869,
+      'trimestriel': 4573.76738,
+      'semestriel': 9062.56656,
+      'annuel': 17916.52823
+    },
+    33: {
+      'mensuel': 1458.30574,
+      'trimestriel': 4345.06312,
+      'semestriel': 8610.13211,
+      'annuel': 17022.92723
+    },
+    34: {
+      'mensuel': 1386.45880,
+      'trimestriel': 4135.30013,
+      'semestriel': 8187.09854,
+      'annuel': 16187.31468
+    },
+    35: {
+      'mensuel': 1319.19093,
+      'trimestriel': 3934.84048,
+      'semestriel': 7790.91726,
+      'annuel': 15404.67203
+    },
+    36: {
+      'mensuel': 1256.11406,
+      'trimestriel': 3746.85383,
+      'semestriel': 7419.32336,
+      'annuel': 14670.53842
+    },
+    37: {
+      'mensuel': 1196.88235,
+      'trimestriel': 3573.66135,
+      'semestriel': 7076.89185,
+      'annuel': 13993.93933
+    },
+    38: {
+      'mensuel': 1141.18658,
+      'trimestriel': 3407.44859,
+      'semestriel': 6748.23829,
+      'annuel': 13344.54196
+    },
+    39: {
+      'mensuel': 1088.74944,
+      'trimestriel': 3250.95304,
+      'semestriel': 6438.75443,
+      'annuel': 12732.97936
+    },
+    40: {
+      'mensuel': 1039.32148,
+      'trimestriel': 3106.23686,
+      'semestriel': 6146.97839,
+      'annuel': 12156.37022
+    },
+    41: {
+      'mensuel': 992.67774,
+      'trimestriel': 2966.86268,
+      'semestriel': 5871.59109,
+      'annuel': 11612.11433
+    },
+    42: {
+      'mensuel': 948.61478,
+      'trimestriel': 2835.19736,
+      'semestriel': 5611.39921,
+      'annuel': 11097.85903
+    },
+    43: {
+      'mensuel': 906.94817,
+      'trimestriel': 2713.06304,
+      'semestriel': 5369.98847,
+      'annuel': 10611.47043
+    },
+    44: {
+      'mensuel': 867.51031,
+      'trimestriel': 2595.08784,
+      'semestriel': 5136.79219,
+      'annuel': 10151.00851
+    },
+    45: {
+      'mensuel': 830.14858,
+      'trimestriel': 2483.32319,
+      'semestriel': 4915.84582,
+      'annuel': 9714.70556
+    },
+    46: {
+      'mensuel': 794.72366,
+      'trimestriel': 2377.35238,
+      'semestriel': 4706.32965,
+      'annuel': 9300.94747
+    },
+    47: {
+      'mensuel': 761.10815,
+      'trimestriel': 2276.79425,
+      'semestriel': 4507.49375,
+      'annuel': 8908.25736
+    },
+    48: {
+      'mensuel': 729.18528,
+      'trimestriel': 2181.29955,
+      'semestriel': 4318.65075,
+      'annuel': 8535.28130
+    },
+    49: {
+      'mensuel': 698.84787,
+      'trimestriel': 2090.54761,
+      'semestriel': 4142.58435,
+      'annuel': 8187.50292
+    },
+    50: {
+      'mensuel': 669.99733,
+      'trimestriel': 2004.24351,
+      'semestriel': 3971.71793,
+      'annuel': 7849.99700
     },
   };
 
+  final Map<String, double> capitalValues = {
+    'mensuel': 10000.00000,
+    'trimestriel': 30000.00000,
+    'semestriel': 60000.00000,
+    'annuel': 120000.00000,
+  };
   @override
   void initState() {
     super.initState();
+
+    // Initialiser _selectedPeriode avec une valeur par défaut
+    _selectedPeriode = Periode.annuel;
 
     // Initialisation des animations
     _animationController = AnimationController(
@@ -1091,126 +716,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-      // Appeler async après initState
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _prefillFromExistingData();
-      });
+      _prefillFromExistingData();
     } else {
       _prefillSimulationData();
     }
 
-    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadQuestionnaireMedicalQuestions();
-    });
-
-    // Listeners pour le calcul automatique
-    _capitalController.addListener(() {
-      _formatTextField(_capitalController);
-      if (_currentSimulation == SimulationType.parCapital && _age > 0) {
-        _effectuerCalcul();
-      }
-    });
-
-    _primeController.addListener(() {
-      _formatTextField(_primeController);
-      if (_currentSimulation == SimulationType.parPrime && _age > 0) {
-        _effectuerCalcul();
-      }
-    });
-
-    // 🔍 Validation de la durée uniquement à la sortie du champ
-    _dureeFocusNode.addListener(() {
-      if (!_dureeFocusNode.hasFocus) {
-        // Utiliser Future.delayed pour éviter les appels multiples
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (!mounted) return;
-          
-          // Le champ a perdu le focus - valider maintenant
-          if (_dureeController.text.isNotEmpty && _age > 0) {
-            int? duree = int.tryParse(_dureeController.text);
-            if (duree != null) {
-              setState(() {
-                _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
-              });
-
-              // Validation de la durée minimale
-              if (_selectedUnite == 'années' && duree < 1) {
-                _showProfessionalDialog(
-                  title: 'Durée minimale requise',
-                  message:
-                      'La durée minimale pour CORIS SÉRÉNITÉ est de 1 an. Veuillez ajuster la durée du contrat pour continuer.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-              if (_selectedUnite == 'mois' && _dureeEnMois < 12) {
-                _showProfessionalDialog(
-                  title: 'Durée minimale requise',
-                  message:
-                      'La durée minimale pour CORIS SÉRÉNITÉ est de 12 mois (1 an). Veuillez ajuster la durée du contrat pour continuer.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-
-              // Validation de la durée maximale
-              if (_selectedUnite == 'années' && duree > 15) {
-                _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
-                  message:
-                      'La durée maximale pour CORIS SÉRÉNITÉ est de 15 ans. Le contrat a été ajusté automatiquement.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-              if (_selectedUnite == 'mois' && _dureeEnMois > 180) {
-                _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
-                  message:
-                      'La durée maximale pour CORIS SÉRÉNITÉ est de 180 mois (15 ans). Le contrat a été ajusté automatiquement.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                setState(() {
-                  _calculatedPrime = 0;
-                  _calculatedCapital = 0;
-                });
-                return;
-              }
-
-              _effectuerCalcul();
-            }
-          }
-        });
-      }
-    });
-
-    // Déplacer ce code à la fin de initState()
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Forcer un recalcul après le premier rendu
-      if (_age > 0 &&
-          (_capitalController.text.isNotEmpty ||
-              _primeController.text.isNotEmpty)) {
+    // Après init, vérifier si le calcul doit être refait (si l'âge a été défini après)
+    Future.microtask(() {
+      if (_age > 0 && (_calculatedCapital == 0 || _calculatedPrime == 0)) {
         _effectuerCalcul();
       }
     });
@@ -1274,10 +787,17 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 }
                 // Utiliser l'âge du client pour le calcul
                 _age = _clientAge;
+                debugPrint('👤 Âge client (commercial) calculé: $_age ans');
               });
+              // Déclencher le calcul après avoir défini l'âge
+              if (_age > 0) {
+                debugPrint(
+                    '📢 Appel _effectuerCalcul depuis didChangeDependencies (commercial)');
+                _effectuerCalcul();
+              }
             }
           } catch (e) {
-            print('Erreur parsing date de naissance: $e');
+            debugPrint('Erreur parsing date de naissance: $e');
           }
         }
 
@@ -1298,89 +818,157 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     if (!_isCommercial) {
       _loadUserData();
     }
+
+    // Listeners pour le calcul automatique
+    _primeController.addListener(() {
+      _formatTextField(_primeController);
+      if (_currentSimulation == SimulationType.parPrime && _age > 0) {
+        _effectuerCalcul();
+      }
+    });
+
+    _capitalController.addListener(() {
+      _formatTextField(_capitalController);
+      if (_currentSimulation == SimulationType.parCapital && _age > 0) {
+        _effectuerCalcul();
+      }
+    });
+
+    // 🔍 Validation de la durée uniquement à la sortie du champ
+    _dureeFocusNode.addListener(() {
+      if (!_dureeFocusNode.hasFocus) {
+        // Utiliser Future.delayed pour éviter les appels multiples
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!mounted) return;
+          
+          // Le champ a perdu le focus - valider maintenant
+          if (_dureeController.text.isNotEmpty && _age > 0) {
+            int? duree = int.tryParse(_dureeController.text);
+            if (duree != null) {
+              setState(() {
+                _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+              });
+
+              // Validation de la durée en années
+              if (_dureeEnAnnees < 5) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
+              if (_dureeEnAnnees > 50) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
+
+              _effectuerCalcul();
+            }
+          }
+        });
+      }
+    });
   }
 
   void _prefillSimulationData() {
     if (widget.simulationData != null) {
       final data = widget.simulationData!;
 
-      // Type de simulation
-      if (data['typeSimulation'] != null) {
-        setState(() {
-          _selectedSimulationType = data['typeSimulation'];
-          _currentSimulation = data['typeSimulation'] == 'Par Capital'
-              ? SimulationType.parCapital
-              : SimulationType.parPrime;
-        });
+      // Déterminer le type de simulation
+      if (data['type'] == 'capital') {
+        _currentSimulation = SimulationType.parCapital;
+        _selectedSimulationType = 'Par Capital';
+        if (data['capital'] != null) {
+          _capitalController.text = _formatNumber(data['capital'].toDouble());
+        }
+      } else {
+        _currentSimulation = SimulationType.parPrime;
+        _selectedSimulationType = 'Par Prime';
+        if (data['prime'] != null) {
+          _primeController.text = _formatNumber(data['prime'].toDouble());
+        }
       }
 
-      // Capital ou prime
-      if (data['capital'] != null &&
-          _currentSimulation == SimulationType.parCapital) {
-        _capitalController.text = _formatNumber(data['capital'].toDouble());
-      }
-      if (data['prime'] != null &&
-          _currentSimulation == SimulationType.parPrime) {
-        _primeController.text = _formatNumber(data['prime'].toDouble());
-      }
-
-      // Durée et unité
+      // Pré-remplir la durée
       if (data['duree'] != null) {
         _dureeController.text = data['duree'].toString();
-        int duree = int.tryParse(data['duree'].toString()) ?? 0;
-        _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
-      }
-      if (data['dureeUnite'] != null) {
-        setState(() {
-          _selectedUnite = data['dureeUnite'];
-        });
+        _dureeEnAnnees = data['duree'];
+        debugPrint(
+            '📅 Durée pré-remplie: $_dureeEnAnnees années (valeur: ${data['duree']})');
       }
 
-      // Périodicité
+      // Pré-remplir l'unité si fournie
+      if (data['unite'] != null) {
+        _selectedUnite = data['unite'];
+        debugPrint('📏 Unité pré-remplie: $_selectedUnite');
+      }
+
+      // Pré-remplir la périodicité
       if (data['periodicite'] != null) {
-        setState(() {
-          switch (data['periodicite']) {
-            case 'mensuelle':
-              _selectedPeriode = Periode.mensuel;
-              break;
-            case 'trimestrielle':
-              _selectedPeriode = Periode.trimestriel;
-              break;
-            case 'semestrielle':
-              _selectedPeriode = Periode.semestriel;
-              break;
-            case 'annuelle':
-              _selectedPeriode = Periode.annuel;
-              break;
+        switch (data['periodicite']) {
+          case 'mensuel':
+            _selectedPeriode = Periode.mensuel;
+            break;
+          case 'trimestriel':
+            _selectedPeriode = Periode.trimestriel;
+            break;
+          case 'semestriel':
+            _selectedPeriode = Periode.semestriel;
+            break;
+          case 'annuel':
+            _selectedPeriode = Periode.annuel;
+            break;
+        }
+      }
+
+      // Déclencher le calcul si l'âge est disponible
+      if (_age > 0) {
+        debugPrint(
+            '📢 Appel _effectuerCalcul depuis _prefillSimulationData (âge: $_age)');
+        _effectuerCalcul();
+      } else {
+        debugPrint(
+            '⚠️ _prefillSimulationData: âge non disponible ($_age), calcul différé');
+        // Si l'âge n'est pas encore disponible, attendre qu'il soit chargé
+        Future.delayed(Duration(milliseconds: 200), () {
+          if (mounted && _age > 0) {
+            debugPrint(
+                '📢 Appel _effectuerCalcul depuis _prefillSimulationData (retardé, âge: $_age)');
+            _effectuerCalcul();
+          } else if (mounted) {
+            debugPrint(
+                '❌ _prefillSimulationData: âge toujours non disponible après délai');
           }
         });
       }
-
-      // Résultat
-      if (data['resultat'] != null) {
-        if (_currentSimulation == SimulationType.parCapital) {
-          _calculatedPrime = data['resultat'].toDouble();
-        } else {
-          _calculatedCapital = data['resultat'].toDouble();
-        }
-      }
-
-      // Forcer le recalcul après un court délai
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && _age > 0) {
-          _effectuerCalcul();
-        }
-      });
     }
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
-  Future<void> _prefillFromExistingData() async {
+  void _prefillFromExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
-    debugPrint(
-        '🔄 Pré-remplissage SÉRÉNITÉ depuis données existantes: ${data.keys}');
+    debugPrint('🔄 Pré-remplissage depuis données existantes: ${data.keys}');
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
@@ -1436,10 +1024,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // Pré-remplir la durée
       if (data['duree'] != null) {
         _dureeController.text = data['duree'].toString();
-        int duree = data['duree'] is int
+        _dureeEnAnnees = data['duree'] is int
             ? data['duree']
             : int.parse(data['duree'].toString());
-        _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
       }
 
       // Pré-remplir l'unité
@@ -1488,6 +1075,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         }
         if (beneficiaire['contact'] != null) {
           final contact = beneficiaire['contact'].toString();
+          // Extraire l'indicatif et le numéro (format: "+225 1234567890")
           final parts = contact.split(' ');
           if (parts.length >= 2) {
             _selectedBeneficiaireIndicatif = parts[0];
@@ -1527,6 +1115,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       if (data['date_effet'] != null) {
         try {
           _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
+          _dateEffetController.text =
+              "${_dateEffetContrat!.day.toString().padLeft(2, '0')}/${_dateEffetContrat!.month.toString().padLeft(2, '0')}/${_dateEffetContrat!.year}";
         } catch (e) {
           debugPrint('⚠️ Erreur parsing date_effet: $e');
         }
@@ -1540,7 +1130,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         }
       }
 
-      // Pré-remplir les informations client si commercial
+      // Pré-remplir les informations client si commercial et si données présentes
       if (data['client_info'] != null && data['client_info'] is Map) {
         final clientInfo = data['client_info'];
         _isCommercial = true;
@@ -1597,75 +1187,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         }
       }
 
-      debugPrint('✅ Pré-remplissage SÉRÉNITÉ terminé avec succès');
+      debugPrint('✅ Pré-remplissage terminé avec succès');
 
-      // Charger les réponses questionnaire avec libelle du serveur
-      if (widget.subscriptionId != null) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-          if (completReponses != null && completReponses.isNotEmpty) {
-            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
-            if (mounted) {
-              setState(() {
-                _questionnaireMedicalReponses = completReponses;
-              });
-            }
-          }
-        } catch (e) {
-          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
-        }
-      }
-
+      // Déclencher un setState pour rafraîchir l'UI
       if (mounted) {
         setState(() {});
       }
     } catch (e) {
-      debugPrint('❌ Erreur lors du pré-remplissage SÉRÉNITÉ: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _progressController.dispose();
-    _pageController.dispose();
-
-    // Dispose des contrôleurs
-    _capitalController.dispose();
-    _primeController.dispose();
-    _dureeController.dispose();
-    _dureeFocusNode.dispose();
-    _beneficiaireNomController.dispose();
-    _beneficiaireContactController.dispose();
-    _personneContactNomController.dispose();
-    _personneContactTelController.dispose();
-    // Dispose des contrôleurs client
-    _clientNomController.dispose();
-    _clientPrenomController.dispose();
-    _clientDateNaissanceController.dispose();
-    _clientLieuNaissanceController.dispose();
-    _clientTelephoneController.dispose();
-    _clientEmailController.dispose();
-    _clientAdresseController.dispose();
-    _clientNumeroPieceController.dispose();
-
-    super.dispose();
-  }
-
-  /// ✅ Charger les questions du questionnaire médical au démarrage
-  Future<void> _loadQuestionnaireMedicalQuestions() async {
-    try {
-      final questionnaireService = QuestionnaireMedicalService();
-      final questions = await questionnaireService.getQuestions();
-      if (questions.isNotEmpty && mounted) {
-        setState(() {
-          _questionnaireMedicalQuestions = questions;
-        });
-        debugPrint('✅ Questions chargées: ${questions.length} questions');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
+      debugPrint('❌ Erreur lors du pré-remplissage: $e');
     }
   }
 
@@ -1673,16 +1202,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   Future<void> _loadUserData() async {
     try {
       final token = await storage.read(key: 'token');
-      if (token == null) {
-        // Même sans token, on peut recalculer avec les données de simulation
-        if (_age > 0 &&
-            (_capitalController.text.isNotEmpty ||
-                _primeController.text.isNotEmpty)) {
-          _effectuerCalcul();
-        }
-        return;
-      }
-
+      if (token == null) return;
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -1690,7 +1210,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           'Authorization': 'Bearer $token',
         },
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         Map<String, dynamic>? userData;
@@ -1726,13 +1245,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         maintenant.day < _dateNaissance!.day)) {
                   _age--;
                 }
+                debugPrint(
+                    '👤 Âge utilisateur calculé: $_age ans (date naissance: $_dateNaissance)');
+              } else {
+                debugPrint('⚠️ Date de naissance manquante dans userData');
               }
             });
-
-            // Recalculer après le chargement des données utilisateur
-            if (_age > 0 &&
-                (_capitalController.text.isNotEmpty ||
-                    _primeController.text.isNotEmpty)) {
+            // Effectuer le calcul après le chargement des données
+            if (_age > 0) {
+              debugPrint('📢 Appel _effectuerCalcul depuis _loadUserData');
               _effectuerCalcul();
             }
           }
@@ -1740,16 +1261,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       }
     } catch (e) {
       debugPrint('Erreur chargement données utilisateur: $e');
-      // Recalculer même en cas d'erreur
-      if (_age > 0 &&
-          (_capitalController.text.isNotEmpty ||
-              _primeController.text.isNotEmpty)) {
-        _effectuerCalcul();
-      }
     }
   }
 
-  // Méthodes pour la simulation (identiques à simulation_serenite.dart)
+  // Méthodes pour la simulation
   String _formatNumber(double number) {
     return number.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -1773,176 +1288,164 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
   }
 
-  int _findDureeTarifaire(int dureeSaisie) {
-    if (_tarifaire.isEmpty) return dureeSaisie;
-
-    List<int> durees = _tarifaire[18]!.keys.toList()..sort();
-    for (int duree in durees) {
-      if (duree >= dureeSaisie) return duree;
-    }
-    return durees.last;
-  }
-
-  double _getPrimePour1000() {
-    if (_age < 18 || _age > 69) return 0.0;
-
-    int duree = _findDureeTarifaire(_dureeEnMois);
-
-    if (!_tarifaire.containsKey(_age)) {
-      List<int> ages = _tarifaire.keys.toList()..sort();
-      for (int a in ages) {
-        if (a >= _age) {
-          _age = a;
-          break;
-        }
-      }
-      if (_age > ages.last) _age = ages.last;
-    }
-
-    return _tarifaire[_age]?[duree] ?? 0.0;
-  }
-
-  double _getCoefficientPeriodicite() {
-    switch (_selectedPeriode) {
+  String _getPeriodiciteKey() {
+    switch (_selectedPeriode ?? Periode.annuel) {
       case Periode.mensuel:
-        return 1.0 / 12;
+        return 'mensuel';
       case Periode.trimestriel:
-        return 1.0 / 4;
+        return 'trimestriel';
       case Periode.semestriel:
-        return 1.0 / 2;
+        return 'semestriel';
       case Periode.annuel:
-        return 1.0;
+        return 'annuel';
     }
+  }
+
+  double calculatePremium(
+      int duration, String periodicity, double desiredCapital) {
+    if (duration < 5 || duration > 50) {
+      return -1;
+    }
+
+    // Si hors ligne, utiliser les données locales
+    if (_useLocalData) {
+      final localPremium = LocalDataService.calculateRetraitePremium(
+        duration,
+        periodicity,
+        desiredCapital,
+      );
+      return localPremium > 0 ? localPremium : -1;
+    }
+
+    if (!capitalValues.containsKey(duration) ||
+        !capitalValues[duration]!.containsKey(periodicity)) {
+      return -1;
+    }
+
+    final double capitalForRefPrime =
+        capitalValues[duration]![periodicity]!.toDouble();
+    final double refPrime = minPrimes[periodicity]?.toDouble() ?? 0;
+    if (capitalForRefPrime <= 0 || refPrime <= 0) {
+      return -1;
+    }
+
+    // Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference
+    return (desiredCapital * refPrime) / capitalForRefPrime;
+  }
+
+  double calculateCapital(
+      int duration, String periodicity, double paidPremium) {
+    if (duration < 5 || duration > 50) {
+      return -1;
+    }
+
+    final double minPremium = minPrimes[periodicity]?.toDouble() ?? 0;
+    if (paidPremium < minPremium) {
+      return -1;
+    }
+
+    // Si hors ligne, utiliser les données locales
+    if (_useLocalData) {
+      final localCapital = LocalDataService.calculateRetraiteCapital(
+        duration,
+        periodicity,
+        paidPremium,
+      );
+      return localCapital > 0 ? localCapital : -1;
+    }
+
+    if (!capitalValues.containsKey(duration) ||
+        !capitalValues[duration]!.containsKey(periodicity)) {
+      return -1;
+    }
+
+    final double capitalForRefPrime =
+        capitalValues[duration]![periodicity]!.toDouble();
+    final double refPrime = minPrimes[periodicity]?.toDouble() ?? 0;
+    if (capitalForRefPrime <= 0 || refPrime <= 0) {
+      return -1;
+    }
+
+    // Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
+    final double calculatedCapital =
+        (paidPremium * capitalForRefPrime) / refPrime;
+
+    return calculatedCapital;
   }
 
   void _effectuerCalcul() async {
+    debugPrint(
+        '🔍 _effectuerCalcul appelé - âge: $_age, durée: $_dureeEnAnnees années, périodicité: ${_getPeriodiciteKey()}');
+
     if (_age < 18 || _age > 69) {
-      _showProfessionalDialog(
-        title: 'Limite d\'âge dépassée',
-        message:
-            'Le Coris Sérénité est disponible pour les personnes âgées de 18 à 69 ans. L\'âge actuel (${_age} ans) n\'est pas éligible pour ce produit.',
-        icon: Icons.schedule_outlined,
-        iconColor: orangeWarning,
-        backgroundColor: orangeWarning,
-      );
-      return;
-    }
-
-    // Vérification de la durée maximale (15 ans = 180 mois)
-    if (_dureeController.text.isNotEmpty) {
-      int duree = int.tryParse(_dureeController.text) ?? 0;
-      if (_selectedUnite == 'années' && duree > 15) {
-        _showErrorSnackBar('La durée du contrat ne peut pas dépasser 15 ans');
-        _dureeController.text = '15';
-        _dureeEnMois = 15 * 12;
-      } else if (_selectedUnite == 'mois' && duree > 180) {
-        _showErrorSnackBar(
-            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
-        _dureeController.text = '180';
-        _dureeEnMois = 180;
+      debugPrint(
+          '⚠️ Âge invalide pour calcul: $_age (doit être entre 18 et 69)');
+      if (mounted) {
+        setState(() {
+          _calculatedPrime = 0.0;
+          _calculatedCapital = 0.0;
+        });
       }
-    }
-
-    double primePour1000 = _getPrimePour1000();
-    if (primePour1000 == 0.0) {
       return;
     }
 
-    setState(() {});
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (_dureeEnAnnees < 5 || _dureeEnAnnees > 50) {
+      debugPrint(
+          '⚠️ Durée invalide pour calcul: $_dureeEnAnnees (doit être entre 5 et 50 ans)');
+      if (mounted) {
+        setState(() {
+          _calculatedPrime = 0.0;
+          _calculatedCapital = 0.0;
+        });
+      }
+      return;
+    }
 
+    // Calcul immédiat: suppression du délai artificiel pour une meilleure réactivité
     if (mounted) {
       setState(() {
-        double coefficient = _getCoefficientPeriodicite();
+        String periodiciteKey = _getPeriodiciteKey();
 
-        if (_currentSimulation == SimulationType.parCapital) {
-          // Calcul à partir du capital saisi
-          String capitalText = _capitalController.text.replaceAll(' ', '');
-          double capital = double.tryParse(capitalText) ?? 0;
-          if (capital <= 0) {
-            _calculatedPrime = 0;
-            _calculatedCapital = 0;
-            return;
-          }
-
-          // Vérification du capital maximum (40 000 000 FCFA)
-          if (capital > 40000000) {
-            _showProfessionalDialog(
-              title: 'Limite de capital dépassée',
-              message:
-                  'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant a été ajusté automatiquement.',
-              icon: Icons.monetization_on_outlined,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            capital = 40000000;
-            _capitalController.text = _formatNumber(capital);
-          }
-
-          // Calcul de la prime annuelle
-          double primeAnnuelle = (capital / 1000) * primePour1000;
-
-          // Ajustement selon la périodicité
-          if (_selectedPeriode == Periode.annuel) {
-            _calculatedPrime = primeAnnuelle;
-          } else {
-            // Pour les autres périodicités, on divise la prime annuelle
-            _calculatedPrime = primeAnnuelle * coefficient;
-          }
-
-          // Le capital reste celui saisi par l'utilisateur
-          _calculatedCapital = capital;
-        } else {
-          // Calcul à partir de la prime saisie
-          String primeText = _primeController.text.replaceAll(' ', '');
-          double prime = double.tryParse(primeText) ?? 0;
+        double prime = 0.0;
+        double capital = 0.0;
+        if (_currentSimulation == SimulationType.parPrime) {
+          prime =
+              double.tryParse(_primeController.text.replaceAll(' ', '')) ?? 0;
           if (prime <= 0) {
-            _calculatedPrime = 0;
-            _calculatedCapital = 0;
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
             return;
           }
 
-          // Prime annuelle pour 1000 FCFA de capital
-          double primeAnnuellePour1000 = primePour1000;
-
-          // Ajustement selon la périodicité
-          double primePeriodiquePour1000;
-          if (_selectedPeriode == Periode.annuel) {
-            primePeriodiquePour1000 = primeAnnuellePour1000;
-          } else {
-            primePeriodiquePour1000 = primeAnnuellePour1000 * coefficient;
+          capital = calculateCapital(_dureeEnAnnees, periodiciteKey, prime);
+          debugPrint(
+              '💰 calculateCapital($_dureeEnAnnees, $periodiciteKey, $prime) = $capital');
+          if (capital == -1) {
+            debugPrint('❌ calculateCapital a retourné -1 (erreur)');
+            capital = 0;
+          }
+        } else {
+          capital =
+              double.tryParse(_capitalController.text.replaceAll(' ', '')) ?? 0;
+          if (capital <= 0) {
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
+            return;
           }
 
-          // Calcul du capital garanti
-          _calculatedCapital = (prime / primePeriodiquePour1000) * 1000;
-
-          // Vérification du capital maximum (40 000 000 FCFA)
-          if (_calculatedCapital > 40000000) {
-            _showProfessionalDialog(
-              title: 'Limite de capital dépassée',
-              message:
-                  'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant et la prime ont été ajustés automatiquement.',
-              icon: Icons.monetization_on_outlined,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            _calculatedCapital = 40000000;
-            // Recalculer la prime correspondante
-            double primeAnnuelle = (_calculatedCapital / 1000) * primePour1000;
-            if (_selectedPeriode == Periode.annuel) {
-              prime = primeAnnuelle;
-            } else {
-              prime = primeAnnuelle * coefficient;
-            }
-            _primeController.text = _formatNumber(prime);
+          prime = calculatePremium(_dureeEnAnnees, periodiciteKey, capital);
+          debugPrint(
+              '💰 calculatePremium($_dureeEnAnnees, $periodiciteKey, $capital) = $prime');
+          if (prime == -1) {
+            debugPrint('❌ calculatePremium a retourné -1 (erreur)');
+            prime = 0;
           }
-
-          // La prime reste celle saisie par l'utilisateur
-          _calculatedPrime = prime;
         }
-        
-        // ⚡ Vérifier automatiquement le capital sous risque
-        _verifierCapitalSousRisqueAuto();
+        _calculatedPrime = prime;
+        _calculatedCapital = capital;
+
+        debugPrint(
+            '✅ Calcul effectué - Prime: ${_formatNumber(prime)} FCFA, Capital: ${_formatNumber(capital)} FCFA');
       });
     }
   }
@@ -1953,16 +1456,17 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
-      locale: const Locale('fr', 'FR'),
     );
     if (picked != null) {
       if (mounted) {
         setState(() {
           _dateEffetContrat = picked;
+          _dateEffetController.text =
+              '${picked.day}/${picked.month}/${picked.year}';
           // Calculer la date d'échéance
           final duree = int.tryParse(_dureeController.text) ?? 0;
-          final dureeMois = _selectedUnite == 'années' ? duree * 12 : duree;
-          _dateEcheanceContrat = picked.add(Duration(days: dureeMois * 30));
+          final dureeAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+          _dateEcheanceContrat = picked.add(Duration(days: dureeAnnees * 365));
         });
       }
     }
@@ -1972,9 +1476,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     if (newValue != null) {
       setState(() {
         _selectedSimulationType = newValue;
-        _currentSimulation = newValue == 'Par Capital'
-            ? SimulationType.parCapital
-            : SimulationType.parPrime;
+        _currentSimulation = newValue == 'Par Prime'
+            ? SimulationType.parPrime
+            : SimulationType.parCapital;
         _effectuerCalcul();
       });
     }
@@ -1995,33 +1499,36 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         _selectedUnite = newValue;
         if (_dureeController.text.isNotEmpty) {
           int duree = int.tryParse(_dureeController.text) ?? 0;
+          _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
 
-          // Vérification de la durée maximale (15 ans = 180 mois)
-          if (_selectedUnite == 'années' && duree > 15) {
+          // Validation de la durée en années
+          if (_dureeEnAnnees < 5) {
             _showProfessionalDialog(
-              title: 'Limite de durée dépassée',
+              title: 'Durée minimale requise',
               message:
-                  'La durée maximale du contrat CORIS SÉRÉNITÉ est de 15 ans. La durée a été ajustée automatiquement.',
-              icon: Icons.schedule_outlined,
+                  'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+              icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
             );
-            _dureeController.text = '15';
-            duree = 15;
-          } else if (_selectedUnite == 'mois' && duree > 180) {
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
+            return;
+          }
+          if (_dureeEnAnnees > 50) {
             _showProfessionalDialog(
-              title: 'Limite de durée dépassée',
+              title: 'Durée maximale dépassée',
               message:
-                  'La durée maximale du contrat CORIS SÉRÉNITÉ est de 180 mois (15 ans). La durée a été ajustée automatiquement.',
-              icon: Icons.schedule_outlined,
+                  'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+              icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
             );
-            _dureeController.text = '180';
-            duree = 180;
+            _calculatedPrime = 0.0;
+            _calculatedCapital = 0.0;
+            return;
           }
 
-          _dureeEnMois = _selectedUnite == 'années' ? duree * 12 : duree;
           _effectuerCalcul();
         }
       });
@@ -2029,7 +1536,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   }
 
   String _getPeriodeTextForDisplay() {
-    switch (_selectedPeriode) {
+    switch (_selectedPeriode ?? Periode.annuel) {
       case Periode.mensuel:
         return 'Mensuel';
       case Periode.trimestriel:
@@ -2044,66 +1551,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   // Méthodes pour la souscription
   String _formatMontant(double montant) {
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
-  }
-
-  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
-  /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
-  Map<String, String> _parseRibUnified(String rib) {
-    final parts = rib.split('/').map((p) => p.trim()).toList();
-    return {
-      'code_guichet': parts.length > 0 ? parts[0] : '',
-      'numero_compte': parts.length > 1 ? parts[1] : '',
-      'cle_rib': parts.length > 2 ? parts[2] : '',
-    };
-  }
-
-  /// Valide le format du RIB unifié
-  bool _validateRibUnified(String rib) {
-    final parts = _parseRibUnified(rib);
-    final codeGuichet = parts['code_guichet'] ?? '';
-    final numeroCompte = parts['numero_compte'] ?? '';
-    final cleRib = parts['cle_rib'] ?? '';
-    
-    return codeGuichet.length == 4 &&
-        numeroCompte.length == 11 &&
-        cleRib.length == 2 &&
-        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
-        RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
-        RegExp(r'^\d{2}$').hasMatch(cleRib);
-  }
-
-  /// Formate l'entrée RIB en temps réel
-  void _formatRibInput() {
-    final text = _ribUnifiedController.text;
-    final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    if (onlyDigits.isEmpty) {
-      _ribUnifiedController.text = '';
-      return;
-    }
-
-    // Construire le format: XXXX / XXXXXXXXXXX / XX
-    final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
-      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 4) {
-      buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(4, min(15, onlyDigits.length)));
-    }
-    if (onlyDigits.length > 15) {
-      buffer.write(' / ');
-      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
-    }
-
-    final formatted = buffer.toString();
-    if (formatted != text) {
-      _ribUnifiedController.text = formatted;
-      _ribUnifiedController.selection = TextSelection.fromPosition(
-        TextPosition(offset: formatted.length),
-      );
-    }
   }
 
   Future<void> _pickDocument() async {
@@ -2245,259 +1692,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
-  Future<bool> _verifierCapitalSousRisque() async {
-    debugPrint('\n╔══════════════════════════════════════════════════════════╗');
-    debugPrint('║  🏥 CORIS SÉRÉNITÉ - Vérification Capital Sous Risque    ║');
-    debugPrint('╚══════════════════════════════════════════════════════════╝');
-    
-    // Pour Coris Sérénité: Capital sous risque = Capital décès
-    final capitalSousRisque = _calculatedCapital;
-    
-    // Déterminer l'âge (client ou commercial)
-    final age = _isCommercial ? _clientAge : _age;
-    
-    debugPrint('📊 Données de calcul:');
-    debugPrint('   - Type utilisateur: ${_isCommercial ? "Commercial" : "Client"}');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatMontant(capitalSousRisque)}');
-    debugPrint('   - Capital sous risque = Capital décès = ${_formatMontant(capitalSousRisque)}');
-    
-    // Vérifier les conditions
-    bool afficherMessage = false;
-    String raison = '';
-    
-    if (age < 45 && capitalSousRisque > 30000000) {
-      afficherMessage = true;
-      raison = 'Âge < 45 ans ET Capital > 30M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else if (age >= 45 && capitalSousRisque > 15000000) {
-      afficherMessage = true;
-      raison = 'Âge ≥ 45 ans ET Capital > 15M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
-    } else {
-      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
-      if (age < 45) {
-        debugPrint('   - Âge < 45: Capital doit être > 30M (actuellement: ${_formatMontant(capitalSousRisque)})');
-      } else {
-        debugPrint('   - Âge ≥ 45: Capital doit être > 15M (actuellement: ${_formatMontant(capitalSousRisque)})');
-      }
-    }
-    
-    if (!afficherMessage) {
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return true; // Pas de message, on peut continuer
-    }
-    
-    debugPrint('🔔 Affichage du dialog de confirmation...');
-    
-    // Marquer que le message est affiché
-    _messageCapitalAffiche = true;
-    
-    // Afficher le dialog
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  const Color(0xFFE8F4FD).withOpacity(0.3),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icône avec fond coloré
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: bleuCoris.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.local_hospital,
-                    color: bleuCoris,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Titre
-                const Text(
-                  'Formulaire Médical',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                // Message principal
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
-                  ),
-                  child: const Text(
-                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: grisTexte,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Souhaitez-vous continuer ?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: bleuCoris,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                // Boutons Oui/Non
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers la page de sélection des produits
-                          await Future.delayed(const Duration(milliseconds: 100));
-                          if (mounted) {
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              '/souscription',
-                              (route) => false,
-                            );
-                          }
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.grey, width: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Non',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(true); // Oui
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: bleuCoris,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Oui',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    
-    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
-    if (result == false) {
-      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
-      debugPrint('══════════════════════════════════════════════════════════\n');
-      return false;
-    }
-    
-    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
-    debugPrint('══════════════════════════════════════════════════════════\n');
-    return true; // L'utilisateur a cliqué "Continuer"
-  }
-
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
-  void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    final age = _isCommercial ? _clientAge : _age;
-    
-    if (age == 0 || _calculatedCapital == 0) {
-      debugPrint('⏳ [AUTO SÉRÉNITÉ] Valeurs incomplètes - Attente saisie complète');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO SÉRÉNITÉ] Vérification automatique déclenchée!');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatMontant(_calculatedCapital)}');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && _calculatedCapital > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && _calculatedCapital > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      _verifierCapitalSousRisque();
-    }
-  }
-
-  Future<void> _nextStep() async{
-    debugPrint('\n🔵 [SÉRÉNITÉ] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
-    // Ajout du questionnaire médical: +1 étape avant le récap
-    final maxStep = _isCommercial ? 6 : 5;
+  void _nextStep() {
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap, step 6 = finalisation
+        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -2505,71 +1706,22 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true; // Mode paiement validé avant questionnaire médical
-        } else if (_currentStep == 4) {
-          // Questionnaire médical: trigger widget validation/save
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
-            if (!ok) return;
-          } else if (!_questionnaireCompleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
           canProceed = true;
-        } else if (_currentStep == 5) {
-          canProceed = true; // Récap, aller à la page de finalisation
         }
       } else {
-        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap, step 5 = finalisation
+        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
-          if (!_messageCapitalAffiche) {
-            final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
-          }
-          canProceed = true; // Mode paiement validé avant questionnaire médical
-        } else if (_currentStep == 3) {
-          // Questionnaire médical avant récap — utiliser la validation du widget (modèle Études)
-          if (_questionnaireValidate != null) {
-            final ok = await _questionnaireValidate!();
-            if (!ok) return;
-          } else if (!_questionnaireCompleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
           canProceed = true;
-        } else if (_currentStep == 4) {
-          canProceed = true; // Récap, aller à la page de finalisation
         }
       }
 
       if (canProceed) {
-        // Recalculer avant le récap
-        final recapStep = _isCommercial ? 5 : 4;
-        if (_currentStep + 1 == recapStep) {
+        // If the next step is the recap, ensure calculations are performed
+        if (_currentStep + 1 == maxStep) {
           try {
             _effectuerCalcul();
           } catch (e) {
@@ -2597,6 +1749,63 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOutCubic);
     }
+  }
+
+  bool _validateStep1() {
+    if (_currentSimulation == SimulationType.parPrime) {
+      if (_primeController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez saisir une prime');
+        return false;
+      }
+    } else {
+      if (_capitalController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez saisir un capital');
+        return false;
+      }
+    }
+
+    if (_dureeController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir une durée');
+      return false;
+    }
+
+    // Si c'est un commercial, on ne valide pas l'âge à l'étape 1 (les champs client ne sont pas encore remplis)
+    if (_isCommercial) {
+      // L'âge sera validé à l'étape 2 quand les infos client seront saisies
+      return true;
+    }
+
+    // Si c'est un client, valider son propre âge
+    // Recalculer l'âge si la date de naissance est disponible
+    if (_dateNaissance != null) {
+      final maintenant = DateTime.now();
+      _age = maintenant.year - _dateNaissance!.year;
+      if (maintenant.month < _dateNaissance!.month ||
+          (maintenant.month == _dateNaissance!.month &&
+              maintenant.day < _dateNaissance!.day)) {
+        _age--;
+      }
+    }
+
+    // Valider l'âge seulement à l'étape 2 si disponible
+    // À l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
+    if (_currentStep == 1) {
+      if (_age <= 0) {
+        _showErrorSnackBar(
+            'Veuillez renseigner votre date de naissance dans votre profil');
+        return false;
+      }
+
+      if (_age > 0) {
+        if (_age < 18 || _age > 69) {
+          _showErrorSnackBar(
+              'Âge non valide (18-69 ans requis). Votre âge: $_age ans');
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   bool _validateStepClientInfo() {
@@ -2634,58 +1843,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     return true;
   }
 
-  bool _validateStep1() {
-    // Si c'est un client, valider son propre âge
-    if (!_isCommercial) {
-      // Recalculer l'âge si la date de naissance est disponible
-      if (_dateNaissance != null) {
-        final maintenant = DateTime.now();
-        _age = maintenant.year - _dateNaissance!.year;
-        if (maintenant.month < _dateNaissance!.month ||
-            (maintenant.month == _dateNaissance!.month &&
-                maintenant.day < _dateNaissance!.day)) {
-          _age--;
-        }
-      }
-
-      // Valider l'âge seulement à l'étape 2 si disponible
-      // À l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
-      if (_currentStep == 1) {
-        if (_age > 0) {
-          if (_age < 18 || _age > 69) {
-            _showErrorSnackBar(
-                'Âge non valide (18-69 ans requis). Votre âge: $_age ans');
-            return false;
-          }
-        } else if (_age <= 0) {
-          _showErrorSnackBar(
-              'Veuillez renseigner votre date de naissance dans votre profil');
-          return false;
-        }
-      }
-    }
-
-    // Valider les champs de simulation
-    if (_currentSimulation == SimulationType.parCapital) {
-      if (_capitalController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez saisir un capital');
-        return false;
-      }
-    } else {
-      if (_primeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez saisir une prime');
-        return false;
-      }
-    }
-
-    if (_dureeController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir une durée');
-      return false;
-    }
-
-    return true;
-  }
-
   bool _validateStep2() {
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
@@ -2704,143 +1861,148 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     return true;
   }
 
-  /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
-    if (_selectedModePaiement == null) {
-      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
+    if (_selectedModePaiement == null || _selectedModePaiement!.isEmpty) {
+      _showErrorSnackBar('Veuillez sélectionner un mode de paiement');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez sélectionner votre banque.');
-        return false;
-      }
-      if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
-        return false;
-      }
-      if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 4444 / 11111111111 / 22');
+      if (_banqueController.text.trim().isEmpty ||
+          _codeGuichetController.text.trim().isEmpty ||
+          _numeroCompteController.text.trim().isEmpty ||
+          _cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner correctement les informations bancaires');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-      if (_numeroMobileMoneyController.text.trim().isEmpty) {
-        _showErrorSnackBar(
-            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+      final phone = _numeroMobileMoneyController.text.trim();
+      if (phone.isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
-      if (!RegExp(r'^[0-9]{8,10}$')
-          .hasMatch(_numeroMobileMoneyController.text.trim())) {
+      if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+            'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-        if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
+        if (!phone.startsWith('07')) {
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
       }
     }
-
     return true;
   }
 
   // Méthodes d'interface utilisateur
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: grisLeger,
-      body: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return <Widget>[
-            SliverAppBar(
-              expandedHeight: 120,
-              floating: false,
-              pinned: true,
-              elevation: 0,
-              backgroundColor: bleuCoris,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [bleuCoris, bleuSecondaire],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.security,
-                                  color: blanc, size: 28),
-                              const SizedBox(width: 12),
-                              const Text('CORIS SÉRÉNITÉ',
-                                  style: TextStyle(
-                                      color: blanc,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700)),
-                            ],
+    return ConnectivityBuilder(
+      builder: (context, isConnected) {
+        _useLocalData = !isConnected;
+
+        return Scaffold(
+          backgroundColor: grisLeger,
+          body: Column(
+            children: [
+              if (!isConnected) ConnectivityBanner(isConnected: isConnected),
+              Expanded(
+                child: NestedScrollView(
+                  headerSliverBuilder:
+                      (BuildContext context, bool innerBoxIsScrolled) {
+                    return <Widget>[
+                      SliverAppBar(
+                        expandedHeight: 120,
+                        floating: false,
+                        pinned: true,
+                        elevation: 0,
+                        backgroundColor: bleuCoris,
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [bleuCoris, bleuSecondaire],
+                              ),
+                            ),
+                            child: SafeArea(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.emoji_people_outlined,
+                                            color: blanc, size: 28),
+                                        const SizedBox(width: 12),
+                                        Text('CORIS RETRAITE',
+                                            style: const TextStyle(
+                                                color: blanc,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text('Préparez sereinement votre retraite',
+                                        style: TextStyle(
+                                            color: blanc.withValues(alpha: 0.9),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400)),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Text('Protection et épargne pour votre sérénité',
-                              style: TextStyle(
-                                  color: blanc.withValues(alpha: 0.9),
-                                  fontSize: 14)),
-                          const SizedBox(height: 16),
-                        ],
+                        ),
+                        leading: IconButton(
+                            icon:
+                                const Icon(Icons.arrow_back_ios, color: blanc),
+                            onPressed: () => Navigator.pop(context)),
                       ),
-                    ),
+                        SliverToBoxAdapter(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            child: _buildModernProgressIndicator())),
+                    ];
+                  },
+                  body: Column(
+                    children: [
+                      Expanded(
+                          child: PageView(
+                              controller: _pageController,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: _isCommercial
+                                  ? [
+                                      _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                                      _buildStep1(), // Page 1: Simulation
+                                      _buildStep2(), // Page 2: Bénéficiaire/Contact
+                                      _buildStepModePaiement(), // Page 3: Mode de paiement
+                                      _buildStep3(), // Page 4: Récapitulatif
+                                    ]
+                                  : [
+                                      _buildStep1(), // Page 0: Simulation
+                                      _buildStep2(), // Page 1: Bénéficiaire/Contact
+                                      _buildStepModePaiement(), // Page 2: Mode de paiement
+                                      _buildStep3(), // Page 3: Récapitulatif
+                                    ])),
+                      _buildNavigationButtons(),
+                    ],
                   ),
                 ),
               ),
-              leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: blanc),
-                  onPressed: () => Navigator.pop(context)),
-            ),
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: _buildModernProgressIndicator())),
-          ];
-        },
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                  child: PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: _isCommercial
-                          ? [
-                              _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                              _buildStep1(), // Page 1: Simulation
-                              _buildStep2(), // Page 2: Bénéficiaire/Contact
-                              _buildStepModePaiement(), // Page 3: Mode de paiement
-                              _buildStepQuestionnaireMedical(), // Page 4: Questionnaire médical
-                              _buildStep3(), // Page 5: Récapitulatif
-                            ]
-                          : [
-                              _buildStep1(), // Page 0: Simulation
-                              _buildStep2(), // Page 1: Bénéficiaire/Contact
-                              _buildStepModePaiement(), // Page 2: Mode de paiement
-                              _buildStepQuestionnaireMedical(), // Page 3: Questionnaire médical
-                              _buildStep3(), // Page 4: Récapitulatif
-                              _buildStep4(), // Page 5: Finaliser
-                            ])),
-              _buildNavigationButtons(),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2930,7 +2092,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   Widget _buildModernProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
           color: blanc,
           borderRadius: BorderRadius.circular(16),
@@ -2945,8 +2107,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           Expanded(
               child: Column(children: [
             Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                     color: i <= _currentStep ? bleuCoris : grisLeger,
                     shape: BoxShape.circle,
@@ -2954,67 +2116,59 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         ? [
                             BoxShadow(
                                 color: bleuCoris.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 1))
+                                blurRadius: 8,
+                                offset: const Offset(0, 2))
                           ]
                         : null),
                 child: Icon(
-                  _isCommercial
-                    ? (i == 0
-                      ? Icons.person
-                      : i == 1
-                        ? Icons.monetization_on
-                        : i == 2
-                          ? Icons.person_add
-                          : i == 3
-                            ? Icons.payment
-                            : i == 4
-                              ? Icons.assignment
-                              : i == 5
-                                ? Icons.check_circle
-                                : Icons.credit_card)
-                    : (i == 0
-                      ? Icons.monetization_on
-                      : i == 1
-                        ? Icons.person_add
-                        : i == 2
-                          ? Icons.payment
-                          : i == 3
-                            ? Icons.assignment
-                            : i == 4
-                              ? Icons.check_circle
-                              : Icons.credit_card),
-                  color: i <= _currentStep ? blanc : grisTexte,
-                  size: 20)),
-            const SizedBox(height: 4),
+                    _isCommercial
+                        ? (i == 0
+                            ? Icons.person
+                            : i == 1
+                                ? Icons.account_balance_wallet
+                                : i == 2
+                                    ? Icons.person_add
+                                    : i == 3
+                                        ? Icons.credit_card
+                                        : i == 4
+                                            ? Icons.check_circle
+                                            : Icons.payment)
+                        : (i == 0
+                            ? Icons.account_balance_wallet
+                            : i == 1
+                                ? Icons.person_add
+                                : i == 2
+                                    ? Icons.credit_card
+                                    : i == 3
+                                        ? Icons.check_circle
+                                        : Icons.payment),
+                    color: i <= _currentStep ? blanc : grisTexte,
+                    size: 20)),
+            const SizedBox(height: 6),
             Text(
-              _isCommercial
-                ? (i == 0
-                  ? 'Client'
-                  : i == 1
-                    ? 'Simulation'
-                    : i == 2
-                      ? 'Informations'
-                      : i == 3
-                        ? 'Paiement'
-                        : i == 4
-                          ? 'Questionnaire médical'
-                          : i == 5
-                            ? 'Récapitulatif'
-                            : 'Finaliser')
-                : (i == 0
-                  ? 'Simulation'
-                  : i == 1
-                    ? 'Informations'
-                    : i == 2
-                      ? 'Paiement'
-                      : i == 3
-                        ? 'Questionnaire médical'
-                        : i == 4
-                          ? 'Récapitulatif'
-                          : 'Finaliser'),
+                _isCommercial
+                    ? (i == 0
+                        ? 'Client'
+                        : i == 1
+                            ? 'Simulation'
+                            : i == 2
+                                ? 'Informations'
+                                : i == 3
+                                    ? 'Paiement'
+                                    : i == 4
+                                        ? 'Récapitulatif'
+                                        : 'Finaliser')
+                    : (i == 0
+                        ? 'Simulation'
+                        : i == 1
+                            ? 'Informations'
+                            : i == 2
+                                ? 'Paiement'
+                                : i == 3
+                                    ? 'Récapitulatif'
+                                    : 'Finaliser'),
                 style: TextStyle(
-                  fontSize: 10,
+                    fontSize: 11,
                     fontWeight:
                         i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                     color: i <= _currentStep ? bleuCoris : grisTexte)),
@@ -3022,9 +2176,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (i < (_isCommercial ? 5 : 4))
             Expanded(
                 child: Container(
-                  height: 2,
-                  margin:
-                    const EdgeInsets.only(bottom: 8, left: 6, right: 6),
+                    height: 2,
+                    margin:
+                        const EdgeInsets.only(bottom: 20, left: 6, right: 6),
                     decoration: BoxDecoration(
                         color: i < _currentStep ? bleuCoris : grisLeger,
                         borderRadius: BorderRadius.circular(1)))),
@@ -3177,15 +2331,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                     color: bleuCoris.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Icon(Icons.settings,
-                                    color: bleuCoris, size: 22)),
+                                    borderRadius: BorderRadius.circular(10))),
                             const SizedBox(width: 12),
-                            const Text("Paramètres de simulation",
+                            Text("Souscrire à CORIS RETRAITE",
                                 style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF002B6B))),
+                                    color: bleuCoris)),
                           ]),
                           const SizedBox(height: 20),
 
@@ -3193,7 +2345,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           _buildSimulationTypeDropdown(),
                           const SizedBox(height: 16),
 
-                          // Champ pour le capital/prime
+                          // Champ pour la prime/capital
                           _buildMontantField(),
                           const SizedBox(height: 16),
 
@@ -3207,10 +2359,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
                           // Champ date d'effet
                           _buildDateEffetField(),
-
-                          // Affichage du résultat
-                          const SizedBox(height: 16),
-                          _buildResultDisplay(),
                         ],
                       ),
                     ),
@@ -3236,10 +2384,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           onTap: _selectDateEffet,
           child: AbsorbPointer(
             child: TextFormField(
-              controller: TextEditingController(
-                  text: _dateEffetContrat != null
-                      ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                      : ''),
+              controller: _dateEffetController,
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding:
@@ -3265,51 +2410,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  Widget _buildResultDisplay() {
-    // Afficher même si les valeurs sont à 0 pendant le calcul
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: vertSucces.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: vertSucces.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Résultat de la simulation',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: bleuCoris,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Toujours afficher la prime périodique
-          Text(
-            'Prime ${_getPeriodeTextForDisplay().toLowerCase()} à verser: ${_formatMontant(_calculatedPrime)}',
-            style: TextStyle(
-              fontSize: 14,
-              color: grisTexte,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Toujours afficher le capital garanti
-          Text(
-            'Capital garanti: ${_formatMontant(_calculatedCapital)}',
-            style: TextStyle(
-              fontSize: 14,
-              color: grisTexte,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSimulationTypeDropdown() {
     return Container(
       decoration: BoxDecoration(
@@ -3326,12 +2426,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         child: DropdownButtonFormField<String>(
           value: _selectedSimulationType,
           decoration: const InputDecoration(
-              border: InputBorder.none,
-              prefixIcon: Icon(Icons.calculate, color: Color(0xFF002B6B)),
-              labelText: 'Type de simulation'),
+            border: InputBorder.none,
+            labelText: 'Mode de souscription',
+          ),
           items: const [
-            DropdownMenuItem(value: 'Par Capital', child: Text('Par Capital')),
-            DropdownMenuItem(value: 'Par Prime', child: Text('Par Prime'))
+            DropdownMenuItem(
+                value: 'Par Prime', child: Text('Saisir la Prime')),
+            DropdownMenuItem(
+                value: 'Par Capital', child: Text('Saisir le Capital'))
           ],
           onChanged: _onSimulationTypeChanged,
         ),
@@ -3344,39 +2446,17 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-            _currentSimulation == SimulationType.parCapital
-                ? 'Capital souhaité'
-                : 'Prime à verser',
+            _currentSimulation == SimulationType.parPrime
+                ? 'Prime souhaitée'
+                : 'Capital souhaitée',
             style: TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
         const SizedBox(height: 6),
         TextField(
-          controller: _currentSimulation == SimulationType.parCapital
-              ? _capitalController
-              : _primeController,
+          controller: _currentSimulation == SimulationType.parPrime
+              ? _primeController
+              : _capitalController,
           keyboardType: TextInputType.number,
-          onChanged: (value) {
-            // Validation en temps réel pour le capital
-            if (_currentSimulation == SimulationType.parCapital &&
-                value.isNotEmpty) {
-              String cleanValue = value.replaceAll(' ', '');
-              double? montant = double.tryParse(cleanValue);
-              if (montant != null && montant > 40000000) {
-                _showProfessionalDialog(
-                  title: 'Limite de capital dépassée',
-                  message:
-                      'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA.',
-                  icon: Icons.monetization_on_outlined,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
-                _capitalController.text = _formatNumber(40000000);
-                _capitalController.selection = TextSelection.fromPosition(
-                  TextPosition(offset: _capitalController.text.length),
-                );
-              }
-            }
-          },
           decoration: InputDecoration(
             isDense: true,
             contentPadding:
@@ -3416,27 +2496,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   controller: _dureeController,
                   focusNode: _dureeFocusNode,
                   keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    // Validation en temps réel pour la durée
-                    if (value.isNotEmpty) {
-                      int duree = int.tryParse(value) ?? 0;
-                      if (_selectedUnite == 'années' && duree > 15) {
-                        _showErrorSnackBar(
-                            'La durée du contrat ne peut pas dépasser 15 ans');
-                        _dureeController.text = '15';
-                        _dureeController.selection = TextSelection.fromPosition(
-                          TextPosition(offset: _dureeController.text.length),
-                        );
-                      } else if (_selectedUnite == 'mois' && duree > 180) {
-                        _showErrorSnackBar(
-                            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
-                        _dureeController.text = '180';
-                        _dureeController.selection = TextSelection.fromPosition(
-                          TextPosition(offset: _dureeController.text.length),
-                        );
-                      }
-                    }
-                  },
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -3474,8 +2533,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         borderSide: BorderSide(color: bleuCoris, width: 1.5)),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'mois', child: Text('Mois')),
-                    DropdownMenuItem(value: 'années', child: Text('Années'))
+                    DropdownMenuItem(value: 'années', child: Text('Années')),
+                    DropdownMenuItem(value: 'mois', child: Text('Mois'))
                   ],
                   onChanged: _onUniteChanged,
                 )),
@@ -3502,7 +2561,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           value: _selectedPeriode,
           decoration: InputDecoration(
               border: InputBorder.none,
-              prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
+              prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
               labelText: 'Périodicité'),
           items: const [
             DropdownMenuItem(value: Periode.mensuel, child: Text('Mensuel')),
@@ -3641,43 +2700,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  Widget _buildModernTextField(
-      {required TextEditingController controller,
-      required String label,
-      required IconData icon,
-      TextInputType? keyboardType}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: bleuCoris.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: bleuCoris, size: 20)),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: grisLeger)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: grisLeger)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: bleuCoris, width: 2)),
-        filled: true,
-        fillColor: fondCarte,
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      ),
-      validator: (value) => value == null || value.trim().isEmpty
-          ? 'Ce champ est obligatoire'
-          : null,
-    );
-  }
-
   Widget _buildDateField({
     required TextEditingController controller,
     required String label,
@@ -3751,7 +2773,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 filled: true,
                 fillColor: fondCarte,
                 contentPadding:
-                    EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 suffixIcon: Icon(Icons.calendar_today, color: bleuCoris),
               ),
               validator: (value) {
@@ -3764,6 +2786,43 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildModernTextField(
+      {required TextEditingController controller,
+      required String label,
+      required IconData icon,
+      TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: bleuCoris.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: bleuCoris, size: 20)),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: grisLeger)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: grisLeger)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: bleuCoris, width: 2)),
+        filled: true,
+        fillColor: fondCarte,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      ),
+      validator: (value) => value == null || value.trim().isEmpty
+          ? 'Ce champ est obligatoire'
+          : null,
     );
   }
 
@@ -3852,7 +2911,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   duration: const Duration(milliseconds: 300),
                   child: Icon(
                       _pieceIdentite != null
-                          ? Icons.check_circle_outlined
+                          ? Icons.check_circle_outline
                           : Icons.cloud_upload_outlined,
                       size: 40,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris,
@@ -3881,7 +2940,118 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  /// 💳 ÉTAPE MODE DE PAIEMENT
+  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
+  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
+  /// si elles ne sont pas déjà disponibles dans _userData
+  Future<Map<String, dynamic>> _loadUserDataForRecap() async {
+    try {
+      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      if (_userData.isNotEmpty) {
+        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        return _userData;
+      }
+
+      final token = await storage.read(key: 'token');
+      if (token == null) {
+        debugPrint('❌ Token non trouvé');
+        // Retourner un map vide au lieu de lever une exception
+        return {};
+      }
+
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/users/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data != null && data is Map) {
+          // 1) Cas standard: { success: true, user: { ... } }
+          if (data['success'] == true &&
+              data['user'] != null &&
+              data['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['user']);
+            debugPrint(
+                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data'] is Map) {
+            final dataObj = data['data'] as Map<String, dynamic>;
+            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
+              final userData = Map<String, dynamic>.from(dataObj);
+              debugPrint(
+                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+              if (mounted) {
+                setState(() {
+                  _userData = userData;
+                });
+              }
+              return userData;
+            }
+          }
+
+          // 3) Cas nested avec user object: { data: { user: { ... } } }
+          if (data['data'] != null &&
+              data['data'] is Map &&
+              data['data']['user'] != null &&
+              data['data']['user'] is Map) {
+            final userData = Map<String, dynamic>.from(data['data']['user']);
+            debugPrint(
+                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          // 4) Direct user object: { id, civilite, nom, ... }
+          if (data.containsKey('id') && data.containsKey('email')) {
+            final userData = Map<String, dynamic>.from(data);
+            debugPrint(
+                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+            if (mounted) {
+              setState(() {
+                _userData = userData;
+              });
+            }
+            return userData;
+          }
+
+          debugPrint(
+              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+        } else {
+          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+        }
+      } else {
+        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+      }
+
+      // Fallback vers _userData si la requête échoue
+      return _userData.isNotEmpty ? _userData : {};
+    } catch (e) {
+      debugPrint(
+          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+      // Fallback vers _userData en cas d'erreur
+      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
+      return result;
+    }
+  }
+
   Widget _buildStepModePaiement() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3992,7 +3162,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
-                              _ribUnifiedController.clear();
+                              _codeGuichetController.clear();
+                              _numeroCompteController.clear();
+                              _cleRibController.clear();
                               _numeroMobileMoneyController.clear();
                             });
                           },
@@ -4113,7 +3285,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         SizedBox(height: 16),
                       ],
 
-                      // Informations du RIB (champ unifié)
+                      // Informations du RIB
                       Text(
                         'Informations du RIB',
                         style: TextStyle(
@@ -4124,23 +3296,57 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                       ),
                       SizedBox(height: 12),
 
-                      // RIB unifié: XXXX / XXXXXXXXXXX / XX
+                      // Code guichet (4 chiffres)
                       TextField(
-                        controller: _ribUnifiedController,
-                        onChanged: (_) => _formatRibInput(),
+                        controller: _codeGuichetController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro RIB complet *',
-                          hintText: '4444 / 11111111111 / 22',
-                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          counterText: '',
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
+                      TextField(
+                        controller: _numeroCompteController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de compte *',
+                          hintText: '11 chiffres',
+                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.vpn_key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
                       ),
                     ],
 
@@ -4211,6 +3417,437 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStep3() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _isCommercial
+                  ? _buildRecapContent()
+                  : FutureBuilder<Map<String, dynamic>>(
+                      future: _loadUserDataForRecap(),
+                      builder: (context, snapshot) {
+                        // Pour les clients, attendre le chargement des données
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
+                        }
+
+                        if (snapshot.hasError) {
+                          debugPrint(
+                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                          // En cas d'erreur, essayer d'utiliser _userData si disponible
+                          if (_userData.isNotEmpty) {
+                            return _buildRecapContent(userData: _userData);
+                          }
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, size: 48, color: rougeCoris),
+                                SizedBox(height: 16),
+                                Text('Erreur lors du chargement des données'),
+                                TextButton(
+                                  onPressed: () => setState(() {}),
+                                  child: Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
+                        final userData = snapshot.data ?? _userData;
+
+                        // Si userData est vide, recharger les données
+                        if (userData.isEmpty && !_isCommercial) {
+                          // Recharger les données utilisateur
+                          _loadUserDataForRecap().then((data) {
+                            if (mounted && data.isNotEmpty) {
+                              setState(() {
+                                _userData = data;
+                              });
+                            }
+                          });
+                          return Center(
+                              child:
+                                  CircularProgressIndicator(color: bleuCoris));
+                        }
+
+                        return _buildRecapContent(userData: userData);
+                      },
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRecapContent({Map<String, dynamic>? userData}) {
+    final duree = _dureeController.text.isNotEmpty
+        ? int.tryParse(_dureeController.text) ?? 0
+        : 0;
+
+    /**
+     * CONSTRUCTION DU RÉCAPITULATIF:
+     * 
+     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     */
+    final displayData = _isCommercial
+        ? {
+            'civilite': _selectedClientCivilite,
+            'nom': _clientNomController.text,
+            'prenom': _clientPrenomController.text,
+            'email': _clientEmailController.text,
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
+            'lieu_naissance': _clientLieuNaissanceController.text,
+            'adresse': _clientAdresseController.text,
+          }
+        : (userData ?? _userData);
+
+    return ListView(children: [
+      // Afficher les informations du client (toujours dans "Informations Personnelles")
+      SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
+
+      const SizedBox(height: 20),
+      SubscriptionRecapWidgets.buildRecapSection(
+          'Produit Souscrit', Icons.emoji_people_outlined, vertSucces, [
+        // Produit et Prime
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Produit',
+            'CORIS RETRAITE',
+            'Prime ${_getPeriodeTextForDisplay()}',
+            _formatMontant(_calculatedPrime)),
+
+        // Capital au terme et Durée du contrat
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Capital au terme',
+            '${_formatNumber(_calculatedCapital)} FCFA',
+            'Durée du contrat',
+            '$duree ${_selectedUnite == 'années' ? 'ans' : 'mois'}'),
+
+        // Date d'effet et Date d'échéance
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
+            'Date d\'effet',
+            _dateEffetContrat != null
+                ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
+                : 'Non définie',
+            'Date d\'échéance',
+            _dateEcheanceContrat != null
+                ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
+                : 'Non définie'),
+      ]),
+      const SizedBox(height: 20),
+      SubscriptionRecapWidgets.buildRecapSection(
+          'Bénéficiaire et Contact d\'urgence', Icons.contacts, orangeWarning, [
+        _buildSubsectionTitle('Bénéficiaire'),
+        SubscriptionRecapWidgets.buildRecapRow(
+            'Nom complet',
+            _beneficiaireNomController.text.isEmpty
+                ? 'Non renseigné'
+                : _beneficiaireNomController.text),
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
+            '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParente),
+        const SizedBox(height: 12),
+        _buildSubsectionTitle('Contact d\'urgence'),
+        SubscriptionRecapWidgets.buildRecapRow(
+            'Nom complet',
+            _personneContactNomController.text.isEmpty
+                ? 'Non renseigné'
+                : _personneContactNomController.text),
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
+            '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
+      ]),
+      const SizedBox(height: 20),
+      // 💳 SECTION MODE DE PAIEMENT
+      if (_selectedModePaiement != null)
+        SubscriptionRecapWidgets.buildRecapSection(
+          'Mode de Paiement',
+          Icons.payment,
+          _selectedModePaiement == 'Virement'
+              ? bleuCoris
+              : _selectedModePaiement == 'Wave'
+                  ? Color(0xFF00BFFF)
+                  : orangeCoris,
+          [
+            SubscriptionRecapWidgets.buildRecapRow('Mode choisi', _selectedModePaiement!),
+            const SizedBox(height: 8),
+            if (_selectedModePaiement == 'Virement') ...[
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Banque',
+                  _banqueController.text.isNotEmpty
+                      ? _banqueController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro de compte',
+                  _numeroCompteController.text.isNotEmpty
+                      ? _numeroCompteController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
+                      : 'Non renseigné'),
+            ] else if (_selectedModePaiement == 'Wave' ||
+                _selectedModePaiement == 'Orange Money') ...[
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro ${_selectedModePaiement}',
+                  _numeroMobileMoneyController.text.isNotEmpty
+                      ? _numeroMobileMoneyController.text
+                      : 'Non renseigné'),
+            ],
+          ],
+        ),
+      if (_selectedModePaiement != null) const SizedBox(height: 20),
+
+      SubscriptionRecapWidgets.buildDocumentsSection(
+        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        onDocumentTap: _pieceIdentite != null
+            ? () => _viewLocalDocument()
+            : null,
+      ),
+
+      const SizedBox(height: 20),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: orangeWarning.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: orangeWarning.withValues(alpha: 0.3))),
+        child: Column(children: [
+          Icon(Icons.info_outline, color: orangeWarning, size: 28),
+          const SizedBox(height: 10),
+          Text('Vérification Importante',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: orangeWarning,
+                  fontSize: 14),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(
+              'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: grisTexte, fontSize: 12, height: 1.4)),
+        ]),
+      ),
+      const SizedBox(height: 20),
+    ]);
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  Widget _buildRecapRow(String label, String value,
+      {bool isHighlighted = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isSmallScreen = screenWidth < 360;
+          final labelWidth = isSmallScreen ? 100.0 : 120.0;
+          final fontSize = isSmallScreen ? 11.0 : 12.0;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: labelWidth,
+                child: Text(
+                  '$label :',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: grisTexte,
+                    fontSize: fontSize,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isHighlighted ? vertSucces : bleuCoris,
+                    fontSize: isHighlighted ? fontSize + 1 : fontSize,
+                  ),
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecapSection(
+      String title, IconData icon, Color color, List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: blanc,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2))
+          ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6)),
+              child: Icon(icon, color: color, size: 18)),
+          const SizedBox(width: 10),
+          Text(title,
+              style: TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+        ]),
+        const SizedBox(height: 12),
+        ...children,
+      ]),
+    );
+  }
+
+  Widget _buildSubsectionTitle(String title) {
+    return Text(title,
+        style: TextStyle(
+            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 14));
+  }
+
+  Widget _buildCombinedRecapRow(
+      String label1, String value1, String label2, String value2) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isSmallScreen = screenWidth < 360;
+          final fontSize = isSmallScreen ? 11.0 : 12.0;
+
+          // Sur très petits écrans, afficher en colonne au lieu de côte à côte
+          if (screenWidth < 340) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label1 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value1,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label2 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value2,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Flexible(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label1 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value1,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$label2 :',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: grisTexte,
+                            fontSize: fontSize)),
+                    Text(value2,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                            fontSize: fontSize),
+                        overflow: TextOverflow.visible,
+                        softWrap: true),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -4520,576 +4157,6 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  /// Étape du questionnaire médical
-  Widget _buildStepQuestionnaireMedical() {
-    return QuestionnaireMedicalDynamicWidget(
-      subscriptionId: widget.subscriptionId,
-        initialReponses: _questionnaireMedicalReponses,
-      showActions: false,
-      registerValidate: (fn) {
-        _questionnaireValidate = fn;
-      },
-      onValidated: (reponses) async {
-        setState(() {
-          _questionnaireMedicalReponses = reponses;
-        });
-
-        // If subscriptionId is present, save and then fetch complete responses from server
-        if (widget.subscriptionId != null) {
-          try {
-            final questionnaireService = QuestionnaireMedicalService();
-            
-            // Save responses
-            await questionnaireService.saveReponses(
-              subscriptionId: widget.subscriptionId!,
-              reponses: reponses,
-            );
-            debugPrint('✅ Questionnaire médical sauvegardé');
-            
-            // Fetch complete responses with libelle from server
-            final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-            if (completReponses != null && completReponses.isNotEmpty) {
-              setState(() {
-                _questionnaireMedicalReponses = completReponses;
-                _questionnaireCompleted = true;
-              });
-              debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
-            }
-          } catch (e) {
-            debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          // Marquer comme complété au moins côté client, même si le backend renvoie vide
-          if (!_questionnaireCompleted) {
-            setState(() {
-              _questionnaireCompleted = true;
-            });
-            debugPrint('✅ Questionnaire marqué comme complété (client-side)');
-          }
-        }
-
-        // Validation/save complete — parent will advance after validate returns true
-      },
-      onCancel: () {
-        _previousStep();
-      },
-    );
-  }
-
-  Widget _buildStep3() {
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: Opacity(
-              opacity: _fadeAnimation.value,
-              child: _isCommercial
-                  ? _buildRecapContent()
-                  : FutureBuilder<Map<String, dynamic>>(
-                      future: _loadUserDataForRecap(),
-                      builder: (context, snapshot) {
-                        // Pour les clients, attendre le chargement des données
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(
-                              child:
-                                  CircularProgressIndicator(color: bleuCoris));
-                        }
-
-                        if (snapshot.hasError) {
-                          debugPrint(
-                              'Erreur chargement données récapitulatif: ${snapshot.error}');
-                          // En cas d'erreur, essayer d'utiliser _userData si disponible
-                          if (_userData.isNotEmpty) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: _buildRecapContent(userData: _userData),
-                            );
-                          }
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.error, size: 48, color: rougeCoris),
-                                SizedBox(height: 16),
-                                Text('Erreur lors du chargement des données'),
-                                TextButton(
-                                  onPressed: () => setState(() {}),
-                                  child: Text('Réessayer'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        // Pour les clients, utiliser les données chargées depuis la base de données
-                        // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
-                        final userData = snapshot.data ?? _userData;
-
-                        // Si userData est vide, recharger les données
-                        if (userData.isEmpty && !_isCommercial) {
-                          // Recharger les données utilisateur
-                          _loadUserDataForRecap().then((data) {
-                            if (mounted && data.isNotEmpty) {
-                              setState(() {
-                                _userData = data;
-                              });
-                            }
-                          });
-                          return Center(
-                              child:
-                                  CircularProgressIndicator(color: bleuCoris));
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildRecapContent(userData: userData),
-                        );
-                      },
-                    ),
-            ));
-      },
-    );
-  }
-
-  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
-  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
-  /// si elles ne sont pas déjà disponibles dans _userData
-  ///
-  /// IMPORTANT:
-  /// - Pour les CLIENTS: Charge les données du client connecté depuis /users/profile
-  /// - Pour les COMMERCIAUX: Retourne null car les données sont dans les contrôleurs
-  Future<Map<String, dynamic>> _loadUserDataForRecap() async {
-    /**
-     * MODIFICATION IMPORTANTE:
-     * 
-     * Pour les CLIENTS (plateforme client):
-     * - Les informations sont déjà pré-enregistrées dans la base de données lors de l'inscription
-     * - On doit TOUJOURS charger les données depuis /users/profile qui récupère le profil de l'utilisateur connecté
-     * 
-     * Pour les COMMERCIAUX (plateforme commercial):
-     * - Le commercial saisit les informations du client dans les champs du formulaire
-     * - On n'a pas besoin de charger les données ici, elles sont dans les contrôleurs
-     * - Cette fonction ne sera pas appelée pour les commerciaux (voir _buildStep3)
-     */
-    try {
-      // Si _userData est déjà chargé et non vide, l'utiliser directement
-      if (_userData.isNotEmpty) {
-        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
-        return _userData;
-      }
-
-      final token = await storage.read(key: 'token');
-      if (token == null) {
-        debugPrint('❌ Token non trouvé');
-        // Retourner un map vide au lieu de lever une exception
-        return {};
-      }
-
-      // Pour les clients, charger les données depuis le profil utilisateur
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/users/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data != null && data is Map) {
-          // 1) Cas standard: { success: true, user: { ... } }
-          if (data['success'] == true &&
-              data['user'] != null &&
-              data['user'] is Map) {
-            final userData = Map<String, dynamic>.from(data['user']);
-            debugPrint(
-                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
-            if (mounted) {
-              setState(() {
-                _userData = userData;
-              });
-            }
-            return userData;
-          }
-
-          // 2) Cas nested: { success: true, data: { id, civilite, nom, ... } }
-          if (data['success'] == true &&
-              data['data'] != null &&
-              data['data'] is Map) {
-            final dataObj = data['data'] as Map<String, dynamic>;
-            if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-              final userData = Map<String, dynamic>.from(dataObj);
-              debugPrint(
-                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
-              if (mounted) {
-                setState(() {
-                  _userData = userData;
-                });
-              }
-              return userData;
-            }
-          }
-
-          // 3) Cas nested avec user object: { data: { user: { ... } } }
-          if (data['data'] != null &&
-              data['data'] is Map &&
-              data['data']['user'] != null &&
-              data['data']['user'] is Map) {
-            final userData = Map<String, dynamic>.from(data['data']['user']);
-            debugPrint(
-                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
-            if (mounted) {
-              setState(() {
-                _userData = userData;
-              });
-            }
-            return userData;
-          }
-
-          // 4) Direct user object: { id, civilite, nom, ... }
-          if (data.containsKey('id') && data.containsKey('email')) {
-            final userData = Map<String, dynamic>.from(data);
-            debugPrint(
-                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
-            if (mounted) {
-              setState(() {
-                _userData = userData;
-              });
-            }
-            return userData;
-          }
-
-          debugPrint(
-              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
-        } else {
-          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
-        }
-      } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
-      }
-
-      // Fallback vers _userData si la requête échoue
-      return _userData.isNotEmpty ? _userData : {};
-    } catch (e) {
-      debugPrint(
-          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
-      // Fallback vers _userData en cas d'erreur
-      final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
-      return result;
-    }
-  }
-
-  /// Construit le contenu du récapitulatif
-  ///
-  /// [userData] : Données de l'utilisateur (client connecté depuis la base de données)
-  ///
-  /// IMPORTANT:
-  /// - Si _isCommercial = true: Utilise les données des contrôleurs (infos client saisies par le commercial)
-  /// - Si _isCommercial = false: Utilise userData (infos du client connecté depuis la base de données)
-  Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    final duree = _dureeController.text.isNotEmpty
-        ? int.tryParse(_dureeController.text) ?? 0
-        : 0;
-
-    /**
-     * CONSTRUCTION DU RÉCAPITULATIF:
-     * 
-     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
-     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
-     */
-    final displayData = _isCommercial
-        ? {
-            'civilite': _selectedClientCivilite,
-            'nom': _clientNomController.text,
-            'prenom': _clientPrenomController.text,
-            'email': _clientEmailController.text,
-            'telephone':
-                '$_selectedClientIndicatif ${_clientTelephoneController.text}',
-            'date_naissance': _clientDateNaissance?.toIso8601String(),
-            'lieu_naissance': _clientLieuNaissanceController.text,
-            'adresse': _clientAdresseController.text,
-          }
-        : (userData ?? _userData);
-
-    return ListView(children: [
-      // Afficher les informations du client (toujours dans "Informations Personnelles")
-      _buildRecapSection(
-        'Informations Personnelles',
-        Icons.person,
-        bleuCoris,
-        [
-          _buildCombinedRecapRow(
-              'Civilité',
-              displayData['civilite'] ?? 'Non renseigné',
-              'Nom',
-              displayData['nom'] ?? 'Non renseigné'),
-          _buildCombinedRecapRow(
-              'Prénom',
-              displayData['prenom'] ?? 'Non renseigné',
-              'Email',
-              displayData['email'] ?? 'Non renseigné'),
-          _buildCombinedRecapRow(
-              'Téléphone',
-              displayData['telephone'] ?? 'Non renseigné',
-              'Date de naissance',
-              displayData['date_naissance'] != null
-                  ? _formatDate(displayData['date_naissance'].toString())
-                  : 'Non renseigné'),
-          _buildCombinedRecapRow(
-              'Lieu de naissance',
-              displayData['lieu_naissance'] ?? 'Non renseigné',
-              'Adresse',
-              displayData['adresse'] ?? 'Non renseigné'),
-        ],
-      ),
-      const SizedBox(height: 20),
-      _buildRecapSection('Produit Souscrit', Icons.security, vertSucces, [
-        // Produit et Prime
-        _buildCombinedRecapRow(
-            'Produit',
-            'CORIS SÉRÉNITÉ',
-            'Prime ${_getPeriodeTextForDisplay()}',
-            _formatMontant(_calculatedPrime)),
-
-        // Capital au terme et Durée du contrat
-        _buildCombinedRecapRow(
-            'Capital au terme',
-            '${_formatNumber(_calculatedCapital)} FCFA',
-            'Durée du contrat',
-            '$duree ${_selectedUnite == 'années' ? 'ans' : 'mois'}'),
-
-        // Date d'effet et Date d'échéance
-        _buildCombinedRecapRow(
-            'Date d\'effet',
-            _dateEffetContrat != null
-                ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                : 'Non définie',
-            'Date d\'échéance',
-            _dateEcheanceContrat != null
-                ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
-                : 'Non définie'),
-      ]),
-      const SizedBox(height: 20),
-      _buildRecapSection(
-          'Bénéficiaire et Contact d\'urgence', Icons.contacts, orangeWarning, [
-        _buildSubsectionTitle('Bénéficiaire'),
-        _buildRecapRow(
-            'Nom complet',
-            _beneficiaireNomController.text.isEmpty
-                ? 'Non renseigné'
-                : _beneficiaireNomController.text),
-        _buildRecapRow('Contact',
-            '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParente),
-        const SizedBox(height: 12),
-        _buildSubsectionTitle('Contact d\'urgence'),
-        _buildRecapRow(
-            'Nom complet',
-            _personneContactNomController.text.isEmpty
-                ? 'Non renseigné'
-                : _personneContactNomController.text),
-        _buildRecapRow('Contact',
-            '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
-      ]),
-      const SizedBox(height: 20),
-      // 💳 SECTION MODE DE PAIEMENT
-      if (_selectedModePaiement != null)
-        _buildRecapSection(
-          'Mode de Paiement',
-          Icons.payment,
-          _selectedModePaiement == 'Virement'
-              ? bleuCoris
-              : _selectedModePaiement == 'Wave'
-                  ? Color(0xFF00BFFF)
-                  : orangeCoris,
-          [
-            _buildRecapRow('Mode choisi', _selectedModePaiement!),
-            const SizedBox(height: 8),
-            if (_selectedModePaiement == 'Virement') ...[
-              _buildRecapRow(
-                  'Banque',
-                  _banqueController.text.isNotEmpty
-                      ? _banqueController.text
-                      : 'Non renseigné'),
-              _buildRecapRow(
-                  'RIB complet',
-                  _ribUnifiedController.text.isNotEmpty
-                      ? _ribUnifiedController.text
-                      : 'Non renseigné'),
-            ] else if (_selectedModePaiement == 'Wave' ||
-                _selectedModePaiement == 'Orange Money') ...[
-              _buildRecapRow(
-                  'Numéro ${_selectedModePaiement}',
-                  _numeroMobileMoneyController.text.isNotEmpty
-                      ? _numeroMobileMoneyController.text
-                      : 'Non renseigné'),
-            ],
-          ],
-        ),
-      if (_selectedModePaiement != null) const SizedBox(height: 20),
-      // RÉCAP: Questionnaire médical (questions + réponses)
-      SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
-
-      const SizedBox(height: 20),
-
-      SubscriptionRecapWidgets.buildDocumentsSection(
-        pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
-        onDocumentTap: _pieceIdentite != null
-            ? () => _viewLocalDocument(
-                _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
-            : null,
-      ),
-
-      const SizedBox(height: 20),
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: orangeWarning.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: orangeWarning.withValues(alpha: 0.3))),
-        child: Column(children: [
-          Icon(Icons.info_outline, color: orangeWarning, size: 28),
-          const SizedBox(height: 10),
-          Text('Vérification Importante',
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: orangeWarning,
-                  fontSize: 14),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          Text(
-              'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: grisTexte, fontSize: 12, height: 1.4)),
-        ]),
-      ),
-      const SizedBox(height: 20),
-    ]);
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  Widget _buildRecapRow(String label, String value,
-      {bool isHighlighted = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-            width: 110,
-            child: Text('$label :',
-                style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: grisTexte,
-                    fontSize: 12))),
-        Expanded(
-            child: Text(value,
-                style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isHighlighted ? vertSucces : bleuCoris,
-                    fontSize: isHighlighted ? 13 : 12))),
-      ]),
-    );
-  }
-
-  Widget _buildRecapSection(
-      String title, IconData icon, Color color, List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: blanc,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2))
-          ]),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6)),
-              child: Icon(icon, color: color, size: 18)),
-          const SizedBox(width: 10),
-          Text(title,
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        ]),
-        const SizedBox(height: 12),
-        ...children,
-      ]),
-    );
-  }
-
-  Widget _buildSubsectionTitle(String title) {
-    return Text(title,
-        style: TextStyle(
-            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 14));
-  }
-
-  Widget _buildCombinedRecapRow(
-      String label1, String value1, String label2, String value2) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('$label1 :',
-              style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: 12)),
-          Text(value1,
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
-        ])),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('$label2 :',
-              style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: 12)),
-          Text(value2,
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
-        ])),
-      ]),
-    );
-  }
-
-  void _viewLocalDocument(File document, String filename) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocumentViewerPage(
-          localFile: document,
-          documentName: filename,
-        ),
-      ),
-    );
-  }
-
   Widget _buildNavigationButtons() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -5125,7 +4192,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: _currentStep == (_isCommercial ? 5 : 4)
+              onPressed: _currentStep == (_isCommercial ? 4 : 3)
                   ? _showPaymentOptions
                   : _nextStep,
               style: ElevatedButton.styleFrom(
@@ -5138,9 +4205,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
-                  _currentStep == (_isCommercial ? 5 : 4)
-                    ? 'Finaliser'
-                    : 'Suivant',
+                    _currentStep == (_isCommercial ? 4 : 3)
+                        ? 'Finaliser'
+                        : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -5176,9 +4243,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       final subscriptionService = SubscriptionService();
 
       final subscriptionData = {
-        'product_type': 'coris_serenite',
-        'capital': _calculatedCapital,
+        'product_type': 'coris_retraite',
         'prime': _calculatedPrime,
+        'capital': _calculatedCapital,
         'duree': int.parse(_dureeController.text),
         'duree_type': _selectedUnite,
         'periodicite': _getPeriodeTextForDisplay().toLowerCase(),
@@ -5197,18 +4264,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
-        // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
-            ? () {
-                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
-                return {
-                  'banque': _banqueController.text.trim(),
-                  'code_guichet': parsed['code_guichet'] ?? '',
-                  'numero_compte': parsed['numero_compte'] ?? '',
-                  'cle_rib': parsed['cle_rib'] ?? '',
-                };
-              }()
+            ? {
+                'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
+                'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
+              }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
@@ -5306,23 +4369,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
-
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       // ÉTAPE 2: Simuler le paiement
@@ -5355,23 +4409,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Sauvegarder les réponses du questionnaire médical
-      if (_questionnaireMedicalReponses.isNotEmpty) {
-        try {
-          final questionnaireService = QuestionnaireMedicalService();
-          await questionnaireService.saveReponses(
-            subscriptionId: subscriptionId,
-            reponses: _questionnaireMedicalReponses,
-          );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
-        } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
-        }
-      }
-
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (mounted) {
@@ -5385,6 +4430,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   }
 
   /// Upload le document pièce d'identité vers le serveur
+  void _viewLocalDocument() {
+    if (_pieceIdentite == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          localFile: _pieceIdentite!,
+          documentName: _pieceIdentite!.path.split('/').last,
+        ),
+      ),
+    );
+  }
+
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
@@ -5398,31 +4457,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         debugPrint('❌ Erreur upload: ${responseData['message']}');
-      }
-
-      // Récupérer le label original si présent dans la réponse
-      try {
-        final updated = responseData['data']?['subscription'];
-        if (updated != null) {
-          final souscriptiondata = updated['souscriptiondata'];
-          if (souscriptiondata != null) {
-            if (souscriptiondata is Map) {
-              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-            } else if (souscriptiondata is String) {
-              try {
-                final parsed = jsonDecode(souscriptiondata);
-                _pieceIdentiteLabel = parsed['piece_identite_label'];
-              } catch (_) {}
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        // Ne pas continuer si erreur
+        throw Exception(responseData['message'] ?? 'Erreur upload document');
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
+      // Rethrow pour que l'appelant puisse gérer l'erreur
+      rethrow;
     }
   }
 
@@ -5432,6 +4475,31 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         context: context,
         barrierDismissible: false,
         builder: (context) => SuccessDialog(isPaid: isPaid));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _progressController.dispose();
+    _pageController.dispose();
+    _primeController.dispose();
+    _capitalController.dispose();
+    _dureeController.dispose();
+    _dureeFocusNode.dispose();
+    _beneficiaireNomController.dispose();
+    _beneficiaireContactController.dispose();
+    _personneContactNomController.dispose();
+    _personneContactTelController.dispose();
+    // Dispose des contrôleurs client
+    _clientNomController.dispose();
+    _clientPrenomController.dispose();
+    _clientDateNaissanceController.dispose();
+    _clientLieuNaissanceController.dispose();
+    _clientTelephoneController.dispose();
+    _clientEmailController.dispose();
+    _clientAdresseController.dispose();
+    _clientNumeroPieceController.dispose();
+    super.dispose();
   }
 }
 
@@ -5501,11 +4569,14 @@ class SuccessDialog extends StatelessWidget {
                 height: 80,
                 decoration: BoxDecoration(
                     color: isPaid
-                        ? vertSucces.withValues(alpha: 0.1)
-                        : orangeWarning.withValues(alpha: 0.1),
+                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                        : const Color(0xFFF59E0B).withValues(alpha: 0.1),
                     shape: BoxShape.circle),
                 child: Icon(isPaid ? Icons.check_circle : Icons.schedule,
-                    color: isPaid ? vertSucces : orangeWarning, size: 40)),
+                    color: isPaid
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFF59E0B),
+                    size: 40)),
             const SizedBox(height: 20),
             Text(isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
                 style: TextStyle(
@@ -5515,7 +4586,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS SÉRÉNITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -5531,7 +4602,7 @@ class SuccessDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12))),
-                    child: const Text('Retour à l\'accueil',
+                    child: Text('Retour à l\'accueil',
                         style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600)))),
@@ -5572,7 +4643,7 @@ class PaymentBottomSheet extends StatelessWidget {
                   Row(children: [
                     Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
                     const SizedBox(width: 12),
-                    const Text('Options de Paiement',
+                    Text('Options de Paiement',
                         style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -5616,7 +4687,7 @@ class PaymentBottomSheet extends StatelessWidget {
                                 Icon(Icons.schedule,
                                     color: Color(0xFF002B6B), size: 20),
                                 const SizedBox(width: 8),
-                                const Text('Payer plus tard',
+                                Text('Payer plus tard',
                                     style: TextStyle(
                                         color: Color(0xFF002B6B),
                                         fontWeight: FontWeight.w600,
