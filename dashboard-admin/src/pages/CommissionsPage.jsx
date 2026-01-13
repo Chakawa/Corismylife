@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, TrendingUp, Users, Plus, Trash2, X } from 'lucide-react'
+import { Search, Eye, TrendingUp, Users, Download } from 'lucide-react'
 import { commissionsService } from '../services/api.service'
 
 export default function CommissionsPage() {
@@ -8,15 +8,8 @@ export default function CommissionsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [pagination, setPagination] = useState({ limit: 10, offset: 0, total: 0 })
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedCommission, setSelectedCommission] = useState(null)
-  const [formData, setFormData] = useState({
-    code_apporteur: '',
-    montant_commission: '',
-    date_calcul: new Date().toISOString().split('T')[0]
-  })
 
   useEffect(() => {
     fetchCommissions()
@@ -69,10 +62,6 @@ export default function CommissionsPage() {
     return new Intl.NumberFormat('fr-CI', { style: 'currency', currency: 'XOF' }).format(amount)
   }
 
-  const handleFormChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
   const handleViewCommission = async (id) => {
     try {
       const data = await commissionsService.getById(id)
@@ -84,52 +73,19 @@ export default function CommissionsPage() {
     }
   }
 
-  const handleDeleteCommission = async () => {
-    try {
-      await commissionsService.delete(selectedCommission.id)
-      setShowDeleteModal(false)
-      setSelectedCommission(null)
-      fetchCommissions()
-      fetchStats()
-      alert('Commission supprimée avec succès')
-    } catch (error) {
-      console.error('Erreur suppression commission:', error)
-      alert('Erreur lors de la suppression de la commission')
-    }
-  }
-
-  const handleCreateCommission = async (e) => {
-    e.preventDefault()
-    try {
-      await commissionsService.create(formData)
-      setShowCreateModal(false)
-      setFormData({
-        code_apporteur: '',
-        montant_commission: '',
-        date_calcul: new Date().toISOString().split('T')[0]
-      })
-      fetchCommissions()
-      fetchStats()
-      alert('Commission créée avec succès')
-    } catch (error) {
-      console.error('Erreur création commission:', error)
-      alert('Erreur lors de la création de la commission')
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Commissions</h1>
-          <p className="text-gray-600 mt-1">Suivez les commissions des commerciaux</p>
+          <h1 className="text-3xl font-bold text-gray-900">Gestion des Commissions & Bordereaux</h1>
+          <p className="text-gray-600 mt-1">Consultez les commissions et les numéros de bordereau</p>
         </div>
         <button 
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-coris-blue text-white px-4 py-2 rounded-lg hover:bg-coris-blue-light transition">
-          <Plus className="w-5 h-5" />
-          Nouvelle commission
+          onClick={() => alert('Export Excel en cours de développement...')}
+          className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+          <Download className="w-5 h-5" />
+          Exporter Excel
         </button>
       </div>
 
@@ -272,76 +228,6 @@ export default function CommissionsPage() {
         )}
       </div>
 
-      {/* Create Commission Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Nouvelle commission</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCommission} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code Apporteur *</label>
-                <input
-                  type="text"
-                  value={formData.code_apporteur}
-                  onChange={(e) => handleFormChange('code_apporteur', e.target.value)}
-                  placeholder="Code du commercial"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Montant Commission *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.montant_commission}
-                  onChange={(e) => handleFormChange('montant_commission', e.target.value)}
-                  placeholder="Montant de la commission"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date de Calcul</label>
-                <input
-                  type="date"
-                  value={formData.date_calcul}
-                  onChange={(e) => handleFormChange('date_calcul', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-light transition"
-                >
-                  Créer la commission
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* View Commission Modal */}
       {showViewModal && selectedCommission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -403,51 +289,6 @@ export default function CommissionsPage() {
         </div>
       )}
 
-      {/* Delete Commission Modal */}
-      {showDeleteModal && selectedCommission && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Confirmer la suppression</h2>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-gray-700 mb-2">
-                Êtes-vous sûr de vouloir supprimer la commission de <strong>{selectedCommission.code_apporteur}</strong> ?
-              </p>
-              <p className="text-gray-600 text-sm mb-2">
-                Montant: <strong>{formatCurrency(selectedCommission.montant_commission)}</strong>
-              </p>
-              <p className="text-gray-600 text-sm mb-6">
-                Cette action est irréversible.
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteCommission}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

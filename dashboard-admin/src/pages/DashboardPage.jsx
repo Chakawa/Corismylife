@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { dashboardService } from '../services/api.service'
-import { Link } from 'react-router-dom'
+import { Link } from 'react'
 import {
   Users,
   FileText,
@@ -9,7 +9,8 @@ import {
   ArrowUp,
   ArrowDown,
   Activity,
-  RefreshCw
+  RefreshCw,
+  LogIn
 } from 'lucide-react'
 import {
   AreaChart,
@@ -19,6 +20,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -41,6 +44,7 @@ const PRODUCT_LABELS = {
 export default function DashboardPage() {
   const [stats, setStats] = useState(null)
   const [activities, setActivities] = useState([])
+  const [activityStats, setActivityStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [periodMonths, setPeriodMonths] = useState(12)
@@ -95,13 +99,15 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     try {
       setLoading(true)
-      const [statsData, activitiesData] = await Promise.all([
+      const [statsData, activitiesData, activityStatsData] = await Promise.all([
         dashboardService.getStats(),
-        dashboardService.getRecentActivities({ limit: 20, offset: 0 })
+        dashboardService.getRecentActivities({ limit: 20, offset: 0 }),
+        dashboardService.getActivityStats(30)
       ])
 
       const normalizedStats = normalizeStats(statsData)
       setStats(normalizedStats)
+      setActivityStats(activityStatsData)
 
       const rawActivities = activitiesData.activities || activitiesData || []
       const normalizedActivities = rawActivities.map((a) => ({
@@ -452,6 +458,79 @@ export default function DashboardPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Graphique d'utilisation de l'application */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <LogIn className="w-5 h-5 text-coris-blue" />
+            Utilisation de l'Application (30 derniers jours)
+          </h3>
+        </div>
+        
+        {activityStats && activityStats.global && (
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="text-sm text-gray-600 mb-1">Utilisateurs Actifs</div>
+              <div className="text-2xl font-bold text-coris-blue">
+                {activityStats.global.utilisateurs_actifs || 0}
+              </div>
+            </div>
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="text-sm text-gray-600 mb-1">Total Connexions</div>
+              <div className="text-2xl font-bold text-green-600">
+                {activityStats.global.total_connexions || 0}
+              </div>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-4">
+              <div className="text-sm text-gray-600 mb-1">Total Déconnexions</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {activityStats.global.total_deconnexions || 0}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activityStats && activityStats.daily && activityStats.daily.length > 0 ? (
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[...activityStats.daily].reverse()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(date) => new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  formatter={(value) => [value, '']}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="total_connexions" 
+                  stroke="#002B6B" 
+                  strokeWidth={2}
+                  name="Connexions"
+                  dot={{ fill: '#002B6B', r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="utilisateurs_uniques" 
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                  name="Utilisateurs uniques"
+                  dot={{ fill: '#10B981', r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-80 flex items-center justify-center text-gray-500">
+            <p>Aucune donnée d'utilisation disponible</p>
           </div>
         )}
       </div>

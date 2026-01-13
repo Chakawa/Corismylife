@@ -289,23 +289,33 @@ router.get('/users', async (req, res) => {
   try {
     const { role, search, limit = 50, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM users WHERE 1=1';
+    let query = `
+      SELECT 
+        u.*,
+        suspendeur.nom as suspendeur_nom,
+        suspendeur.prenom as suspendeur_prenom,
+        (SELECT MAX(created_at) FROM user_activity_logs WHERE user_id = u.id AND type = 'login') as derniere_connexion,
+        (SELECT MAX(created_at) FROM user_activity_logs WHERE user_id = u.id AND type = 'logout') as derniere_deconnexion
+      FROM users u
+      LEFT JOIN users suspendeur ON u.suspendu_par = suspendeur.id
+      WHERE 1=1
+    `;
     const params = [];
     let paramCount = 1;
 
     if (role) {
-      query += ` AND role = $${paramCount}`;
+      query += ` AND u.role = $${paramCount}`;
       params.push(role);
       paramCount++;
     }
 
     if (search) {
-      query += ` AND (nom ILIKE $${paramCount} OR prenom ILIKE $${paramCount} OR email ILIKE $${paramCount} OR telephone ILIKE $${paramCount})`;
+      query += ` AND (u.nom ILIKE $${paramCount} OR u.prenom ILIKE $${paramCount} OR u.email ILIKE $${paramCount} OR u.telephone ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY u.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
@@ -1114,12 +1124,14 @@ router.get('/activities', async (req, res) => {
 /**
  * GET /api/admin/notifications
  * Liste des notifications pour l'admin connecté
+ * Par défaut: affiche uniquement les non-lues
  */
 router.get('/notifications', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
     const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
-    const unread_only = req.query.unread_only === 'true';
+    // Par défaut, afficher seulement les non-lues (unread_only=true par défaut)
+    const unread_only = req.query.show_all === 'true' ? false : true;
 
     let query = `
       SELECT id, type, title, message, reference_id, reference_type, is_read, 
@@ -1145,7 +1157,8 @@ router.get('/notifications', async (req, res) => {
       notifications: result.rows,
       unread_count: parseInt(countResult.rows[0].count),
       limit,
-      offset
+      offset,
+      showing_all: !unread_only
     });
   } catch (error) {
     console.error('Erreur notifications:', error);
@@ -1217,6 +1230,205 @@ router.post('/notifications/create', async (req, res) => {
   } catch (error) {
     console.error('Erreur création notification:', error);
     res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/suspend
+ * Suspendre un compte utilisateur
+ */
+router.post('/users/:id/suspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { raison } = req.body;
+    const adminId = req.user.id;
+
+    await pool.query(
+      `UPDATE users 
+       SET est_suspendu = true, date_suspension = NOW(), raison_suspension = $1, suspendu_par = $2
+       WHERE id = $3`,
+      [raison || 'Aucune raison spécifiée', adminId, id]
+    );
+
+    // Créer notification
+    await createNotificationForAllAdmins({
+      type: 'user_action',
+      title: 'Compte suspendu',
+      message: `Un compte utilisateur a été suspendu`,
+      reference_id: id,
+      reference_type: 'user',
+      action_url: `/utilisateurs?user=${id}`
+    });
+
+    res.json({ success: true, message: 'Compte suspendu avec succès' });
+  } catch (error) {
+    console.error('Erreur suspension compte:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la suspension' });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/unsuspend
+ * Réactiver un compte utilisateur
+ */
+router.post('/users/:id/unsuspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await pool.query(
+      `UPDATE users 
+       SET est_suspendu = false, date_suspension = NULL, raison_suspension = NULL, suspendu_par = NULL
+       WHERE id = $1`,
+      [id]
+    );
+
+    res.json({ success: true, message: 'Compte réactivé avec succès' });
+  } catch (error) {
+    console.error('Erreur réactivation compte:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la réactivation' });
+  }
+});
+
+/**
+ * GET /api/admin/users/stats/suspended
+ * Obtenir le nombre de comptes suspendus
+ */
+router.get('/users/stats/suspended', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT COUNT(*) as count FROM users WHERE est_suspendu = true'
+    );
+
+    res.json({ 
+      success: true, 
+      count: parseInt(result.rows[0].count) 
+    });
+  } catch (error) {
+    console.error('Erreur stats suspendus:', error);
+    res.status(500).json({ success: false, message: 'Erreur' });
+  }
+});
+
+/**
+ * GET /api/admin/activity-stats
+ * Obtenir les statistiques d'utilisation de l'application
+ */
+router.get('/activity-stats', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+
+    // Statistiques quotidiennes sur X jours
+    const dailyStats = await pool.query(
+      `SELECT * FROM user_activity_stats 
+       WHERE date >= CURRENT_DATE - INTERVAL '${parseInt(days)} days'
+       ORDER BY date DESC`
+    );
+
+    // Total de connexions par utilisateur (top 10)
+    const topUsers = await pool.query(
+      `SELECT 
+        u.id, u.nom, u.prenom, u.email, u.role,
+        COUNT(*) FILTER (WHERE ual.type = 'login') as total_connexions,
+        MAX(ual.created_at) as derniere_connexion
+       FROM users u
+       LEFT JOIN user_activity_logs ual ON u.id = ual.user_id
+       WHERE ual.created_at >= CURRENT_DATE - INTERVAL '${parseInt(days)} days'
+       GROUP BY u.id, u.nom, u.prenom, u.email, u.role
+       ORDER BY total_connexions DESC
+       LIMIT 10`
+    );
+
+    // Stats globales
+    const globalStats = await pool.query(
+      `SELECT 
+        COUNT(DISTINCT user_id) as utilisateurs_actifs,
+        COUNT(*) FILTER (WHERE type = 'login') as total_connexions,
+        COUNT(*) FILTER (WHERE type = 'logout') as total_deconnexions
+       FROM user_activity_logs
+       WHERE created_at >= CURRENT_DATE - INTERVAL '${parseInt(days)} days'`
+    );
+
+    res.json({
+      success: true,
+      daily: dailyStats.rows,
+      topUsers: topUsers.rows,
+      global: globalStats.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur stats activité:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des statistiques' });
+  }
+});
+
+/**
+ * GET /api/admin/products
+ * Liste de tous les produits
+ */
+router.get('/products', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM produit ORDER BY libelle');
+    res.json({ success: true, products: result.rows });
+  } catch (error) {
+    console.error('Erreur liste produits:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des produits' });
+  }
+});
+
+/**
+ * GET /api/admin/products/:id/tarifs
+ * Liste des tarifs d'un produit
+ */
+router.get('/products/:id/tarifs', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM tarif_produit WHERE produit_id = $1 ORDER BY age, duree_contrat, periodicite',
+      [id]
+    );
+    res.json({ success: true, tarifs: result.rows });
+  } catch (error) {
+    console.error('Erreur liste tarifs:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des tarifs' });
+  }
+});
+
+/**
+ * POST /api/admin/products/:id/tarifs/import
+ * Importer des tarifs depuis un fichier Excel (à implémenter côté frontend)
+ */
+router.post('/products/:id/tarifs/import', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tarifs } = req.body; // Array de tarifs depuis Excel
+
+    if (!tarifs || !Array.isArray(tarifs)) {
+      return res.status(400).json({ success: false, message: 'Format invalide' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      for (const tarif of tarifs) {
+        await client.query(
+          `INSERT INTO tarif_produit (produit_id, duree_contrat, periodicite, prime, capital, age, categorie)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT DO NOTHING`,
+          [id, tarif.duree_contrat, tarif.periodicite, tarif.prime, tarif.capital, tarif.age, tarif.categorie]
+        );
+      }
+
+      await client.query('COMMIT');
+      res.json({ success: true, message: `${tarifs.length} tarifs importés avec succès` });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Erreur import tarifs:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de l\'import des tarifs' });
   }
 });
 

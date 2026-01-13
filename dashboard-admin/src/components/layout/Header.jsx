@@ -5,6 +5,7 @@ import { notificationsService } from '../../services/api.service'
 export default function Header({ onLogout }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showAllNotifications, setShowAllNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -13,11 +14,14 @@ export default function Header({ onLogout }) {
     // Recharger les notifications toutes les 30 secondes
     const interval = setInterval(loadNotifications, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [showAllNotifications])
 
   const loadNotifications = async () => {
     try {
-      const data = await notificationsService.getNotifications({ limit: 10, unread_only: false })
+      const data = await notificationsService.getNotifications({ 
+        limit: 50, 
+        show_all: showAllNotifications 
+      })
       setNotifications(data.notifications || [])
       setUnreadCount(data.unread_count || 0)
     } catch (error) {
@@ -86,8 +90,16 @@ export default function Header({ onLogout }) {
             {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                <div className="p-4 border-b border-gray-200">
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <button
+                    onClick={() => {
+                      setShowAllNotifications(!showAllNotifications)
+                    }}
+                    className="text-xs text-coris-blue hover:underline"
+                  >
+                    {showAllNotifications ? 'Masquer lues' : 'Voir toutes'}
+                  </button>
                 </div>
                 {notifications.length > 0 ? (
                   <div className="divide-y divide-gray-100">
@@ -131,7 +143,9 @@ export default function Header({ onLogout }) {
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <p className="text-gray-500 text-sm">Aucune notification</p>
+                    <p className="text-gray-500 text-sm">
+                      {showAllNotifications ? 'Aucune notification' : 'Aucune notification non lue'}
+                    </p>
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, Edit, Trash2, Filter, Plus, X } from 'lucide-react'
+import { Search, Eye, Filter, Download, FileText } from 'lucide-react'
 import { contractsService } from '../services/api.service'
 
 export default function ContractsPage() {
@@ -9,19 +9,8 @@ export default function ContractsPage() {
   const [statusFilter, setStatusFilter] = useState('tous')
   const [pagination, setPagination] = useState({ limit: 10, offset: 0, total: 0 })
   const [stats, setStats] = useState({ by_status: {} })
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedContract, setSelectedContract] = useState(null)
-  const [formData, setFormData] = useState({
-    numepoli: '',
-    nom_prenom: '',
-    codeprod: '',
-    dateeffet: '',
-    etat: 'en_attente',
-    email: '',
-    telephone: ''
-  })
 
   useEffect(() => {
     fetchContracts()
@@ -146,14 +135,22 @@ export default function ContractsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestion des Contrats</h1>
-          <p className="text-gray-600 mt-1">Gérez et supervisez tous les contrats d'assurance</p>
+          <p className="text-gray-600 mt-1">Consultez et exportez tous les contrats d'assurance</p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-coris-blue text-white px-4 py-2 rounded-lg hover:bg-coris-blue-light transition">
-          <Plus className="w-5 h-5" />
-          Nouveau contrat
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => alert('Export Excel en cours de développement...')}
+            className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+            <Download className="w-5 h-5" />
+            Exporter Excel
+          </button>
+          <button 
+            onClick={() => alert('Export PDF en cours de développement...')}
+            className="flex items-center gap-2 bg-coris-red text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+            <FileText className="w-5 h-5" />
+            Exporter PDF
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -303,125 +300,6 @@ export default function ContractsPage() {
         )}
       </div>
 
-      {/* Modal Création Contrat */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Créer un nouveau contrat</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateContract} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">N° Police *</label>
-                <input
-                  type="text"
-                  value={formData.numepoli}
-                  onChange={(e) => handleFormChange('numepoli', e.target.value)}
-                  placeholder="Numéro de police"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Assuré *</label>
-                <input
-                  type="text"
-                  value={formData.nom_prenom}
-                  onChange={(e) => handleFormChange('nom_prenom', e.target.value)}
-                  placeholder="Nom complet de l'assuré"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code Produit *</label>
-                <input
-                  type="text"
-                  value={formData.codeprod}
-                  onChange={(e) => handleFormChange('codeprod', e.target.value)}
-                  placeholder="Code produit d'assurance"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date d'effet *</label>
-                <input
-                  type="date"
-                  value={formData.dateeffet}
-                  onChange={(e) => handleFormChange('dateeffet', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Statut *</label>
-                <select
-                  value={formData.etat}
-                  onChange={(e) => handleFormChange('etat', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                  required
-                >
-                  <option value="en_attente">En attente</option>
-                  <option value="actif">Actif</option>
-                  <option value="suspendu">Suspendu</option>
-                  <option value="resilie">Résilié</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleFormChange('email', e.target.value)}
-                  placeholder="Email de l'assuré"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input
-                  type="tel"
-                  value={formData.telephone}
-                  onChange={(e) => handleFormChange('telephone', e.target.value)}
-                  placeholder="Téléphone de l'assuré"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-light transition"
-                >
-                  Créer le contrat
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* View Contract Modal */}
       {showViewModal && selectedContract && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -496,48 +374,6 @@ export default function ContractsPage() {
         </div>
       )}
 
-      {/* Delete Contract Modal */}
-      {showDeleteModal && selectedContract && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Confirmer la suppression</h2>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-gray-700 mb-2">
-                Êtes-vous sûr de vouloir supprimer le contrat <strong>{selectedContract.numepoli}</strong> ?
-              </p>
-              <p className="text-gray-600 text-sm mb-6">
-                Cette action est irréversible.
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteContract}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

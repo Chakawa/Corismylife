@@ -1169,5 +1169,34 @@ router.post('/verify-2fa-otp', async (req, res) => {
   }
 });
 
+/**
+ * 🚪 ROUTE DE DÉCONNEXION
+ * Enregistre la déconnexion de l'utilisateur
+ * 
+ * @route POST /auth/logout
+ * @returns {object} Confirmation de déconnexion
+ */
+router.post('/logout', verifyToken, async (req, res) => {
+  console.log('🚪 Déconnexion utilisateur:', req.user.id);
+  
+  try {
+    if (authController && authController.logout) {
+      await authController.logout(req.user.id, req.ip || 'unknown');
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Déconnexion réussie' 
+    });
+  } catch (error) {
+    console.error('❌ Erreur déconnexion:', error);
+    // Même en cas d'erreur de log, on confirme la déconnexion
+    res.json({ 
+      success: true, 
+      message: 'Déconnexion réussie' 
+    });
+  }
+});
+
 module.exports = router;
  

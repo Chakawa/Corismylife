@@ -316,6 +316,17 @@ async function login(identifier, password) {
   console.log('✅ Utilisateur trouvé:', user.email);
   
   // ============================================
+  // ÉTAPE 2.5 : Vérifier si le compte est suspendu
+  // ============================================
+  if (user.est_suspendu) {
+    console.log('❌ Compte suspendu');
+    const error = new Error('Votre compte a été suspendu');
+    error.reason = user.raison_suspension || 'Aucune raison spécifiée';
+    error.suspended = true;
+    throw error;
+  }
+  
+  // ============================================
   // ÉTAPE 3 : Vérifier le mot de passe
   // ============================================
   // Comparer le mot de passe saisi avec le hash stocké
@@ -328,6 +339,20 @@ async function login(identifier, password) {
   }
   
   console.log('✅ Mot de passe correct');
+  
+  // ============================================
+  // ÉTAPE 3.5 : Logger la connexion
+  // ============================================
+  try {
+    await pool.query(
+      'INSERT INTO user_activity_logs (user_id, type, ip_address) VALUES ($1, $2, $3)',
+      [user.id, 'login', 'api-request'] // L'IP sera ajoutée plus tard depuis req
+    );
+    console.log('📝 Connexion enregistrée dans les logs');
+  } catch (logError) {
+    console.error('⚠️ Erreur lors de l\'enregistrement de la connexion:', logError);
+    // Ne pas bloquer la connexion si le log échoue
+  }
   
   // ============================================
   // ÉTAPE 4 : Créer le token JWT
@@ -368,6 +393,30 @@ async function login(identifier, password) {
 
 /**
  * ===============================================
+ * FONCTION DE DÉCONNEXION (LOGOUT)
+ * ===============================================
+ * 
+ * Enregistre la déconnexion d'un utilisateur dans les logs
+ * 
+ * @param {number} userId - ID de l'utilisateur
+ * @param {string} ipAddress - Adresse IP (optionnel)
+ */
+async function logout(userId, ipAddress = 'api-request') {
+  try {
+    await pool.query(
+      'INSERT INTO user_activity_logs (user_id, type, ip_address) VALUES ($1, $2, $3)',
+      [userId, 'logout', ipAddress]
+    );
+    console.log('📝 Déconnexion enregistrée pour utilisateur:', userId);
+    return { success: true, message: 'Déconnexion enregistrée' };
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'enregistrement de la déconnexion:', error);
+    throw error;
+  }
+}
+
+/**
+ * ===============================================
  * EXPORTS
  * ===============================================
  * 
@@ -378,6 +427,7 @@ module.exports = {
   registerClient,      // Inscription d'un client
   registerCommercial,  // Inscription d'un commercial
   login,               // Connexion (email ou téléphone)
+  logout,              // Déconnexion
   detectUserRole,      // Détection du rôle
   checkPhoneExists,    // Vérification d'unicité du téléphone
   checkEmailExists     // Vérification d'unicité de l'email

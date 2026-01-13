@@ -29,6 +29,11 @@ export const dashboardService = {
   getRecentActivities: async (params) => {
     const response = await api.get('/admin/activities', { params })
     return response.data
+  },
+
+  getActivityStats: async (days = 30) => {
+    const response = await api.get('/admin/activity-stats', { params: { days } })
+    return response.data
   }
 }
 
@@ -55,6 +60,21 @@ export const usersService = {
 
   delete: async (id) => {
     const response = await api.delete(`/admin/users/${id}`)
+    return response.data
+  },
+
+  suspend: async (id, raison) => {
+    const response = await api.post(`/admin/users/${id}/suspend`, { raison })
+    return response.data
+  },
+
+  unsuspend: async (id) => {
+    const response = await api.post(`/admin/users/${id}/unsuspend`)
+    return response.data
+  },
+
+  getSuspendedCount: async () => {
+    const response = await api.get('/admin/users/stats/suspended')
     return response.data
   }
 }
@@ -168,6 +188,28 @@ export const notificationsService = {
 
   create: async (notificationData) => {
     const response = await api.post('/admin/notifications/create', notificationData)
+    return response.data
+  }
+}
+
+export const productsService = {
+  getAll: async () => {
+    const response = await api.get('/admin/products')
+    return response.data
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/admin/products/${id}`)
+    return response.data
+  },
+
+  getTarifs: async (productId) => {
+    const response = await api.get(`/admin/products/${productId}/tarifs`)
+    return response.data
+  },
+
+  importTarifs: async (productId, tarifs) => {
+    const response = await api.post(`/admin/products/${productId}/tarifs/import`, { tarifs })
     return response.data
   }
 }

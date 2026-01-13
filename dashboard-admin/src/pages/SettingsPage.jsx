@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Bell, Lock, Eye, Settings, Save } from 'lucide-react'
+import { Bell, Lock, Eye, Settings, Save, Upload, Download, DollarSign } from 'lucide-react'
+import { productsService } from '../services/api.service'
 
 export default function SettingsPage() {
   const [formData, setFormData] = useState({
@@ -275,6 +276,75 @@ export default function SettingsPage() {
               max="240"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Gestion des Tarifs */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DollarSign className="w-5 h-5" />
+          Gestion des Tarifs Produits
+        </h2>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800 mb-3">
+            <strong>Important :</strong> Utilisez les fichiers Excel pour importer ou exporter les grilles tarifaires de vos produits d'assurance.
+          </p>
+          <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+            <li>Format attendu : Produit, Âge, Durée, Périodicité, Prime, Capital, Catégorie</li>
+            <li>L'import mettra à jour les tarifs existants dans la base de données</li>
+            <li>L'export génère un fichier Excel avec tous les tarifs actuels</li>
+          </ul>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-coris-blue transition">
+            <div className="text-center">
+              <Download className="w-12 h-12 text-coris-blue mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Exporter les Tarifs</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Téléchargez tous les tarifs actuels au format Excel
+              </p>
+              <button 
+                onClick={() => alert('Export Excel des tarifs en cours de développement...')}
+                className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition mx-auto"
+              >
+                <Download className="w-4 h-4" />
+                Télécharger Excel
+              </button>
+            </div>
+          </div>
+
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-coris-blue transition">
+            <div className="text-center">
+              <Upload className="w-12 h-12 text-coris-orange mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Importer les Tarifs</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Mettez à jour les tarifs depuis un fichier Excel
+              </p>
+              <label className="flex items-center gap-2 bg-coris-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition mx-auto cursor-pointer w-fit">
+                <Upload className="w-4 h-4" />
+                Sélectionner Excel
+                <input 
+                  type="file" 
+                  accept=".xlsx,.xls" 
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      alert('Import Excel des tarifs en cours de développement...')
+                      // TODO: Implémenter l'upload et le parsing Excel
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-sm text-yellow-800">
+            <strong>⚠️ Attention :</strong> Assurez-vous de vérifier les données avant d'importer. Les tarifs incorrects peuvent affecter les calculs de prime dans l'application mobile.
+          </p>
         </div>
       </div>
 

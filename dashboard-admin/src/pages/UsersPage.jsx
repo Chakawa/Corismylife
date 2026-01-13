@@ -12,8 +12,11 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showSuspendModal, setShowSuspendModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [editFormData, setEditFormData] = useState({})
+  const [suspendReason, setSuspendReason] = useState('')
+  const [suspendedCount, setSuspendedCount] = useState(0)
   const [formData, setFormData] = useState({
     civilite: 'M',
     prenom: '',
@@ -31,6 +34,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsers()
+    loadSuspendedCount()
   }, [filterRole])
 
   useEffect(() => {
@@ -47,6 +51,15 @@ export default function UsersPage() {
       setUsers([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSuspendedCount = async () => {
+    try {
+      const data = await usersService.getSuspendedCount()
+      setSuspendedCount(data.count || 0)
+    } catch (error) {
+      console.error('Erreur chargement comptes suspendus:', error)
     }
   }
 
@@ -119,6 +132,43 @@ export default function UsersPage() {
     }
   }
 
+  const handleSuspendUser = (user) => {
+    setSelectedUser(user)
+    setSuspendReason('')
+    setShowSuspendModal(true)
+  }
+
+  const handleConfirmSuspend = async () => {
+    try {
+      const response = await usersService.suspend(selectedUser.id, suspendReason)
+      if (response.success) {
+        setShowSuspendModal(false)
+        alert('Compte suspendu avec succès')
+        loadUsers()
+        loadSuspendedCount()
+      } else {
+        throw new Error(response.message || 'Erreur lors de la suspension')
+      }
+    } catch (error) {
+      console.error('Erreur suspension:', error)
+      alert(error.message || 'Erreur lors de la suspension du compte')
+    }
+  }
+
+  const handleUnsuspendUser = async (userId) => {
+    if (window.confirm('Voulez-vous réactiver ce compte?')) {
+      try {
+        await usersService.unsuspend(userId)
+        loadUsers()
+        loadSuspendedCount()
+        alert('Compte réactivé avec succès')
+      } catch (error) {
+        console.error('Erreur réactivation:', error)
+        alert('Erreur lors de la réactivation')
+      }
+    }
+  }
+
   const handleEditFormChange = (field, value) => {
     setEditFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -137,7 +187,6 @@ export default function UsersPage() {
   const totalClients = users.filter(u => u.role === 'client').length
   const totalCommerciaux = users.filter(u => u.role === 'commercial').length
   const totalAdmins = users.filter(u => ['super_admin', 'admin', 'moderation'].includes(u.role)).length
-  const suspendedAccounts = users.filter(u => u.status === 'suspended').length
 
   return (
     <div className="space-y-6">
@@ -220,7 +269,7 @@ export default function UsersPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium">Comptes Suspendus</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{suspendedAccounts}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{suspendedCount}</p>
             </div>
             <div className="p-3 bg-red-50 rounded-lg">
               <UserX className="w-8 h-8 text-red-600" />
@@ -237,7 +286,7 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="overflow-auto max-h-[70vh] w-full">
-            <table className="min-w-[1200px] w-full table-auto divide-y divide-gray-200">
+            <table className="min-w-[1400px] w-full table-auto divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -248,6 +297,12 @@ export default function UsersPage() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rôle
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                    Dernière Connexion
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                    Dernière Déconnexion
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Inscription
@@ -295,6 +350,29 @@ export default function UsersPage() {
                          user.role === 'commercial' ? 'Commercial' :
                          'Client'}
                       </span>
+                      {user.est_suspendu && (
+                        <span className="ml-2 px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">
+                          Suspendu
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 hidden xl:table-cell">
+                      {user.derniere_connexion ? new Date(user.derniere_connexion).toLocaleString('fr-FR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      }) : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 hidden xl:table-cell">
+                      {user.derniere_deconnexion ? new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      }) : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
                       {new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -313,6 +391,21 @@ export default function UsersPage() {
                           title="Modifier">
                           <Edit className="w-4 h-4" />
                         </button>
+                        {user.est_suspendu ? (
+                          <button 
+                            onClick={() => handleUnsuspendUser(user.id)}
+                            className="text-orange-600 hover:text-orange-900 p-1.5 hover:bg-orange-50 rounded transition"
+                            title="Réactiver">
+                            <UserCheck className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleSuspendUser(user)}
+                            className="text-yellow-600 hover:text-yellow-900 p-1.5 hover:bg-yellow-50 rounded transition"
+                            title="Suspendre">
+                            <UserX className="w-4 h-4" />
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleDeleteUser(user.id)}
                           className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded transition"
@@ -677,6 +770,53 @@ export default function UsersPage() {
                   className="flex-1 px-4 py-2 bg-coris-blue text-white rounded-lg font-medium hover:bg-coris-blue-light transition"
                 >
                   Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend User Modal */}
+      {showSuspendModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Suspendre le compte</h3>
+              <button onClick={() => setShowSuspendModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Vous êtes sur le point de suspendre le compte de <strong>{selectedUser?.prenom} {selectedUser?.nom}</strong>.
+                L'utilisateur ne pourra plus se connecter.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Raison de la suspension <span className="text-gray-400">(optionnel)</span>
+                </label>
+                <textarea
+                  value={suspendReason}
+                  onChange={(e) => setSuspendReason(e.target.value)}
+                  placeholder="Indiquez la raison de la suspension..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSuspendModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleConfirmSuspend}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+                >
+                  Suspendre
                 </button>
               </div>
             </div>
