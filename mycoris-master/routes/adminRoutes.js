@@ -141,6 +141,54 @@ router.get('/stats', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/stats/connexions-mensuelles
+ * Statistiques des connexions clients par mois (derniers 12 mois)
+ */
+router.get('/stats/connexions-mensuelles', async (req, res) => {
+  try {
+    const { months = 12 } = req.query;
+    
+    // Récupérer les connexions des clients (role='client') groupées par mois
+    const result = await pool.query(`
+      WITH monthly_stats AS (
+        SELECT 
+          DATE_TRUNC('month', ual.created_at) AS mois,
+          COUNT(DISTINCT ual.user_id) AS utilisateurs_uniques,
+          COUNT(*) AS total_connexions
+        FROM user_activity_logs ual
+        INNER JOIN users u ON u.id = ual.user_id
+        WHERE 
+          ual.type = 'login'
+          AND u.role = 'client'
+          AND ual.created_at >= NOW() - INTERVAL '${parseInt(months)} months'
+        GROUP BY DATE_TRUNC('month', ual.created_at)
+        ORDER BY mois DESC
+      )
+      SELECT 
+        TO_CHAR(mois, 'YYYY-MM') AS mois,
+        TO_CHAR(mois, 'Month YYYY') AS mois_label,
+        EXTRACT(MONTH FROM mois)::int AS mois_num,
+        EXTRACT(YEAR FROM mois)::int AS annee,
+        utilisateurs_uniques::int,
+        total_connexions::int
+      FROM monthly_stats
+      ORDER BY mois ASC
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Erreur stats connexions mensuelles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des statistiques de connexion'
+    });
+  }
+});
+
+/**
  * POST /api/admin/users
  * Créer un nouvel utilisateur
  */
@@ -1238,32 +1286,54 @@ router.post('/notifications/create', async (req, res) => {
  * Suspendre un compte utilisateur
  */
 router.post('/users/:id/suspend', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     const { raison } = req.body;
     const adminId = req.user.id;
 
-    await pool.query(
+    await client.query('BEGIN');
+
+    // Récupérer les infos de l'utilisateur suspendu
+    const userResult = await client.query('SELECT prenom, nom, email FROM users WHERE id = $1', [id]);
+    const user = userResult.rows[0];
+
+    // Suspendre le compte
+    await client.query(
       `UPDATE users 
        SET est_suspendu = true, date_suspension = NOW(), raison_suspension = $1, suspendu_par = $2
        WHERE id = $3`,
       [raison || 'Aucune raison spécifiée', adminId, id]
     );
 
-    // Créer notification
-    await createNotificationForAllAdmins({
-      type: 'user_action',
-      title: 'Compte suspendu',
-      message: `Un compte utilisateur a été suspendu`,
-      reference_id: id,
-      reference_type: 'user',
-      action_url: `/utilisateurs?user=${id}`
-    });
+    // Créer notification pour tous les admins
+    const admins = await client.query("SELECT id FROM users WHERE role IN ('super_admin', 'admin', 'moderation')");
+    
+    for (const admin of admins.rows) {
+      await client.query(
+        `INSERT INTO notifications (admin_id, type, title, message, reference_id, reference_type, action_url, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+        [
+          admin.id,
+          'user_action',
+          'Compte suspendu',
+          `Le compte de ${user.prenom} ${user.nom} (${user.email}) a été suspendu. Raison: ${raison || 'Non spécifiée'}`,
+          id,
+          'user',
+          `/utilisateurs?user=${id}`
+        ]
+      );
+    }
+
+    await client.query('COMMIT');
 
     res.json({ success: true, message: 'Compte suspendu avec succès' });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Erreur suspension compte:', error);
-    res.status(500).json({ success: false, message: 'Erreur lors de la suspension' });
+    res.status(500).json({ success: false, message: 'Erreur lors de la suspension', error: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -1429,6 +1499,62 @@ router.post('/products/:id/tarifs/import', async (req, res) => {
   } catch (error) {
     console.error('Erreur import tarifs:', error);
     res.status(500).json({ success: false, message: 'Erreur lors de l\'import des tarifs' });
+  }
+});
+
+/**
+ * GET /api/admin/tarifs/export
+ * Exporter tous les tarifs de tous les produits au format Excel
+ */
+router.get('/tarifs/export', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        p.libelle as produit,
+        t.age,
+        t.duree_contrat as duree,
+        t.periodicite,
+        t.prime,
+        t.capital,
+        t.categorie
+      FROM tarif_produit t
+      JOIN produit p ON p.id = t.produit_id
+      ORDER BY p.libelle, t.age, t.duree_contrat, t.periodicite
+    `);
+
+    // Créer un CSV simple (peut être ouvert dans Excel)
+    const header = 'Produit,Âge,Durée,Périodicité,Prime,Capital,Catégorie\n';
+    const rows = result.rows.map(r => 
+      `"${r.produit}",${r.age},${r.duree},"${r.periodicite}",${r.prime},${r.capital || ''},"${r.categorie || ''}"`
+    ).join('\n');
+    
+    const csv = header + rows;
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=tarifs_coris_${new Date().toISOString().split('T')[0]}.csv`);
+    res.send('\uFEFF' + csv); // BOM pour Excel
+  } catch (error) {
+    console.error('Erreur export tarifs:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de l\'export' });
+  }
+});
+
+/**
+ * POST /api/admin/tarifs/import
+ * Importer des tarifs depuis un fichier Excel/CSV
+ */
+router.post('/tarifs/import', async (req, res) => {
+  try {
+    // Note: Pour parser Excel, installer 'xlsx' package: npm install xlsx
+    // Pour l'instant, retourner un message
+    res.json({ 
+      success: true, 
+      message: 'Fonctionnalité d\'import en cours de développement. Utilisez l\'export pour voir le format attendu.',
+      imported: 0
+    });
+  } catch (error) {
+    console.error('Erreur import tarifs:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de l\'import' });
   }
 });
 

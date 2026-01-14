@@ -34,6 +34,11 @@ export const dashboardService = {
   getActivityStats: async (days = 30) => {
     const response = await api.get('/admin/activity-stats', { params: { days } })
     return response.data
+  },
+
+  getConnexionsMensuelles: async (months = 12) => {
+    const response = await api.get('/admin/stats/connexions-mensuelles', { params: { months } })
+    return response.data
   }
 }
 

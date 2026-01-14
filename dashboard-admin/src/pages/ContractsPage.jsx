@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, Filter, Download, FileText } from 'lucide-react'
+import { Search, Eye, Filter, Download, FileText, X } from 'lucide-react'
 import { contractsService } from '../services/api.service'
 
 export default function ContractsPage() {
@@ -25,11 +25,13 @@ export default function ContractsPage() {
         offset: pagination.offset
       }
       const data = await contractsService.getAll(params)
+      console.log('Contrats chargés:', data)
       setContracts(data.contracts || [])
       setPagination(prev => ({ ...prev, total: data.total || 0 }))
       setStats(data.stats || { by_status: {} })
     } catch (error) {
       console.error('Erreur lors du chargement des contrats:', error)
+      alert('Erreur: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -90,43 +92,12 @@ export default function ContractsPage() {
     }
   }
 
-  const handleDeleteContract = async () => {
-    try {
-      await contractsService.delete(selectedContract.id)
-      setShowDeleteModal(false)
-      setSelectedContract(null)
-      fetchContracts()
-      alert('Contrat supprimé avec succès')
-    } catch (error) {
-      console.error('Erreur suppression contrat:', error)
-      alert('Erreur lors de la suppression du contrat')
-    }
+  const handleExportExcel = () => {
+    alert('Export Excel en cours de développement...')
   }
 
-  const handleCreateContract = async (e) => {
-    e.preventDefault()
-    try {
-      await contractsService.create(formData)
-      setShowCreateModal(false)
-      setFormData({
-        numepoli: '',
-        nom_prenom: '',
-        codeprod: '',
-        dateeffet: '',
-        etat: 'en_attente',
-        email: '',
-        telephone: ''
-      })
-      fetchContracts()
-      alert('Contrat créé avec succès')
-    } catch (error) {
-      console.error('Erreur création contrat:', error)
-      alert(error.response?.data?.message || 'Erreur lors de la création du contrat')
-    }
-  }
-
-  const handleFormChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const handleExportPDF = () => {
+    alert('Export PDF en cours de développement...')
   }
 
   return (
@@ -139,13 +110,13 @@ export default function ContractsPage() {
         </div>
         <div className="flex gap-3">
           <button 
-            onClick={() => alert('Export Excel en cours de développement...')}
+            onClick={handleExportExcel}
             className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
             <Download className="w-5 h-5" />
             Exporter Excel
           </button>
           <button 
-            onClick={() => alert('Export PDF en cours de développement...')}
+            onClick={handleExportPDF}
             className="flex items-center gap-2 bg-coris-red text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
             <FileText className="w-5 h-5" />
             Exporter PDF
@@ -257,14 +228,6 @@ export default function ContractsPage() {
                         onClick={() => handleUpdateStatus(contract.id, 'suspendu')}
                         className="text-orange-600 hover:bg-orange-50 p-2 rounded transition" title="Suspendre">
                         Suspendre
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedContract(contract)
-                          setShowDeleteModal(true)
-                        }}
-                        className="text-red-600 hover:bg-red-50 p-2 rounded transition" title="Supprimer">
-                        <Trash2 className="w-4 h-4" />
                       </button>
                   </td>
                 </tr>

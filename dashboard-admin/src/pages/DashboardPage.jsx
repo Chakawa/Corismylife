@@ -45,6 +45,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null)
   const [activities, setActivities] = useState([])
   const [activityStats, setActivityStats] = useState(null)
+  const [connexionsMensuelles, setConnexionsMensuelles] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [periodMonths, setPeriodMonths] = useState(12)
@@ -99,15 +100,32 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     try {
       setLoading(true)
-      const [statsData, activitiesData, activityStatsData] = await Promise.all([
+      const [statsData, activitiesData, activityStatsData, connexionsData] = await Promise.all([
         dashboardService.getStats(),
         dashboardService.getRecentActivities({ limit: 20, offset: 0 }),
-        dashboardService.getActivityStats(30)
+        dashboardService.getActivityStats(30),
+        dashboardService.getConnexionsMensuelles(12)
       ])
+
+      console.log('📊 Données chargées:', {
+        stats: statsData,
+        activities: activitiesData,
+        activityStats: activityStatsData,
+        connexions: connexionsData
+      })
 
       const normalizedStats = normalizeStats(statsData)
       setStats(normalizedStats)
       setActivityStats(activityStatsData)
+      
+      // Charger les connexions mensuelles
+      if (connexionsData?.success && connexionsData.data) {
+        console.log('✅ Connexions mensuelles:', connexionsData.data)
+        setConnexionsMensuelles(connexionsData.data)
+      } else {
+        console.warn('⚠️ Pas de données de connexion:', connexionsData)
+        setConnexionsMensuelles([])
+      }
 
       const rawActivities = activitiesData.activities || activitiesData || []
       const normalizedActivities = rawActivities.map((a) => ({
@@ -382,6 +400,92 @@ export default function DashboardPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Courbe d'utilisation de l'application mobile */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              📱 Utilisation de l'Application Mobile
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Connexions réelles des clients sur les 12 derniers mois
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Activity className="w-4 h-4" />
+            <span>{connexionsMensuelles.reduce((sum, m) => sum + (m.total_connexions || 0), 0).toLocaleString()} connexions</span>
+          </div>
+        </div>
+        {connexionsMensuelles.length > 0 ? (
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={connexionsMensuelles} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="mois" 
+                stroke="#6b7280"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => {
+                  const [year, month] = value.split('-')
+                  const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+                  return monthNames[parseInt(month) - 1]
+                }}
+              />
+              <YAxis 
+                stroke="#6b7280" 
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Nombre de connexions', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                formatter={(value, name) => {
+                  if (name === 'total_connexions') return [value.toLocaleString(), 'Total connexions']
+                  if (name === 'utilisateurs_uniques') return [value.toLocaleString(), 'Utilisateurs uniques']
+                  return [value, name]
+                }}
+                labelFormatter={(label) => {
+                  const item = connexionsMensuelles.find(m => m.mois === label)
+                  return item?.mois_label || label
+                }}
+              />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                formatter={(value) => {
+                  if (value === 'total_connexions') return 'Total connexions'
+                  if (value === 'utilisateurs_uniques') return 'Utilisateurs uniques'
+                  return value
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="total_connexions"
+                stroke="#002B6B"
+                strokeWidth={3}
+                dot={{ fill: '#002B6B', r: 4 }}
+                activeDot={{ r: 6 }}
+                name="total_connexions"
+              />
+              <Line
+                type="monotone"
+                dataKey="utilisateurs_uniques"
+                stroke="#10B981"
+                strokeWidth={2}
+                dot={{ fill: '#10B981', r: 3 }}
+                strokeDasharray="5 5"
+                name="utilisateurs_uniques"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-64 text-gray-400">
+            <div className="text-center">
+              <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">Aucune donnée de connexion disponible</p>
+              <p className="text-xs mt-1">Les connexions des clients apparaîtront ici</p>
+            </div>
           </div>
         )}
       </div>

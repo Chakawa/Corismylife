@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, TrendingUp, Users, Download } from 'lucide-react'
+import { Search, Eye, TrendingUp, Users, Download, X } from 'lucide-react'
 import { commissionsService } from '../services/api.service'
 
 export default function CommissionsPage() {
@@ -163,6 +163,7 @@ export default function CommissionsPage() {
           <table className="w-full">
             <thead className="bg-coris-gray border-b">
               <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">N° Bordereau</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Code Commercial</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nom</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Montant</th>
@@ -171,29 +172,23 @@ export default function CommissionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredCommissions.map(comm => (
+              {filteredCommissions.map((comm, index) => (
                 <tr key={comm.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 text-sm font-bold text-coris-blue">
+                    BRD-{new Date(comm.date_calcul).getFullYear()}-{String(comm.id).padStart(6, '0')}
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{comm.code_apporteur}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {comm.prenom && comm.nom ? `${comm.prenom} ${comm.nom}` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-coris-green">{formatCurrency(comm.montant_commission)}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">{formatDate(comm.date_calcul)}</td>
-                  <td className="px-6 py-4 text-sm space-x-2 flex">
+                  <td className="px-6 py-4 text-sm">
                     <button 
                       onClick={() => handleViewCommission(comm.id)}
-                      className="text-coris-blue hover:bg-blue-50 p-2 rounded transition">
+                      className="text-coris-blue hover:bg-blue-50 p-2 rounded transition"
+                      title="Voir les détails">
                       <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedCommission(comm)
-                        setShowDeleteModal(true)
-                      }}
-                      className="text-red-600 hover:bg-red-50 p-2 rounded transition"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

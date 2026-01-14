@@ -40,6 +40,38 @@ export default function ProductsPage() {
     }
   }
 
+  const formatPrime = (prime, productName) => {
+    if (!prime) return '-'
+    const name = productName?.toLowerCase() || ''
+    
+    // Solidarité : pas de virgules (valeur brute arrondie)
+    if (name.includes('solidarite') || name.includes('solidarité')) {
+      return Math.round(prime)
+    }
+    
+    // Tous les autres produits : max 5 chiffres après la virgule
+    // (Sérénité, Familis, Retraite, Études, Flex Emprunteur, Épargne Bonus)
+    return Number(prime).toFixed(5).replace(/\.?0+$/, '')
+  }
+
+  const formatDuree = (duree, productName) => {
+    if (!duree) return '-'
+    const name = productName?.toLowerCase() || ''
+    
+    // Solidarité : en mois (valeur brute)
+    if (name.includes('solidarite') || name.includes('solidarité')) {
+      return `${duree} mois`
+    }
+    
+    // Familis, Retraite : déjà en années dans la base
+    if (name.includes('familis') || name.includes('retraite')) {
+      return `${duree} ans`
+    }
+    
+    // Autres produits : afficher la valeur brute
+    return duree
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -134,16 +166,16 @@ export default function ProductsPage() {
                     {tarifs.map((tarif, idx) => (
                       <tr key={idx} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm">{tarif.age} ans</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{tarif.duree_contrat} mois</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">{formatDuree(tarif.duree_contrat, selectedProduct?.libelle)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">{tarif.periodicite}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-coris-blue">
-                          {tarif.prime}
+                          {formatPrime(tarif.prime, selectedProduct?.libelle)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-coris-green">
-                          {tarif.capital}
+                          {formatPrime(tarif.capital, selectedProduct?.libelle)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{tarif.categorie}</span>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{tarif.categorie || '-'}</span>
                         </td>
                       </tr>
                     ))}

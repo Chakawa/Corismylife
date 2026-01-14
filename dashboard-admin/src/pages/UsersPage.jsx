@@ -286,7 +286,7 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="overflow-auto max-h-[70vh] w-full">
-            <table className="min-w-[1400px] w-full table-auto divide-y divide-gray-200">
+            <table className="min-w-full w-full table-auto divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -298,11 +298,11 @@ export default function UsersPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rôle
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
-                    Dernière Connexion
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Statut / Connexion
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
-                    Dernière Déconnexion
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Déconnexion
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Inscription
@@ -356,23 +356,43 @@ export default function UsersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 hidden xl:table-cell">
-                      {user.derniere_connexion ? new Date(user.derniere_connexion).toLocaleString('fr-FR', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric',
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      }) : '-'}
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const isConnected = user.derniere_connexion && (!user.derniere_deconnexion || new Date(user.derniere_connexion) > new Date(user.derniere_deconnexion));
+                          return (
+                            <>
+                              <div className={`h-3 w-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} 
+                                   title={isConnected ? "Connecté" : "Déconnecté"}></div>
+                              <div className="flex flex-col">
+                                <span className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
+                                  {isConnected ? '🟢 En ligne' : '⚫ Hors ligne'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {user.derniere_connexion ? new Date(user.derniere_connexion).toLocaleString('fr-FR', { 
+                                    day: '2-digit', 
+                                    month: '2-digit',
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  }) : 'Jamais'}
+                                </span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 hidden xl:table-cell">
-                      {user.derniere_deconnexion ? new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric',
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      }) : '-'}
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {user.derniere_deconnexion ? (
+                        <span className="text-xs">
+                          {new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
+                            day: '2-digit', 
+                            month: '2-digit',
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
                       {new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}

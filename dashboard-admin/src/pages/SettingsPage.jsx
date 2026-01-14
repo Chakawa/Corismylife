@@ -24,6 +24,77 @@ export default function SettingsPage() {
   })
 
   const [saved, setSaved] = useState(false)
+  const [importing, setImporting] = useState(false)
+
+  const handleExportTarifs = async () => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch('http://localhost:5000/api/admin/tarifs/export', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erreur lors de l\'export')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `tarifs_coris_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      alert('Export réussi! Le fichier CSV a été téléchargé (ouvrir avec Excel).')
+    } catch (error) {
+      console.error('Erreur export:', error)
+      alert('Erreur lors de l\'export des tarifs: ' + error.message)
+    }
+  }
+
+  const handleImportTarifs = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      alert('Veuillez sélectionner un fichier Excel (.xlsx ou .xls)')
+      return
+    }
+    
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    setImporting(true)
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/tarifs/import', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        alert(`Import réussi! ${result.imported || 0} tarifs importés.`)
+      } else {
+        throw new Error(result.message || 'Erreur lors de l\'import')
+      }
+    } catch (error) {
+      console.error('Erreur import:', error)
+      alert('Erreur lors de l\'import des tarifs: ' + error.message)
+    } finally {
+      setImporting(false)
+      e.target.value = '' // Reset input
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -306,7 +377,7 @@ export default function SettingsPage() {
                 Téléchargez tous les tarifs actuels au format Excel
               </p>
               <button 
-                onClick={() => alert('Export Excel des tarifs en cours de développement...')}
+                onClick={handleExportTarifs}
                 className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition mx-auto"
               >
                 <Download className="w-4 h-4" />
@@ -329,12 +400,7 @@ export default function SettingsPage() {
                   type="file" 
                   accept=".xlsx,.xls" 
                   className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      alert('Import Excel des tarifs en cours de développement...')
-                      // TODO: Implémenter l'upload et le parsing Excel
-                    }
-                  }}
+                  onChange={handleImportTarifs}
                 />
               </label>
             </div>
