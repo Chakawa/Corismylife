@@ -289,19 +289,40 @@ async function login(identifier, password) {
   const isEmail = identifier.includes('@');
   console.log('📧 Type d\'identifiant:', isEmail ? 'Email' : 'Téléphone');
   
-  // Choisir la requête SQL appropriée
-  const query = isEmail 
-    ? 'SELECT * FROM users WHERE email = $1'        // Recherche par email
-    : 'SELECT * FROM users WHERE telephone = $1';   // Recherche par téléphone
+  let query, searchValue;
+  
+  if (isEmail) {
+    // Recherche par email
+    query = 'SELECT * FROM users WHERE email = $1';
+    searchValue = identifier;
+  } else {
+    // Recherche par téléphone - normaliser le numéro
+    // Accepter les numéros avec ou sans +225
+    const normalizedPhone = identifier.trim();
+    
+    // Rechercher avec le numéro exact OU avec/sans +225
+    query = `SELECT * FROM users WHERE telephone = $1 
+             OR telephone = $2 
+             OR telephone = $3`;
+    
+    // Préparer les 3 variantes: original, avec +225, sans +225
+    const withPrefix = normalizedPhone.startsWith('+225') ? normalizedPhone : '+225' + normalizedPhone.replace(/^\+225/, '');
+    const withoutPrefix = normalizedPhone.replace(/^\+225/, '');
+    
+    searchValue = [normalizedPhone, withPrefix, withoutPrefix];
+    console.log('📱 Recherche téléphone avec variantes:', searchValue);
+  }
   
   // ============================================
   // ÉTAPE 2 : Rechercher l'utilisateur
   // ============================================
   console.log('🔍 Recherche de l\'utilisateur...');
   console.log('📝 Requête SQL:', query);
-  console.log('📝 Paramètre de recherche:', identifier);
+  console.log('📝 Paramètre de recherche:', isEmail ? identifier : searchValue);
   
-  const result = await pool.query(query, [identifier]);
+  const result = isEmail 
+    ? await pool.query(query, [searchValue])
+    : await pool.query(query, searchValue);
   
   console.log('📊 Nombre de résultats trouvés:', result.rows.length);
   
@@ -339,6 +360,20 @@ async function login(identifier, password) {
   }
   
   console.log('✅ Mot de passe correct');
+  
+  // ============================================
+  // ÉTAPE 3.3 : Normaliser le numéro de téléphone si nécessaire
+  // ============================================
+  if (!isEmail && user.telephone && !user.telephone.startsWith('+225')) {
+    // Mettre à jour le numéro avec +225 si pas déjà présent
+    const updatedPhone = '+225' + user.telephone;
+    await pool.query(
+      'UPDATE users SET telephone = $1 WHERE id = $2',
+      [updatedPhone, user.id]
+    );
+    console.log('📱 Numéro normalisé:', user.telephone, '→', updatedPhone);
+    user.telephone = updatedPhone;
+  }
   
   // ============================================
   // ÉTAPE 3.5 : Logger la connexion
@@ -417,6 +452,78 @@ async function logout(userId, ipAddress = 'api-request') {
 
 /**
  * ===============================================
+ * CHANGE PASSWORD
+ * ===============================================
+ * 
+ * Permet à un utilisateur de changer son propre mot de passe
+ * Nécessite l'ancien mot de passe pour vérification
+ */
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id; // From JWT token via verifyToken middleware
+    const { oldPassword, newPassword } = req.body;
+
+    // Validation
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Ancien et nouveau mot de passe requis' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le nouveau mot de passe doit contenir au moins 6 caractères' 
+      });
+    }
+
+    // Get user
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Verify old password
+    const isValidPassword = await bcrypt.compare(oldPassword, user.password_hash);
+    
+    if (!isValidPassword) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Ancien mot de passe incorrect' 
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    console.log(`✅ Password changed successfully for user ${userId} (${user.email})`);
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Mot de passe modifié avec succès' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error changing password:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la modification du mot de passe' 
+    });
+  }
+};
+
+/**
+ * ===============================================
  * EXPORTS
  * ===============================================
  * 
@@ -430,5 +537,6 @@ module.exports = {
   logout,              // Déconnexion
   detectUserRole,      // Détection du rôle
   checkPhoneExists,    // Vérification d'unicité du téléphone
-  checkEmailExists     // Vérification d'unicité de l'email
+  checkEmailExists,    // Vérification d'unicité de l'email
+  changePassword       // Changement de mot de passe
 };

@@ -21,8 +21,7 @@ export default function UsersPage() {
     civilite: 'M',
     prenom: '',
     nom: '',
-    email: '',
-    telephone: '',
+    email: '',    phonePrefix: '+225',    telephone: '',
     date_naissance: '',
     lieu_naissance: '',
     adresse: '',
@@ -31,6 +30,8 @@ export default function UsersPage() {
     code_apporteur: '',
     password: ''
   })
+
+  const [showPasswordFields, setShowPasswordFields] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -66,13 +67,19 @@ export default function UsersPage() {
   const handleCreateUser = async (e) => {
     e.preventDefault()
     try {
-      const response = await usersService.create(formData)
+      // Combiner le préfixe et le numéro de téléphone
+      const userData = {
+        ...formData,
+        telephone: formData.phonePrefix + formData.telephone
+      }
+      const response = await usersService.create(userData)
       setShowCreateModal(false)
       setFormData({
         civilite: 'M',
         prenom: '',
         nom: '',
         email: '',
+        phonePrefix: '+225',
         telephone: '',
         date_naissance: '',
         lieu_naissance: '',
@@ -102,19 +109,45 @@ export default function UsersPage() {
 
   const handleEditUser = (user) => {
     setSelectedUser(user)
-    setEditFormData(user)
+    setEditFormData({
+      ...user,
+      password: '', // Champ vide par défaut, optionnel
+      newPassword: '' // Pour confirmation visuelle
+    })
+    setShowPasswordFields(false) // Masquer les champs de mot de passe initialement
     setShowEditModal(true)
   }
 
   const handleSaveEdit = async () => {
     try {
-      await usersService.update(selectedUser.id, editFormData)
+      // Validation du mot de passe si fourni
+      if (showPasswordFields && editFormData.password) {
+        if (editFormData.password.length < 6) {
+          alert('Le mot de passe doit contenir au moins 6 caractères');
+          return;
+        }
+        if (editFormData.password !== editFormData.newPassword) {
+          alert('Les mots de passe ne correspondent pas');
+          return;
+        }
+      }
+
+      // Ne pas envoyer le mot de passe s'il est vide
+      const dataToSend = { ...editFormData }
+      
+      if (!dataToSend.password || dataToSend.password.trim() === '') {
+        delete dataToSend.password
+      }
+      delete dataToSend.newPassword // Champ de confirmation UI uniquement
+
+      await usersService.update(selectedUser.id, dataToSend)
       loadUsers()
       setShowEditModal(false)
+      setShowPasswordFields(false)
       alert('Utilisateur modifié avec succès')
     } catch (error) {
       console.error('Erreur modification:', error)
-      alert('Erreur lors de la modification')
+      alert(error.response?.data?.message || 'Erreur lors de la modification')
     }
   }
 
@@ -574,13 +607,31 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input
-                  type="tel"
-                  value={formData.telephone}
-                  onChange={(e) => handleFormChange('telephone', e.target.value)}
-                  placeholder="Téléphone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={formData.phonePrefix}
+                    onChange={(e) => handleFormChange('phonePrefix', e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue bg-white"
+                  >
+                    <option value="+225">🇨🇮 +225</option>
+                    <option value="+33">🇫🇷 +33</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+237">🇨🇲 +237</option>
+                    <option value="+221">🇸🇳 +221</option>
+                    <option value="+226">🇧🇫 +226</option>
+                    <option value="+229">🇧🇯 +229</option>
+                    <option value="+228">🇹🇬 +228</option>
+                  </select>
+                  <input
+                    type="tel"
+                    value={formData.telephone}
+                    onChange={(e) => handleFormChange('telephone', e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="0123456789"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Numéro complet: {formData.phonePrefix}{formData.telephone}</p>
               </div>
 
               <div>
@@ -777,6 +828,70 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
                 />
               </div>
+
+              {/* Code Apporteur - seulement pour les commerciaux */}
+              {(editFormData.role === 'commercial' || selectedUser?.role === 'commercial') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Code Apporteur
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.code_apporteur || ''}
+                    onChange={(e) => handleEditFormChange('code_apporteur', e.target.value)}
+                    placeholder="Ex: COM001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
+                  />
+                </div>
+              )}
+
+              {/* Bouton pour afficher les champs de mot de passe */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordFields(!showPasswordFields)}
+                  className="text-sm text-coris-blue hover:underline"
+                >
+                  {showPasswordFields ? '❌ Annuler la modification du mot de passe' : '🔐 Modifier le mot de passe'}
+                </button>
+              </div>
+
+              {/* Champs de mot de passe (affichés uniquement si activés) */}
+              {showPasswordFields && (
+                <div className="space-y-3 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <p className="text-xs text-yellow-800 font-medium">
+                    ⚠️ Laissez vide pour conserver le mot de passe actuel
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nouveau mot de passe
+                    </label>
+                    <input
+                      type="password"
+                      value={editFormData.password || ''}
+                      onChange={(e) => handleEditFormChange('password', e.target.value)}
+                      placeholder="Minimum 6 caractères"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirmer le nouveau mot de passe
+                    </label>
+                    <input
+                      type="password"
+                      value={editFormData.newPassword || ''}
+                      onChange={(e) => handleEditFormChange('newPassword', e.target.value)}
+                      placeholder="Retaper le mot de passe"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coris-blue"
+                    />
+                    {editFormData.password && editFormData.newPassword && editFormData.password !== editFormData.newPassword && (
+                      <p className="text-xs text-red-600 mt-1">❌ Les mots de passe ne correspondent pas</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"

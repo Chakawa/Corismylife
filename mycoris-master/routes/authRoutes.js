@@ -1198,5 +1198,21 @@ router.post('/logout', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * 🔐 CHANGE PASSWORD (Self-service)
+ * Permet à un utilisateur connecté de changer son mot de passe
+ * Nécessite l'ancien mot de passe pour vérification
+ */
+router.post('/change-password', verifyToken, async (req, res) => {
+  if (authController && authController.changePassword) {
+    return authController.changePassword(req, res);
+  }
+  
+  return res.status(501).json({ 
+    success: false, 
+    message: 'Fonctionnalité non disponible' 
+  });
+});
+
 module.exports = router;
  

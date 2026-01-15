@@ -163,6 +163,7 @@ class UserService {
     required String nom,
     required String prenom,
     required String telephone,
+    String? email,
     String? adresse,
     String? dateNaissance,
     String? lieuNaissance,
@@ -197,6 +198,7 @@ class UserService {
         'nom': nom,
         'prenom': prenom,
         'telephone': telephone,
+        if (email != null) 'email': email,
         if (adresse != null) 'adresse': adresse,
         if (dateNaissance != null) 'date_naissance': dateNaissance,
         if (lieuNaissance != null) 'lieu_naissance': lieuNaissance,
@@ -263,10 +265,10 @@ class UserService {
         throw Exception('Token non trouvé');
       }
 
-      // Faire la requête PUT avec timeout réduit à 5 secondes
+      // Faire la requête POST avec timeout réduit à 5 secondes
       final response = await http
-          .put(
-        Uri.parse('$baseUrl/change-password'),
+          .post(
+        Uri.parse('${AppConfig.baseUrl}/auth/change-password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

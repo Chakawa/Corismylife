@@ -424,24 +424,97 @@ router.get('/users/:id', async (req, res) => {
 router.put('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { prenom, nom, email, telephone, adresse, role } = req.body;
+    const { prenom, nom, email, telephone, adresse, role, password, code_apporteur } = req.body;
+
+    // Construire la requête dynamiquement selon les champs fournis
+    const updateFields = [];
+    const params = [];
+    let paramCount = 1;
+
+    if (prenom !== undefined) {
+      updateFields.push(`prenom = $${paramCount}`);
+      params.push(prenom);
+      paramCount++;
+    }
+    if (nom !== undefined) {
+      updateFields.push(`nom = $${paramCount}`);
+      params.push(nom);
+      paramCount++;
+    }
+    if (email !== undefined) {
+      updateFields.push(`email = $${paramCount}`);
+      params.push(email);
+      paramCount++;
+    }
+    if (telephone !== undefined) {
+      updateFields.push(`telephone = $${paramCount}`);
+      params.push(telephone);
+      paramCount++;
+    }
+    if (adresse !== undefined) {
+      updateFields.push(`adresse = $${paramCount}`);
+      params.push(adresse);
+      paramCount++;
+    }
+    if (role !== undefined) {
+      updateFields.push(`role = $${paramCount}`);
+      params.push(role);
+      paramCount++;
+    }
+    if (code_apporteur !== undefined) {
+      updateFields.push(`code_apporteur = $${paramCount}`);
+      params.push(code_apporteur);
+      paramCount++;
+    }
+
+    // Si un nouveau mot de passe est fourni, le hasher avant mise à jour
+    if (password && password.trim() !== '') {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateFields.push(`password_hash = $${paramCount}`);
+      params.push(hashedPassword);
+      paramCount++;
+      console.log(`🔐 Admin modifying password for user ${id}`);
+    }
+
+    // Toujours mettre à jour updated_at
+    updateFields.push(`updated_at = NOW()`);
+
+    if (updateFields.length === 1) {
+      // Seulement updated_at, aucune modification réelle
+      return res.status(400).json({ success: false, message: 'Aucune donnée à modifier' });
+    }
 
     const query = `
       UPDATE users 
-      SET prenom = $1, nom = $2, email = $3, telephone = $4, adresse = $5, role = $6, updated_at = NOW()
-      WHERE id = $7
-      RETURNING *
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING id, prenom, nom, email, telephone, adresse, role, code_apporteur, created_at, updated_at
     `;
 
-    const result = await pool.query(query, [prenom, nom, email, telephone, adresse, role, id]);
+    params.push(id);
+
+    const result = await pool.query(query, params);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
+    console.log(`✅ User ${id} updated successfully by admin`);
     res.json({ success: true, user: result.rows[0] });
   } catch (error) {
     console.error('Erreur modification utilisateur:', error);
+    
+    // Gestion des erreurs d'unicité (email ou téléphone déjà existant)
+    if (error.code === '23505') {
+      if (error.constraint === 'users_email_key') {
+        return res.status(400).json({ success: false, message: 'Cet email est déjà utilisé' });
+      }
+      if (error.constraint === 'users_telephone_key') {
+        return res.status(400).json({ success: false, message: 'Ce numéro de téléphone est déjà utilisé' });
+      }
+    }
+    
     res.status(500).json({ success: false, message: 'Erreur lors de la modification' });
   }
 });
