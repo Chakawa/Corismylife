@@ -145,7 +145,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
+  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -2717,11 +2717,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
+        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 4444 / 11111111111 / 22');
+        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -4130,8 +4130,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         onChanged: (_) => _formatRibInput(),
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
-                          hintText: '4444 / 11111111111 / 22',
-                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
+                          hintText: '55555 / 11111111111 / 22',
+                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
                           prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
