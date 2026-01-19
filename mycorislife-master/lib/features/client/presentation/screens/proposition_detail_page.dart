@@ -427,14 +427,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   const SizedBox(height: 20),
 
                     // 📋 RÉCAP: Questionnaire médical (questions + réponses) —
-                    // n'afficher que pour ÉTUDE, FAMILIS, SÉRÉNITÉ et RETRAITE
+                    // n'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
                     Builder(builder: (context) {
                       final productType = _getProductType().toLowerCase();
                       if (productType.contains('etude') ||
                           productType.contains('familis') ||
                           productType.contains('serenite') ||
-                          productType.contains('sérénité') ||
-                          productType.contains('retraite')) {
+                          productType.contains('sérénité')) {
                         return Column(
                           children: [
                             // Passe les questions si disponibles (_getQuestionnaireMedicalQuestions)

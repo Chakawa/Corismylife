@@ -747,8 +747,11 @@ class _PropositionsPageState extends State<PropositionsPage>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => PdfViewerPage(
-                                    subscriptionId: subscription.id),
+                                builder: (_) {
+                                  final prod = subscription.produitNom.toLowerCase();
+                                  final excludeQ = prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité');
+                                  return PdfViewerPage(subscriptionId: subscription.id, excludeQuestionnaire: excludeQ);
+                                },
                               ),
                             );
                           },
@@ -1128,6 +1131,8 @@ class _PropositionsPageState extends State<PropositionsPage>
       'CORIS RETRAITE',
       'CORIS SÉRÉNITÉ',
       'CORIS FAMILIS',
+      'CORIS ASSURE PRESTIGE',
+      'MON BON PLAN CORIS',
       'ÉPARGNE BONUS'
     ];
 

@@ -133,7 +133,8 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           children: [
             // Hero Section
@@ -331,6 +332,7 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
             ),
           ],
         ),
+      ),
       ),
     );
   }

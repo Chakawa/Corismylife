@@ -11,10 +11,12 @@ class SouscriptionPretsScolairePage extends StatefulWidget {
   const SouscriptionPretsScolairePage({super.key});
 
   @override
-  State<SouscriptionPretsScolairePage> createState() => _SouscriptionPretsScolairePageState();
+  State<SouscriptionPretsScolairePage> createState() =>
+      _SouscriptionPretsScolairePageState();
 }
 
-class _SouscriptionPretsScolairePageState extends State<SouscriptionPretsScolairePage> {
+class _SouscriptionPretsScolairePageState
+    extends State<SouscriptionPretsScolairePage> {
   static const Color bleuCoris = Color(0xFF002B6B);
   static const Color fondGris = Color(0xFFF0F4F8);
 
@@ -68,7 +70,8 @@ class _SouscriptionPretsScolairePageState extends State<SouscriptionPretsScolair
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 ),
                 child: const Text(
                   'Retour',

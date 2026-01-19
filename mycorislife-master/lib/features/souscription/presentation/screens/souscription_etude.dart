@@ -3051,7 +3051,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Form(
                 key: _formKeyClientInfo,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: ListView(
                   children: [
                     _buildFormSection(
@@ -3164,7 +3163,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Form(
                 key: _formKeyStep1,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: ListView(
                   children: [
                     Container(
@@ -3202,12 +3200,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           const SizedBox(height: 20),
                           _buildModeDropdown(),
                           const SizedBox(height: 16),
-                          // Masquer le champ date de naissance parent si c'est un commercial
-                          // car le client EST le parent dans ce cas
-                          if (widget.clientId == null) ...[
-                            _buildDateNaissanceParentField(),
-                            const SizedBox(height: 16),
-                          ],
+                          _buildDateNaissanceParentField(),
+                          const SizedBox(height: 16),
                           _buildAgeEnfantField(),
                           const SizedBox(height: 16),
                           _buildPeriodiciteDropdown(),
@@ -3599,7 +3593,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Form(
                 key: _formKeyStep2,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: ListView(
                   children: [
                     _buildFormSection(

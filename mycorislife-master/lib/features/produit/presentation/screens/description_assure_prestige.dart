@@ -73,134 +73,155 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Image d'en-tête réduite
-            Container(
-              width: double.infinity,
-              height: 150,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-              ),
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/coris_assure_prestige.jpg',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF002B6B).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.diamond,
-                          size: 60,
-                          color: Color(0xFF002B6B),
-                        ),
-                      );
-                    },
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Image d'en-tête réduite
+              Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                ),
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      'assets/images/coris_assure_prestige.jpg',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF002B6B).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.diamond,
+                            size: 60,
+                            color: Color(0xFF002B6B),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Contenu Markdown
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              child: MarkdownBody(
-                data: markdownContent,
-                styleSheet: MarkdownStyleSheet(
-                  h3: const TextStyle(
-                    fontSize: 26.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF002B6B),
-                  ),
-                  h4: const TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF002B6B),
-                  ),
-                  p: TextStyle(
-                    fontSize: 16.0,
-                    height: 1.6,
-                    color: Colors.grey[800],
-                  ),
-                  listBullet: const TextStyle(
-                    fontSize: 16.0,
-                    color: Color(0xFFE30613),
-                  ),
-                ),
-              ),
-            ),
-            // Section Souscription
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.grey[100]!,
-                    Colors.grey[50]!,
-                  ],
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Intéressé par ce produit prestige ?',
-                    style: TextStyle(
+              // Contenu Markdown
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24.0),
+                child: MarkdownBody(
+                  data: markdownContent,
+                  styleSheet: MarkdownStyleSheet(
+                    h3: const TextStyle(
+                      fontSize: 26.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF002B6B),
+                    ),
+                    h4: const TextStyle(
                       fontSize: 20.0,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16.0),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/souscription_assure_prestige');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF002B6B),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 18.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        elevation: 4.0,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.workspace_premium, size: 24),
-                          SizedBox(width: 12),
-                          Text(
-                            'SOUSCRIRE MAINTENANT',
-                            style: TextStyle(
-                              fontSize: 17.0,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ],
-                      ),
+                    p: TextStyle(
+                      fontSize: 16.0,
+                      height: 1.6,
+                      color: Colors.grey[800],
+                    ),
+                    listBullet: const TextStyle(
+                      fontSize: 16.0,
+                      color: Color(0xFFE30613),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              // Section Souscription
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.grey[100]!,
+                      Colors.grey[50]!,
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Intéressé par ce produit prestige ?',
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF002B6B),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16.0),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final args = ModalRoute.of(context)?.settings.arguments
+                              as Map<String, dynamic>?;
+                          final bool isCommercial = args?['isCommercial'] == true;
+
+                          if (isCommercial) {
+                            Navigator.pushNamed(
+                              context,
+                              '/commercial/select_client',
+                              arguments: {
+                                'isCommercial': true,
+                                'productType': 'assure_prestige'
+                              },
+                            );
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/souscription_assure_prestige',
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF002B6B),
+                          disabledBackgroundColor: Colors.grey[400],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 18.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          elevation: 2.0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.workspace_premium, size: 24),
+                            SizedBox(width: 12),
+                            Text(
+                              'SOUSCRIRE MAINTENANT',
+                              style: TextStyle(
+                                fontSize: 17.0,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

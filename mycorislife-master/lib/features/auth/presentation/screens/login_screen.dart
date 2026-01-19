@@ -3,6 +3,11 @@ import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/core/widgets/country_selector.dart';
 import 'package:mycorislife/core/widgets/phone_input_field.dart';
+import 'package:mycorislife/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:mycorislife/features/auth/presentation/screens/two_fa_login_otp_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mycorislife/config/app_config.dart';
 
 /// ============================================
 /// PAGE DE CONNEXION
@@ -102,8 +107,10 @@ class _LoginScreenState extends State<LoginScreen>
   /// 1. Valide le formulaire
   /// 2. Détermine l'identifiant (email ou téléphone selon le type de connexion)
   /// 3. Appelle le service d'authentification
-  /// 4. Redirige l'utilisateur selon son rôle en cas de succès
-  /// 5. Affiche des messages d'erreur clairs en cas d'échec
+  /// 4. Vérifie si la 2FA est activée
+  /// 5. Si 2FA activée, envoie OTP et affiche l'écran de vérification
+  /// 6. Sinon, redirige directement l'utilisateur selon son rôle
+  /// 7. Affiche des messages d'erreur clairs en cas d'échec
   /// 
   /// Les erreurs possibles sont :
   /// - Email/mot de passe incorrect
@@ -142,14 +149,47 @@ class _LoginScreenState extends State<LoginScreen>
       if (result['success'] == true) {
         // Extraire les données utilisateur depuis la réponse
         final user = result['user'];
+        final userId = user['id'];
         final role = user['role'] ?? 'client'; // Par défaut 'client' si le rôle n'est pas défini
 
-        // Rediriger l'utilisateur vers la page appropriée selon son rôle
-        final route = _getRouteForRole(role);
-        Navigator.pushReplacementNamed(context, route);
-        
-        // Afficher un message de succès
-        _showSuccessSnackbar();
+        // Désactiver le chargement temporairement pour vérifier la 2FA
+        setState(() => isLoading = false);
+
+        // Vérifier si la 2FA est activée pour cet utilisateur
+        final has2FA = await _check2FAStatus(userId);
+
+        if (has2FA['enabled'] == true) {
+          // 2FA activée, envoyer un OTP et afficher l'écran de vérification
+          final otpResponse = await _request2FAOtp(userId);
+          
+          if (otpResponse['success'] == true) {
+            // Naviguer vers l'écran de vérification OTP
+            final verificationResult = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TwoFALoginOtpScreen(
+                  userId: userId,
+                  secondaryPhone: otpResponse['secondaryPhone'] ?? '',
+                  userData: user,
+                ),
+              ),
+            );
+
+            // Si la vérification réussit, rediriger selon le rôle
+            if (verificationResult != null) {
+              final route = _getRouteForRole(role);
+              Navigator.pushReplacementNamed(context, route);
+              _showSuccessSnackbar();
+            }
+          } else {
+            _showErrorSnackbar('Erreur lors de l\'envoi du code 2FA');
+          }
+        } else {
+          // Pas de 2FA, rediriger directement selon le rôle
+          final route = _getRouteForRole(role);
+          Navigator.pushReplacementNamed(context, route);
+          _showSuccessSnackbar();
+        }
       } else {
         // La connexion a échoué, afficher le message d'erreur du serveur
         _showErrorSnackbar(result['message'] ?? 
@@ -195,6 +235,44 @@ class _LoginScreenState extends State<LoginScreen>
         setState(() => isLoading = false);
       }
     }
+  }
+
+  /// Vérifie si la 2FA est activée pour un utilisateur
+  Future<Map<String, dynamic>> _check2FAStatus(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/auth/2fa-status'),
+        headers: {
+          'Authorization': 'Bearer ${await AuthService.getToken()}',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Erreur vérification 2FA: $e');
+    }
+    return {'enabled': false};
+  }
+
+  /// Demande l'envoi d'un code OTP pour la 2FA
+  Future<Map<String, dynamic>> _request2FAOtp(int userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/request-2fa-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': userId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Erreur envoi OTP 2FA: $e');
+    }
+    return {'success': false};
   }
 
   String _getRouteForRole(String role) {
@@ -570,13 +648,10 @@ class _LoginScreenState extends State<LoginScreen>
                           Center(
                             child: TextButton(
                               onPressed: () {
-                                // TODO: Implémenter la fonctionnalité de réinitialisation du mot de passe
-                                // Navigator.pushNamed(context, '/reset_password');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Fonctionnalité en cours de développement'),
-                                    backgroundColor: Color(0xFFF59E0B),
-                                    duration: Duration(seconds: 2),
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ForgotPasswordScreen(),
                                   ),
                                 );
                               },

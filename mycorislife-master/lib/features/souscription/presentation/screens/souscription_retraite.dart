@@ -9,6 +9,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
+import '../../../../core/widgets/subscription_recap_widgets.dart';
 
 // Enum pour le type de simulation
 enum SimulationType { parPrime, parCapital }
@@ -73,6 +74,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
+  final FocusNode _dureeFocusNode = FocusNode();
 
   // Variables pour la simulation
   int _dureeEnAnnees = 5;
@@ -133,6 +135,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   String _selectedContactIndicatif = '+225';
 
   File? _pieceIdentite;
+  String? _pieceIdentiteLabel;
 
   // Mode de paiement
   String? _selectedModePaiement;
@@ -150,9 +153,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Banque Atlantique',
     'Autre',
   ];
+  final _codeGuichetController = TextEditingController();
   final _numeroCompteController = TextEditingController();
+  final _cleRibController = TextEditingController();
   final _numeroMobileMoneyController = TextEditingController();
-  final List<String> _modePaiementOptions = ['Virement', 'Wave', 'Orange Money'];
+  final List<String> _modePaiementOptions = [
+    'Virement',
+    'Wave',
+    'Orange Money'
+  ];
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -165,294 +174,300 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   ];
   final storage = FlutterSecureStorage();
 
-  // Primes minimales par périodicité (prime de référence)
+  // Primes minimales par périodicité
   final Map<String, int> minPrimes = {
-    'mensuel': 10000,
-    'trimestriel': 30000,
-    'semestriel': 60000,
-    'annuel': 120000,
+    'mensuel': 5000,
+    'trimestriel': 15000,
+    'semestriel': 30000,
+    'annuel': 60000,
   };
 
-  // Valeurs du capital à terme pour une prime de référence (10k / 30k / 60k / 120k)
-  final Map<int, Map<String, double>> capitalValues = {
+  // Table tarifaire (identique à celle de la simulation)
+  final Map<int, Map<String, double>> premiumValues = {
     5: {
-      'mensuel': 605463.405379,
-      'trimestriel': 615056.504123,
-      'semestriel': 620331.447928,
-      'annuel': 625666.388106
+      'mensuel': 17385.55245,
+      'trimestriel': 51343.16466,
+      'semestriel': 101813.14352,
+      'annuel': 201890.00380
     },
     6: {
-      'mensuel': 739294.364577,
-      'trimestriel': 752266.795228,
-      'semestriel': 758213.774878,
-      'annuel': 764734.523010
+      'mensuel': 14238.32819,
+      'trimestriel': 41978.94598,
+      'semestriel': 83298.26868,
+      'annuel': 165175.99987
     },
     7: {
-      'mensuel': 877714.810967,
-      'trimestriel': 891453.723199,
-      'semestriel': 898104.646416,
-      'annuel': 908670.042636
+      'mensuel': 11992.86563,
+      'trimestriel': 35424.10172,
+      'semestriel': 70323.54417,
+      'annuel': 139011.72433
     },
     8: {
-      'mensuel': 1020882.065727,
-      'trimestriel': 1038327.916972,
-      'semestriel': 1045708.931812,
-      'annuel': 1057643.305449
+      'mensuel': 10311.00079,
+      'trimestriel': 30413.27008,
+      'semestriel': 60397.20310,
+      'annuel': 119431.37050
     },
     9: {
-      'mensuel': 1168958.840396,
-      'trimestriel': 1190342.707527,
-      'semestriel': 1190479.470698,
-      'annuel': 1211830.632461
+      'mensuel': 9004.86435,
+      'trimestriel': 26529.29040,
+      'semestriel': 52698.35344,
+      'annuel': 104235.51451
     },
     10: {
-      'mensuel': 1322113.421481,
-      'trimestriel': 1344587.648202,
-      'semestriel': 1356596.978444,
-      'annuel': 1371414.515917
+      'mensuel': 7563.64759,
+      'trimestriel': 22312.00493,
+      'semestriel': 44228.31611,
+      'annuel': 87500.89678
     },
     11: {
-      'mensuel': 1480519.861382,
-      'trimestriel': 1507300.829349,
-      'semestriel': 1520248.598961,
-      'annuel': 1536583.835295
+      'mensuel': 6754.38423,
+      'trimestriel': 19903.12711,
+      'semestriel': 39467.22927,
+      'annuel': 78095.31588
     },
     12: {
-      'mensuel': 1644358.175855,
-      'trimestriel': 1675729.671837,
-      'semestriel': 1689628.026197,
-      'annuel': 1707534.080851
+      'mensuel': 6081.40012,
+      'trimestriel': 17902.64892,
+      'semestriel': 35510.77460,
+      'annuel': 70276.78179
     },
     13: {
-      'mensuel': 1813844.548229,
-      'trimestriel': 1846605.003713,
-      'semestriel': 1861472.384183,
-      'annuel': 1880974.450438
+      'mensuel': 5513.24280,
+      'trimestriel': 16246.02984,
+      'semestriel': 32232.54909,
+      'annuel': 63796.71982
     },
     14: {
-      'mensuel': 1989081.640624,
-      'trimestriel': 2026309.492304,
-      'semestriel': 2042794.643842,
-      'annuel': 2063978.367524
+      'mensuel': 5027.44598,
+      'trimestriel': 14800.85821,
+      'semestriel': 29371.52796,
+      'annuel': 58140.14424
     },
     15: {
-      'mensuel': 2170358.312385,
-      'trimestriel': 2213524.637995,
-      'semestriel': 2230463.182648,
-      'annuel': 2253387.421708
+      'mensuel': 4607.53413,
+      'trimestriel': 13553.04544,
+      'semestriel': 26900.24228,
+      'annuel': 53253.15960
     },
     16: {
-      'mensuel': 2361663.347047,
-      'trimestriel': 2402847.877909,
-      'semestriel': 2424700.120313,
-      'annuel': 2449425.792789
+      'mensuel': 4234.30376,
+      'trimestriel': 12485.18488,
+      'semestriel': 24745.32809,
+      'annuel': 48991.07389
     },
     17: {
-      'mensuel': 2559654.057923,
-      'trimestriel': 2602620.867097,
-      'semestriel': 2625735.350796,
-      'annuel': 2652329.506857
+      'mensuel': 3906.76267,
+      'trimestriel': 11526.84218,
+      'semestriel': 22850.74160,
+      'annuel': 45243.31561
     },
     18: {
-      'mensuel': 2764594.793679,
-      'trimestriel': 2809385.910906,
-      'semestriel': 2833806.814345,
-      'annuel': 2862326.710918
+      'mensuel': 3617.16662,
+      'trimestriel': 10678.49023,
+      'semestriel': 21172.93236,
+      'annuel': 41923.93536
     },
     19: {
-      'mensuel': 2976698.105187,
-      'trimestriel': 3019148.619548,
-      'semestriel': 3044903.438595,
-      'annuel': 3079677.957121
+      'mensuel': 3359.42700,
+      'trimestriel': 9936.57609,
+      'semestriel': 19705.05837,
+      'annuel': 38965.11313
     },
     20: {
-      'mensuel': 3196225.032957,
-      'trimestriel': 3240492.134693,
-      'semestriel': 3267645.786918,
-      'annuel': 3304636.466941
+      'mensuel': 3128.69085,
+      'trimestriel': 9257.85305,
+      'semestriel': 18361.84334,
+      'annuel': 36312.61717
     },
     21: {
-      'mensuel': 3423435.402467,
-      'trimestriel': 3469582.672868,
-      'semestriel': 3498184.113972,
-      'annuel': 3537468.588654
+      'mensuel': 2921.04241,
+      'trimestriel': 8646.57304,
+      'semestriel': 17151.75590,
+      'annuel': 33922.56273
     },
     22: {
-      'mensuel': 3658598.135282,
-      'trimestriel': 3701991.400963,
-      'semestriel': 3736791.284233,
-      'annuel': 3778449.797473
+      'mensuel': 2733.28735,
+      'trimestriel': 8103.74654,
+      'semestriel': 16056.55640,
+      'annuel': 31759.05634
     },
     23: {
-      'mensuel': 3901991.563746,
-      'trimestriel': 3947234.413457,
-      'semestriel': 3983749.705453,
-      'annuel': 4027865.351705
+      'mensuel': 2562.79385,
+      'trimestriel': 7600.25802,
+      'semestriel': 15061.18718,
+      'annuel': 29792.45569
     },
     24: {
-      'mensuel': 4153903.762206,
-      'trimestriel': 4201060.933389,
-      'semestriel': 4239351.671416,
-      'annuel': 4286010.450336
+      'mensuel': 2407.37402,
+      'trimestriel': 7141.05329,
+      'semestriel': 14153.10752,
+      'annuel': 27998.06519
     },
     25: {
-      'mensuel': 4414632.887612,
-      'trimestriel': 4458560.426312,
-      'semestriel': 4498666.347671,
-      'annuel': 4547912.261262
+      'mensuel': 2265.19402,
+      'trimestriel': 6728.62923,
+      'semestriel': 13337.28607,
+      'annuel': 26385.73330
     },
     26: {
-      'mensuel': 4684487.532408,
-      'trimestriel': 4730283.355211,
-      'semestriel': 4772290.396112,
-      'annuel': 4824259.001727
+      'mensuel': 2134.70522,
+      'trimestriel': 6342.11478,
+      'semestriel': 12572.57942,
+      'annuel': 24874.28638
     },
     27: {
-      'mensuel': 4963787.683771,
-      'trimestriel': 5011516.586104,
-      'semestriel': 5055491.266247,
-      'annuel': 5110277.878109
+      'mensuel': 2014.59084,
+      'trimestriel': 5986.21186,
+      'semestriel': 11868.28274,
+      'annuel': 23482.08901
     },
     28: {
-      'mensuel': 5252862.131642,
-      'trimestriel': 5296815.505562,
-      'semestriel': 5348604.207638,
-      'annuel': 5406307.415163
+      'mensuel': 1903.72406,
+      'trimestriel': 5663.78043,
+      'semestriel': 11217.87997,
+      'annuel': 22196.29606
     },
     29: {
-      'mensuel': 5552054.799978,
-      'trimestriel': 5597877.362131,
-      'semestriel': 5651976.081074,
-      'annuel': 5712697.986015
+      'mensuel': 1801.13496,
+      'trimestriel': 5359.17421,
+      'semestriel': 10615.75618,
+      'annuel': 21005.83652
     },
     30: {
-      'mensuel': 5861719.211707,
-      'trimestriel': 5909476.383267,
-      'semestriel': 5965965.970183,
-      'annuel': 6029812.226846
+      'mensuel': 1705.98414,
+      'trimestriel': 5076.59191,
+      'semestriel': 10057.04697,
+      'annuel': 19901.11723
     },
     31: {
-      'mensuel': 6182221.877845,
-      'trimestriel': 6225575.781317,
-      'semestriel': 6284512.371581,
-      'annuel': 6358025.466106
+      'mensuel': 1617.54143,
+      'trimestriel': 4818.83139,
+      'semestriel': 9547.28012,
+      'annuel': 18873.78411
     },
     32: {
-      'mensuel': 6513942.137299,
-      'trimestriel': 6559144.247123,
-      'semestriel': 6620641.030858,
-      'annuel': 6697726.168741
+      'mensuel': 1535.16869,
+      'trimestriel': 4573.76738,
+      'semestriel': 9062.56656,
+      'annuel': 17916.52823
     },
     33: {
-      'mensuel': 6857272.605833,
-      'trimestriel': 6904387.609234,
-      'semestriel': 6968534.193210,
-      'annuel': 7049316.395967
+      'mensuel': 1458.30574,
+      'trimestriel': 4345.06312,
+      'semestriel': 8610.13211,
+      'annuel': 17022.92723
     },
     34: {
-      'mensuel': 7212619.840766,
-      'trimestriel': 7264612.498187,
-      'semestriel': 7328603.616244,
-      'annuel': 7413212.281147
+      'mensuel': 1386.45880,
+      'trimestriel': 4135.30013,
+      'semestriel': 8187.09854,
+      'annuel': 16187.31468
     },
     35: {
-      'mensuel': 7580403.821922,
-      'trimestriel': 7624197.249084,
-      'semestriel': 7701275.469085,
-      'annuel': 7789844.522308
+      'mensuel': 1319.19093,
+      'trimestriel': 3934.84048,
+      'semestriel': 7790.91726,
+      'annuel': 15404.67203
     },
     36: {
-      'mensuel': 7961060.449418,
-      'trimestriel': 8006717.466263,
-      'semestriel': 8086990.836775,
-      'annuel': 8179658.891909
+      'mensuel': 1256.11406,
+      'trimestriel': 3746.85383,
+      'semestriel': 7419.32336,
+      'annuel': 14670.53842
     },
     37: {
-      'mensuel': 8355040.058877,
-      'trimestriel': 8394751.786861,
-      'semestriel': 8478298.278308,
-      'annuel': 8575140.790787
+      'mensuel': 1196.88235,
+      'trimestriel': 3573.66135,
+      'semestriel': 7076.89185,
+      'annuel': 13993.93933
     },
     38: {
-      'mensuel': 8762808.954867,
-      'trimestriel': 8804241.412862,
-      'semestriel': 8891209.444321,
-      'annuel': 8992440.529785
+      'mensuel': 1141.18658,
+      'trimestriel': 3407.44859,
+      'semestriel': 6748.23829,
+      'annuel': 13344.54196
     },
     39: {
-      'mensuel': 9184849.761809,
-      'trimestriel': 9228063.175773,
-      'semestriel': 9318572.501144,
-      'annuel': 9424345.759649
+      'mensuel': 1088.74944,
+      'trimestriel': 3250.95304,
+      'semestriel': 6438.75443,
+      'annuel': 12732.97936
     },
     40: {
-      'mensuel': 9621661.997201,
-      'trimestriel': 9657988.540329,
-      'semestriel': 9760893.264956,
-      'annuel': 9871367.672557
+      'mensuel': 1039.32148,
+      'trimestriel': 3106.23686,
+      'semestriel': 6146.97839,
+      'annuel': 12156.37022
     },
     41: {
-      'mensuel': 10073762.660832,
-      'trimestriel': 10111691.452702,
-      'semestriel': 10218695.255501,
-      'annuel': 10334035.352417
+      'mensuel': 992.67774,
+      'trimestriel': 2966.86268,
+      'semestriel': 5871.59109,
+      'annuel': 11612.11433
     },
     42: {
-      'mensuel': 10541686.847690,
-      'trimestriel': 10581273.967007,
-      'semestriel': 10692520.315715,
-      'annuel': 10812896.401073
+      'mensuel': 948.61478,
+      'trimestriel': 2835.19736,
+      'semestriel': 5611.39921,
+      'annuel': 11097.85903
     },
     43: {
-      'mensuel': 11025988.381088,
-      'trimestriel': 11057612.584807,
-      'semestriel': 11173208.346138,
-      'annuel': 11308517.586431
+      'mensuel': 906.94817,
+      'trimestriel': 2713.06304,
+      'semestriel': 5369.98847,
+      'annuel': 10611.47043
     },
     44: {
-      'mensuel': 11527240.468155,
-      'trimestriel': 11560302.338736,
-      'semestriel': 11680441.364525,
-      'annuel': 11821485.513277
+      'mensuel': 867.51031,
+      'trimestriel': 2595.08784,
+      'semestriel': 5136.79219,
+      'annuel': 10151.00851
     },
     45: {
-      'mensuel': 12046036.378270,
-      'trimestriel': 12080582.334053,
-      'semestriel': 12205427.538555,
-      'annuel': 12352407.317562
+      'mensuel': 830.14858,
+      'trimestriel': 2483.32319,
+      'semestriel': 4915.84582,
+      'annuel': 9714.70556
     },
     46: {
-      'mensuel': 12582990.145238,
-      'trimestriel': 12619080.006705,
-      'semestriel': 12748788.228676,
-      'annuel': 12901911.384998
+      'mensuel': 794.72366,
+      'trimestriel': 2377.35238,
+      'semestriel': 4706.32965,
+      'annuel': 9300.94747
     },
     47: {
-      'mensuel': 13138737.294051,
-      'trimestriel': 13176421.181466,
-      'semestriel': 13311166.542952,
-      'annuel': 13470648.094793
+      'mensuel': 761.10815,
+      'trimestriel': 2276.79425,
+      'semestriel': 4507.49375,
+      'annuel': 8908.25736
     },
     48: {
-      'mensuel': 13713935.593071,
-      'trimestriel': 13753269.236278,
-      'semestriel': 13893228.098227,
-      'annuel': 14059290.589432
+      'mensuel': 729.18528,
+      'trimestriel': 2181.29955,
+      'semestriel': 4318.65075,
+      'annuel': 8535.28130
     },
     49: {
-      'mensuel': 14309265.832568,
-      'trimestriel': 14350306.973009,
-      'semestriel': 14483712.331354,
-      'annuel': 14668483.327573
+      'mensuel': 698.84787,
+      'trimestriel': 2090.54761,
+      'semestriel': 4142.58435,
+      'annuel': 8187.50292
     },
     50: {
-      'mensuel': 14925432.630426,
-      'trimestriel': 14968241.030525,
-      'semestriel': 15106812.989223,
-      'annuel': 15286630.055359
+      'mensuel': 669.99733,
+      'trimestriel': 2004.24351,
+      'semestriel': 3971.71793,
+      'annuel': 7849.99700
     },
   };
 
+  final Map<String, double> capitalValues = {
+    'mensuel': 10000.00000,
+    'trimestriel': 30000.00000,
+    'semestriel': 60000.00000,
+    'annuel': 120000.00000,
+  };
   @override
   void initState() {
     super.initState();
@@ -597,48 +612,57 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     });
 
-    _dureeController.addListener(() {
-      if (_dureeController.text.isNotEmpty && _age > 0) {
-        int? duree = int.tryParse(_dureeController.text);
-        if (duree != null) {
-          setState(() {
-            _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
-          });
+    // 🔍 Validation de la durée uniquement à la sortie du champ
+    _dureeFocusNode.addListener(() {
+      if (!_dureeFocusNode.hasFocus) {
+        // Utiliser Future.delayed pour éviter les appels multiples
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!mounted) return;
+          
+          // Le champ a perdu le focus - valider maintenant
+          if (_dureeController.text.isNotEmpty && _age > 0) {
+            int? duree = int.tryParse(_dureeController.text);
+            if (duree != null) {
+              setState(() {
+                _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+              });
 
-          // Validation de la durée en années
-          if (_dureeEnAnnees < 5) {
-            _showProfessionalDialog(
-              title: 'Durée minimale requise',
-              message:
-                  'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0.0;
-              _calculatedCapital = 0.0;
-            });
-            return;
-          }
-          if (_dureeEnAnnees > 50) {
-            _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
-              message:
-                  'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
-            setState(() {
-              _calculatedPrime = 0.0;
-              _calculatedCapital = 0.0;
-            });
-            return;
-          }
+              // Validation de la durée en années
+              if (_dureeEnAnnees < 5) {
+                _showProfessionalDialog(
+                  title: 'Durée minimale requise',
+                  message:
+                      'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
+              if (_dureeEnAnnees > 50) {
+                _showProfessionalDialog(
+                  title: 'Durée maximale dépassée',
+                  message:
+                      'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+                  icon: Icons.access_time,
+                  iconColor: orangeWarning,
+                  backgroundColor: orangeWarning,
+                );
+                setState(() {
+                  _calculatedPrime = 0.0;
+                  _calculatedCapital = 0.0;
+                });
+                return;
+              }
 
-          _effectuerCalcul();
-        }
+              _effectuerCalcul();
+            }
+          }
+        });
       }
     });
   }
@@ -1071,20 +1095,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return localPremium > 0 ? localPremium : -1;
     }
 
-    if (!capitalValues.containsKey(duration) ||
-        !capitalValues[duration]!.containsKey(periodicity)) {
+    if (!premiumValues.containsKey(duration) ||
+        !premiumValues[duration]!.containsKey(periodicity)) {
       return -1;
     }
 
-    // Récupérer le capital à terme pour la prime de référence
-    double capitalForRefPrime =
-        capitalValues[duration]![periodicity]!.toDouble();
+    // Récupérer la prime pour 1 million
+    double primePour1Million =
+        premiumValues[duration]![periodicity]!.toDouble();
 
-    // Récupérer la prime de référence selon la périodicité
-    double primeRef = minPrimes[periodicity]!.toDouble();
-
-    // Nouvelle formule: Prime = (Capital * PrimeRef) / CapitalForRef
-    double calculatedPremium = (desiredCapital * primeRef) / capitalForRefPrime;
+    // Calculer la prime avec règle de trois
+    double calculatedPremium = (desiredCapital * primePour1Million) / 1000000;
 
     return calculatedPremium;
   }
@@ -1111,20 +1132,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return localCapital > 0 ? localCapital : -1;
     }
 
-    if (!capitalValues.containsKey(duration) ||
-        !capitalValues[duration]!.containsKey(periodicity)) {
+    if (!premiumValues.containsKey(duration) ||
+        !premiumValues[duration]!.containsKey(periodicity)) {
       return -1;
     }
 
-    // Récupérer le capital à terme pour la prime de référence
-    double capitalForRefPrime =
-        capitalValues[duration]![periodicity]!.toDouble();
+    // Récupérer la prime pour 1 million
+    double primePour1Million =
+        premiumValues[duration]![periodicity]!.toDouble();
 
-    // Récupérer la prime de référence selon la périodicité
-    double primeRef = minPrimes[periodicity]!.toDouble();
-
-    // Nouvelle formule: Capital = (Prime * CapitalForRef) / PrimeRef
-    double calculatedCapital = (paidPremium * capitalForRefPrime) / primeRef;
+    // Calculer le capital avec règle de trois
+    double calculatedCapital = (paidPremium * 1000000) / primePour1Million;
 
     return calculatedCapital;
   }
@@ -1449,12 +1467,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _nextStep() {
-    final maxStep = _isCommercial ? 5 : 4;
+    final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap, step 5 = finalisation
+        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -1462,20 +1480,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          canProceed = true; // Mode paiement validé avant d'aller au récap
-        } else if (_currentStep == 4) {
-          canProceed = true; // Récap, aller à la page de finalisation (paiement)
+          canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap, step 4 = finalisation
+        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          canProceed = true; // Mode paiement validé avant d'aller au récap
-        } else if (_currentStep == 3) {
-          canProceed = true; // Récap, aller à la page de finalisation (paiement)
+          canProceed = true;
         }
       }
 
@@ -1488,14 +1502,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             debugPrint('Erreur lors du calcul avant récapitulatif: $e');
           }
         }
-        setState(() => _currentStep++);
-        _progressController.forward();
-        _animationController.reset();
-        _animationController.forward();
-        _pageController.nextPage(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOutCubic);
-      } else if (_currentStep == 1 && _validateStep2()) {
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -1622,7 +1628,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-      _showErrorSnackBar('Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      _showErrorSnackBar(
+          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
     return true;
@@ -1635,18 +1642,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
 
     if (_selectedModePaiement == 'Virement') {
-      if (_banqueController.text.trim().isEmpty || _numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner les informations bancaires');
+      if (_banqueController.text.trim().isEmpty ||
+          _codeGuichetController.text.trim().isEmpty ||
+          _numeroCompteController.text.trim().isEmpty ||
+          _cleRibController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner correctement les informations bancaires');
         return false;
       }
-    } else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') {
+    } else if (_selectedModePaiement == 'Wave' ||
+        _selectedModePaiement == 'Orange Money') {
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
       if (phone.length < 8) {
-        _showErrorSnackBar('Le numéro de téléphone doit contenir au moins 8 chiffres');
+        _showErrorSnackBar(
+            'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
       // Validation spécifique pour Orange Money : doit commencer par 07
@@ -1730,10 +1742,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 const Icon(Icons.arrow_back_ios, color: blanc),
                             onPressed: () => Navigator.pop(context)),
                       ),
-                      SliverToBoxAdapter(
+                        SliverToBoxAdapter(
                           child: Container(
-                              margin: const EdgeInsets.all(20),
-                              child: _buildModernProgressIndicator())),
+                            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            child: _buildModernProgressIndicator())),
                     ];
                   },
                   body: Column(
@@ -1749,14 +1761,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                       _buildStep2(), // Page 2: Bénéficiaire/Contact
                                       _buildStepModePaiement(), // Page 3: Mode de paiement
                                       _buildStep3(), // Page 4: Récapitulatif
-                                      _buildStep4(), // Page 5: Finalisation
                                     ]
                                   : [
                                       _buildStep1(), // Page 0: Simulation
                                       _buildStep2(), // Page 1: Bénéficiaire/Contact
                                       _buildStepModePaiement(), // Page 2: Mode de paiement
                                       _buildStep3(), // Page 3: Récapitulatif
-                                      _buildStep4(), // Page 4: Finalisation
                                     ])),
                       _buildNavigationButtons(),
                     ],
@@ -2258,6 +2268,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 flex: 3,
                 child: TextField(
                   controller: _dureeController,
+                  focusNode: _dureeFocusNode,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     isDense: true,
@@ -2597,7 +2608,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       required ValueChanged<String?> onChanged}) {
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
-    
+
     return DropdownButtonFormField<String>(
       value: validValue,
       onChanged: onChanged,
@@ -2824,7 +2835,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2844,10 +2855,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: blanc.withValues(alpha: 0.2),
+                            color: blanc.withAlpha(51),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.payment, color: blanc, size: 32),
+                          child:
+                              const Icon(Icons.payment, color: blanc, size: 32),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -2866,7 +2878,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
-                                  color: blanc.withValues(alpha: 0.9),
+                                  color: blanc.withAlpha(229),
                                   fontSize: 14,
                                 ),
                               ),
@@ -2876,177 +2888,297 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 30),
 
                   // Sélection du mode de paiement
                   Text(
-                    'Sélectionnez votre mode de paiement',
+                    'Mode de paiement *',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      children: _modePaiementOptions.map((mode) {
+                        final isSelected = _selectedModePaiement == mode;
+                        IconData icon;
+                        Color iconColor;
 
-                  // Options de paiement (style radio moderne)
-                  ...(_modePaiementOptions.map((mode) {
-                    final isSelected = _selectedModePaiement == mode;
-                    IconData icon;
-                    Color color;
-                    
-                    if (mode == 'Virement') {
-                      icon = Icons.account_balance;
-                      color = Colors.blue;
-                    } else if (mode == 'Wave') {
-                      icon = Icons.water_drop;
-                      color = const Color(0xFF00BFFF);
-                    } else {
-                      icon = Icons.phone_android;
-                      color = Colors.orange;
-                    }
+                        switch (mode) {
+                          case 'Virement':
+                            icon = Icons.account_balance;
+                            iconColor = Colors.blue;
+                            break;
+                          case 'Wave':
+                            icon = Icons.water_drop;
+                            iconColor = Color(0xFF00BFFF);
+                            break;
+                          case 'Orange Money':
+                            icon = Icons.phone_android;
+                            iconColor = Colors.orange;
+                            break;
+                          default:
+                            icon = Icons.payment;
+                            iconColor = bleuCoris;
+                        }
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedModePaiement = mode;
-                          // Réinitialiser les champs non utilisés
-                          if (mode == 'Virement') {
-                            _numeroMobileMoneyController.clear();
-                          } else {
-                            _banqueController.clear();
-                            _numeroCompteController.clear();
-                          }
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected ? color.withValues(alpha: 0.1) : blanc,
-                          border: Border.all(
-                            color: isSelected ? color : grisLeger,
-                            width: isSelected ? 2 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? color : grisLeger,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(icon, color: isSelected ? blanc : grisTexte, size: 24),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                mode,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                  color: isSelected ? color : grisTexte,
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedModePaiement = mode;
+                              // Réinitialiser les champs
+                              _banqueController.clear();
+                              _codeGuichetController.clear();
+                              _numeroCompteController.clear();
+                              _cleRibController.clear();
+                              _numeroMobileMoneyController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? bleuCoris.withOpacity(0.1)
+                                  : Colors.transparent,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: _modePaiementOptions.last == mode
+                                      ? Colors.transparent
+                                      : Colors.grey[300]!,
                                 ),
                               ),
                             ),
-                            if (isSelected)
-                              Icon(Icons.check_circle, color: color, size: 24)
-                            else
-                              Icon(Icons.circle_outlined, color: grisLeger, size: 24),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList()),
-
-                  const SizedBox(height: 24),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 28),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    mode,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? bleuCoris
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(Icons.check_circle,
+                                      color: bleuCoris, size: 28),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
 
                   // Champs conditionnels selon le mode sélectionné
-                  if (_selectedModePaiement == 'Virement') ...[
-                    Text(
-                      'Informations Bancaires',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDropdownField(
-                      value: _selectedBanque,
-                      label: 'Nom de la banque',
-                      icon: Icons.account_balance,
-                      items: _banques,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedBanque = value;
-                          if (value != null && value != 'Autre') {
-                            _banqueController.text = value;
-                          } else if (value == 'Autre') {
-                            _banqueController.text = '';
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Champ texte personnalisé si "Autre" est sélectionné
-                    if (_selectedBanque == 'Autre') ...[
-                      _buildModernTextField(
-                        controller: _banqueController,
-                        label: 'Nom de votre banque',
-                        icon: Icons.edit,
+                  if (_selectedModePaiement != null) ...[
+                    SizedBox(height: 30),
+
+                    // VIREMENT
+                    if (_selectedModePaiement == 'Virement') ...[
+                      Text(
+                        'Informations Bancaires',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                    ],
-                    _buildModernTextField(
-                      controller: _numeroCompteController,
-                      label: 'Numéro de compte',
-                      icon: Icons.account_box,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ] else if (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money') ...[
-                    Text(
-                      'Numéro Mobile Money',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
+
+                      // Nom de la banque
+                      DropdownButtonFormField<String>(
+                        value: _selectedBanque,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la banque *',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        items: _banques.map((String banque) {
+                          return DropdownMenuItem<String>(
+                            value: banque,
+                            child: Text(banque),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedBanque = newValue;
+                            if (newValue != null && newValue != 'Autre') {
+                              _banqueController.text = newValue;
+                            } else if (newValue == 'Autre') {
+                              _banqueController.text = '';
+                            }
+                          });
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernTextField(
-                      controller: _numeroMobileMoneyController,
-                      label: 'Numéro de téléphone',
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
+                      SizedBox(height: 16),
+
+                      // Champ texte personnalisé si "Autre" est sélectionné
+                      if (_selectedBanque == 'Autre') ...[
+                        TextField(
+                          controller: _banqueController,
+                          decoration: InputDecoration(
+                            labelText: 'Nom de votre banque *',
+                            hintText: 'Entrez le nom de votre banque',
+                            prefixIcon: Icon(Icons.edit, color: bleuCoris),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                      ],
+
+                      // Informations du RIB
+                      Text(
+                        'Informations du RIB',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Code guichet (4 chiffres)
+                      TextField(
+                        controller: _codeGuichetController,
+                        decoration: InputDecoration(
+                          labelText: 'Code guichet *',
+                          hintText: '4 chiffres',
+                          prefixIcon: Icon(Icons.domain, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Numéro de compte (11 chiffres)
+                      TextField(
+                        controller: _numeroCompteController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de compte *',
+                          hintText: '11 chiffres',
+                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 11,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Clé RIB (2 chiffres)
+                      TextField(
+                        controller: _cleRibController,
+                        decoration: InputDecoration(
+                          labelText: 'Clé RIB *',
+                          hintText: '2 chiffres',
+                          prefixIcon: Icon(Icons.vpn_key, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 2,
+                      ),
+                    ],
+
+                    // WAVE ou ORANGE MONEY
+                    if (_selectedModePaiement == 'Wave' ||
+                        _selectedModePaiement == 'Orange Money') ...[
+                      Text(
+                        'Numéro ${_selectedModePaiement}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroMobileMoneyController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone *',
+                          hintText: 'Ex: 0707070707',
+                          prefixIcon: Icon(
+                            Icons.phone_android,
+                            color: _selectedModePaiement == 'Wave'
+                                ? Color(0xFF00BFFF)
+                                : Colors.orange,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
                   ],
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: 30),
 
                   // Note informative
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
-                        const SizedBox(width: 12),
+                        Icon(Icons.info_outline,
+                            color: Colors.blue[700], size: 24),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
                             style: TextStyle(
-                              color: Colors.blue.shade900,
                               fontSize: 14,
-                              height: 1.4,
+                              color: Colors.blue[900],
                             ),
                           ),
                         ),
@@ -3067,14 +3199,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       animation: _fadeAnimation,
       builder: (context, child) {
         return Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: Opacity(
-              opacity: _fadeAnimation.value,
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: _isCommercial
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _buildRecapContent(),
-                    )
+                  ? _buildRecapContent()
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
@@ -3091,11 +3222,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               'Erreur chargement données récapitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: _buildRecapContent(userData: _userData),
-                            );
+                            return _buildRecapContent(userData: _userData);
                           }
                           return Center(
                             child: Column(
@@ -3132,13 +3259,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                   CircularProgressIndicator(color: bleuCoris));
                         }
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildRecapContent(userData: userData),
-                        );
+                        return _buildRecapContent(userData: userData);
                       },
                     ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -3169,49 +3295,28 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         : (userData ?? _userData);
 
     return ListView(children: [
-      _buildRecapSection('Informations Personnelles', Icons.person, bleuCoris, [
-        _buildCombinedRecapRow(
-            'Civilité',
-            displayData['civilite'] ?? 'Non renseigné',
-            'Nom',
-            displayData['nom'] ?? 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Prénom',
-            displayData['prenom'] ?? 'Non renseigné',
-            'Email',
-            displayData['email'] ?? 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Téléphone',
-            displayData['telephone'] ?? 'Non renseigné',
-            'Date de naissance',
-            displayData['date_naissance'] != null
-                ? _formatDate(displayData['date_naissance'].toString())
-                : 'Non renseigné'),
-        _buildCombinedRecapRow(
-            'Lieu de naissance',
-            displayData['lieu_naissance'] ?? 'Non renseigné',
-            'Adresse',
-            displayData['adresse'] ?? 'Non renseigné'),
-      ]),
+      // Afficher les informations du client (toujours dans "Informations Personnelles")
+      SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
+
       const SizedBox(height: 20),
-      _buildRecapSection(
+      SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit', Icons.emoji_people_outlined, vertSucces, [
         // Produit et Prime
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Produit',
             'CORIS RETRAITE',
             'Prime ${_getPeriodeTextForDisplay()}',
             _formatMontant(_calculatedPrime)),
 
         // Capital au terme et Durée du contrat
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Capital au terme',
             '${_formatNumber(_calculatedCapital)} FCFA',
             'Durée du contrat',
             '$duree ${_selectedUnite == 'années' ? 'ans' : 'mois'}'),
 
         // Date d'effet et Date d'échéance
-        _buildCombinedRecapRow(
+        SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             _dateEffetContrat != null
                 ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
@@ -3222,32 +3327,32 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 : 'Non définie'),
       ]),
       const SizedBox(height: 20),
-      _buildRecapSection(
+      SubscriptionRecapWidgets.buildRecapSection(
           'Bénéficiaire et Contact d\'urgence', Icons.contacts, orangeWarning, [
         _buildSubsectionTitle('Bénéficiaire'),
-        _buildRecapRow(
+        SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _beneficiaireNomController.text.isEmpty
                 ? 'Non renseigné'
                 : _beneficiaireNomController.text),
-        _buildRecapRow('Contact',
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParente),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParente),
         const SizedBox(height: 12),
         _buildSubsectionTitle('Contact d\'urgence'),
-        _buildRecapRow(
+        SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _personneContactNomController.text.isEmpty
                 ? 'Non renseigné'
                 : _personneContactNomController.text),
-        _buildRecapRow('Contact',
+        SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-        _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
+        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
       ]),
       const SizedBox(height: 20),
       // 💳 SECTION MODE DE PAIEMENT
       if (_selectedModePaiement != null)
-        _buildRecapSection(
+        SubscriptionRecapWidgets.buildRecapSection(
           'Mode de Paiement',
           Icons.payment,
           _selectedModePaiement == 'Virement'
@@ -3256,71 +3361,48 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   ? Color(0xFF00BFFF)
                   : orangeCoris,
           [
-            _buildRecapRow('Mode choisi', _selectedModePaiement!),
+            SubscriptionRecapWidgets.buildRecapRow('Mode choisi', _selectedModePaiement!),
             const SizedBox(height: 8),
             if (_selectedModePaiement == 'Virement') ...[
-              _buildRecapRow('Banque',
-                  _banqueController.text.isNotEmpty ? _banqueController.text : 'Non renseigné'),
-              _buildRecapRow('Numéro de compte',
-                  _numeroCompteController.text.isNotEmpty ? _numeroCompteController.text : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Banque',
+                  _banqueController.text.isNotEmpty
+                      ? _banqueController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Code guichet',
+                  _codeGuichetController.text.isNotEmpty
+                      ? _codeGuichetController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro de compte',
+                  _numeroCompteController.text.isNotEmpty
+                      ? _numeroCompteController.text
+                      : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Clé RIB',
+                  _cleRibController.text.isNotEmpty
+                      ? _cleRibController.text
+                      : 'Non renseigné'),
             ] else if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
-              _buildRecapRow('Numéro ${_selectedModePaiement}',
-                  _numeroMobileMoneyController.text.isNotEmpty ? _numeroMobileMoneyController.text : 'Non renseigné'),
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Numéro ${_selectedModePaiement}',
+                  _numeroMobileMoneyController.text.isNotEmpty
+                      ? _numeroMobileMoneyController.text
+                      : 'Non renseigné'),
             ],
           ],
         ),
       if (_selectedModePaiement != null) const SizedBox(height: 20),
-      _buildRecapSection('Documents', Icons.description, bleuSecondaire, [
-        _buildRecapRow('Pièce d\'identité',
-            _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-        if (_pieceIdentite != null) ...[
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => _viewLocalDocument(),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bleuCoris.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: bleuCoris.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.picture_as_pdf, color: rougeCoris, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Document téléchargé',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: bleuCoris,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Appuyer pour voir',
-                          style: TextStyle(
-                            color: grisTexte,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.visibility, color: bleuCoris, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ]),
+
+      SubscriptionRecapWidgets.buildDocumentsSection(
+        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        onDocumentTap: _pieceIdentite != null
+            ? () => _viewLocalDocument()
+            : null,
+      ),
+
       const SizedBox(height: 20),
       Container(
         padding: const EdgeInsets.all(16),
@@ -3551,181 +3633,287 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: ListView(
                 children: [
-                  // En-tête
+                  // En-tête de finalisation
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [bleuCoris, bleuSecondaire],
+                        colors: [vertSucces, vertSucces.withOpacity(0.8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: vertSucces.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: blanc.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.check_circle_outline, color: blanc, size: 48),
-                        ),
-                        const SizedBox(height: 16),
+                        Icon(Icons.check_circle, color: blanc, size: 56),
+                        SizedBox(height: 16),
                         Text(
-                          'Finalisation',
-                          style: const TextStyle(
+                          'Souscription Prête !',
+                          style: TextStyle(
                             color: blanc,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
-                          'Votre souscription est prête',
+                          'Toutes vos informations ont été enregistrées',
                           style: TextStyle(
-                            color: blanc.withValues(alpha: 0.9),
-                            fontSize: 16,
+                            color: blanc.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Montant à payer
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: blanc,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: vertSucces,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: vertSucces.withAlpha(26),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cotisation ${_selectedPeriode.toString().split('.').last.toLowerCase()} à payer',
+                          style: TextStyle(
+                            color: grisTexte,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _formatMontant(_calculatedPrime),
+                          style: TextStyle(
+                            color: vertSucces,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  SizedBox(height: 24),
 
-                  const SizedBox(height: 32),
+                  // Titre de la section
+                  Text(
+                    'Que souhaitez-vous faire maintenant ?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: bleuCoris,
+                    ),
+                  ),
+                  SizedBox(height: 20),
 
                   // Option 1: Payer maintenant
-                  GestureDetector(
+                  InkWell(
                     onTap: () => _showPaymentOptions(),
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [bleuCoris, bleuSecondaire],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+                        color: bleuCoris,
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: bleuCoris.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            color: bleuCoris.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Column(
+                      child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: blanc.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
+                              color: blanc.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.payment, color: blanc, size: 40),
+                            child: Icon(Icons.payment, color: blanc, size: 32),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Payer Maintenant',
-                            style: const TextStyle(
-                              color: blanc,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payer Maintenant',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: blanc,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Finalisez votre souscription avec un paiement immédiat',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: blanc.withOpacity(0.9),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Procéder au paiement immédiat de la première prime',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: blanc.withValues(alpha: 0.9),
-                              fontSize: 14,
-                            ),
-                          ),
+                          Icon(Icons.arrow_forward_ios, color: blanc, size: 20),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Option 2: Payer plus tard
-                  GestureDetector(
+                  InkWell(
                     onTap: () => _saveAsProposition(),
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: blanc,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: orangeCoris, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: orangeWarning, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: Column(
+                      child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: orangeCoris.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              color: orangeWarning.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.schedule, color: orangeCoris, size: 40),
+                            child: Icon(Icons.schedule,
+                                color: orangeWarning, size: 32),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Payer Plus Tard',
-                            style: TextStyle(
-                              color: grisTexte,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payer Plus Tard',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: orangeWarning,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Enregistrez votre proposition et payez ultérieurement',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: grisTexte,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Enregistrer comme proposition et payer ultérieurement',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: grisTexte,
-                              fontSize: 14,
-                            ),
-                          ),
+                          Icon(Icons.arrow_forward_ios,
+                              color: orangeWarning, size: 20),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
 
                   // Note informative
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade200),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: Colors.amber.shade700, size: 24),
-                        const SizedBox(width: 12),
+                        Icon(Icons.info_outline, color: bleuCoris, size: 24),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Information importante',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: bleuCoris,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue[900],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Avertissement de sécurité
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withAlpha(26),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info, color: Colors.blue, size: 20),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Si vous choisissez "Payer Plus Tard", votre souscription sera enregistrée comme proposition. Vous pourrez la retrouver dans vos propositions et finaliser le paiement quand vous le souhaitez.',
+                            'Vos informations de paiement sont sécurisées et chiffrées.',
                             style: TextStyle(
-                              color: Colors.amber.shade900,
-                              fontSize: 13,
+                              fontSize: 12,
+                              color: grisTexte,
                               height: 1.4,
                             ),
                           ),
@@ -3733,6 +3921,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                   ),
+                  SizedBox(height: 20),
                 ],
               ),
             ),
@@ -3853,11 +4042,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
+                'code_guichet': _codeGuichetController.text.trim(),
                 'numero_compte': _numeroCompteController.text.trim(),
+                'cle_rib': _cleRibController.text.trim(),
               }
-            : (_selectedModePaiement == 'Wave' || _selectedModePaiement == 'Orange Money')
+            : (_selectedModePaiement == 'Wave' ||
+                    _selectedModePaiement == 'Orange Money')
                 ? {
-                    'numero_telephone': _numeroMobileMoneyController.text.trim(),
+                    'numero_telephone':
+                        _numeroMobileMoneyController.text.trim(),
                   }
                 : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -4066,6 +4259,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _primeController.dispose();
     _capitalController.dispose();
     _dureeController.dispose();
+    _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
@@ -4166,7 +4360,7 @@ class SuccessDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un email de confirmation sous peu.'
+                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(

@@ -554,10 +554,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
     
-    return codeGuichet.length == 5 &&
+    return codeGuichet.length == 4 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
-        RegExp(r'^\d{5}$').hasMatch(codeGuichet) &&
+        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
         RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
@@ -2581,7 +2581,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '4444 / 11111111111 / 22',
-                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                          helperText: 'Code guichet (4) / Numéro compte (11) / Clé RIB (2)',
                           prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
