@@ -842,64 +842,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ],
           ),
 
-        // 💳 Mode de Paiement
+        // 💳 Mode de Paiement - Version améliorée avec icônes
         if (souscriptionData['mode_paiement'] != null &&
             souscriptionData['mode_paiement'].toString().isNotEmpty)
-          _buildRecapSection(
-            'Mode de Paiement',
-            Icons.payment,
-            souscriptionData['mode_paiement']
-                    .toString()
-                    .toLowerCase()
-                    .contains('virement')
-                ? bleuCoris
-                : souscriptionData['mode_paiement']
-                        .toString()
-                        .toLowerCase()
-                        .contains('wave')
-                    ? const Color(0xFF00BFFF)
-                    : const Color(0xFFFF6B00),
-            [
-              _buildRecapRow(
-                  'Mode choisi', souscriptionData['mode_paiement'].toString()),
-              const SizedBox(height: 8),
-              if (souscriptionData['mode_paiement']
-                  .toString()
-                  .toLowerCase()
-                  .contains('virement')) ...[
-                _buildRecapRow(
-                    'Banque',
-                    souscriptionData['banque'] != null &&
-                            souscriptionData['banque'].toString().isNotEmpty
-                        ? souscriptionData['banque'].toString()
-                        : 'Non renseigné'),
-                _buildRecapRow(
-                    'Numéro de compte',
-                    souscriptionData['numero_compte'] != null &&
-                            souscriptionData['numero_compte']
-                                .toString()
-                                .isNotEmpty
-                        ? souscriptionData['numero_compte'].toString()
-                        : 'Non renseigné'),
-              ] else if (souscriptionData['mode_paiement']
-                      .toString()
-                      .toLowerCase()
-                      .contains('wave') ||
-                  souscriptionData['mode_paiement']
-                      .toString()
-                      .toLowerCase()
-                      .contains('orange')) ...[
-                _buildRecapRow(
-                    'Numéro de téléphone',
-                    souscriptionData['numero_mobile_money'] != null &&
-                            souscriptionData['numero_mobile_money']
-                                .toString()
-                                .isNotEmpty
-                        ? souscriptionData['numero_mobile_money'].toString()
-                        : 'Non renseigné'),
-              ],
-            ],
-          ),
+          SubscriptionRecapWidgets.buildPaymentModeSection(souscriptionData),
 
         // RÉCAP: Questionnaire médical (questions + réponses)
         // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ

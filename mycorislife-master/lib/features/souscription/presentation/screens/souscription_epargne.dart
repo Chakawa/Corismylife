@@ -99,7 +99,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Banque Atlantique',
     'Autre',
   ];
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXX / XXXXXXXXXXX / XX
+  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
@@ -469,10 +469,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
     
-    return codeGuichet.length == 4 &&
+    return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
-        RegExp(r'^\d{4}$').hasMatch(codeGuichet) &&
+        RegExp(r'^\d{5}$').hasMatch(codeGuichet) &&
         RegExp(r'^\d{11}$').hasMatch(numeroCompte) &&
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
@@ -487,19 +487,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       return;
     }
 
-    // Construire le format: XXXX / XXXXXXXXXXX / XX
+    // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
     if (onlyDigits.length > 0) {
-      buffer.write(onlyDigits.substring(0, min(4, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
-    if (onlyDigits.length > 4) {
+    if (onlyDigits.length > 5) {
       buffer.write(' / ');
       buffer.write(
-          onlyDigits.substring(4, min(15, onlyDigits.length)));
+          onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
-    if (onlyDigits.length > 15) {
+    if (onlyDigits.length > 16) {
       buffer.write(' / ');
-      buffer.write(onlyDigits.substring(15, min(17, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(16, min(18, onlyDigits.length)));
     }
 
     final formatted = buffer.toString();
@@ -922,7 +922,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Format RIB invalide. Format attendu: 4444 / 11111111111 / 22');
+        _showErrorSnackBar('Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -2117,6 +2117,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         filled: true,
         fillColor: fondCarte,
         contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        counterText: '',
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -2525,9 +2526,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                     _buildModernTextField(
                       controller: _ribUnifiedController,
-                      label: 'Numéro RIB complet (XXXX / XXXXXXXXXXX / XX)',
+                      label: 'Numéro RIB complet (XXXXX / XXXXXXXXXXX / XX)',
                       icon: Icons.account_balance,
                       keyboardType: TextInputType.number,
+                      maxLength: 24,
                       onChanged: (_) => _formatRibInput(),
                     ),
                   ] else if (_selectedModePaiement == 'Wave' ||

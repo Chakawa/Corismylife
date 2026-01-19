@@ -136,8 +136,9 @@ class SubscriptionRecapWidgets {
               color: isHighlighted ? vertSucces : bleuCoris,
               fontSize: 13,
             ),
-            overflow: TextOverflow.visible,
+            overflow: TextOverflow.ellipsis,
             softWrap: true,
+            maxLines: 3,
           ),
         ],
       ),
@@ -176,8 +177,9 @@ class SubscriptionRecapWidgets {
                         color: bleuCoris,
                         fontSize: 13,
                       ),
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.ellipsis,
                       softWrap: true,
+                      maxLines: 2,
                     ),
                   ],
                 ),
@@ -201,8 +203,9 @@ class SubscriptionRecapWidgets {
                         color: bleuCoris,
                         fontSize: 13,
                       ),
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.ellipsis,
                       softWrap: true,
+                      maxLines: 2,
                     ),
                   ],
                 ),
@@ -234,8 +237,9 @@ class SubscriptionRecapWidgets {
                         color: bleuCoris,
                         fontSize: 13,
                       ),
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.ellipsis,
                       softWrap: true,
+                      maxLines: 2,
                     ),
                   ],
                 ),
@@ -261,8 +265,9 @@ class SubscriptionRecapWidgets {
                         color: bleuCoris,
                         fontSize: 13,
                       ),
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.ellipsis,
                       softWrap: true,
+                      maxLines: 2,
                     ),
                   ],
                 ),
@@ -1122,6 +1127,121 @@ class SubscriptionRecapWidgets {
           ),
         ),
       ),
+    );
+  }
+
+  /// Construit une section de mode de paiement avec icône et couleur
+  static Widget buildPaymentModeSection(Map<String, dynamic> souscriptionData) {
+    final modePaiement = souscriptionData['mode_paiement']?.toString() ?? '';
+    
+    if (modePaiement.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Déterminer l'icône et la couleur selon le mode
+    IconData icon;
+    Color color;
+    String displayName;
+
+    if (modePaiement.toLowerCase().contains('virement')) {
+      icon = Icons.account_balance;
+      color = Colors.blue;
+      displayName = 'Virement Bancaire';
+    } else if (modePaiement.toLowerCase().contains('wave')) {
+      icon = Icons.water_drop;
+      color = const Color(0xFF00BFFF);
+      displayName = 'Wave';
+    } else if (modePaiement.toLowerCase().contains('orange')) {
+      icon = Icons.phone_android;
+      color = Colors.orange;
+      displayName = 'Orange Money';
+    } else {
+      icon = Icons.payment;
+      color = bleuCoris;
+      displayName = modePaiement;
+    }
+
+    return buildRecapSection(
+      'Mode de Paiement',
+      Icons.payment,
+      color,
+      [
+        // Afficher le mode avec son icône
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mode choisi',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: grisTexte,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.check_circle, color: color, size: 24),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        // Afficher les détails selon le mode
+        if (modePaiement.toLowerCase().contains('virement')) ...[
+          buildRecapRow(
+            'Banque',
+            souscriptionData['banque']?.toString().isNotEmpty == true
+                ? souscriptionData['banque'].toString()
+                : 'Non renseigné',
+          ),
+          buildRecapRow(
+            'RIB',
+            souscriptionData['rib']?.toString().isNotEmpty == true
+                ? souscriptionData['rib'].toString()
+                : souscriptionData['numero_compte']?.toString().isNotEmpty == true
+                    ? souscriptionData['numero_compte'].toString()
+                    : 'Non renseigné',
+          ),
+        ] else if (modePaiement.toLowerCase().contains('wave') ||
+            modePaiement.toLowerCase().contains('orange')) ...[
+          buildRecapRow(
+            'Numéro de téléphone',
+            souscriptionData['numero_mobile_money']?.toString().isNotEmpty == true
+                ? souscriptionData['numero_mobile_money'].toString()
+                : 'Non renseigné',
+          ),
+        ],
+      ],
     );
   }
 }

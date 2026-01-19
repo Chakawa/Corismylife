@@ -2378,7 +2378,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         content: Row(children: [
           Icon(Icons.error_outline, color: blanc),
           SizedBox(width: 12),
-          Text(message)
+          Expanded(child: Text(message))
         ]),
         backgroundColor: rougeCoris,
         behavior: SnackBarBehavior.floating,
