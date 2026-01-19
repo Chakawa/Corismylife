@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/commercial_service.dart';
 import 'commission_detail_screen.dart';
+import 'commissions_page.dart'; // Import pour les commissions en instance
 
 /// ===============================================
 /// PAGE DES COMMISSIONS COMMERCIAL
@@ -15,6 +16,7 @@ import 'commission_detail_screen.dart';
 /// - Design moderne avec icônes et couleurs
 /// - Navigation vers les détails d'un bordereau
 /// - Pull-to-refresh pour actualiser les données
+/// - Accès aux commissions en instance
 class MesCommissionsScreen extends StatefulWidget {
   const MesCommissionsScreen({super.key});
 
@@ -307,8 +309,34 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                             ),
                     ),
                   ],
-                ),
-    );
+                ),      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.85,
+          height: 64,
+          child: FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.pushNamed(context, '/commissions');
+            },
+            backgroundColor: bleuCoris,
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            icon: const Icon(Icons.calculate_outlined, color: blanc, size: 28),
+            label: const Text(
+              'Mes Commissions en Instance',
+              style: TextStyle(
+                color: blanc,
+                fontWeight: FontWeight.w600,
+                fontSize: 17,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,    );
   }
 
   /// Construit la carte affichant le total des commissions

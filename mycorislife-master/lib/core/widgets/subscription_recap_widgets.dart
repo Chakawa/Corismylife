@@ -309,7 +309,10 @@ class SubscriptionRecapWidgets {
             'Nom',
             userData['nom'] ?? 'Non renseigné'),
         buildCombinedRecapRow('Prénom', userData['prenom'] ?? 'Non renseigné',
-            'Email', userData['email'] ?? 'Non renseigné'),
+            'Email', 
+            (userData['email'] != null && userData['email'].toString().trim().isNotEmpty)
+                ? userData['email']
+                : 'Non renseigné'),
         buildCombinedRecapRow(
             'Téléphone',
             userData['telephone'] ?? 'Non renseigné',
@@ -812,6 +815,7 @@ class SubscriptionRecapWidgets {
     } else {
       // Fallback: use provided responses list as-is (old behavior)
       if (reponses == null || reponses.isEmpty) {
+        // Même s'il n'y a pas de réponses, afficher la section
         return buildRecapSection(
           'Questionnaire médical',
           Icons.assignment,
@@ -922,6 +926,18 @@ class SubscriptionRecapWidgets {
             ],
           ),
         ),
+      );
+    }
+
+    // Si aucune question/réponse trouvée après le merge, afficher "Non rempli"
+    if (widgets.isEmpty) {
+      return buildRecapSection(
+        'Questionnaire médical',
+        Icons.assignment,
+        bleuSecondaire,
+        [
+          buildRecapRow('Statut', 'Non rempli'),
+        ],
       );
     }
 
