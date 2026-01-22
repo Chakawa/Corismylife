@@ -136,6 +136,24 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   Future<void> _processPayment(String paymentMethod) async {
     if (_isProcessingPayment) return;
 
+    // Afficher message en cours de développement
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.construction, color: blanc, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('Paiement via $paymentMethod - Fonctionnalité en cours de développement'),
+            ),
+          ],
+        ),
+        backgroundColor: orangeWarning,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    /* Code original commenté pour future intégration API
     setState(() {
       _isProcessingPayment = true;
     });
@@ -187,6 +205,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         );
       }
     }
+    */
   }
 
   void _viewDocument(String documentName, [String? displayLabel]) {
@@ -1045,7 +1064,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                  * - Si un paiement est en cours : Affiche un indicateur de chargement
                  * 
                  * ACTIONS:
-                 * - Clic sur "Payer maintenant" : Ouvre le bottom sheet avec les options de paiement (Wave, Orange Money)
+                 * - Clic sur "Payer maintenant" : Ouvre le bottom sheet avec les options de paiement (Wave, Orange Money, CORIS Money)
                  */
                 if (isProposition && !_isProcessingPayment)
                   Container(
@@ -1193,7 +1212,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
  * DESIGN IDENTIQUE À LA VERSION CLIENT:
  * - Même structure et disposition que le bottom sheet dans proposition_detail_page.dart
  * - Mêmes couleurs et styles
- * - Mêmes options de paiement (Wave et Orange Money uniquement)
+ * - Mêmes options de paiement (Wave, Orange Money et CORIS Money uniquement)
  * - Même bouton "Payer plus tard"
  * 
  * OPTIONS DE PAIEMENT:
@@ -1283,6 +1302,15 @@ class _PaymentBottomSheet extends StatelessWidget {
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
+              ),
+              const SizedBox(height: 12),
+              _buildPaymentOption(
+                context,
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                const Color(0xFF1E3A8A),
+                'Paiement via CORIS Money',
+                () => onPayNow('CORIS Money'),
               ),
               const SizedBox(height: 24),
               Row(

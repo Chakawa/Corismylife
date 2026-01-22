@@ -224,6 +224,16 @@ class _CommissionsPageState extends State<CommissionsPage>
         backgroundColor: bleuCoris,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/commercial_home',
+              (route) => false,
+            );
+          },
+        ),
         title: const Text(
           'Mes Commissions en Instance',
           style: TextStyle(

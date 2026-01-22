@@ -501,6 +501,16 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       _selectedPeriodicite = data['periodicite'];
     }
 
+    // Durée du contrat
+    if (data['duree_contrat'] != null) {
+      _dureeController.text = data['duree_contrat'].toString();
+    }
+
+    // Unité de durée (ans ou mois)
+    if (data['unite_duree'] != null) {
+      _selectedDureeType = data['unite_duree'];
+    }
+
     // Date d'effet
     if (data['date_effet'] != null) {
       try {

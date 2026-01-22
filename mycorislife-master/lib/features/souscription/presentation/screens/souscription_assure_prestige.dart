@@ -398,7 +398,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       _dureeContratController.text = data['duree_contrat'].toString();
     }
 
-    // Unité de durée
+    // Unité de durée (ans ou mois)
     if (data['unite_duree'] != null) {
       _selectedUniteDuree = data['unite_duree'];
     }

@@ -2640,6 +2640,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   }
 
   bool _validateStep1() {
+    // Vérifier que la date d'effet est sélectionnée
+    if (_dateEffetContrat == null) {
+      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      return false;
+    }
+
     // Si c'est un client, valider son propre âge
     if (!_isCommercial) {
       // Recalculer l'âge si la date de naissance est disponible

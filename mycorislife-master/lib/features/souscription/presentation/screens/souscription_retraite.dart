@@ -1591,6 +1591,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   bool _validateStep1() {
+    // Vérifier que la date d'effet est sélectionnée
+    if (_dateEffetContrat == null) {
+      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      return false;
+    }
+
     if (_currentSimulation == SimulationType.parPrime) {
       if (_primeController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez saisir une prime');

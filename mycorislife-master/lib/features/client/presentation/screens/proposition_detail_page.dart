@@ -12,6 +12,8 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_flex.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_epargne.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_mon_bon_plan.dart';
+import 'package:mycorislife/features/souscription/presentation/screens/souscription_assure_prestige.dart';
 
 /// ============================================
 /// PAGE DE DÉTAILS D'UNE PROPOSITION
@@ -1426,6 +1428,36 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         if (mounted) _loadSubscriptionData();
       });
+    } else if (productType.contains('mon bon plan')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SouscriptionBonPlanPage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
+      ).then((_) {
+        if (mounted) _loadSubscriptionData();
+      });
+    } else if (productType.contains('assuré prestige') ||
+        productType.contains('assure prestige') ||
+        productType.contains('prestige')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SouscriptionPrestigePage(
+            subscriptionId: widget.subscriptionId,
+            existingData: details,
+            clientId: clientId,
+            clientData: clientData,
+          ),
+        ),
+      ).then((_) {
+        if (mounted) _loadSubscriptionData();
+      });
     } else {
       // Produit non reconnu
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1590,12 +1622,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.payment, color: blanc, size: 20),
+            const Icon(Icons.construction, color: blanc, size: 20),
             const SizedBox(width: 12),
-            Text('Paiement via $paymentMethod en cours...'),
+            Expanded(
+              child: Text('Paiement via $paymentMethod - Fonctionnalité en cours de développement'),
+            ),
           ],
         ),
-        backgroundColor: vertSucces,
+        backgroundColor: orangeWarning,
+        duration: const Duration(seconds: 3),
       ),
     );
   }

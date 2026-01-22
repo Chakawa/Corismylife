@@ -882,108 +882,69 @@ class _PropositionsPageState extends State<PropositionsPage>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 24,
-            offset: const Offset(0, -8),
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           )
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
-                width: 48,
-                height: 5,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(3),
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Header avec icône et titre
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF002B6B),
-                          Color(0xFF003D8F),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF002B6B).withAlpha(40),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.payment_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Options de Paiement',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Choisissez votre méthode',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                  Icon(Icons.payment, color: const Color(0xFF002B6B), size: 28),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Options de Paiement',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF002B6B),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              // Options de paiement
+              const SizedBox(height: 24),
               _buildPaymentOption(
                 'Wave',
-                Icons.waves_rounded,
-                const Color(0xFF0066FF),
+                Icons.waves,
+                Colors.blue,
                 'Paiement mobile sécurisé',
                 () => _processPayment(subscription, 'Wave'),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               _buildPaymentOption(
                 'Orange Money',
-                Icons.phone_android_rounded,
-                const Color(0xFFFF6600),
+                Icons.phone_android,
+                Colors.orange,
                 'Paiement mobile Orange',
                 () => _processPayment(subscription, 'Orange Money'),
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 8),
+              const SizedBox(height: 12),
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                const Color(0xFF1E3A8A),
+                'Paiement via CORIS Money',
+                () => _processPayment(subscription, 'CORIS Money'),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),
         ),
@@ -998,105 +959,52 @@ class _PropositionsPageState extends State<PropositionsPage>
     String subtitle,
     VoidCallback onTap,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            const Color(0xFFFAFBFC),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8EEF4),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withAlpha(15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                // Icône avec gradient
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color,
-                        Color.lerp(color, Colors.white, 0.2)!,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withAlpha(40),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 26),
-                ),
-                const SizedBox(width: 16),
-                // Texte
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                          fontSize: 16,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Flèche
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Color(0xFF002B6B),
-                    size: 18,
-                  ),
-                ),
-              ],
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-          ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                      fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+          ],
         ),
       ),
     );
@@ -1107,19 +1015,50 @@ class _PropositionsPageState extends State<PropositionsPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.payment, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
-            Text('Paiement via $paymentMethod en cours...'),
-          ],
+        content: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF59E0B), // orangeWarning
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.white, size: 24),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Fonctionnalité en cours de développement',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Le paiement sera bientôt disponible',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
       ),
     );
-
-    // TODO: Implémenter la logique de paiement réelle
-    // Puis rediriger vers la page d'accueil après paiement réussi
   }
 
   void _showFilterMenu() {
