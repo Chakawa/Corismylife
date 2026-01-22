@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { dashboardService } from '../services/api.service'
-import { Link } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Users,
   FileText,
@@ -10,7 +10,8 @@ import {
   ArrowDown,
   Activity,
   RefreshCw,
-  LogIn
+  LogIn,
+  Smartphone
 } from 'lucide-react'
 import {
   AreaChart,
@@ -120,10 +121,11 @@ export default function DashboardPage() {
       
       // Charger les connexions mensuelles
       if (connexionsData?.success && connexionsData.data) {
-        console.log('✅ Connexions mensuelles:', connexionsData.data)
+        console.log('✅ Connexions mensuelles chargées:', connexionsData.data.length, 'mois')
+        console.log('📈 Données détaillées:', connexionsData.data)
         setConnexionsMensuelles(connexionsData.data)
       } else {
-        console.warn('⚠️ Pas de données de connexion:', connexionsData)
+        console.error('❌ ERREUR: Pas de données de connexion:', connexionsData)
         setConnexionsMensuelles([])
       }
 
@@ -149,12 +151,16 @@ export default function DashboardPage() {
   }
 
   if (loading) {
+    console.log('⏳ DASHBOARD EN CHARGEMENT...')
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coris-blue"></div>
       </div>
     )
   }
+
+  console.log('✅ DASHBOARD CHARGÉ - Rendu de la page complète')
+  console.log('📊 connexionsMensuelles dans render:', connexionsMensuelles)
 
   // Préparer les données pour les graphiques depuis les stats réels
   const MONTHS_FR_FULL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
@@ -406,23 +412,30 @@ export default function DashboardPage() {
 
       {/* Courbe d'utilisation de l'application mobile */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              📱 Utilisation de l'Application Mobile
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Connexions réelles des clients sur les 12 derniers mois
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Smartphone className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Utilisation de l'Application Mobile
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Connexions réelles des clients sur les 12 derniers mois
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
             <Activity className="w-4 h-4" />
             <span>{connexionsMensuelles.reduce((sum, m) => sum + (m.total_connexions || 0), 0).toLocaleString()} connexions</span>
           </div>
         </div>
+        {console.log('🔍 RENDU COURBE - connexionsMensuelles.length:', connexionsMensuelles.length)}
+        {console.log('🔍 RENDU COURBE - données:', connexionsMensuelles)}
         {connexionsMensuelles.length > 0 ? (
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={connexionsMensuelles} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={connexionsMensuelles} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
                 dataKey="mois" 
@@ -437,7 +450,13 @@ export default function DashboardPage() {
               <YAxis 
                 stroke="#6b7280" 
                 tick={{ fontSize: 12 }}
-                label={{ value: 'Nombre de connexions', angle: -90, position: 'insideLeft' }}
+                width={80}
+                label={{ 
+                  value: 'Nombre de connexions', 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { fontSize: 14, fill: '#374151' }
+                }}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
@@ -447,8 +466,10 @@ export default function DashboardPage() {
                   return [value, name]
                 }}
                 labelFormatter={(label) => {
-                  const item = connexionsMensuelles.find(m => m.mois === label)
-                  return item?.mois_label || label
+                  // Toujours formater en français, ignorer mois_label du backend
+                  const [year, month] = label.split('-')
+                  const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+                  return `${monthNames[parseInt(month) - 1]} ${year}`
                 }}
               />
               <Legend 
@@ -474,18 +495,16 @@ export default function DashboardPage() {
                 stroke="#10B981"
                 strokeWidth={2}
                 dot={{ fill: '#10B981', r: 3 }}
-                strokeDasharray="5 5"
+                activeDot={{ r: 5 }}
                 name="utilisateurs_uniques"
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-64 text-gray-400">
-            <div className="text-center">
-              <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">Aucune donnée de connexion disponible</p>
-              <p className="text-xs mt-1">Les connexions des clients apparaîtront ici</p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-80 text-gray-400">
+            <Activity className="w-16 h-16 mb-4 opacity-20" />
+            <p className="text-lg font-medium">Aucune donnée disponible</p>
+            <p className="text-sm mt-2">Les statistiques de connexion s'afficheront dès que des utilisateurs se connecteront</p>
           </div>
         )}
       </div>
@@ -599,9 +618,9 @@ export default function DashboardPage() {
         )}
 
         {activityStats && activityStats.daily && activityStats.daily.length > 0 ? (
-          <div className="h-80">
+          <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[...activityStats.daily].reverse()}>
+              <LineChart data={[...activityStats.daily].reverse()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="date" 

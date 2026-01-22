@@ -366,12 +366,33 @@ class AuthService {
   /// DÉCONNEXION DE L'UTILISATEUR
   /// ==========================================
   /// Déconnecte l'utilisateur en supprimant le token et les données utilisateur
-  /// du stockage sécurisé. Cette opération est locale et ne nécessite pas Internet.
+  /// du stockage sécurisé. Enregistre aussi la déconnexion sur le serveur.
   static Future<void> logout() async {
-    // Supprimer le token JWT
-    await _storage.delete(key: _tokenKey);
-
-    // Supprimer les données utilisateur
-    await _storage.delete(key: _userKey);
+    try {
+      // Enregistrer la déconnexion sur le serveur
+      final token = await getToken();
+      if (token != null) {
+        final user = await getUser();
+        if (user != null) {
+          // Appel backend pour enregistrer la déconnexion
+          await http.post(
+            Uri.parse('${AppConfig.baseUrl}/auth/logout'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: json.encode({'userId': user['id']}),
+          );
+          print('✅ Déconnexion enregistrée sur le serveur');
+        }
+      }
+    } catch (e) {
+      // Continuer même si l'appel API échoue (ex: pas de connexion Internet)
+      print('⚠️ Erreur lors de l\'enregistrement de la déconnexion: $e');
+    } finally {
+      // Supprimer le token JWT et les données utilisateur (local)
+      await _storage.delete(key: _tokenKey);
+      await _storage.delete(key: _userKey);
+    }
   }
 }

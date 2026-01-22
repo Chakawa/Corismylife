@@ -33,6 +33,14 @@ const { generatePolicyNumber } = require('../utils/helpers');  // Fonction utili
 const PDFDocument = require('pdfkit'); // Bibliothèque pour générer des PDF dynamiques (utilisée pour les propositions/contrats)
 const fs = require('fs');  // Module Node.js pour les opérations sur le système de fichiers
 const path = require('path');  // Module Node.js pour manipuler les chemins de fichiers
+const {
+  notifySubscriptionCreated,
+  notifyPaymentPending,
+  notifyPaymentSuccess,
+  notifyPropositionGenerated,
+  notifyContractGenerated,
+  notifySubscriptionModified
+} = require('../services/notificationHelper');  // Helper pour créer des notifications automatiques
 
 /**
  * ===============================================
@@ -144,6 +152,20 @@ exports.createSubscription = async (req, res) => {
     // Exécuter la requête
     const result = await pool.query(query, values);
     
+    // 🔔 NOTIFICATION CLIENT : Souscription créée
+    try {
+      const productName = product_type.replace(/_/g, ' ').toUpperCase();
+      await notifySubscriptionCreated(userId, productName, numeroPolice);
+      
+      // Notification de paiement en attente (car statut = proposition)
+      if (subscriptionData.montant_cotisation || subscriptionData.prime_totale || subscriptionData.montant_versement) {
+        const amount = subscriptionData.montant_cotisation || subscriptionData.prime_totale || subscriptionData.montant_versement;
+        await notifyPaymentPending(userId, productName, amount);
+      }
+    } catch (notifError) {
+      console.error('❌ Erreur notification client:', notifError.message);
+    }
+    
     // Créer une notification pour tous les admins
     try {
       const adminQuery = "SELECT id FROM users WHERE role = 'admin'";
@@ -175,7 +197,7 @@ exports.createSubscription = async (req, res) => {
         }
       }
     } catch (notifError) {
-      console.error('Erreur création notification:', notifError.message);
+      console.error('Erreur création notification admin:', notifError.message);
       // Ne pas bloquer la création de souscription
     }
     

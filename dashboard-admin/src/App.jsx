@@ -74,7 +74,7 @@ function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="users" element={
             <ProtectedRoute requiredPage="users">
               <UsersPage />
