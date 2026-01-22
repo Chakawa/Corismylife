@@ -559,7 +559,9 @@ exports.getCommercialCommissions = async (req, res) => {
       totalCommissions += montant;
 
       // Formater les dates (déjà au format texte dans la DB)
-      const dateDebut = bordereau.datedebut || '';
+      // ✅ RÉSULTAT DIAGNOSTIC: datedebut est toujours présent (78/78 bordereaux)
+      // On utilise datedebut comme date principale, datefeui comme fallback de sécurité
+      const dateDebut = bordereau.datedebut || bordereau.datefeui || '';
       const dateFin = bordereau.datefin || '';
 
       // Déterminer le type d'apporteur

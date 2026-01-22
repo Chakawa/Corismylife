@@ -101,10 +101,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   ];
   final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
+  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money'
+    'Orange Money',
+    'Prélèvement à la source',
+    'CORIS Money'
   ];
 
   String _selectedBeneficiaireIndicatif = '+225'; // Côte d\'Ivoire par défaut
@@ -944,6 +949,26 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           return false;
         }
       }
+    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+      if (_nomStructureController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le nom de la structure');
+        return false;
+      }
+      if (_numeroMatriculeController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
+        return false;
+      }
+    } else if (_selectedModePaiement == 'CORIS Money') {
+      final phone = _corisMoneyPhoneController.text.trim();
+      if (phone.isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        return false;
+      }
+      if (phone.length < 8) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+        return false;
+      }
     }
     return true;
   }
@@ -1002,7 +1027,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : null,
+                : _selectedModePaiement == 'Prélèvement à la source'
+                    ? {
+                        'nom_structure': _nomStructureController.text.trim(),
+                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                      }
+                    : _selectedModePaiement == 'CORIS Money'
+                        ? {
+                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                          }
+                        : null,
       };
 
       final http.Response response;
@@ -2365,9 +2399,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     } else if (mode == 'Wave') {
                       icon = Icons.water_drop;
                       color = const Color(0xFF00BFFF);
-                    } else {
+                    } else if (mode == 'Orange Money') {
                       icon = Icons.phone_android;
                       color = Colors.orange;
+                    } else if (mode == 'Prélèvement à la source') {
+                      icon = Icons.business;
+                      color = Colors.green;
+                    } else if (mode == 'CORIS Money') {
+                      icon = Icons.account_balance_wallet;
+                      color = const Color(0xFF1E3A8A);
+                    } else {
+                      icon = Icons.payment;
+                      color = Colors.blue;
                     }
 
                     return GestureDetector(
@@ -2377,9 +2420,26 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           // Réinitialiser les champs non utilisés
                           if (mode == 'Virement') {
                             _numeroMobileMoneyController.clear();
-                          } else {
+                            _nomStructureController.clear();
+                            _numeroMatriculeController.clear();
+                            _corisMoneyPhoneController.clear();
+                          } else if (mode == 'Wave' || mode == 'Orange Money') {
                             _banqueController.clear();
                             _ribUnifiedController.clear();
+                            _nomStructureController.clear();
+                            _numeroMatriculeController.clear();
+                            _corisMoneyPhoneController.clear();
+                          } else if (mode == 'Prélèvement à la source') {
+                            _banqueController.clear();
+                            _ribUnifiedController.clear();
+                            _numeroMobileMoneyController.clear();
+                            _corisMoneyPhoneController.clear();
+                          } else if (mode == 'CORIS Money') {
+                            _banqueController.clear();
+                            _ribUnifiedController.clear();
+                            _numeroMobileMoneyController.clear();
+                            _nomStructureController.clear();
+                            _numeroMatriculeController.clear();
                           }
                         });
                       },
@@ -2547,6 +2607,45 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       controller: _numeroMobileMoneyController,
                       label: 'Numéro de téléphone',
                       icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ] else if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                    Text(
+                      'Informations Prélèvement',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: grisTexte,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildModernTextField(
+                      controller: _nomStructureController,
+                      label: 'Nom de la structure',
+                      icon: Icons.business,
+                      keyboardType: TextInputType.text,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildModernTextField(
+                      controller: _numeroMatriculeController,
+                      label: 'Numéro de matricule',
+                      icon: Icons.badge,
+                      keyboardType: TextInputType.text,
+                    ),
+                  ] else if (_selectedModePaiement == 'CORIS Money') ...[
+                    Text(
+                      'Numéro CORIS Money',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: grisTexte,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildModernTextField(
+                      controller: _corisMoneyPhoneController,
+                      label: 'Numéro de téléphone',
+                      icon: Icons.account_balance_wallet,
                       keyboardType: TextInputType.phone,
                     ),
                   ],
@@ -3625,6 +3724,14 @@ class PaymentBottomSheet extends StatelessWidget {
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
+              ),
+              SizedBox(height: 12),
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                Color(0xFF1E3A8A),
+                'Paiement par CORIS Money',
+                () => onPayNow('CORIS Money'),
               ),
               SizedBox(height: 24),
               Row(

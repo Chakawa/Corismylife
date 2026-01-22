@@ -78,6 +78,64 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
+// 🔍 Route de diagnostic pour vérifier les colonnes de bordereau_commissions
+app.get('/test-bordereau-dates', async (req, res) => {
+  try {
+    console.log('\n🔍 === DIAGNOSTIC COLONNES BORDEREAU_COMMISSIONS ===');
+    
+    // Récupérer les 10 premiers bordereaux (tous codes apporteurs confondus)
+    const query = `
+      SELECT 
+        id,
+        exercice,
+        numefeui,
+        codeappin,
+        datedebut,
+        datefin,
+        datefeui,
+        montfeui,
+        CASE 
+          WHEN datedebut IS NOT NULL AND datedebut != '' THEN 'datedebut'
+          WHEN datefeui IS NOT NULL AND datefeui != '' THEN 'datefeui'
+          ELSE 'AUCUNE'
+        END as colonne_date_principale
+      FROM bordereau_commissions
+      ORDER BY exercice DESC, numefeui DESC
+      LIMIT 10
+    `;
+    
+    const result = await pool.query(query);
+    
+    console.log(`\n📊 Total bordereaux dans la table: ${result.rowCount}`);
+    console.log('\n📋 Échantillon des 10 derniers bordereaux:\n');
+    
+    result.rows.forEach((row, index) => {
+      console.log(`  ${index + 1}. ID=${row.id} | Exercice=${row.exercice} | Num=${row.numefeui}`);
+      console.log(`     Code apporteur: ${row.codeappin}`);
+      console.log(`     datedebut: "${row.datedebut}" ${row.datedebut ? '✅' : '❌'}`);
+      console.log(`     datefin: "${row.datefin}" ${row.datefin ? '✅' : '❌'}`);
+      console.log(`     datefeui: "${row.datefeui}" ${row.datefeui ? '✅' : '❌'}`);
+      console.log(`     Colonne principale: ${row.colonne_date_principale}`);
+      console.log('');
+    });
+    
+    console.log('🔍 === FIN DIAGNOSTIC ===\n');
+    
+    res.json({
+      status: 'success',
+      message: 'Diagnostic terminé - voir la console du serveur',
+      data: result.rows
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur diagnostic:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 // Gestion des 404
 app.use((req, res) => {
   res.status(404).json({

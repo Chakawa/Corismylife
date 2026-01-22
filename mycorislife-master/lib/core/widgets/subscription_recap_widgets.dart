@@ -729,7 +729,8 @@ class SubscriptionRecapWidgets {
         displayPiece = pieceIdentite;
       }
 
-      children.add(buildDocRow('Pièce d\'identité', displayPiece, onDocumentTap));
+      // Afficher directement le nom du fichier comme titre au lieu de 'Pièce d'identité'
+      children.add(buildDocRow(displayPiece ?? 'Pièce d\'identité', displayPiece, onDocumentTap));
     }
 
     // Additional documents list (if provided)
@@ -1138,6 +1139,20 @@ class SubscriptionRecapWidgets {
       return const SizedBox.shrink();
     }
 
+    // Récupérer les infos de paiement (peuvent être au niveau racine ou dans infos_paiement)
+    final infosPaiement = souscriptionData['infos_paiement'] ?? {};
+    
+    // Helper pour chercher une valeur d'abord au niveau racine puis dans infos_paiement
+    String _getValue(String key) {
+      if (souscriptionData[key]?.toString().isNotEmpty == true) {
+        return souscriptionData[key].toString();
+      }
+      if (infosPaiement is Map && infosPaiement[key]?.toString().isNotEmpty == true) {
+        return infosPaiement[key].toString();
+      }
+      return 'Non renseigné';
+    }
+
     // Déterminer l'icône et la couleur selon le mode
     IconData icon;
     Color color;
@@ -1155,6 +1170,15 @@ class SubscriptionRecapWidgets {
       icon = Icons.phone_android;
       color = Colors.orange;
       displayName = 'Orange Money';
+    } else if (modePaiement.toLowerCase().contains('prélèvement') || 
+               modePaiement.toLowerCase().contains('prelevement')) {
+      icon = Icons.business;
+      color = Colors.green;
+      displayName = 'Prélèvement à la source';
+    } else if (modePaiement.toLowerCase().contains('coris money')) {
+      icon = Icons.account_balance_wallet;
+      color = const Color(0xFF1E3A8A);
+      displayName = 'CORIS Money';
     } else {
       icon = Icons.payment;
       color = bleuCoris;
@@ -1218,28 +1242,22 @@ class SubscriptionRecapWidgets {
         
         // Afficher les détails selon le mode
         if (modePaiement.toLowerCase().contains('virement')) ...[
-          buildRecapRow(
-            'Banque',
-            souscriptionData['banque']?.toString().isNotEmpty == true
-                ? souscriptionData['banque'].toString()
-                : 'Non renseigné',
-          ),
+          buildRecapRow('Banque', _getValue('banque')),
           buildRecapRow(
             'RIB',
-            souscriptionData['rib']?.toString().isNotEmpty == true
-                ? souscriptionData['rib'].toString()
-                : souscriptionData['numero_compte']?.toString().isNotEmpty == true
-                    ? souscriptionData['numero_compte'].toString()
-                    : 'Non renseigné',
+            _getValue('rib').isNotEmpty && _getValue('rib') != 'Non renseigné'
+                ? _getValue('rib')
+                : _getValue('numero_compte'),
           ),
         ] else if (modePaiement.toLowerCase().contains('wave') ||
             modePaiement.toLowerCase().contains('orange')) ...[
-          buildRecapRow(
-            'Numéro de téléphone',
-            souscriptionData['numero_mobile_money']?.toString().isNotEmpty == true
-                ? souscriptionData['numero_mobile_money'].toString()
-                : 'Non renseigné',
-          ),
+          buildRecapRow('Numéro de téléphone', _getValue('numero_telephone')),
+        ] else if (modePaiement.toLowerCase().contains('prélèvement') ||
+                   modePaiement.toLowerCase().contains('prelevement')) ...[
+          buildRecapRow('Nom de la structure', _getValue('nom_structure')),
+          buildRecapRow('Numéro matricule', _getValue('numero_matricule')),
+        ] else if (modePaiement.toLowerCase().contains('coris money')) ...[
+          buildRecapRow('Numéro CORIS Money', _getValue('numero_telephone')),
         ],
       ],
     );

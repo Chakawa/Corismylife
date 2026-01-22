@@ -119,10 +119,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final _banqueController = TextEditingController();
   final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
+  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money'
+    'Orange Money',
+    'Prélèvement à la source',
+    'CORIS Money'
   ];
   final List<String> _banques = [
     'CORIS BANK',
@@ -1860,25 +1865,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-                // Message principal
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: bleuCoris.withOpacity(0.2)),
-                  ),
-                  child: const Text(
-                    'Nos équipes vous contacteront pour remplir un formulaire médical complémentaire.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: grisTexte,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
                 const SizedBox(height: 20),
                 const Text(
                   'Souhaitez-vous continuer ?',
@@ -2282,6 +2268,26 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           return false;
         }
       }
+    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+      if (_nomStructureController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le nom de la structure');
+        return false;
+      }
+      if (_numeroMatriculeController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
+        return false;
+      }
+    } else if (_selectedModePaiement == 'CORIS Money') {
+      final phone = _corisMoneyPhoneController.text.trim();
+      if (phone.isEmpty) {
+        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        return false;
+      }
+      if (phone.length < 8) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+        return false;
+      }
     }
 
     return true;
@@ -2469,7 +2475,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : null,
+                : _selectedModePaiement == 'Prélèvement à la source'
+                    ? {
+                        'nom_structure': _nomStructureController.text.trim(),
+                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                      }
+                    : _selectedModePaiement == 'CORIS Money'
+                        ? {
+                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                          }
+                        : null,
       };
 
       // Si c'est un commercial, ajouter les infos client
@@ -4264,6 +4279,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             icon = Icons.phone_android;
                             iconColor = Colors.orange;
                             break;
+                          case 'Prélèvement à la source':
+                            icon = Icons.business;
+                            iconColor = Colors.green;
+                            break;
+                          case 'CORIS Money':
+                            icon = Icons.account_balance_wallet;
+                            iconColor = Color(0xFF1E3A8A);
+                            break;
                           default:
                             icon = Icons.payment;
                             iconColor = bleuCoris;
@@ -4277,6 +4300,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               _banqueController.clear();
                               _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
+                              _nomStructureController.clear();
+                              _numeroMatriculeController.clear();
+                              _corisMoneyPhoneController.clear();
                             });
                           },
                           child: Container(
@@ -4449,6 +4475,76 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             color: _selectedModePaiement == 'Wave'
                                 ? Color(0xFF00BFFF)
                                 : Colors.orange,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
+
+                    // PRÉLÈVEMENT À LA SOURCE
+                    if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                      Text(
+                        'Informations Prélèvement',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _nomStructureController,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la structure *',
+                          hintText: 'Nom de votre entreprise/organisme',
+                          prefixIcon: Icon(Icons.business, color: Colors.green),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroMatriculeController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de matricule *',
+                          hintText: 'Votre matricule',
+                          prefixIcon: Icon(Icons.badge, color: Colors.green),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                      ),
+                    ],
+
+                    // CORIS MONEY
+                    if (_selectedModePaiement == 'CORIS Money') ...[
+                      Text(
+                        'Numéro CORIS Money',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _corisMoneyPhoneController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone *',
+                          hintText: 'Ex: 0707070707',
+                          prefixIcon: Icon(
+                            Icons.account_balance_wallet,
+                            color: Color(0xFF1E3A8A),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -5557,6 +5653,14 @@ class _PaymentBottomSheet extends StatelessWidget {
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
+              ),
+              SizedBox(height: 12),
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                Color(0xFF1E3A8A),
+                'Paiement par CORIS Money',
+                () => onPayNow('CORIS Money'),
               ),
               SizedBox(height: 24),
               Row(

@@ -188,7 +188,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     }
   }
 
-  void _viewDocument(String documentName) {
+  void _viewDocument(String documentName, [String? displayLabel]) {
     if (documentName.isEmpty || documentName == 'Non téléchargée') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -206,6 +206,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         builder: (context) => DocumentViewerPage(
           documentName: documentName,
           subscriptionId: subscriptionId,
+          displayLabel: displayLabel,
         ),
       ),
     );
@@ -867,9 +868,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               GestureDetector(
                 onTap: () {
                   final pieceIdentite = souscriptionData['piece_identite'];
+                  final pieceIdentiteLabel = souscriptionData['piece_identite_label'];
                   if (pieceIdentite != null &&
                       pieceIdentite != 'Non téléchargée') {
-                    _viewDocument(pieceIdentite);
+                    _viewDocument(pieceIdentite, pieceIdentiteLabel);
                   }
                 },
                 child: Container(
@@ -903,22 +905,30 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                           ],
                         ),
                       ),
-                      Row(
-                        children: [
-                          Text(
-                            souscriptionData['piece_identite_label'] ??
-                                souscriptionData['piece_identite'] ??
-                                'Non téléchargée',
-                            style: const TextStyle(
-                              color: bleuCoris,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                souscriptionData['piece_identite_label'] ??
+                                    souscriptionData['piece_identite'] ??
+                                    'Non téléchargée',
+                                style: const TextStyle(
+                                  color: bleuCoris,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                textAlign: TextAlign.right,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.visibility, size: 20, color: bleuCoris),
-                          const SizedBox(width: 12),
-                        ],
+                            const SizedBox(width: 8),
+                            Icon(Icons.visibility, size: 20, color: bleuCoris),
+                            const SizedBox(width: 12),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -991,6 +1001,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             onPressed: () {
               final pieceIdentite =
                   _fullSubscriptionData?['souscriptiondata']?['piece_identite'];
+              final pieceIdentiteLabel =
+                  _fullSubscriptionData?['souscriptiondata']?['piece_identite_label'];
               if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
                 Navigator.push(
                   context,
@@ -998,6 +1010,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                     builder: (context) => DocumentViewerPage(
                       subscriptionId: subscription['id'],
                       documentName: pieceIdentite,
+                      displayLabel: pieceIdentiteLabel,
                     ),
                   ),
                 );
