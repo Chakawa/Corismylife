@@ -729,8 +729,8 @@ class SubscriptionRecapWidgets {
         displayPiece = pieceIdentite;
       }
 
-      // Afficher directement le nom du fichier comme titre au lieu de 'Pièce d'identité'
-      children.add(buildDocRow(displayPiece ?? 'Pièce d\'identité', displayPiece, onDocumentTap));
+      // Afficher "Pièce d'identité" comme titre et le nom du fichier comme filename
+      children.add(buildDocRow('Pièce d\'identité', displayPiece, onDocumentTap));
     }
 
     // Additional documents list (if provided)

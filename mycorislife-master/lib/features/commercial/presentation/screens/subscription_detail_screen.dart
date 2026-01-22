@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
@@ -999,31 +1000,24 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: () {
-              final pieceIdentite =
-                  _fullSubscriptionData?['souscriptiondata']?['piece_identite'];
-              final pieceIdentiteLabel =
-                  _fullSubscriptionData?['souscriptiondata']?['piece_identite_label'];
-              if (pieceIdentite != null && pieceIdentite != 'Non téléchargée') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DocumentViewerPage(
-                      subscriptionId: subscription['id'],
-                      documentName: pieceIdentite,
-                      displayLabel: pieceIdentiteLabel,
-                    ),
+              // Déterminer le type de produit pour exclure ou non le questionnaire
+              final productName = subscription['nom_produit']?.toString().toLowerCase() ?? '';
+              final excludeQ = productName.contains('etude') ||
+                  productName.contains('familis') ||
+                  productName.contains('serenite') ||
+                  productName.contains('sérénité');
+              
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PdfViewerPage(
+                    subscriptionId: subscription['id'],
+                    excludeQuestionnaire: excludeQ,
                   ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Aucun document disponible'),
-                    backgroundColor: orangeWarning,
-                  ),
-                );
-              }
+                ),
+              );
             },
-            tooltip: 'Voir le document',
+            tooltip: 'Voir le PDF du contrat',
           ),
         ],
       ),

@@ -385,6 +385,28 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         icon: const Icon(Icons.arrow_back_ios, color: blanc),
         onPressed: () => Navigator.pop(context),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf, color: blanc),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            final productType = _getProductType().toLowerCase();
+            final excludeQ = productType.contains('etude') ||
+                productType.contains('familis') ||
+                productType.contains('serenite') ||
+                productType.contains('sérénité');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PdfViewerPage(
+                    subscriptionId: widget.subscriptionId,
+                    excludeQuestionnaire: excludeQ),
+              ),
+            );
+          },
+          tooltip: 'Voir le PDF du contrat',
+        ),
+      ],
     );
   }
 
@@ -1087,7 +1109,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       pieceIdentite: displayLabel,
       documents: docsList,
       onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
-      onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, pieceIdentiteLabel) : null,
+      onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, displayLabel) : null,
     );
   }
 
@@ -1485,6 +1507,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => _processPayment('Orange Money'),
+              ),
+              const SizedBox(height: 12),
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                const Color(0xFF1E3A8A),
+                'Paiement via CORIS Money',
+                () => _processPayment('CORIS Money'),
               ),
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],

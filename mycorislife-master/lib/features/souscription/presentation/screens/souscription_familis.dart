@@ -4431,6 +4431,32 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           // Champ date d'effet
                           _buildDateEffetField(),
                           const SizedBox(height: 20),
+
+                          // Affichage du résultat de simulation en vert
+                          if (_calculatedPrime != null && _calculatedPrime! > 0)
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: vertSucces.withAlpha(26),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Résultats Calculés :',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: vertSucces,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Prime ${_selectedPeriodicite == 'unique' ? 'unique' : 'annuelle'} : ${_formatNumber(_calculatedPrime!)} FCFA',
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),
