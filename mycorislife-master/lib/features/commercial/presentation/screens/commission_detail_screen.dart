@@ -171,82 +171,84 @@ class CommissionDetailScreen extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: blanc),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Carte principale avec numéro et exercice
-            _buildMainCard(),
-            const SizedBox(height: 16),
-            // Informations générales
-            _buildInfoSection(
-              'Informations Générales',
-              Icons.info_outline,
-              [
-                _buildInfoRow(
-                  'Référence',
-                  bordereau['reference'] ?? 'Non renseigné',
-                  Icons.person_outline,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Code Apporteur',
-                  bordereau['codeApporteur'] ?? 'Non renseigné',
-                  Icons.badge_outlined,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Type d\'Apporteur',
-                  typeApporteurLabel,
-                  _getTypeApporteurIcon(typeApporteur),
-                  color: _getTypeApporteurColor(typeApporteur),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Période
-            _buildInfoSection(
-              'Période',
-              Icons.date_range,
-              [
-                _buildInfoRow(
-                  'Date de début',
-                  _formatDate(bordereau['dateDebut']),
-                  Icons.calendar_today,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Date de fin',
-                  _formatDate(bordereau['dateFin']),
-                  Icons.event,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Montant et état
-            _buildInfoSection(
-              'Montant et État',
-              Icons.monetization_on,
-              [
-                _buildInfoRow(
-                  'Montant',
-                  bordereau['montantFormate'] ??
-                      _formatMoney(bordereau['montant']),
-                  Icons.account_balance_wallet,
-                  color: vertSucces,
-                  isBold: true,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'État',
-                  etat,
-                  _getEtatIcon(etat),
-                  color: _getEtatColor(etat),
-                ),
-              ],
-            ),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Carte principale avec numéro et exercice
+              _buildMainCard(),
+              const SizedBox(height: 16),
+              // Informations générales
+              _buildInfoSection(
+                'Informations Générales',
+                Icons.info_outline,
+                [
+                  _buildInfoRow(
+                    'Référence',
+                    bordereau['reference'] ?? 'Non renseigné',
+                    Icons.person_outline,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'Code Apporteur',
+                    bordereau['codeApporteur'] ?? 'Non renseigné',
+                    Icons.badge_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'Type d\'Apporteur',
+                    typeApporteurLabel,
+                    _getTypeApporteurIcon(typeApporteur),
+                    color: _getTypeApporteurColor(typeApporteur),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Période
+              _buildInfoSection(
+                'Période',
+                Icons.date_range,
+                [
+                  _buildInfoRow(
+                    'Date de début',
+                    _formatDate(bordereau['dateDebut']),
+                    Icons.calendar_today,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'Date de fin',
+                    _formatDate(bordereau['dateFin']),
+                    Icons.event,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Montant et état
+              _buildInfoSection(
+                'Montant et État',
+                Icons.monetization_on,
+                [
+                  _buildInfoRow(
+                    'Montant',
+                    bordereau['montantFormate'] ??
+                        _formatMoney(bordereau['montant']),
+                    Icons.account_balance_wallet,
+                    color: vertSucces,
+                    isBold: true,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'État',
+                    etat,
+                    _getEtatIcon(etat),
+                    color: _getEtatColor(etat),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

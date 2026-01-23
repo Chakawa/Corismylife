@@ -2293,8 +2293,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   void initState() {
     super.initState();
     
-    // ⚡ LISTENER AUTOMATIQUE pour vérification du capital sous risque
-    _capitalController.addListener(_verifierCapitalSousRisqueAuto);
+    // ⚡ LISTENER AUTOMATIQUE - DÉSACTIVÉ (message formulaire médical supprimé)
+    // _capitalController.addListener(_verifierCapitalSousRisqueAuto);
     
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -3081,9 +3081,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
+  /// 🏥 Vérification du capital sous risque - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   Future<bool> _verifierCapitalSousRisque() async {
+    // Fonction désactivée - retourne toujours true pour continuer
+    return true;
+    
+    /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔══════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS FAMILIS - Vérification Capital Sous Risque     ║');
     debugPrint('╚══════════════════════════════════════════════════════════╝');
@@ -3286,44 +3290,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
     debugPrint('══════════════════════════════════════════════════════════\n');
     return true; // L'utilisateur a cliqué "Continuer"
+    */
   }
 
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
+  /// ⚡ Vérification AUTOMATIQUE - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    final age = _isCommercial ? (_clientAge ?? 0) : (_age ?? 0);
-    final capital = _parseDouble(_capitalController.text);
-    
-    if (age == 0 || capital == 0) {
-      debugPrint('⏳ [AUTO FAMILIS] Valeurs incomplètes - Attente saisie complète');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO FAMILIS] Vérification automatique déclenchée!');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatNumber(capital)} FCFA');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && capital > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && capital > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      _verifierCapitalSousRisque();
-    }
+    // Fonction désactivée - ne fait plus rien
+    return;
   }
 
   Future<void> _nextStep() async {

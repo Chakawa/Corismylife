@@ -971,9 +971,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void initState() {
     super.initState();
 
-    // ⚡ LISTENER AUTOMATIQUE pour vérification du capital sous risque
-    _dureeController.addListener(_verifierCapitalSousRisqueAuto);
-    _montantController.addListener(_verifierCapitalSousRisqueAuto);
+    // ⚡ LISTENER AUTOMATIQUE - DÉSACTIVÉ (message formulaire médical supprimé)
+    // _dureeController.addListener(_verifierCapitalSousRisqueAuto);
+    // _montantController.addListener(_verifierCapitalSousRisqueAuto);
 
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
@@ -1758,9 +1758,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
+  /// 🏥 Vérification du capital sous risque - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   Future<bool> _verifierCapitalSousRisque() async {
+    // Fonction désactivée - retourne toujours true pour continuer
+    return true;
+    
+    /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔════════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS ÉTUDE - Vérification Capital Sous Risque       ║');
     debugPrint('╚════════════════════════════════════════════════════════════╝');
@@ -1952,52 +1956,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
     debugPrint('═══════════════════════════════════════════════════════════\n');
     return true; // L'utilisateur a cliqué "Continuer"
+    */
   }
 
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
+  /// ⚡ Vérification AUTOMATIQUE - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    // Vérifier seulement si toutes les valeurs nécessaires sont présentes
-    final ageEnfant = int.tryParse(_dureeController.text);
-    final age = _calculatedAgeParent;
-    
-    if (ageEnfant == null || age == null || age == 0 || _renteCalculee == 0) {
-      debugPrint('⏳ [AUTO ÉTUDE] Valeurs incomplètes (Âge enfant: $ageEnfant, Âge parent: $age, Rente: $_renteCalculee)');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO] Vérification automatique déclenchée!');
-    debugPrint('   - Âge enfant: $ageEnfant ans');
-    debugPrint('   - Âge parent: $age ans');
-    debugPrint('   - Rente: ${_formatNumber(_renteCalculee)} FCFA');
-    
-    final dureeCotisationMois = ((17 - ageEnfant) * 12).toDouble();
-    final capitalSousRisque = (dureeCotisationMois * 0.5 * _renteCalculee) + (5 * _renteCalculee);
-    
-    debugPrint('   - Capital sous risque calculé: ${_formatNumber(capitalSousRisque)} FCFA');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && capitalSousRisque > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && capitalSousRisque > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      // Afficher le dialog immédiatement
-      _verifierCapitalSousRisque();
-    }
+    // Fonction désactivée - ne fait plus rien
+    return;
   }
 
   Future<void> _nextStep() async {

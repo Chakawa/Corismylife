@@ -1946,8 +1946,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           _calculatedPrime = prime;
         }
         
-        // ⚡ Vérifier automatiquement le capital sous risque
-        _verifierCapitalSousRisqueAuto();
+        // ⚡ Vérification automatique - DÉSACTIVÉE (message supprimé)
+        // _verifierCapitalSousRisqueAuto();
       });
     }
   }
@@ -2250,9 +2250,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     );
   }
 
-  /// 🏥 Vérification du capital sous risque et affichage du message médical
-  /// Retourne true si l'utilisateur peut continuer, false sinon
+  /// 🏥 Vérification du capital sous risque - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   Future<bool> _verifierCapitalSousRisque() async {
+    // Fonction désactivée - retourne toujours true pour continuer
+    return true;
+    
+    /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔══════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS SÉRÉNITÉ - Vérification Capital Sous Risque    ║');
     debugPrint('╚══════════════════════════════════════════════════════════╝');
@@ -2455,43 +2459,14 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
     debugPrint('══════════════════════════════════════════════════════════\n');
     return true; // L'utilisateur a cliqué "Continuer"
+    */
   }
 
-  /// ⚡ Vérification AUTOMATIQUE (sans dialog) dès que les valeurs changent
+  /// ⚡ Vérification AUTOMATIQUE - DÉSACTIVÉE
+  /// (Message formulaire médical supprimé à la demande)
   void _verifierCapitalSousRisqueAuto() {
-    // Si le message a déjà été affiché, ne plus vérifier
-    if (_messageCapitalAffiche) {
-      return;
-    }
-    
-    final age = _isCommercial ? _clientAge : _age;
-    
-    if (age == 0 || _calculatedCapital == 0) {
-      debugPrint('⏳ [AUTO SÉRÉNITÉ] Valeurs incomplètes - Attente saisie complète');
-      return;
-    }
-    
-    debugPrint('\n⚡ [AUTO SÉRÉNITÉ] Vérification automatique déclenchée!');
-    debugPrint('   - Âge: $age ans');
-    debugPrint('   - Capital décès: ${_formatMontant(_calculatedCapital)}');
-    
-    bool depasseSeuil = false;
-    if (age < 45 && _calculatedCapital > 30000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge < 45 ans & Capital > 30M');
-    } else if (age >= 45 && _calculatedCapital > 15000000) {
-      depasseSeuil = true;
-      debugPrint('   ⚠️  SEUIL DÉPASSÉ: Âge ≥ 45 ans & Capital > 15M');
-    } else {
-      debugPrint('   ✅ Seuil OK - Pas de formulaire médical requis');
-    }
-    
-    if (depasseSeuil) {
-      debugPrint('   🏥 Formulaire médical sera requis lors de la validation!\n');
-      // Marquer que le message va être affiché
-      _messageCapitalAffiche = true;
-      _verifierCapitalSousRisque();
-    }
+    // Fonction désactivée - ne fait plus rien
+    return;
   }
 
   Future<void> _nextStep() async{

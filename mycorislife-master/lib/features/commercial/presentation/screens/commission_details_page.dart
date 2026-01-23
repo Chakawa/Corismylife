@@ -44,9 +44,10 @@ class CommissionDetailsPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
             // Header avec gradient
             Container(
               width: double.infinity,
@@ -194,6 +195,7 @@ class CommissionDetailsPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
