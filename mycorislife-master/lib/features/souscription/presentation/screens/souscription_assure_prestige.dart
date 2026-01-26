@@ -10,6 +10,8 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import '../widgets/signature_dialog.dart';
+import 'dart:typed_data';
 
 class SouscriptionPrestigePage extends StatefulWidget {
   final String? clientId; // ID du client si souscription par commercial
@@ -113,6 +115,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // ignore: unused_field
   String? _pieceIdentiteLabel;
   bool _isProcessing = false;
+
+  // Signature du client
+  Uint8List? _clientSignature;
 
   // 🟦 3. TROISIÈME PARTIE
   // 💳 VARIABLES MODE DE PAIEMENT
@@ -724,6 +729,27 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
+  Future<void> _showSignatureAndPayment() async {
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    if (signature == null) {
+      return; // L'utilisateur a annulé
+    }
+
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    if (!mounted) return;
+
+    // Après la signature, afficher les options de paiement
+    _showPaymentOptions();
+  }
+
   void _showPaymentOptions() async {
     showModalBottomSheet(
       context: context,
@@ -797,6 +823,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           }
                         : null,
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
@@ -3116,7 +3147,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 4 : 3)
-                    ? _showPaymentOptions
+                    ? _showSignatureAndPayment
                     : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
@@ -3132,7 +3163,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   children: [
                     Text(
                       _currentStep == (_isCommercial ? 4 : 3)
-                          ? 'Finaliser'
+                          ? 'Signer et Finaliser'
                           : 'Suivant',
                       style: TextStyle(
                         color: blanc,
@@ -3143,7 +3174,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     SizedBox(width: 8),
                     Icon(
                       _currentStep == (_isCommercial ? 4 : 3)
-                          ? Icons.check
+                          ? Icons.draw
                           : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
@@ -3273,7 +3304,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
                   // Option 1: Payer maintenant
                   InkWell(
-                    onTap: () => _showPaymentOptions(),
+                    onTap: () => _showSignatureAndPayment(),
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(

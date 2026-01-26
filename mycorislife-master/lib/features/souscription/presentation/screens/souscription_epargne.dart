@@ -7,6 +7,8 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
+import '../widgets/signature_dialog.dart';
+import 'dart:typed_data';
 
 class SouscriptionEpargnePage extends StatefulWidget {
   final int? subscriptionId; // ID pour modification
@@ -82,6 +84,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   File? _pieceIdentite;
   // ignore: unused_field
   String? _pieceIdentiteLabel;
+
+  // Signature du client
+  Uint8List? _clientSignature;
 
   // Mode de paiement
   String? _selectedModePaiement;
@@ -973,6 +978,27 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     return true;
   }
 
+  Future<void> _showSignatureAndPayment() async {
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    if (signature == null) {
+      return; // L'utilisateur a annulé
+    }
+
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    if (!mounted) return;
+
+    // Après la signature, afficher les options de paiement
+    _showPaymentOptions();
+  }
+
   void _showPaymentOptions() async {
     showModalBottomSheet(
       context: context,
@@ -1038,6 +1064,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           }
                         : null,
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       final http.Response response;
       if (widget.subscriptionId != null) {
@@ -2802,7 +2833,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                   // Option 1: Payer maintenant
                   InkWell(
-                    onTap: () => _showPaymentOptions(),
+                    onTap: () => _showSignatureAndPayment(),
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -3462,7 +3493,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 4 : 3)
-                    ? _showPaymentOptions
+                    ? _showSignatureAndPayment
                     : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
@@ -3478,7 +3509,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   children: [
                     Text(
                       _currentStep == (_isCommercial ? 4 : 3)
-                          ? 'Finaliser'
+                          ? 'Signer et Finaliser'
                           : 'Suivant',
                       style: TextStyle(
                         color: blanc,
@@ -3489,7 +3520,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     SizedBox(width: 8),
                     Icon(
                       _currentStep == (_isCommercial ? 4 : 3)
-                          ? Icons.check
+                          ? Icons.draw
                           : Icons.arrow_forward,
                       color: blanc,
                       size: 20,

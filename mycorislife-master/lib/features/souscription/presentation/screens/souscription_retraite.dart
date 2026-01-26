@@ -11,6 +11,8 @@ import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
 import '../../../../core/widgets/subscription_recap_widgets.dart';
+import '../widgets/signature_dialog.dart';
+import 'dart:typed_data';
 
 // Enum pour le type de simulation
 enum SimulationType { parPrime, parCapital }
@@ -137,6 +139,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+
+  // Signature du client
+  Uint8List? _clientSignature;
 
   // Mode de paiement
   String? _selectedModePaiement;
@@ -3933,7 +3938,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
                   // Option 1: Payer maintenant
                   InkWell(
-                    onTap: () => _showPaymentOptions(),
+                    onTap: () => _showSignatureAndPayment(),
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -4162,7 +4167,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           Expanded(
             child: ElevatedButton(
               onPressed: _currentStep == (_isCommercial ? 4 : 3)
-                  ? _showPaymentOptions
+                  ? _showSignatureAndPayment
                   : _nextStep,
               style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
@@ -4175,7 +4180,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
                     _currentStep == (_isCommercial ? 4 : 3)
-                        ? 'Finaliser'
+                        ? 'Signer et Finaliser'
                         : 'Suivant',
                     style: TextStyle(
                         color: blanc,
@@ -4184,7 +4189,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 const SizedBox(width: 8),
                 Icon(
                     _currentStep == (_isCommercial ? 4 : 3)
-                        ? Icons.check
+                        ? Icons.draw
                         : Icons.arrow_forward,
                     color: blanc,
                     size: 20),
@@ -4194,6 +4199,27 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         ]),
       ),
     );
+  }
+
+  Future<void> _showSignatureAndPayment() async {
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    if (signature == null) {
+      return; // L'utilisateur a annulé
+    }
+
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    if (!mounted) return;
+
+    // Après la signature, afficher les options de paiement
+    _showPaymentOptions();
   }
 
   void _showPaymentOptions() {
@@ -4257,6 +4283,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {

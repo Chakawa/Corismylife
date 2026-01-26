@@ -78,6 +78,7 @@ exports.createSubscription = async (req, res) => {
       product_type,
       client_id, // ID du client (optionnel, pour les commerciaux - DEPRECATED: ne plus utiliser)
       client_info, // Informations du client (nom, prénom, date_naissance, etc.) - pour les commerciaux
+      signature, // Signature du client en base64
       ...subscriptionData
     } = req.body;
 
@@ -131,6 +132,37 @@ exports.createSubscription = async (req, res) => {
     // Générer un numéro de police unique pour cette souscription
     // Format: PROD-YYYY-XXXXX (ex: SER-2025-00123)
     const numeroPolice = await generatePolicyNumber(product_type);
+    
+    // Sauvegarder la signature si elle existe
+    let signaturePath = null;
+    if (signature) {
+      try {
+        // Créer le dossier signatures s'il n'existe pas
+        const signaturesDir = path.join(process.cwd(), 'uploads', 'signatures');
+        if (!fs.existsSync(signaturesDir)) {
+          fs.mkdirSync(signaturesDir, { recursive: true });
+        }
+        
+        // Décoder la signature base64
+        const signatureBuffer = Buffer.from(signature, 'base64');
+        console.log('📝 Signature reçue - Taille buffer:', signatureBuffer.length, 'bytes');
+        
+        // Générer un nom de fichier unique
+        const signatureFilename = `signature_${numeroPolice}_${Date.now()}.png`;
+        signaturePath = path.join(signaturesDir, signatureFilename);
+        
+        // Sauvegarder l'image
+        fs.writeFileSync(signaturePath, signatureBuffer);
+        
+        // Stocker le chemin relatif dans les données de souscription
+        subscriptionData.signature_path = `uploads/signatures/${signatureFilename}`;
+        
+        console.log('✅ Signature sauvegardée:', signaturePath, '- Taille fichier:', signatureBuffer.length);
+      } catch (error) {
+        console.error('❌ Erreur sauvegarde signature:', error.message);
+        // On continue même si la signature échoue
+      }
+    }
     
     // Requête SQL pour insérer la nouvelle souscription
     // IMPORTANT : Le statut par défaut est "proposition" (pas encore payé)
@@ -292,6 +324,7 @@ exports.updateSubscription = async (req, res) => {
     const {
       product_type,
       client_info,
+      signature,
       ...subscriptionData
     } = req.body;
 
@@ -312,6 +345,42 @@ exports.updateSubscription = async (req, res) => {
         civilite: client_info.civilite || client_info.genre,
         numero_piece_identite: client_info.numero_piece_identite || client_info.numero
       };
+    }
+    
+    // Traiter la signature si elle existe
+    if (signature) {
+      try {
+        // Récupérer la souscription actuelle pour obtenir le numéro de police
+        const currentSubQuery = 'SELECT numero_police FROM subscriptions WHERE id = $1';
+        const currentSub = await pool.query(currentSubQuery, [id]);
+        
+        if (currentSub.rows.length > 0) {
+          const numeroPolice = currentSub.rows[0].numero_police;
+          
+          // Créer le dossier signatures s'il n'existe pas
+          const signaturesDir = path.join(process.cwd(), 'uploads', 'signatures');
+          if (!fs.existsSync(signaturesDir)) {
+            fs.mkdirSync(signaturesDir, { recursive: true });
+          }
+          
+          // Décoder la signature base64
+          const signatureBuffer = Buffer.from(signature, 'base64');
+          
+          // Générer un nom de fichier unique
+          const signatureFilename = `signature_${numeroPolice}_${Date.now()}.png`;
+          const signaturePath = path.join(signaturesDir, signatureFilename);
+          
+          // Sauvegarder l'image
+          fs.writeFileSync(signaturePath, signatureBuffer);
+          
+          // Stocker le chemin relatif
+          subscriptionData.signature_path = `uploads/signatures/${signatureFilename}`;
+          
+          console.log('✅ Signature mise à jour:', signaturePath);
+        }
+      } catch (error) {
+        console.error('❌ Erreur mise à jour signature:', error.message);
+      }
     }
 
     // Requête SQL pour mettre à jour la souscription
@@ -2246,11 +2315,11 @@ exports.getSubscriptionPDF = async (req, res) => {
     doc.fontSize(8).fillColor('#000000').text(`Fait à Abidjan, le ${dateContrat} en 2 Exemplaires`, startX, curY, { width: fullW, align: 'left' });
     curY += 10;
 
-    // Espaces pour signatures (2 colonnes: Souscripteur et Compagnie) - Réduits
+    // Espaces pour signatures (2 colonnes: Souscripteur et Compagnie) - Augmentés pour visibilité
     const sigWidth = 220;
     const sigGap = 30;
     const sigStartX = startX;
-    const sigHeight = 30; // Hauteur réduite
+    const sigHeight = 60; // Hauteur optimisée pour visibilité sans déborder
     
     // Labels au-dessus des cases de signature
     doc.fontSize(7).fillColor('#000000').text('Le Souscripteur', sigStartX, curY, { width: sigWidth, align: 'center' });
@@ -2262,6 +2331,39 @@ exports.getSubscriptionPDF = async (req, res) => {
     // Dessiner les cases pour signatures
     drawRow(sigStartX, sigY, sigWidth, sigHeight);
     drawRow(sigStartX + sigWidth + sigGap, sigY, sigWidth, sigHeight);
+    
+    // Afficher la signature du client si elle existe
+    const signaturePath = subscription.souscriptiondata?.signature_path;
+    if (signaturePath) {
+      const absoluteSignaturePath = path.join(process.cwd(), signaturePath);
+      if (exists(absoluteSignaturePath)) {
+        try {
+          console.log('📝 Chargement signature depuis:', absoluteSignaturePath);
+          
+          // Insérer la signature dans la case du souscripteur
+          // L'image sera redimensionnée pour tenir dans le cadre tout en gardant ses proportions
+          const sigPadding = 5;
+          const maxWidth = sigWidth - (sigPadding * 2);
+          const maxHeight = sigHeight - (sigPadding * 2);
+          
+          // Utiliser fit pour redimensionner proportionnellement et centrer
+          doc.image(absoluteSignaturePath, 
+            sigStartX + sigPadding, 
+            sigY + sigPadding, 
+            { 
+              fit: [maxWidth, maxHeight],
+              align: 'center',
+              valign: 'center'
+            }
+          );
+          console.log('✅ Signature client ajoutée au PDF (zone: ' + maxWidth + 'x' + maxHeight + 'px)');
+        } catch (error) {
+          console.log('❌ Erreur chargement signature client:', error.message);
+        }
+      } else {
+        console.log('⚠️ Fichier signature introuvable:', absoluteSignaturePath);
+      }
+    }
 
     // Tampon de la compagnie (si disponible) - Plus petit
     const stampPaths = [

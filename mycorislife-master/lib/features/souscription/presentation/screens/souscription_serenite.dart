@@ -8,6 +8,8 @@ import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
+import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
@@ -140,6 +142,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+  
+  // 📝 SIGNATURE DU CLIENT
+  Uint8List? _clientSignature; // Signature en bytes pour le PDF
 
   // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement;
@@ -4415,7 +4420,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
                   // Option 1: Payer maintenant
                   InkWell(
-                    onTap: () => _showPaymentOptions(),
+                    onTap: () => _showSignatureAndPayment(),
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -5214,7 +5219,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           Expanded(
             child: ElevatedButton(
               onPressed: _currentStep == (_isCommercial ? 5 : 4)
-                  ? _showPaymentOptions
+                  ? _showSignatureAndPayment
                   : _nextStep,
               style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
@@ -5227,7 +5232,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
                   _currentStep == (_isCommercial ? 5 : 4)
-                    ? 'Finaliser'
+                    ? 'Signer et Finaliser'
                     : 'Suivant',
                     style: TextStyle(
                         color: blanc,
@@ -5235,8 +5240,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         fontSize: 16)),
                 const SizedBox(width: 8),
                 Icon(
-                    _currentStep == (_isCommercial ? 4 : 3)
-                        ? Icons.check
+                    _currentStep == (_isCommercial ? 5 : 4)
+                        ? Icons.draw
                         : Icons.arrow_forward,
                     color: blanc,
                     size: 20),
@@ -5246,6 +5251,28 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         ]),
       ),
     );
+  }
+
+  /// Affiche d'abord le dialogue de signature, puis les options de paiement
+  Future<void> _showSignatureAndPayment() async {
+    // 1. Afficher le dialogue de signature
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    // Si l'utilisateur annule la signature, on arrête
+    if (signature == null) return;
+
+    // Sauvegarder la signature
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    // 2. Afficher les options de paiement
+    if (!mounted) return;
+    _showPaymentOptions();
   }
 
   void _showPaymentOptions() {
@@ -5331,6 +5358,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           'civilite': _selectedClientCivilite,
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
+      }
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
       // Utiliser updateSubscription si on modifie, createSubscription sinon

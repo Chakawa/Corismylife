@@ -5,7 +5,9 @@ import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
 
 // Couleurs globales
 const Color bleuCoris = Color(0xFF002B6B);
@@ -88,6 +90,9 @@ class _SouscriptionSolidaritePageState
   // Date d'effet du contrat
   DateTime? _dateEffetContrat;
   final TextEditingController _dateEffetController = TextEditingController();
+
+  // Signature du client
+  Uint8List? _clientSignature;
 
   // Données des membres
   List<Membre> conjoints = [];
@@ -181,7 +186,8 @@ class _SouscriptionSolidaritePageState
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money'
+    'Orange Money',
+    'CORIS Money'
   ];
 
   final List<String> _lienParenteOptions = [
@@ -846,6 +852,11 @@ class _SouscriptionSolidaritePageState
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       http.Response response;
       Map<String, dynamic> responseData;
@@ -2411,94 +2422,102 @@ class _SouscriptionSolidaritePageState
           const SizedBox(height: 24),
 
           // Sélection du mode de paiement
-          Container(
-            decoration: BoxDecoration(
-              color: blanc,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Mode de paiement *',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                    ),
+          ..._modePaiementOptions.map((mode) {
+            final isSelected = _selectedModePaiement == mode;
+            IconData iconData;
+            if (mode == 'Virement') {
+              iconData = Icons.account_balance;
+            } else if (mode == 'Wave') {
+              iconData = Icons.water_drop;
+            } else if (mode == 'Orange Money') {
+              iconData = Icons.phone_android;
+            } else if (mode == 'CORIS Money') {
+              iconData = Icons.account_balance_wallet;
+            } else {
+              iconData = Icons.payment;
+            }
+
+            return GestureDetector(
+              onTap: () => setState(() {
+                _selectedModePaiement = mode;
+                // Réinitialiser les champs selon le mode
+                if (mode != 'Virement') {
+                  _banqueController.clear();
+                  _numeroCompteController.clear();
+                }
+                if (mode == 'Virement') {
+                  _numeroMobileMoneyController.clear();
+                }
+              }),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? bleuCoris.withOpacity(0.1)
+                      : blanc,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? bleuCoris : grisLeger,
+                    width: isSelected ? 2 : 1,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: bleuCoris.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
                 ),
-                ..._modePaiementOptions.map((mode) {
-                  final isSelected = _selectedModePaiement == mode;
-                  return InkWell(
-                    onTap: () => setState(() {
-                      _selectedModePaiement = mode;
-                      // Réinitialiser les champs selon le mode
-                      if (mode != 'Virement') {
-                        _banqueController.clear();
-                        _numeroCompteController.clear();
-                      }
-                      if (mode == 'Virement') {
-                        _numeroMobileMoneyController.clear();
-                      }
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? bleuCoris.withOpacity(0.1)
-                            : Colors.transparent,
-                        border: Border(
-                          top: BorderSide(
-                            color: Colors.grey.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
+                            ? bleuCoris.withOpacity(0.15)
+                            : fondCarte,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            mode == 'Virement'
-                                ? Icons.account_balance
-                                : mode == 'Wave'
-                                    ? Icons.water_drop
-                                    : Icons.phone_android,
-                            color: isSelected ? bleuCoris : grisTexte,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              mode,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                color: isSelected ? bleuCoris : grisTexte,
-                              ),
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle,
-                                color: bleuCoris, size: 24),
-                        ],
+                      child: Icon(
+                        iconData,
+                        color: isSelected ? bleuCoris : grisTexte,
+                        size: 24,
                       ),
                     ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        mode,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: isSelected ? bleuCoris : grisTexte,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: bleuCoris,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: blanc,
+                          size: 16,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
 
           const SizedBox(height: 24),
 
@@ -2577,10 +2596,15 @@ class _SouscriptionSolidaritePageState
               keyboardType: TextInputType.number,
             ),
           ] else if (_selectedModePaiement == 'Wave' ||
-              _selectedModePaiement == 'Orange Money') ...[
+              _selectedModePaiement == 'Orange Money' ||
+              _selectedModePaiement == 'CORIS Money') ...[
             _buildModernTextField(
               controller: _numeroMobileMoneyController,
-              label: 'Numéro de téléphone',
+              label: _selectedModePaiement == 'Wave'
+                  ? 'Numéro Wave'
+                  : _selectedModePaiement == 'Orange Money'
+                      ? 'Numéro Orange Money'
+                      : 'Numéro CORIS Money',
               icon: Icons.phone,
               keyboardType: TextInputType.phone,
             ),
@@ -3045,14 +3069,44 @@ class _SouscriptionSolidaritePageState
     );
   }
 
+  Future<void> _showSignatureAndPayment() async {
+    // 1. Afficher le dialogue de signature
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    // Si l'utilisateur annule la signature, on arrête
+    if (signature == null) return;
+
+    // Sauvegarder la signature
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    // 2. Afficher les options de paiement
+    if (!mounted) return;
+    _showPaymentOptions();
+  }
+
   void _showPaymentOptions() {
     if (mounted) {
       showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => _PaymentBottomSheet(
-              onPayNow: _processPayment, onPayLater: _saveAsProposition));
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _PaymentBottomSheet(
+          onPayNow: (paymentMethod) {
+            Navigator.pop(context);
+            _processPayment(paymentMethod);
+          },
+          onPayLater: () {
+            Navigator.pop(context);
+            _saveAsProposition();
+          },
+        ),
+      );
     }
   }
 
@@ -3176,7 +3230,8 @@ class _SouscriptionSolidaritePageState
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
-        _selectedModePaiement == 'Orange Money') {
+        _selectedModePaiement == 'Orange Money' ||
+        _selectedModePaiement == 'CORIS Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
@@ -3221,11 +3276,11 @@ class _SouscriptionSolidaritePageState
       _pageController.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
-      // Dernière étape (récap), aller à la page de paiement
+      // Dernière étape (récap), aller à la signature puis paiement
       if (!_validateMembresAges()) {
         return; // Valider les âges avant le paiement
       }
-      _showPaymentOptions();
+      _showSignatureAndPayment();
     }
   }
 
@@ -3308,21 +3363,21 @@ class _SouscriptionSolidaritePageState
                           child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                Icon(
+                                    _currentStep == _getTotalSteps() - 1
+                                        ? Icons.draw
+                                        : Icons.arrow_forward,
+                                    color: blanc,
+                                    size: 20),
+                                const SizedBox(width: 8),
                                 Text(
                                     _currentStep == _getTotalSteps() - 1
-                                        ? 'Finaliser'
+                                        ? 'Signer et Finaliser'
                                         : 'Suivant',
                                     style: TextStyle(
                                         color: blanc,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16)),
-                                const SizedBox(width: 8),
-                                Icon(
-                                    _currentStep == _getTotalSteps() - 1
-                                        ? Icons.check
-                                        : Icons.arrow_forward,
-                                    color: blanc,
-                                    size: 20),
                               ]),
                         ),
                       ),
@@ -3450,121 +3505,212 @@ class _PaymentBottomSheet extends StatelessWidget {
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const _PaymentBottomSheet({required this.onPayNow, required this.onPayLater});
+  
   @override
   Widget build(BuildContext context) {
     return Container(
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4))
-            ]),
-        child: SafeArea(
-            child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
+      decoration: BoxDecoration(
+        color: blanc,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          )
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: grisLeger,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // En-tête
+              Row(
+                children: [
                   Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 24),
-                  Row(children: [
-                    Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                    const SizedBox(width: 12),
-                    const Text('Options de Paiement',
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: bleuCoris.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.payment, color: bleuCoris, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Options de Paiement',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: bleuCoris,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Option Wave
+              _buildPaymentOption(
+                'Wave',
+                Icons.water_drop,
+                Colors.blue,
+                'Paiement mobile sécurisé',
+                () => onPayNow('Wave'),
+              ),
+              const SizedBox(height: 12),
+              
+              // Option Orange Money
+              _buildPaymentOption(
+                'Orange Money',
+                Icons.phone_android,
+                Colors.orange,
+                'Paiement mobile Orange',
+                () => onPayNow('Orange Money'),
+              ),
+              const SizedBox(height: 12),
+              
+              // Option CORIS Money
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                const Color(0xFFFF6B35), // orangeCoris
+                'Paiement via CORIS Money',
+                () => onPayNow('CORIS Money'),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Séparateur OU
+              Row(
+                children: [
+                  Expanded(child: Divider(color: grisLeger)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OU',
+                      style: TextStyle(
+                        color: grisTexte,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: grisLeger)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Option Payer plus tard
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: onPayLater,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: bleuCoris, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.schedule, color: bleuCoris, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Payer plus tard',
                         style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF002B6B)))
-                  ]),
-                  const SizedBox(height: 24),
-                  _buildPaymentOption('Wave', Icons.waves, Colors.blue,
-                      'Paiement mobile sécurisé', () => onPayNow('Wave')),
-                  const SizedBox(height: 12),
-                  _buildPaymentOption(
-                      'Orange Money',
-                      Icons.phone_android,
-                      Colors.orange,
-                      'Paiement mobile Orange',
-                      () => onPayNow('Orange Money')),
-                  const SizedBox(height: 24),
-                  Row(children: [
-                    Expanded(child: Divider(color: Colors.grey[300])),
-                    const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OU',
-                            style: TextStyle(
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500))),
-                    Expanded(child: Divider(color: Colors.grey[300])),
-                  ]),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                          onPressed: onPayLater,
-                          style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                  color: Color(0xFF002B6B), width: 2),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12))),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.schedule,
-                                    color: Color(0xFF002B6B), size: 20),
-                                const SizedBox(width: 8),
-                                const Text('Payer plus tard',
-                                    style: TextStyle(
-                                        color: Color(0xFF002B6B),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16))
-                              ]))),
-                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-                ]))));
+                          color: bleuCoris,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildPaymentOption(String title, IconData icon, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOption(
+    String title,
+    IconData icon,
+    Color color,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-                color: Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
-            child: Row(children: [
-              Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Icon(icon, color: color, size: 24)),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(title,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF002B6B),
-                            fontSize: 16)),
-                    const SizedBox(height: 4),
-                    Text(subtitle,
-                        style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
-                  ])),
-              Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
-            ])));
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: fondCarte,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: grisLeger),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: bleuCoris,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: grisTexte,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: grisTexte, size: 16),
+          ],
+        ),
+      ),
+    );
   }
 }

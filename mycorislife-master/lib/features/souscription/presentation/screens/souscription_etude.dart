@@ -12,6 +12,8 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
+import 'dart:typed_data';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -109,6 +111,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   String? _pieceIdentiteLabel;
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
+  
+  // 📝 SIGNATURE DU CLIENT
+  Uint8List? _clientSignature; // Signature en bytes pour le PDF
   
   // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
   bool _messageCapitalAffiche = false;
@@ -2366,6 +2371,28 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
+  /// Affiche d'abord le dialogue de signature, puis les options de paiement
+  Future<void> _showSignatureAndPayment() async {
+    // 1. Afficher le dialogue de signature
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    // Si l'utilisateur annule la signature, on arrête
+    if (signature == null) return;
+
+    // Sauvegarder la signature
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    // 2. Afficher les options de paiement
+    if (!mounted) return;
+    _showPaymentOptions();
+  }
+
   void _showPaymentOptions() async {
     showModalBottomSheet(
       context: context,
@@ -2452,6 +2479,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           }
                         : null,
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
@@ -4996,7 +5028,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   children: [
                     Text(
                       _currentStep == (_isCommercial ? 5 : 4)
-                          ? 'Finaliser'
+                          ? 'Signer et Finaliser'
                           : 'Suivant',
                       style: TextStyle(
                         color: blanc,
@@ -5007,7 +5039,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     SizedBox(width: 8),
                     Icon(
                       _currentStep == (_isCommercial ? 5 : 4)
-                          ? Icons.check
+                          ? Icons.draw
                           : Icons.arrow_forward,
                       color: blanc,
                       size: 20,
@@ -5137,9 +5169,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   ),
                   SizedBox(height: 20),
 
-                  // Option 1: Payer maintenant
+                  // Option 1: Payer maintenant (avec signature)
                   InkWell(
-                    onTap: () => _showPaymentOptions(),
+                    onTap: () => _showSignatureAndPayment(),
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(

@@ -3,11 +3,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
-import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
-import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
+import 'dart:typed_data';
 
 /// ===============================================
 /// ❌❌❌ PRODUIT DÉSACTIVÉ - NE PAS UTILISER ❌❌❌
@@ -220,6 +222,43 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
   String? _pieceIdentiteLabel;
+
+  // ============================================
+  // SIGNATURE ET TRAITEMENT
+  // ============================================
+  Uint8List? _clientSignature; // Signature en bytes pour le PDF
+  bool _isProcessing = false; // Indicateur de traitement en cours
+
+  // ============================================
+  // VARIABLES MODE DE PAIEMENT
+  // ============================================
+  String? _selectedModePaiement;
+  String? _selectedBanque;
+  final _banqueController = TextEditingController();
+  final _ribUnifiedController = TextEditingController();
+  final _numeroMobileMoneyController = TextEditingController();
+  final _nomStructureController = TextEditingController();
+  final _numeroMatriculeController = TextEditingController();
+  final _corisMoneyPhoneController = TextEditingController();
+  final List<String> _modePaiementOptions = [
+    'Virement',
+    'Wave',
+    'Orange Money',
+    'Prélèvement à la source',
+    'CORIS Money'
+  ];
+  final List<String> _banques = [
+    'CORIS BANK',
+    'SGCI',
+    'BICICI',
+    'Ecobank',
+    'BOA',
+    'UBA',
+    'Société Générale',
+    'BNI',
+    'Banque Atlantique',
+    'Autre',
+  ];
 
   // ============================================
   // OPTIONS ET LISTES DE SÉLECTION
@@ -4630,7 +4669,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 3 : 2)
-                    ? _showPaymentOptions
+                    ? _showSignatureAndPayment
                     : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
@@ -4644,23 +4683,23 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(
+                      _currentStep == (_isCommercial ? 3 : 2)
+                          ? Icons.draw
+                          : Icons.arrow_forward,
+                      color: blanc,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
                     Text(
                       _currentStep == (_isCommercial ? 3 : 2)
-                          ? 'Payer maintenant'
+                          ? 'Signer et Finaliser'
                           : 'Suivant',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      _currentStep == (_isCommercial ? 3 : 2)
-                          ? Icons.check
-                          : Icons.arrow_forward,
-                      color: blanc,
-                      size: 20,
                     ),
                   ],
                 ),
@@ -4672,13 +4711,43 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     );
   }
 
+  Future<void> _showSignatureAndPayment() async {
+    // 1. Afficher le dialogue de signature
+    final Uint8List? signature = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const SignatureDialog(),
+    );
+
+    // Si l'utilisateur annule la signature, on arrête
+    if (signature == null) return;
+
+    // Sauvegarder la signature
+    setState(() {
+      _clientSignature = signature;
+    });
+
+    // 2. Afficher les options de paiement
+    if (!mounted) return;
+    _showPaymentOptions();
+  }
+
   void _showPaymentOptions() {
     showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => PaymentBottomSheet(
-            onPayNow: _processPayment, onPayLater: _saveAsProposition));
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PaymentBottomSheet(
+        onPayNow: (paymentMethod) {
+          Navigator.pop(context);
+          _processPayment(paymentMethod);
+        },
+        onPayLater: () {
+          Navigator.pop(context);
+          _saveAsProposition();
+        },
+      ),
+    );
   }
 
   Future<int> _saveSubscriptionData() async {
@@ -4719,6 +4788,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
       };
+
+      // Ajouter la signature si elle existe
+      if (_clientSignature != null) {
+        subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
@@ -5073,11 +5147,10 @@ class SuccessDialog extends StatelessWidget {
   }
 }
 
-class PaymentBottomSheet extends StatelessWidget {
+class _PaymentBottomSheet extends StatelessWidget {
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
-  const PaymentBottomSheet({
-    super.key,
+  const _PaymentBottomSheet({
     required this.onPayNow,
     required this.onPayLater,
   });
@@ -5140,6 +5213,14 @@ class PaymentBottomSheet extends StatelessWidget {
                 const Color(0xFFE65100),
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
+              ),
+              SizedBox(height: 12),
+              _buildPaymentOption(
+                'CORIS Money',
+                Icons.account_balance_wallet,
+                const Color(0xFF1E3A8A),
+                'Paiement par CORIS Money',
+                () => onPayNow('CORIS Money'),
               ),
               SizedBox(height: 24),
               Row(
