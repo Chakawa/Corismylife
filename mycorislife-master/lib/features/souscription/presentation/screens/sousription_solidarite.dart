@@ -2390,257 +2390,340 @@ class _SouscriptionSolidaritePageState
 
   /// 💳 ÉTAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
-    const Color bleuCoris = Color(0xFF002B6B);
-    const Color blanc = Colors.white;
-    const Color fondCarte = Color(0xFFF8FAFC);
-    const Color grisTexte = Color(0xFF64748B);
-    const Color orangeCoris = Color(0xFFFF6B00);
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Titre
-          Text(
-            'Choisissez votre mode de paiement',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: bleuCoris,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sélectionnez comment vous souhaitez effectuer vos paiements',
-            style: TextStyle(
-              fontSize: 14,
-              color: grisTexte,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Sélection du mode de paiement
-          ..._modePaiementOptions.map((mode) {
-            final isSelected = _selectedModePaiement == mode;
-            IconData iconData;
-            if (mode == 'Virement') {
-              iconData = Icons.account_balance;
-            } else if (mode == 'Wave') {
-              iconData = Icons.water_drop;
-            } else if (mode == 'Orange Money') {
-              iconData = Icons.phone_android;
-            } else if (mode == 'CORIS Money') {
-              iconData = Icons.account_balance_wallet;
-            } else {
-              iconData = Icons.payment;
-            }
-
-            return GestureDetector(
-              onTap: () => setState(() {
-                _selectedModePaiement = mode;
-                // Réinitialiser les champs selon le mode
-                if (mode != 'Virement') {
-                  _banqueController.clear();
-                  _numeroCompteController.clear();
-                }
-                if (mode == 'Virement') {
-                  _numeroMobileMoneyController.clear();
-                }
-              }),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? bleuCoris.withOpacity(0.1)
-                      : blanc,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? bleuCoris : grisLeger,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: bleuCoris.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? bleuCoris.withOpacity(0.15)
-                            : fondCarte,
-                        borderRadius: BorderRadius.circular(10),
+          // En-tête avec gradient
+          Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [bleuCoris, bleuSecondaire],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(
-                        iconData,
-                        color: isSelected ? bleuCoris : grisTexte,
-                        size: 24,
-                      ),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        mode,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: blanc.withAlpha(51),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child:
+                              const Icon(Icons.payment, color: blanc, size: 32),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mode de Paiement',
+                                style: const TextStyle(
+                                  color: blanc,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Comment souhaitez-vous payer vos primes ?',
+                                style: TextStyle(
+                                  color: blanc.withAlpha(229),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Sélection du mode de paiement
+                  Text(
+                    'Mode de paiement *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: grisTexte,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      children: _modePaiementOptions.map((mode) {
+                        final isSelected = _selectedModePaiement == mode;
+                        IconData icon;
+                        Color iconColor;
+
+                        switch (mode) {
+                          case 'Virement':
+                            icon = Icons.account_balance;
+                            iconColor = Colors.blue;
+                            break;
+                          case 'Wave':
+                            icon = Icons.water_drop;
+                            iconColor = Color(0xFF00BFFF);
+                            break;
+                          case 'Orange Money':
+                            icon = Icons.phone_android;
+                            iconColor = Colors.orange;
+                            break;
+                          case 'CORIS Money':
+                            icon = Icons.account_balance_wallet;
+                            iconColor = Color(0xFF1E3A8A);
+                            break;
+                          default:
+                            icon = Icons.payment;
+                            iconColor = bleuCoris;
+                        }
+
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedModePaiement = mode;
+                              // Réinitialiser les champs
+                              _banqueController.clear();
+                              _numeroCompteController.clear();
+                              _numeroMobileMoneyController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? bleuCoris.withOpacity(0.1)
+                                  : Colors.transparent,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: _modePaiementOptions.last == mode
+                                      ? Colors.transparent
+                                      : Colors.grey[300]!,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 28),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    mode,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? bleuCoris
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(Icons.check_circle,
+                                      color: bleuCoris, size: 28),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  // Champs conditionnels selon le mode sélectionné
+                  if (_selectedModePaiement != null) ...[
+                    SizedBox(height: 30),
+
+                    // VIREMENT
+                    if (_selectedModePaiement == 'Virement') ...[
+                      Text(
+                        'Informations Bancaires',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: isSelected ? bleuCoris : grisTexte,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
                         ),
                       ),
-                    ),
-                    if (isSelected)
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: bleuCoris,
-                          shape: BoxShape.circle,
+                      const SizedBox(height: 16),
+
+                      // Nom de la banque
+                      DropdownButtonFormField<String>(
+                        value: _selectedBanque,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la banque *',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          color: blanc,
-                          size: 16,
+                        items: _banques.map((String banque) {
+                          return DropdownMenuItem<String>(
+                            value: banque,
+                            child: Text(banque),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedBanque = newValue;
+                            if (newValue != null && newValue != 'Autre') {
+                              _banqueController.text = newValue;
+                            } else if (newValue == 'Autre') {
+                              _banqueController.text = '';
+                            }
+                          });
+                        },
+                      ),
+                      SizedBox(height: 16),
+
+                      // Champ texte personnalisé si "Autre" est sélectionné
+                      if (_selectedBanque == 'Autre') ...[
+                        TextField(
+                          controller: _banqueController,
+                          decoration: InputDecoration(
+                            labelText: 'Nom de votre banque *',
+                            hintText: 'Entrez le nom de votre banque',
+                            prefixIcon: Icon(Icons.edit, color: bleuCoris),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                      ],
+
+                      // Numéro de compte
+                      TextField(
+                        controller: _numeroCompteController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de compte *',
+                          hintText: 'Entrez votre numéro de compte',
+                          prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                    if (_selectedModePaiement == 'Wave' ||
+                        _selectedModePaiement == 'Orange Money') ...[
+                      Text(
+                        'Numéro ${_selectedModePaiement}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroMobileMoneyController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone *',
+                          hintText: 'Ex: 0707070707',
+                          prefixIcon: Icon(
+                            Icons.phone_android,
+                            color: _selectedModePaiement == 'Wave'
+                                ? Color(0xFF00BFFF)
+                                : Colors.orange,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
+
+                    // CORIS MONEY
+                    if (_selectedModePaiement == 'CORIS Money') ...[
+                      Text(
+                        'Numéro CORIS Money',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroMobileMoneyController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone *',
+                          hintText: 'Ex: 0707070707',
+                          prefixIcon: Icon(
+                            Icons.account_balance_wallet,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
                   ],
-                ),
-              ),
-            );
-          }).toList(),
 
-          const SizedBox(height: 24),
+                  SizedBox(height: 30),
 
-          // Champs conditionnels selon le mode
-          if (_selectedModePaiement == 'Virement') ...[
-            DropdownButtonFormField<String>(
-              value: _selectedBanque,
-              decoration: InputDecoration(
-                labelText: 'Nom de la banque',
-                prefixIcon: Container(
-                  margin: EdgeInsets.all(8),
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: bleuCoris.withAlpha(26),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child:
-                      Icon(Icons.account_balance, color: bleuCoris, size: 20),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: grisLeger),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: grisLeger),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: bleuCoris, width: 2),
-                ),
-                filled: true,
-                fillColor: fondCarte,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              ),
-              hint: Text('Sélectionnez votre banque'),
-              items: _banques.map((String banque) {
-                return DropdownMenuItem<String>(
-                  value: banque,
-                  child: Text(banque),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedBanque = newValue;
-                  if (newValue != null && newValue != 'Autre') {
-                    _banqueController.text = newValue;
-                  } else if (newValue == 'Autre') {
-                    _banqueController.text = '';
-                  }
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez sélectionner une banque';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Champ texte personnalisé si "Autre" est sélectionné
-            if (_selectedBanque == 'Autre') ...[
-              _buildModernTextField(
-                controller: _banqueController,
-                label: 'Nom de votre banque',
-                icon: Icons.edit,
-              ),
-              const SizedBox(height: 16),
-            ],
-            _buildModernTextField(
-              controller: _numeroCompteController,
-              label: 'Numéro de compte',
-              icon: Icons.credit_card,
-              keyboardType: TextInputType.number,
-            ),
-          ] else if (_selectedModePaiement == 'Wave' ||
-              _selectedModePaiement == 'Orange Money' ||
-              _selectedModePaiement == 'CORIS Money') ...[
-            _buildModernTextField(
-              controller: _numeroMobileMoneyController,
-              label: _selectedModePaiement == 'Wave'
-                  ? 'Numéro Wave'
-                  : _selectedModePaiement == 'Orange Money'
-                      ? 'Numéro Orange Money'
-                      : 'Numéro CORIS Money',
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
-            ),
-          ],
-
-          const SizedBox(height: 24),
-
-          // Information
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: orangeCoris.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: orangeCoris.withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline, color: orangeCoris, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Ces informations seront utilisées pour vos paiements de primes. Assurez-vous qu\'elles sont correctes.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: grisTexte,
-                      height: 1.4,
+                  // Note informative
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.blue[700], size: 24),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                ],
       ),
     );
   }
@@ -3096,7 +3179,7 @@ class _SouscriptionSolidaritePageState
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => _PaymentBottomSheet(
+        builder: (context) => PaymentBottomSheet(
           onPayNow: (paymentMethod) {
             Navigator.pop(context);
             _processPayment(paymentMethod);
@@ -3501,216 +3584,134 @@ class _SuccessDialog extends StatelessWidget {
   }
 }
 
-class _PaymentBottomSheet extends StatelessWidget {
+class PaymentBottomSheet extends StatelessWidget {
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
-  const _PaymentBottomSheet({required this.onPayNow, required this.onPayLater});
-  
+  const PaymentBottomSheet(
+      {super.key, required this.onPayNow, required this.onPayLater});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: blanc,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          )
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: grisLeger,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // En-tête
-              Row(
-                children: [
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4))
+            ]),
+        child: SafeArea(
+            child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: bleuCoris.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.payment, color: bleuCoris, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Options de Paiement',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: bleuCoris,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Option Wave
-              _buildPaymentOption(
-                'Wave',
-                Icons.water_drop,
-                Colors.blue,
-                'Paiement mobile sécurisé',
-                () => onPayNow('Wave'),
-              ),
-              const SizedBox(height: 12),
-              
-              // Option Orange Money
-              _buildPaymentOption(
-                'Orange Money',
-                Icons.phone_android,
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              const SizedBox(height: 12),
-              
-              // Option CORIS Money
-              _buildPaymentOption(
-                'CORIS Money',
-                Icons.account_balance_wallet,
-                const Color(0xFFFF6B35), // orangeCoris
-                'Paiement via CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Séparateur OU
-              Row(
-                children: [
-                  Expanded(child: Divider(color: grisLeger)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OU',
-                      style: TextStyle(
-                        color: grisTexte,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: grisLeger)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Option Payer plus tard
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: onPayLater,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: bleuCoris, width: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.schedule, color: bleuCoris, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Payer plus tard',
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 24),
+                  Row(children: [
+                    Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
+                    const SizedBox(width: 12),
+                    Text('Options de Paiement',
                         style: TextStyle(
-                          color: bleuCoris,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-            ],
-          ),
-        ),
-      ),
-    );
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF002B6B)))
+                  ]),
+                  const SizedBox(height: 24),
+                  _buildPaymentOption('Wave', Icons.waves, Colors.blue,
+                      'Paiement mobile sécurisé', () => onPayNow('Wave')),
+                  const SizedBox(height: 12),
+                  _buildPaymentOption(
+                      'Orange Money',
+                      Icons.phone_android,
+                      Colors.orange,
+                      'Paiement mobile Orange',
+                      () => onPayNow('Orange Money')),
+                  const SizedBox(height: 12),
+                  _buildPaymentOption(
+                      'CORIS Money',
+                      Icons.account_balance_wallet,
+                      Color(0xFF1E3A8A),
+                      'Paiement par CORIS Money',
+                      () => onPayNow('CORIS Money')),
+                  const SizedBox(height: 24),
+                  Row(children: [
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                    const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('OU',
+                            style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500))),
+                    Expanded(child: Divider(color: Colors.grey[300]))
+                  ]),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                          onPressed: onPayLater,
+                          style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                  color: Color(0xFF002B6B), width: 2),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12))),
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.schedule,
+                                    color: Color(0xFF002B6B), size: 20),
+                                const SizedBox(width: 8),
+                                Text('Payer plus tard',
+                                    style: TextStyle(
+                                        color: Color(0xFF002B6B),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16))
+                              ]))),
+                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                ]))));
   }
 
-  Widget _buildPaymentOption(
-    String title,
-    IconData icon,
-    Color color,
-    String subtitle,
-    VoidCallback onTap,
-  ) {
+  Widget _buildPaymentOption(String title, IconData icon, Color color,
+      String subtitle, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: fondCarte,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: grisLeger),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: grisTexte,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: grisTexte, size: 16),
-          ],
-        ),
-      ),
-    );
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+            child: Row(children: [
+              Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Icon(icon, color: color, size: 24)),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(title,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF002B6B),
+                            fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text(subtitle,
+                        style:
+                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
+                  ])),
+              Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+            ])));
   }
 }

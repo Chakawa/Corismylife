@@ -2,18 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:signature/signature.dart';
 
-/// ===============================================
-/// DIALOGUE DE SIGNATURE MANUSCRITE
-/// ===============================================
-///
-/// Permet au client de signer électroniquement
-/// lors de la finalisation de sa souscription.
-///
-/// FONCTIONNALITÉS:
-/// - Canvas de signature tactile
-/// - Bouton effacer pour recommencer
-/// - Validation de signature non vide
-/// - Export en image (Uint8List)
 class SignatureDialog extends StatefulWidget {
   const SignatureDialog({super.key});
 
@@ -22,38 +10,24 @@ class SignatureDialog extends StatefulWidget {
 }
 
 class _SignatureDialogState extends State<SignatureDialog> {
-  // Couleurs CORIS
+  // Couleurs personnalisées
   static const Color bleuCoris = Color(0xFF002B6B);
-  static const Color rougeCoris = Color(0xFFE30613);
   static const Color blanc = Colors.white;
-  static const Color grisLeger = Color(0xFFF1F5F9);
   static const Color grisTexte = Color(0xFF64748B);
 
-  late final SignatureController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = SignatureController(
-      penStrokeWidth: 3,
-      penColor: Colors.black,
-      exportBackgroundColor: Colors.white, // Fond blanc pour l'export
-      exportPenColor: Colors.black, // Stylo noir pour l'export
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  // Controller du widget Signature
+  final SignatureController _controller = SignatureController(
+    penStrokeWidth: 3,
+    penColor: Colors.black,
+    exportBackgroundColor: blanc,
+  );
 
   /// Efface la signature
   void _clearSignature() {
     _controller.clear();
   }
 
-  /// Valide et retourne la signature
+  /// Valide et retourne la signature en PNG
   Future<void> _validateSignature() async {
     if (_controller.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,34 +41,36 @@ class _SignatureDialogState extends State<SignatureDialog> {
     }
 
     try {
-      print('📸 Capture de la signature via controller.toPngBytes()...');
-      
-      // Utiliser la méthode native du controller pour capturer UNIQUEMENT le canvas de signature
+      // Export de la signature en PNG
       final Uint8List? signatureBytes = await _controller.toPngBytes();
-      
+
       if (signatureBytes == null) {
-        throw Exception('Échec de la capture - toPngBytes() a retourné null');
+        throw Exception('Impossible de convertir la signature en PNG');
       }
-      
+
       print('✅ Signature capturée avec succès!');
-      print('   - Taille fichier: ${signatureBytes.length} bytes (${(signatureBytes.length / 1024).toStringAsFixed(2)} KB)');
-      
+      print('   - Taille: ${(signatureBytes.length / 1024).toStringAsFixed(2)} KB');
+
       if (mounted) {
-        Navigator.of(context).pop(signatureBytes);
+        Navigator.of(context).pop(signatureBytes); // retourne l'image
       }
-    } catch (e, stackTrace) {
-      print('❌ Erreur capture signature: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
+      print('❌ Erreur: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la capture: $e'),
+            content: Text('Erreur: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -216,7 +192,6 @@ class _SignatureDialogState extends State<SignatureDialog> {
             // Boutons d'action
             Row(
               children: [
-                // Bouton Effacer
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _clearSignature,
@@ -233,7 +208,6 @@ class _SignatureDialogState extends State<SignatureDialog> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Bouton Valider
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
