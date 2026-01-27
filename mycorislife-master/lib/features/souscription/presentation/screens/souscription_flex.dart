@@ -2677,6 +2677,65 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     return true;
   }
 
+  /// Parse le RIB unifié en ses composants
+  Map<String, String> _parseRibUnified(String rib) {
+    final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
+    return {
+      'code_guichet': cleaned.length >= 5 ? cleaned.substring(0, 5) : '',
+      'numero_compte': cleaned.length >= 16 ? cleaned.substring(5, 16) : '',
+      'cle_rib': cleaned.length >= 18 ? cleaned.substring(16, 18) : '',
+    };
+  }
+
+  /// Valide le format du RIB unifié
+  bool _validateRibUnified(String rib) {
+    final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
+    return cleaned.length == 18; // 5 + 11 + 2
+  }
+
+  /// Formate l'entrée RIB en temps réel
+  void _formatRibInput() {
+    String text = _ribUnifiedController.text;
+    String cleaned = text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (cleaned.isEmpty) {
+      _ribUnifiedController.value = TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+      return;
+    }
+
+    String formatted = '';
+    int cursorPosition = 0;
+
+    // Code guichet (5 chiffres)
+    if (cleaned.length > 0) {
+      formatted += cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
+      if (cleaned.length > 5) formatted += ' / ';
+    }
+
+    // Numéro de compte (11 chiffres)
+    if (cleaned.length > 5) {
+      formatted +=
+          cleaned.substring(5, cleaned.length > 16 ? 16 : cleaned.length);
+      if (cleaned.length > 16) formatted += ' / ';
+    }
+
+    // Clé RIB (2 chiffres)
+    if (cleaned.length > 16) {
+      formatted +=
+          cleaned.substring(16, cleaned.length > 18 ? 18 : cleaned.length);
+    }
+
+    cursorPosition = formatted.length;
+
+    _ribUnifiedController.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+
   bool _validateStep2() {
     // Si c'est un commercial, valider aussi les infos client
     if (_isCommercial) {

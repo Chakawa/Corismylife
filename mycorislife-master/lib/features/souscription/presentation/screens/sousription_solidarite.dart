@@ -183,10 +183,15 @@ class _SouscriptionSolidaritePageState
   final TextEditingController _numeroCompteController = TextEditingController();
   final TextEditingController _numeroMobileMoneyController =
       TextEditingController();
+  final TextEditingController _ribUnifiedController = TextEditingController();
+  final TextEditingController _nomStructureController = TextEditingController();
+  final TextEditingController _numeroMatriculeController = TextEditingController();
+  final TextEditingController _corisMoneyPhoneController = TextEditingController();
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
     'Orange Money',
+    'Prélèvement à la source',
     'CORIS Money'
   ];
 
@@ -2388,6 +2393,66 @@ class _SouscriptionSolidaritePageState
     }
   }
 
+  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
+  /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
+  Map<String, String> _parseRibUnified(String rib) {
+    final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
+    return {
+      'code_guichet': cleaned.length >= 5 ? cleaned.substring(0, 5) : '',
+      'numero_compte': cleaned.length >= 16 ? cleaned.substring(5, 16) : '',
+      'cle_rib': cleaned.length >= 18 ? cleaned.substring(16, 18) : '',
+    };
+  }
+
+  /// Valide le format du RIB unifié
+  bool _validateRibUnified(String rib) {
+    final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
+    return cleaned.length == 18; // 5 + 11 + 2
+  }
+
+  /// Formate l'entrée RIB en temps réel
+  void _formatRibInput() {
+    String text = _ribUnifiedController.text;
+    String cleaned = text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (cleaned.isEmpty) {
+      _ribUnifiedController.value = TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+      return;
+    }
+
+    String formatted = '';
+    int cursorPosition = 0;
+
+    // Code guichet (5 chiffres)
+    if (cleaned.length > 0) {
+      formatted += cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
+      if (cleaned.length > 5) formatted += ' / ';
+    }
+
+    // Numéro de compte (11 chiffres)
+    if (cleaned.length > 5) {
+      formatted +=
+          cleaned.substring(5, cleaned.length > 16 ? 16 : cleaned.length);
+      if (cleaned.length > 16) formatted += ' / ';
+    }
+
+    // Clé RIB (2 chiffres)
+    if (cleaned.length > 16) {
+      formatted +=
+          cleaned.substring(16, cleaned.length > 18 ? 18 : cleaned.length);
+    }
+
+    cursorPosition = formatted.length;
+
+    _ribUnifiedController.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+
   /// 💳 ÉTAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
     return SingleChildScrollView(
@@ -2480,6 +2545,10 @@ class _SouscriptionSolidaritePageState
                           case 'Orange Money':
                             icon = Icons.phone_android;
                             iconColor = Colors.orange;
+                            break;
+                          case 'Prélèvement à la source':
+                            icon = Icons.business;
+                            iconColor = Colors.green;
                             break;
                           case 'CORIS Money':
                             icon = Icons.account_balance_wallet;
@@ -2617,12 +2686,15 @@ class _SouscriptionSolidaritePageState
                         SizedBox(height: 16),
                       ],
 
-                      // Numéro de compte
+                      // Numéro RIB unifié
                       TextField(
-                        controller: _numeroCompteController,
+                        controller: _ribUnifiedController,
+                        onChanged: (_) => _formatRibInput(),
                         decoration: InputDecoration(
-                          labelText: 'Numéro de compte *',
-                          hintText: 'Entrez votre numéro de compte',
+                          labelText: 'Numéro RIB complet *',
+                          hintText: '55555 / 11111111111 / 22',
+                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                          helperMaxLines: 2,
                           prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2631,6 +2703,7 @@ class _SouscriptionSolidaritePageState
                           fillColor: Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
+                        maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec séparateurs
                       ),
                     ],
                     if (_selectedModePaiement == 'Wave' ||
@@ -2665,6 +2738,47 @@ class _SouscriptionSolidaritePageState
                       ),
                     ],
 
+                    // Prélèvement à la source
+                    if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                      Text(
+                        'Informations Prélèvement',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _nomStructureController,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la structure *',
+                          hintText: 'Ex: Entreprise SARL',
+                          prefixIcon: Icon(Icons.business, color: Colors.green),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroMatriculeController,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de matricule *',
+                          hintText: 'Ex: 123456789',
+                          prefixIcon: Icon(Icons.badge, color: Colors.green),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+
                     // CORIS MONEY
                     if (_selectedModePaiement == 'CORIS Money') ...[
                       Text(
@@ -2677,7 +2791,7 @@ class _SouscriptionSolidaritePageState
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                        controller: _numeroMobileMoneyController,
+                        controller: _corisMoneyPhoneController,
                         decoration: InputDecoration(
                           labelText: 'Numéro de téléphone *',
                           hintText: 'Ex: 0707070707',
@@ -2984,7 +3098,11 @@ class _SouscriptionSolidaritePageState
                   ? bleuCoris
                   : _selectedModePaiement == 'Wave'
                       ? Color(0xFF00BFFF)
-                      : Color(0xFFFF6B00),
+                      : _selectedModePaiement == 'Orange Money'
+                          ? Colors.orange
+                          : _selectedModePaiement == 'Prélèvement à la source'
+                              ? Colors.green
+                              : Color(0xFF1E3A8A),
               [
                 _buildRecapRow('Mode choisi', _selectedModePaiement!),
                 const SizedBox(height: 8),
@@ -2995,9 +3113,20 @@ class _SouscriptionSolidaritePageState
                           ? _banqueController.text
                           : 'Non renseigné'),
                   _buildRecapRow(
-                      'Numéro de compte',
-                      _numeroCompteController.text.isNotEmpty
-                          ? _numeroCompteController.text
+                      'Numéro RIB',
+                      _ribUnifiedController.text.isNotEmpty
+                          ? _ribUnifiedController.text
+                          : 'Non renseigné'),
+                ] else if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                  _buildRecapRow(
+                      'Nom de la structure',
+                      _nomStructureController.text.isNotEmpty
+                          ? _nomStructureController.text
+                          : 'Non renseigné'),
+                  _buildRecapRow(
+                      'Numéro de matricule',
+                      _numeroMatriculeController.text.isNotEmpty
+                          ? _numeroMatriculeController.text
                           : 'Non renseigné'),
                 ] else if (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money') ...[
@@ -3005,6 +3134,12 @@ class _SouscriptionSolidaritePageState
                       'Numéro ${_selectedModePaiement}',
                       _numeroMobileMoneyController.text.isNotEmpty
                           ? _numeroMobileMoneyController.text
+                          : 'Non renseigné'),
+                ] else if (_selectedModePaiement == 'CORIS Money') ...[
+                  _buildRecapRow(
+                      'Numéro CORIS Money',
+                      _corisMoneyPhoneController.text.isNotEmpty
+                          ? _corisMoneyPhoneController.text
                           : 'Non renseigné'),
                 ],
               ],
@@ -3308,13 +3443,25 @@ class _SouscriptionSolidaritePageState
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
-      if (_numeroCompteController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro de compte bancaire.');
+      if (_ribUnifiedController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet.');
+        return false;
+      }
+      if (!_validateRibUnified(_ribUnifiedController.text)) {
+        _showErrorSnackBar('Le numéro RIB est invalide (18 chiffres attendus au format : 55555 / 11111111111 / 22).');
+        return false;
+      }
+    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+      if (_nomStructureController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le nom de la structure.');
+        return false;
+      }
+      if (_numeroMatriculeController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer le numéro de matricule.');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
-        _selectedModePaiement == 'Orange Money' ||
-        _selectedModePaiement == 'CORIS Money') {
+        _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
@@ -3332,6 +3479,17 @@ class _SouscriptionSolidaritePageState
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
+      }
+    } else if (_selectedModePaiement == 'CORIS Money') {
+      if (_corisMoneyPhoneController.text.trim().isEmpty) {
+        _showErrorSnackBar('Veuillez entrer votre numéro de téléphone CORIS Money.');
+        return false;
+      }
+      if (!RegExp(r'^[0-9]{8,10}$')
+          .hasMatch(_corisMoneyPhoneController.text.trim())) {
+        _showErrorSnackBar(
+            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+        return false;
       }
     }
 
