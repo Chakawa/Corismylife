@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+/// NOUVELLE APPROCHE RADICALE: Dessiner dans un vrai Canvas offscreen
+/// sans aucun widget Flutter pour éviter tout risque de capture d'UI
 class SignatureDialog extends StatefulWidget {
   const SignatureDialog({super.key});
 
@@ -16,11 +18,11 @@ class _SignatureDialogState extends State<SignatureDialog> {
   static const Color blanc = Colors.white;
   static const Color grisTexte = Color(0xFF64748B);
 
-  // GlobalKey pour capturer EXACTEMENT la zone de signature
-  final GlobalKey _signatureKey = GlobalKey();
-
   // Liste des points dessinés
   final List<Offset?> _points = [];
+  
+  // GlobalKey juste pour obtenir les dimensions, PAS pour capturer
+  final GlobalKey _containerKey = GlobalKey();
 
   /// Efface la signature
   void _clearSignature() {
@@ -30,7 +32,7 @@ class _SignatureDialogState extends State<SignatureDialog> {
   }
 
   /// Valide et retourne la signature en PNG
-  /// NOUVELLE APPROCHE: Créer l'image directement à partir des points (pas de capture widget)
+  /// APPROCHE DÉFINITIVE: Création pure d'image sans passer par aucun widget
   Future<void> _validateSignature() async {
     if (_points.isEmpty || _points.every((p) => p == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,90 +46,83 @@ class _SignatureDialogState extends State<SignatureDialog> {
     }
 
     try {
-      print('🎨 DÉBUT GÉNÉRATION SIGNATURE - VERSION DIRECTE CANVAS');
+      print('🎨🎨🎨 NOUVELLE APPROCHE: CRÉATION PURE D\'IMAGE OFFSCREEN');
       
-      // Dimensions FIXES de l'image (haute résolution)
-      const double imageWidth = 800.0;
-      const double imageHeight = 400.0;
-
-      // Dimensions FIXES du widget signature (identique au Container dans build())
-      const double widgetWidth = 400.0;  // Largeur typique du dialog
-      const double widgetHeight = 200.0; // Hauteur définie dans le Container
-
-      // Ratio pour adapter les coordonnées
-      const double scaleX = imageWidth / widgetWidth;
-      const double scaleY = imageHeight / widgetHeight;
+      // DIMENSIONS FIXES - Aucune dépendance aux widgets
+      const int outputWidth = 800;
+      const int outputHeight = 400;
       
-      print('📐 Dimensions: Image=${imageWidth}x${imageHeight}, Widget=${widgetWidth}x${widgetHeight}');
-      print('📐 Scale: X=${scaleX}, Y=${scaleY}');
+      // Obtenir les dimensions du widget pour le ratio
+      final RenderBox? box = _containerKey.currentContext?.findRenderObject() as RenderBox?;
+      final double inputWidth = box?.size.width ?? 400.0;
+      final double inputHeight = box?.size.height ?? 200.0;
+      
+      print('📏 Input: ${inputWidth}x$inputHeight → Output: ${outputWidth}x$outputHeight');
+      
+      final double scaleX = outputWidth / inputWidth;
+      final double scaleY = outputHeight / inputHeight;
 
-      // Créer un PictureRecorder pour dessiner
+      // Créer un PictureRecorder - C'est un objet OFFSCREEN, pas un widget!
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
       
-      // Dessiner le fond blanc
-      final Paint backgroundPaint = Paint()..color = blanc;
+      // Fond blanc
       canvas.drawRect(
-        Rect.fromLTWH(0, 0, imageWidth, imageHeight),
-        backgroundPaint,
+        Rect.fromLTWH(0, 0, outputWidth.toDouble(), outputHeight.toDouble()),
+        Paint()..color = Colors.white,
       );
-      print('✅ Fond blanc créé: ${imageWidth}x${imageHeight}');
+      print('✅ Fond blanc dessiné');
 
-      // Dessiner la signature avec les points
-      final Paint signaturePaint = Paint()
+      // Dessiner les traits de signature
+      final paint = Paint()
         ..color = Colors.black
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = 6.0; // Épaisseur fixe pour haute résolution
+        ..strokeWidth = 6.0;
 
-      int linesDrawn = 0;
+      int strokeCount = 0;
       for (int i = 0; i < _points.length - 1; i++) {
         if (_points[i] != null && _points[i + 1] != null) {
-          // Adapter les coordonnées au ratio
-          final Offset start = Offset(
-            _points[i]!.dx * scaleX,
-            _points[i]!.dy * scaleY,
+          canvas.drawLine(
+            Offset(_points[i]!.dx * scaleX, _points[i]!.dy * scaleY),
+            Offset(_points[i + 1]!.dx * scaleX, _points[i + 1]!.dy * scaleY),
+            paint,
           );
-          final Offset end = Offset(
-            _points[i + 1]!.dx * scaleX,
-            _points[i + 1]!.dy * scaleY,
-          );
-          canvas.drawLine(start, end, signaturePaint);
-          linesDrawn++;
+          strokeCount++;
         }
       }
-      print('✅ Lignes dessinées: $linesDrawn');
+      print('✅ $strokeCount traits dessinés');
 
-      // Convertir en image
+      // Convertir en image (OFFSCREEN - pas de widget UI capturé)
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = await picture.toImage(imageWidth.toInt(), imageHeight.toInt());
-      print('✅ Image créée: ${image.width}x${image.height}');
+      final ui.Image image = await picture.toImage(outputWidth, outputHeight);
+      print('✅ Image générée: ${image.width}x${image.height}px');
 
-      // Convertir en PNG
-      final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-
-      if (byteData == null) {
-        throw Exception('Impossible de convertir la signature en PNG');
+      // Encoder en PNG
+      final ByteData? pngBytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (pngBytes == null) {
+        throw Exception('Échec encodage PNG');
       }
 
-      final Uint8List signatureBytes = byteData.buffer.asUint8List();
-
-      print('✅ Signature créée avec succès!');
-      print('   - Taille: ${(signatureBytes.length / 1024).toStringAsFixed(2)} KB');
-      print('   - Dimensions: ${imageWidth.toInt()}x${imageHeight.toInt()}px');
-      print('   - Points dessinés: ${_points.where((p) => p != null).length}');
-      print('   - AUCUN WIDGET CAPTURÉ - IMAGE PURE CANVAS');
+      final Uint8List bytes = pngBytes.buffer.asUint8List();
+      
+      print('🎉 SUCCÈS TOTAL!');
+      print('   📦 Taille: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+      print('   🖼️ Format: PNG ${outputWidth}x$outputHeight');
+      print('   ✍️ Points: ${_points.where((p) => p != null).length}');
+      print('   🚫 ZÉRO widget capturé - Image pure offscreen');
+      print('   📊 Header PNG: ${bytes.take(8).toList()}');
 
       if (mounted) {
-        Navigator.of(context).pop(signatureBytes); // retourne l'image
+        Navigator.of(context).pop(bytes);
       }
-    } catch (e) {
-      print('❌ Erreur: $e');
+    } catch (e, stack) {
+      print('❌ ERREUR GÉNÉRATION: $e');
+      print('   Stack: $stack');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur génération: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -205,8 +200,9 @@ class _SignatureDialogState extends State<SignatureDialog> {
 
             const SizedBox(height: 16),
 
-            // Zone de signature - DÉLIMITÉE AVEC REPAINTBOUNDARY
+            // Zone de signature avec Container Key
             Container(
+              key: _containerKey, // Pour obtenir les dimensions réelles
               decoration: BoxDecoration(
                 border: Border.all(color: bleuCoris, width: 2),
                 borderRadius: BorderRadius.circular(12),
@@ -216,34 +212,31 @@ class _SignatureDialogState extends State<SignatureDialog> {
                 child: Container(
                   height: 200,
                   color: blanc,
-                  child: RepaintBoundary(
-                    key: _signatureKey, // CLÉ POUR CAPTURE EXACTE
-                    child: GestureDetector(
-                      onPanStart: (details) {
-                        setState(() {
-                          _points.add(details.localPosition);
-                        });
-                      },
-                      onPanUpdate: (details) {
-                        setState(() {
-                          _points.add(details.localPosition);
-                        });
-                      },
-                      onPanEnd: (details) {
-                        setState(() {
-                          _points.add(null); // Séparateur de lignes
-                        });
-                      },
-                      child: Container(
-                        color: blanc, // FOND BLANC FORCÉ
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: CustomPaint(
-                          painter: SignaturePainter(
-                            points: _points,
-                            penColor: Colors.black,
-                            strokeWidth: 3.0,
-                          ),
+                  child: GestureDetector(
+                    onPanStart: (details) {
+                      setState(() {
+                        _points.add(details.localPosition);
+                      });
+                    },
+                    onPanUpdate: (details) {
+                      setState(() {
+                        _points.add(details.localPosition);
+                      });
+                    },
+                    onPanEnd: (details) {
+                      setState(() {
+                        _points.add(null); // Séparateur de lignes
+                      });
+                    },
+                    child: Container(
+                      color: blanc,
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: CustomPaint(
+                        painter: SignaturePainter(
+                          points: _points,
+                          penColor: Colors.black,
+                          strokeWidth: 3.0,
                         ),
                       ),
                     ),

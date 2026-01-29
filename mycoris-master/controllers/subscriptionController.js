@@ -146,6 +146,7 @@ exports.createSubscription = async (req, res) => {
         // Décoder la signature base64
         const signatureBuffer = Buffer.from(signature, 'base64');
         console.log('📝 Signature reçue - Taille buffer:', signatureBuffer.length, 'bytes');
+        console.log('🔍 HEADER REÇU:', signatureBuffer.slice(0, 20).toString('hex'));
         
         // Générer un nom de fichier unique
         const signatureFilename = `signature_${numeroPolice}_${Date.now()}.png`;
@@ -153,6 +154,11 @@ exports.createSubscription = async (req, res) => {
         
         // Sauvegarder l'image
         fs.writeFileSync(signaturePath, signatureBuffer);
+        
+        // VÉRIFIER le fichier immédiatement après sauvegarde
+        const savedFile = fs.readFileSync(signaturePath);
+        console.log('🔍 HEADER FICHIER SAUVEGARDÉ:', savedFile.slice(0, 20).toString('hex'));
+        console.log('✅ Les headers match?', signatureBuffer.slice(0, 20).equals(savedFile.slice(0, 20)) ? 'OUI ✅' : 'NON ❌');
         
         // Stocker le chemin relatif dans les données de souscription
         subscriptionData.signature_path = `uploads/signatures/${signatureFilename}`;
@@ -365,6 +371,8 @@ exports.updateSubscription = async (req, res) => {
           
           // Décoder la signature base64
           const signatureBuffer = Buffer.from(signature, 'base64');
+          console.log('📝 [UPDATE] Signature reçue - Taille buffer:', signatureBuffer.length, 'bytes');
+          console.log('🔍 [UPDATE] HEADER REÇU:', signatureBuffer.slice(0, 20).toString('hex'));
           
           // Générer un nom de fichier unique
           const signatureFilename = `signature_${numeroPolice}_${Date.now()}.png`;
@@ -373,10 +381,15 @@ exports.updateSubscription = async (req, res) => {
           // Sauvegarder l'image
           fs.writeFileSync(signaturePath, signatureBuffer);
           
+          // VÉRIFIER le fichier immédiatement après sauvegarde
+          const savedFile = fs.readFileSync(signaturePath);
+          console.log('🔍 [UPDATE] HEADER FICHIER SAUVEGARDÉ:', savedFile.slice(0, 20).toString('hex'));
+          console.log('✅ [UPDATE] Les headers match?', signatureBuffer.slice(0, 20).equals(savedFile.slice(0, 20)) ? 'OUI ✅' : 'NON ❌');
+          
           // Stocker le chemin relatif
           subscriptionData.signature_path = `uploads/signatures/${signatureFilename}`;
           
-          console.log('✅ Signature mise à jour:', signaturePath);
+          console.log('✅ Signature mise à jour:', signaturePath, '- Taille:', signatureBuffer.length);
         }
       } catch (error) {
         console.error('❌ Erreur mise à jour signature:', error.message);
@@ -2315,20 +2328,20 @@ exports.getSubscriptionPDF = async (req, res) => {
     doc.fontSize(8).fillColor('#000000').text(`Fait à Abidjan, le ${dateContrat} en 2 Exemplaires`, startX, curY, { width: fullW, align: 'left' });
     curY += 10;
 
-    // Espaces pour signatures (2 colonnes: Souscripteur et Compagnie) - Augmentés pour visibilité
-    const sigWidth = 220;
-    const sigGap = 30;
+    // Espaces pour signatures (2 colonnes: Souscripteur et Compagnie) - Alignés et compacts
+    const sigWidth = 260;
+    const sigGap = 15;
     const sigStartX = startX;
-    const sigHeight = 60; // Hauteur optimisée pour visibilité sans déborder
+    const sigHeight = 65; // Hauteur réduite pour ne pas déborder
     
-    // Labels au-dessus des cases de signature
+    // Labels au-dessus des zones de signature
     doc.fontSize(7).fillColor('#000000').text('Le Souscripteur', sigStartX, curY, { width: sigWidth, align: 'center' });
     doc.fontSize(7).fillColor('#000000').text('La Compagnie', sigStartX + sigWidth + sigGap, curY, { width: sigWidth, align: 'center' });
-    curY += 10; // Espacement entre les labels et les cases
+    curY += 8; // Espacement réduit entre les labels et les zones
     
-    const sigY = curY; // Position des cases de signature
+    const sigY = curY; // Position des zones de signature
 
-    // Dessiner les cases pour signatures
+    // Dessiner les deux cases pour signatures - Même largeur pour alignement
     drawRow(sigStartX, sigY, sigWidth, sigHeight);
     drawRow(sigStartX + sigWidth + sigGap, sigY, sigWidth, sigHeight);
     
@@ -2340,13 +2353,12 @@ exports.getSubscriptionPDF = async (req, res) => {
         try {
           console.log('📝 Chargement signature depuis:', absoluteSignaturePath);
           
-          // Insérer la signature dans la case du souscripteur
-          // L'image sera redimensionnée pour tenir dans le cadre tout en gardant ses proportions
-          const sigPadding = 5;
+          // Padding minimal pour masquer uniquement la bordure tout en maximisant la signature
+          const sigPadding = 3;
           const maxWidth = sigWidth - (sigPadding * 2);
           const maxHeight = sigHeight - (sigPadding * 2);
           
-          // Utiliser fit pour redimensionner proportionnellement et centrer
+          // Insérer la signature avec padding pour masquer les bordures de capture
           doc.image(absoluteSignaturePath, 
             sigStartX + sigPadding, 
             sigY + sigPadding, 
@@ -2365,7 +2377,7 @@ exports.getSubscriptionPDF = async (req, res) => {
       }
     }
 
-    // Tampon de la compagnie (si disponible) - Plus petit
+    // Tampon de la compagnie (si disponible) - Plus petit et centré
     const stampPaths = [
       path.join(process.cwd(), 'assets', 'stamp_coris.png'),
       path.join(process.cwd(), 'assets', 'images', 'stamp_coris.png'),
@@ -2374,7 +2386,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     for (const stampPath of stampPaths) {
       if (exists(stampPath)) {
         try {
-          doc.image(stampPath, sigStartX + sigWidth + sigGap + 65, sigY + 3, { width: 50 });
+          doc.image(stampPath, sigStartX + sigWidth + sigGap + 60, sigY + 3, { width: 50 });
           console.log('✅ Tampon chargé depuis:', stampPath);
           break;
         } catch (e) {

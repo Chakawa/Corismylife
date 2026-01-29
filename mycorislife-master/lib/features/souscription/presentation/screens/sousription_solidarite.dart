@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
+import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 
 // Couleurs globales
 const Color bleuCoris = Color(0xFF002B6B);
@@ -3292,7 +3292,7 @@ class _SouscriptionSolidaritePageState
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialog(),
+      builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
     // Si l'utilisateur annule la signature, on arrête

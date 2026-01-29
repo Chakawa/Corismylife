@@ -3,6 +3,7 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class SimulationSereniteScreen extends StatefulWidget {
   const SimulationSereniteScreen({super.key});
@@ -1225,6 +1226,13 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         } else {
           _resultatCalcul = primeAnnuelle * coefficient;
         }
+        
+        // Enregistrer la simulation dans la base de données
+        _saveSimulation(
+          typeSimulation: 'Par Capital',
+          capital: capital,
+          resultatPrime: _resultatCalcul,
+        );
       } else {
         String primeText = _primeController.text.replaceAll(' ', '');
         double prime = double.tryParse(primeText) ?? 0;
@@ -1265,8 +1273,63 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           }
           _primeController.text = _formatNumber(prime);
         }
+        
+        // Enregistrer la simulation dans la base de données
+        _saveSimulation(
+          typeSimulation: 'Par Prime',
+          prime: prime,
+          resultatCapital: _resultatCalcul,
+        );
       }
     });
+  }
+
+  // Méthode pour enregistrer la simulation
+  void _saveSimulation({
+    required String typeSimulation,
+    double? capital,
+    double? prime,
+    double? resultatPrime,
+    double? resultatCapital,
+  }) {
+    // Calculer l'âge
+    final age = _dateNaissance != null 
+        ? DateTime.now().year - _dateNaissance!.year 
+        : null;
+    
+    // Récupérer la durée en mois
+    final dureeMois = _dureeEnMois;
+    
+    // Déterminer la périodicité
+    String periodicite;
+    switch (_selectedPeriode) {
+      case Periode.annuel:
+        periodicite = 'Annuel';
+        break;
+      case Periode.semestriel:
+        periodicite = 'Semestriel';
+        break;
+      case Periode.trimestriel:
+        periodicite = 'Trimestriel';
+        break;
+      case Periode.mensuel:
+        periodicite = 'Mensuel';
+        break;
+    }
+
+    // Enregistrer sans bloquer l'UI
+    SimulationService.saveSimulation(
+      produitNom: 'CORIS SERENITE',
+      typeSimulation: typeSimulation,
+      age: age,
+      dateNaissance: _dateNaissance?.toIso8601String(),
+      capital: capital,
+      prime: prime,
+      dureeMois: dureeMois,
+      periodicite: periodicite,
+      resultatPrime: resultatPrime,
+      resultatCapital: resultatCapital,
+    );
   }
 
   void _showMessage(String message) {

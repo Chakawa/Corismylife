@@ -31,7 +31,8 @@ dependencies:
   image_cropper: ^8.0.2
   connectivity_plus: ^6.0.5  # Détection de connexion internet
   share_plus: ^10.1.2  # Partage de fichiers
-  # signature: ^5.5.0  # Widget de signature manuscrite - REMPLACÉ PAR CUSTOMPAINTER
+  syncfusion_flutter_signaturepad: ^28.1.36  # Widget de signature professionnel
+  # signature: ^5.5.0  # Widget de signature manuscrite - REMPLACÉ PAR SYNCFUSION
 
 dev_dependencies:
   flutter_test:

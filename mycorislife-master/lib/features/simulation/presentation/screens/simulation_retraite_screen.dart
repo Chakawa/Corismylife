@@ -5,6 +5,7 @@ import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
 import 'package:mycorislife/services/local_data_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class CorisRetraiteScreen extends StatefulWidget {
   const CorisRetraiteScreen({super.key});
@@ -877,6 +878,23 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     }
 
     setState(() => isLoading = false);
+
+    // Sauvegarder la simulation en base de données
+    if (result != null && result! > 0) {
+      int duree = int.tryParse(_dureeController.text) ?? 0;
+      double montant = double.tryParse(_valeurController.text.replaceAll(' ', '').replaceAll(',', '')) ?? 0;
+      
+      SimulationService.saveSimulation(
+        produitNom: 'CORIS RETRAITE',
+        typeSimulation: selectedOption == 'capital' ? 'Par Capital' : 'Par Prime',
+        dureeMois: duree * 12, // Convertir années en mois
+        capital: selectedOption == 'capital' ? montant : result,
+        prime: selectedOption == 'capital' ? result : montant,
+        periodicite: selectedPeriodicite,
+        resultatPrime: selectedOption == 'capital' ? result : null,
+        resultatCapital: selectedOption == 'capital' ? null : result,
+      );
+    }
   }
 
   Widget _buildModernHeader() {

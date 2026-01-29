@@ -53,6 +53,7 @@ app.get('/api/config/support', (_, res) => {
 });
 app.use('/api/produits', require('./routes/produitRoutes'));
 app.use('/api/contrats', require('./routes/contratRoutes'));
+app.use('/api/simulations', require('./routes/simulationRoutes'));
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));

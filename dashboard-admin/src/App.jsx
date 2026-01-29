@@ -12,6 +12,7 @@ import CommissionsPage from './pages/CommissionsPage'
 import ProductsPage from './pages/ProductsPage'
 import SettingsPage from './pages/SettingsPage'
 import ActivitiesPage from './pages/ActivitiesPage'
+import SimulationsPage from './pages/SimulationsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import permissionsService from './services/permissions.service'
 
@@ -108,6 +109,11 @@ function App() {
           <Route path="activities" element={
             <ProtectedRoute requiredPage="stats">
               <ActivitiesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="simulations" element={
+            <ProtectedRoute requiredPage="stats">
+              <SimulationsPage />
             </ProtectedRoute>
           } />
           <Route path="access-denied" element={<AccessDeniedPage />} />

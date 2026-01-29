@@ -4,6 +4,7 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class FlexEmprunteurPage extends StatefulWidget {
   const FlexEmprunteurPage({super.key});
@@ -2026,6 +2027,21 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           'rateBase': rateBase,
         };
       });
+
+      // Sauvegarder la simulation en base de données
+      if (result != null && result!['primeTotal'] > 0) {
+        final age = _calculateAge(_dateNaissanceController.text);
+        SimulationService.saveSimulation(
+          produitNom: 'CORIS FLEX EMPRUNTEUR',
+          typeSimulation: typePret,
+          age: age,
+          dateNaissance: _dateNaissanceController.text,
+          capital: capital,
+          prime: result!['primeTotal'],
+          dureeMois: dureeMois,
+          resultatPrime: result!['primeTotal'],
+        );
+      }
     } catch (e) {
       _showProfessionalDialog(
         title: 'Erreur de calcul',

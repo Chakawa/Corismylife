@@ -10,7 +10,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
-import '../widgets/signature_dialog.dart';
+import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionBonPlanPage extends StatefulWidget {
@@ -837,7 +837,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialog(),
+      builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
     if (signature == null) {
@@ -1471,6 +1471,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
+      resizeToAvoidBottomInset: false,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[

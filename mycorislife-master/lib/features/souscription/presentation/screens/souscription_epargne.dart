@@ -7,7 +7,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
-import '../widgets/signature_dialog.dart';
+import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionEpargnePage extends StatefulWidget {
@@ -982,7 +982,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialog(),
+      builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
     if (signature == null) {
@@ -1222,6 +1222,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
+      resizeToAvoidBottomInset: false,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -2409,186 +2410,162 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                   // Sélection du mode de paiement
                   Text(
-                    'Sélectionnez votre mode de paiement',
+                    'Mode de paiement *',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      children: _modePaiementOptions.map((mode) {
+                        final isSelected = _selectedModePaiement == mode;
+                        IconData icon;
+                        Color iconColor;
 
-                  // Options de paiement (style radio moderne)
-                  ...(_modePaiementOptions.map((mode) {
-                    final isSelected = _selectedModePaiement == mode;
-                    IconData icon;
-                    Color color;
+                        switch (mode) {
+                          case 'Virement':
+                            icon = Icons.account_balance;
+                            iconColor = Colors.blue;
+                            break;
+                          case 'Wave':
+                            icon = Icons.water_drop;
+                            iconColor = Color(0xFF00BFFF);
+                            break;
+                          case 'Orange Money':
+                            icon = Icons.phone_android;
+                            iconColor = Colors.orange;
+                            break;
+                          case 'Prélèvement à la source':
+                            icon = Icons.business;
+                            iconColor = Colors.green;
+                            break;
+                          case 'CORIS Money':
+                            icon = Icons.account_balance_wallet;
+                            iconColor = Color(0xFF1E3A8A);
+                            break;
+                          default:
+                            icon = Icons.payment;
+                            iconColor = bleuCoris;
+                        }
 
-                    if (mode == 'Virement') {
-                      icon = Icons.account_balance;
-                      color = Colors.blue;
-                    } else if (mode == 'Wave') {
-                      icon = Icons.water_drop;
-                      color = const Color(0xFF00BFFF);
-                    } else if (mode == 'Orange Money') {
-                      icon = Icons.phone_android;
-                      color = Colors.orange;
-                    } else if (mode == 'Prélèvement à la source') {
-                      icon = Icons.business;
-                      color = Colors.green;
-                    } else if (mode == 'CORIS Money') {
-                      icon = Icons.account_balance_wallet;
-                      color = const Color(0xFF1E3A8A);
-                    } else {
-                      icon = Icons.payment;
-                      color = Colors.blue;
-                    }
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedModePaiement = mode;
-                          // Réinitialiser les champs non utilisés
-                          if (mode == 'Virement') {
-                            _numeroMobileMoneyController.clear();
-                            _nomStructureController.clear();
-                            _numeroMatriculeController.clear();
-                            _corisMoneyPhoneController.clear();
-                          } else if (mode == 'Wave' || mode == 'Orange Money') {
-                            _banqueController.clear();
-                            _ribUnifiedController.clear();
-                            _nomStructureController.clear();
-                            _numeroMatriculeController.clear();
-                            _corisMoneyPhoneController.clear();
-                          } else if (mode == 'Prélèvement à la source') {
-                            _banqueController.clear();
-                            _ribUnifiedController.clear();
-                            _numeroMobileMoneyController.clear();
-                            _corisMoneyPhoneController.clear();
-                          } else if (mode == 'CORIS Money') {
-                            _banqueController.clear();
-                            _ribUnifiedController.clear();
-                            _numeroMobileMoneyController.clear();
-                            _nomStructureController.clear();
-                            _numeroMatriculeController.clear();
-                          }
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected ? color.withAlpha(26) : blanc,
-                          border: Border.all(
-                            color: isSelected ? color : grisLeger,
-                            width: isSelected ? 2 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? color : grisLeger,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(icon,
-                                  color: isSelected ? blanc : grisTexte,
-                                  size: 24),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                mode,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: isSelected ? color : grisTexte,
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedModePaiement = mode;
+                              // Réinitialiser les champs
+                              _banqueController.clear();
+                              _ribUnifiedController.clear();
+                              _numeroMobileMoneyController.clear();
+                              _nomStructureController.clear();
+                              _numeroMatriculeController.clear();
+                              _corisMoneyPhoneController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? bleuCoris.withOpacity(0.1)
+                                  : Colors.transparent,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: _modePaiementOptions.last == mode
+                                      ? Colors.transparent
+                                      : Colors.grey[300]!,
                                 ),
                               ),
                             ),
-                            if (isSelected)
-                              Icon(Icons.check_circle, color: color, size: 24)
-                            else
-                              Icon(Icons.circle_outlined,
-                                  color: grisLeger, size: 24),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList()),
-
-                  const SizedBox(height: 24),
-
-                  // Champs conditionnels selon le mode sélectionné
-                  if (_selectedModePaiement == 'Virement') ...[
-                    Text(
-                      'Informations Bancaires',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedBanque,
-                      decoration: InputDecoration(
-                        labelText: 'Nom de la banque',
-                        prefixIcon: Container(
-                          margin: EdgeInsets.all(8),
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: bleuCoris.withAlpha(26),
-                            borderRadius: BorderRadius.circular(8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 28),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    mode,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? bleuCoris
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(Icons.check_circle,
+                                      color: bleuCoris, size: 28),
+                              ],
+                            ),
                           ),
-                          child: Icon(Icons.account_balance,
-                              color: bleuCoris, size: 20),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: grisLeger),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: grisLeger),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: bleuCoris, width: 2),
-                        ),
-                        filled: true,
-                        fillColor: fondCarte,
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      hint: Text('Sélectionnez votre banque'),
-                      items: _banques.map((String banque) {
-                        return DropdownMenuItem<String>(
-                          value: banque,
-                          child: Text(banque),
                         );
                       }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedBanque = newValue;
-                          if (newValue != null && newValue != 'Autre') {
-                            _banqueController.text = newValue;
-                          } else if (newValue == 'Autre') {
-                            _banqueController.text = '';
-                          }
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Veuillez sélectionner une banque';
-                        }
-                        return null;
-                      },
                     ),
+                  ),
+
+                  // Champs conditionnels selon le mode sélectionné
+                  if (_selectedModePaiement != null) ...[
+                    SizedBox(height: 30),
+
+                    // VIREMENT
+                    if (_selectedModePaiement == 'Virement') ...[
+                      Text(
+                        'Informations Bancaires',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Nom de la banque
+                      DropdownButtonFormField<String>(
+                        value: _selectedBanque,
+                        decoration: InputDecoration(
+                          labelText: 'Nom de la banque *',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        items: _banques.map((String banque) {
+                          return DropdownMenuItem<String>(
+                            value: banque,
+                            child: Text(banque),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedBanque = newValue;
+                            if (newValue != null && newValue != 'Autre') {
+                              _banqueController.text = newValue;
+                            } else if (newValue == 'Autre') {
+                              _banqueController.text = '';
+                            }
+                          });
+                        },
+                      ),
                     const SizedBox(height: 16),
 
                     // Champ texte personnalisé si "Autre" est sélectionné
@@ -2680,44 +2657,45 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       keyboardType: TextInputType.phone,
                     ),
                   ],
+                ],
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // Note informative
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline,
-                            color: Colors.blue.shade700, size: 24),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
-                            style: TextStyle(
-                              color: Colors.blue.shade900,
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
+                // Note informative
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline,
+                          color: Colors.blue.shade700, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                          style: TextStyle(
+                            color: Colors.blue.shade900,
+                            fontSize: 14,
+                            height: 1.4,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ], // Fin du children du Column
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // ignore: unused_element
   Widget _buildStep4() {

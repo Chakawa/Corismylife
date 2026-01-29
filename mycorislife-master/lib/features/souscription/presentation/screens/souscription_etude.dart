@@ -12,7 +12,7 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
-import 'package:mycorislife/features/souscription/presentation/widgets/signature_dialog.dart';
+import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionEtudePage extends StatefulWidget {
@@ -2377,7 +2377,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialog(),
+      builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
     // Si l'utilisateur annule la signature, on arrête
@@ -2894,6 +2894,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
+      resizeToAvoidBottomInset: false,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[

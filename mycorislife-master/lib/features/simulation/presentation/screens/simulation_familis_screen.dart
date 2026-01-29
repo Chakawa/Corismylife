@@ -4,6 +4,7 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class SimulationFamilisScreen extends StatefulWidget {
   const SimulationFamilisScreen({super.key});
@@ -2483,6 +2484,22 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     }
 
     setState(() => isLoading = false);
+
+    // Sauvegarder la simulation en base de données
+    if (result != null && result!['primeTotal'] != null && result!['primeTotal'] > 0) {
+      final capital = _parseDouble(_capitalController.text);
+      int dureeAnnees = _parseInt(_dureeController.text);
+      
+      SimulationService.saveSimulation(
+        produitNom: 'CORIS FAMILIS',
+        typeSimulation: 'Par Capital',
+        age: age,
+        capital: capital,
+        dureeMois: dureeAnnees * 12,
+        periodicite: periodicite,
+        resultatPrime: result!['primeTotal'],
+      );
+    }
   }
 
   Widget _buildModernHeader() {

@@ -11,7 +11,7 @@ import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
 import '../../../../core/widgets/subscription_recap_widgets.dart';
-import '../widgets/signature_dialog.dart';
+import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 // Enum pour le type de simulation
@@ -1782,6 +1782,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
         return Scaffold(
           backgroundColor: grisLeger,
+          resizeToAvoidBottomInset: false,
           body: Column(
             children: [
               if (!isConnected) ConnectivityBanner(isConnected: isConnected),
@@ -4205,7 +4206,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialog(),
+      builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
     if (signature == null) {

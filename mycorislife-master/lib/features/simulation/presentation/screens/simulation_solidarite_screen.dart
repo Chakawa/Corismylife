@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/sousription_solidarite.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 
 class SolidariteSimulationPage extends StatefulWidget {
@@ -148,6 +149,17 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     setState(() {
       primeTotaleResult = base + conjointSuppl + enfantsSuppl + ascendantsSuppl;
     });
+
+    // Sauvegarder la simulation en base de données
+    if (primeTotaleResult != null && primeTotaleResult! > 0) {
+      SimulationService.saveSimulation(
+        produitNom: 'CORIS SOLIDARITE',
+        typeSimulation: 'Par Capital',
+        capital: selectedCapital?.toDouble(),
+        periodicite: selectedPeriodicite,
+        resultatPrime: primeTotaleResult,
+      );
+    }
   }
 
   String _formatNumber(int number) {

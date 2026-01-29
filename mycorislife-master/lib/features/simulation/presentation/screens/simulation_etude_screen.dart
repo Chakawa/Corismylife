@@ -4,6 +4,7 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class SimulationEtudeScreen extends StatefulWidget {
   const SimulationEtudeScreen({super.key});
@@ -1111,6 +1112,25 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
     }
 
     setState(() => isLoading = false);
+
+    // Sauvegarder la simulation en base de données
+    if (result != null && result! > 0) {
+      int ageEnfant = int.parse(_ageEnfantController.text);
+      int dureeMois = ((17 - ageEnfant) * 12).round();
+      double valeur = double.tryParse(_valeurController.text.replaceAll(' ', '').replaceAll(',', '.')) ?? 0;
+      
+      SimulationService.saveSimulation(
+        produitNom: 'CORIS ETUDE',
+        typeSimulation: selectedOption == 'rente' ? 'Par Prime' : 'Par Rente',
+        age: ageParent,
+        capital: selectedOption == 'rente' ? null : valeur,
+        prime: selectedOption == 'rente' ? valeur : result,
+        dureeMois: dureeMois,
+        periodicite: selectedPeriodicite,
+        resultatPrime: selectedOption == 'rente' ? null : result,
+        resultatCapital: selectedOption == 'rente' ? result : null,
+      );
+    }
   }
 
   Future<double> calculateRente(
