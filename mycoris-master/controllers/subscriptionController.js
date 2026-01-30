@@ -459,6 +459,27 @@ exports.updateSubscription = async (req, res) => {
  * 2. Le paiement est traité (Wave, Orange Money, etc.)
  * 3. Cette fonction est appelée avec le résultat
  * 4. Le statut est mis à jour en conséquence
+ * 
+ * ⚠️ TODO - INTÉGRATION API DE PAIEMENT ⚠️
+ * ==========================================
+ * CETTE FONCTION DOIT ÊTRE MODIFIÉE POUR INTÉGRER L'API DE PAIEMENT
+ * 
+ * Actions à effectuer :
+ * 1. Appeler l'API Wave/Orange Money pour initier le paiement
+ * 2. Récupérer le transaction_id depuis la réponse de l'API
+ * 3. Gérer les callbacks/webhooks de l'API pour le statut final
+ * 4. Mettre à jour automatiquement le statut selon la réponse de l'API
+ * 
+ * APIs à intégrer :
+ * - Wave API: https://developer.wave.com/
+ * - Orange Money API: Documentation fournie par Orange CI
+ * 
+ * Ne pas oublier :
+ * - Clés API (à stocker dans .env)
+ * - Gestion des erreurs API
+ * - Timeouts et retry logic
+ * - Webhooks pour notifications asynchrones
+ * ==========================================
  */
 exports.updatePaymentStatus = async (req, res) => {
   try {
@@ -1315,16 +1336,29 @@ exports.getSubscriptionPDF = async (req, res) => {
     const userRole = req.user.role;
     const codeApporteur = req.user.code_apporteur;
 
+    console.log('📄 getSubscriptionPDF - Demande PDF pour souscription:', id);
+    console.log('👤 Utilisateur:', { userId, userRole, codeApporteur });
+
     // Récupérer la souscription
+    // Si c'est un admin, accès à toutes les souscriptions
     // Si c'est un commercial, vérifier le code_apporteur
     // Si c'est un client, vérifier user_id ou code_apporteur avec téléphone correspondant
     let subResult;
-    if (userRole === 'commercial' && codeApporteur) {
+    if (userRole === 'admin' || userRole === 'superadmin' || userRole === 'super_admin') {
+      console.log('✅ Admin détecté - Accès à toutes les souscriptions');
+      // Les admins peuvent voir toutes les souscriptions
+      subResult = await pool.query(
+        "SELECT * FROM subscriptions WHERE id = $1",
+        [id]
+      );
+    } else if (userRole === 'commercial' && codeApporteur) {
+      console.log('✅ Commercial détecté - Vérification code_apporteur');
       subResult = await pool.query(
         "SELECT * FROM subscriptions WHERE id = $1 AND code_apporteur = $2",
         [id, codeApporteur]
       );
     } else {
+      console.log('✅ Client détecté - Vérification user_id');
       // Pour les clients, vérifier user_id ou code_apporteur avec téléphone correspondant
       const userResult = await pool.query(
         "SELECT telephone FROM users WHERE id = $1",
@@ -1347,7 +1381,10 @@ exports.getSubscriptionPDF = async (req, res) => {
       );
     }
     
+    console.log('📊 Résultat requête:', subResult.rows.length, 'souscription(s) trouvée(s)');
+    
     if (subResult.rows.length === 0) {
+      console.log('❌ Souscription non trouvée pour l\'utilisateur');
       return res.status(404).json({ success: false, message: 'Souscription non trouvée' });
     }
     const subscription = subResult.rows[0];
@@ -2353,12 +2390,12 @@ exports.getSubscriptionPDF = async (req, res) => {
         try {
           console.log('📝 Chargement signature depuis:', absoluteSignaturePath);
           
-          // Padding minimal pour masquer uniquement la bordure tout en maximisant la signature
-          const sigPadding = 3;
+          // Padding équilibré pour masquer les bordures tout en gardant la signature visible
+          const sigPadding = 6;
           const maxWidth = sigWidth - (sigPadding * 2);
           const maxHeight = sigHeight - (sigPadding * 2);
           
-          // Insérer la signature avec padding pour masquer les bordures de capture
+          // Insérer la signature en conservant les proportions (fit) pour éviter la distorsion
           doc.image(absoluteSignaturePath, 
             sigStartX + sigPadding, 
             sigY + sigPadding, 

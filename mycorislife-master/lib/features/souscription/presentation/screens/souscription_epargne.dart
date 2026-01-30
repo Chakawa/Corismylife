@@ -1023,6 +1023,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       final subscriptionData = {
         'product_type': 'coris_epargne_bonus',
+        'montant': _selectedPrime ?? _selectedCapital,  // Ajouté pour l'admin
         'capital': _selectedCapital,
         'prime_mensuelle': _selectedPrime,
         'duree_mois': 180,
@@ -1068,6 +1069,21 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
         subscriptionData['signature'] = base64Encode(_clientSignature!);
+      }
+
+      // Si c'est un commercial, ajouter les infos client
+      if (_isCommercial) {
+        subscriptionData['client_info'] = {
+          'nom': _clientNomController.text.trim(),
+          'prenom': _clientPrenomController.text.trim(),
+          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+          'telephone':
+              '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
+          'email': _clientEmailController.text.trim(),
+          'adresse': _clientAdresseController.text.trim(),
+          'civilite': _selectedClientCivilite,
+          'date_naissance': _clientDateNaissance?.toIso8601String(),
+        };
       }
 
       final http.Response response;

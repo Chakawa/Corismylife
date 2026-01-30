@@ -21,6 +21,8 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   String selectedOption = 'rente';
   String selectedPeriodicite = 'mensuel';
   double? result;
+  double calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double calculatedRente = 0.0;  // Rente calculée (toujours afficher)
   String resultLabel = '';
   bool isLoading = false;
   int? ageParent;
@@ -1085,25 +1087,30 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       }
 
       if (selectedOption == 'rente') {
+        // Utilisateur saisit la prime à verser
         double primeMensuelle = _convertToMensuel(valeur, selectedPeriodicite);
-        result =
-            await calculateRente(ageParentValue, dureeMois, primeMensuelle);
-        if (result == 0) {
+        double rente = await calculateRente(ageParentValue, dureeMois, primeMensuelle);
+        if (rente == 0) {
           showError("Aucune donnée disponible pour cet âge ou cette durée.");
           setState(() => isLoading = false);
           return;
         }
+        calculatedPrime = _convertFromMensuel(primeMensuelle, selectedPeriodicite);
+        calculatedRente = rente;
+        result = rente;
         resultLabel = "Rente annuelle au terme";
       } else {
+        // Utilisateur saisit la rente souhaitée
         double renteSouhaitee = valeur;
-        double primeMensuelle =
-            await calculatePrime(ageParentValue, dureeMois, renteSouhaitee);
+        double primeMensuelle = await calculatePrime(ageParentValue, dureeMois, renteSouhaitee);
         if (primeMensuelle == 0) {
           showError("Aucune donnée disponible pour cet âge ou cette durée.");
           setState(() => isLoading = false);
           return;
         }
-        result = _convertFromMensuel(primeMensuelle, selectedPeriodicite);
+        calculatedPrime = _convertFromMensuel(primeMensuelle, selectedPeriodicite);
+        calculatedRente = renteSouhaitee;
+        result = calculatedPrime;
         resultLabel = "Prime $selectedPeriodicite";
       }
     } catch (e) {
@@ -1905,6 +1912,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Afficher TOUJOURS rente ET prime (pas seulement l'un ou l'autre)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -1913,14 +1921,55 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: vertCoris.withAlpha(25)),
               ),
-              child: Text(
-                '${_formatNumber(result!)} FCFA',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: constraints.maxWidth * 0.06,
-                  fontWeight: FontWeight.bold,
-                  color: vertCoris,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Prime périodique
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Prime $selectedPeriodicite :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(calculatedPrime)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  // Rente annuelle
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Rente annuelle :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(calculatedRente)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: vertCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

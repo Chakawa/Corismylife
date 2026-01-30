@@ -2666,6 +2666,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             const SizedBox(height: 16),
             Container(height: 1, color: Color.fromRGBO(0, 166, 80, 0.3)),
             const SizedBox(height: 16),
+            // Afficher capital ET prime totale
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -2675,7 +2676,33 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                 border: Border.all(color: Color.fromRGBO(0, 166, 80, 0.1)),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Capital couvert
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Capital couvert :',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.035,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(_parseDouble(_capitalController.text.replaceAll(' ', '')))} FCFA',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.04,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  // Prime totale
                   Text(
                     "PRIME TOTALE",
                     style: TextStyle(

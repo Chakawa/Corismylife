@@ -37,6 +37,8 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   Periode _selectedPeriode = Periode.annuel;
   SimulationType _currentSimulation = SimulationType.parCapital;
   double _resultatCalcul = 0.0;
+  double _calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double _calculatedCapital = 0.0; // Capital calculé (toujours afficher)
   bool _calculEffectue = false;
   bool _isLoading = false;
   String _selectedSimulationType = 'Par Capital';
@@ -1227,6 +1229,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           _resultatCalcul = primeAnnuelle * coefficient;
         }
         
+        // Stocker les deux valeurs
+        _calculatedCapital = capital;
+        _calculatedPrime = _resultatCalcul;
+        
         // Enregistrer la simulation dans la base de données
         _saveSimulation(
           typeSimulation: 'Par Capital',
@@ -1273,6 +1279,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           }
           _primeController.text = _formatNumber(prime);
         }
+        
+        // Stocker les deux valeurs
+        _calculatedCapital = _resultatCalcul;
+        _calculatedPrime = prime;
         
         // Enregistrer la simulation dans la base de données
         _saveSimulation(
@@ -2054,6 +2064,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Afficher TOUJOURS capital ET prime (pas seulement l'un ou l'autre)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -2064,14 +2075,55 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     color:
                         vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacé
               ),
-              child: Text(
-                '${_formatNumber(_resultatCalcul)} FCFA',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: vertCoris,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Prime périodique
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Prime ${_getPeriodeText()} :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(_calculatedPrime)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  // Capital garanti
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Capital garanti :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(_calculatedCapital)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: vertCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

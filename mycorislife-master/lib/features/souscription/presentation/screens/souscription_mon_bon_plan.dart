@@ -880,6 +880,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
       final subscriptionData = {
         'product_type': 'mon_bon_plan_coris',
+        'montant': double.parse(_montantCotisationController.text.replaceAll(' ', '')).toInt(),
         'montant_cotisation':
             double.parse(_montantCotisationController.text.replaceAll(' ', ''))
                 .toInt(),

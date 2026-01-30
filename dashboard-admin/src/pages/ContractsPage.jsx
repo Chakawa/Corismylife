@@ -108,20 +108,6 @@ export default function ContractsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Gestion des Contrats</h1>
           <p className="text-gray-600 mt-1">Consultez et exportez tous les contrats d'assurance</p>
         </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={handleExportExcel}
-            className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
-            <Download className="w-5 h-5" />
-            Exporter Excel
-          </button>
-          <button 
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 bg-coris-red text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
-            <FileText className="w-5 h-5" />
-            Exporter PDF
-          </button>
-        </div>
       </div>
 
       {/* Stats Cards */}
@@ -216,18 +202,8 @@ export default function ContractsPage() {
                   <td className="px-6 py-4 text-sm space-x-2 flex">
                       <button 
                         onClick={() => handleViewContract(contract.id)}
-                        className="text-coris-blue hover:bg-blue-50 p-2 rounded transition" title="Voir">
+                        className="text-coris-blue hover:bg-blue-50 p-2 rounded transition" title="Voir détails">
                         <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleUpdateStatus(contract.id, 'actif')}
-                        className="text-green-600 hover:bg-green-50 p-2 rounded transition" title="Activer">
-                        Activer
-                      </button>
-                      <button
-                        onClick={() => handleUpdateStatus(contract.id, 'suspendu')}
-                        className="text-orange-600 hover:bg-orange-50 p-2 rounded transition" title="Suspendre">
-                        Suspendre
                       </button>
                   </td>
                 </tr>

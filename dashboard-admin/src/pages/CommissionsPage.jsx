@@ -81,12 +81,6 @@ export default function CommissionsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Gestion des Commissions & Bordereaux</h1>
           <p className="text-gray-600 mt-1">Consultez les commissions et les numéros de bordereau</p>
         </div>
-        <button 
-          onClick={() => alert('Export Excel en cours de développement...')}
-          className="flex items-center gap-2 bg-coris-green text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
-          <Download className="w-5 h-5" />
-          Exporter Excel
-        </button>
       </div>
 
       {/* Stats Cards */}

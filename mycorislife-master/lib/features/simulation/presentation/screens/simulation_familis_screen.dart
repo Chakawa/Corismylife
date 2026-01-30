@@ -2926,6 +2926,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Afficher TOUJOURS capital ET prime
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -2934,14 +2935,55 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: vertCoris.withAlpha(25)),
               ),
-              child: Text(
-                '${_formatNumber(result!['primeTotal'])} FCFA',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: vertCoris,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Capital garanti
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Capital garanti :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(double.parse(_capitalController.text.replaceAll(' ', '')))} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  // Prime calculée
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Prime ${periodicite == 'unique' ? 'unique' : 'annuelle'} :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(result!['primeTotal'])} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: vertCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

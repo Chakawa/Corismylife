@@ -25,11 +25,21 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState('')
+  const [showProductSelector, setShowProductSelector] = useState(false)
+  const [pendingFile, setPendingFile] = useState(null)
+  const [showExportProductSelector, setShowExportProductSelector] = useState(false)
+  const [selectedExportProduct, setSelectedExportProduct] = useState('')
 
   const handleExportTarifs = async () => {
+    if (!selectedExportProduct) {
+      setShowExportProductSelector(true)
+      return
+    }
+
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await fetch('http://localhost:5000/api/admin/tarifs/export', {
+      const response = await fetch(`http://localhost:5000/api/admin/tarifs/export?product=${selectedExportProduct}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -44,32 +54,48 @@ export default function SettingsPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tarifs_coris_${new Date().toISOString().split('T')[0]}.csv`
+      a.download = `tarifs_${selectedExportProduct.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       
-      alert('Export réussi! Le fichier CSV a été téléchargé (ouvrir avec Excel).')
+      alert(`Export réussi! Les tarifs de ${selectedExportProduct} ont été téléchargés.`)
+      setShowExportProductSelector(false)
+      setSelectedExportProduct('')
     } catch (error) {
       console.error('Erreur export:', error)
       alert('Erreur lors de l\'export des tarifs: ' + error.message)
     }
   }
 
-  const handleImportTarifs = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     
     if (!file.name.match(/\.(xlsx|xls)$/)) {
       alert('Veuillez sélectionner un fichier Excel (.xlsx ou .xls)')
+      e.target.value = ''
+      return
+    }
+    
+    setPendingFile(file)
+    setShowProductSelector(true)
+    e.target.value = ''
+  }
+
+  const handleImportTarifs = async () => {
+    if (!selectedProduct || !pendingFile) {
+      alert('Veuillez sélectionner un produit')
       return
     }
     
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', pendingFile)
+    formData.append('product', selectedProduct)
     
     setImporting(true)
+    setShowProductSelector(false)
     
     try {
       const response = await fetch('http://localhost:5000/api/admin/tarifs/import', {
@@ -83,7 +109,9 @@ export default function SettingsPage() {
       const result = await response.json()
       
       if (response.ok) {
-        alert(`Import réussi! ${result.imported || 0} tarifs importés.`)
+        alert(`Import réussi! ${result.imported || 0} tarifs importés pour le produit ${selectedProduct}.`)
+        setSelectedProduct('')
+        setPendingFile(null)
       } else {
         throw new Error(result.message || 'Erreur lors de l\'import')
       }
@@ -92,7 +120,6 @@ export default function SettingsPage() {
       alert('Erreur lors de l\'import des tarifs: ' + error.message)
     } finally {
       setImporting(false)
-      e.target.value = '' // Reset input
     }
   }
 
@@ -400,9 +427,13 @@ export default function SettingsPage() {
                   type="file" 
                   accept=".xlsx,.xls" 
                   className="hidden"
-                  onChange={handleImportTarifs}
+                  onChange={handleFileSelect}
+                  disabled={importing}
                 />
               </label>
+              {importing && (
+                <p className="text-sm text-gray-600 mt-2">Import en cours...</p>
+              )}
             </div>
           </div>
         </div>
@@ -413,6 +444,99 @@ export default function SettingsPage() {
           </p>
         </div>
       </div>
+
+      {/* Modal de sélection de produit */}
+      {showProductSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sélectionnez le produit</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Pour quel produit souhaitez-vous importer les tarifs ?
+            </p>
+            <select
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-coris-blue mb-4"
+            >
+              <option value="">-- Choisir un produit --</option>
+              <option value="CORIS SERENITE">CORIS SERENITE</option>
+              <option value="CORIS ETUDE">CORIS ETUDE</option>
+              <option value="CORIS RETRAITE">CORIS RETRAITE</option>
+              <option value="CORIS FAMILIS">CORIS FAMILIS</option>
+              <option value="CORIS SOLIDARITE">CORIS SOLIDARITE</option>
+              <option value="FLEX EMPRUNTEUR">FLEX EMPRUNTEUR</option>
+              <option value="CORIS EPARGNE BONUS">CORIS EPARGNE BONUS</option>
+              <option value="CORIS ASSURE PRESTIGE">CORIS ASSURE PRESTIGE</option>
+              <option value="MON BON PLAN CORIS">MON BON PLAN CORIS</option>
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowProductSelector(false)
+                  setSelectedProduct('')
+                  setPendingFile(null)
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleImportTarifs}
+                disabled={!selectedProduct}
+                className="px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Importer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de sélection de produit pour export */}
+      {showExportProductSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sélectionnez le produit à exporter</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Choisissez le produit dont vous souhaitez exporter les tarifs
+            </p>
+            <select
+              value={selectedExportProduct}
+              onChange={(e) => setSelectedExportProduct(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-coris-blue mb-4"
+            >
+              <option value="">-- Choisir un produit --</option>
+              <option value="CORIS SERENITE">CORIS SERENITE</option>
+              <option value="CORIS ETUDE">CORIS ETUDE</option>
+              <option value="CORIS RETRAITE">CORIS RETRAITE</option>
+              <option value="CORIS FAMILIS">CORIS FAMILIS</option>
+              <option value="CORIS SOLIDARITE">CORIS SOLIDARITE</option>
+              <option value="FLEX EMPRUNTEUR">FLEX EMPRUNTEUR</option>
+              <option value="CORIS EPARGNE BONUS">CORIS EPARGNE BONUS</option>
+              <option value="CORIS ASSURE PRESTIGE">CORIS ASSURE PRESTIGE</option>
+              <option value="MON BON PLAN CORIS">MON BON PLAN CORIS</option>
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowExportProductSelector(false)
+                  setSelectedExportProduct('')
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleExportTarifs}
+                disabled={!selectedExportProduct}
+                className="px-4 py-2 bg-coris-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Exporter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="flex gap-3">

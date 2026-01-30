@@ -458,8 +458,6 @@ async function logout(userId, ipAddress = 'api-request') {
  * Permet à un utilisateur de changer son propre mot de passe
  * Nécessite l'ancien mot de passe pour vérification
  */
-const { notifyPasswordChanged } = require('../services/notificationHelper');
-
 const changePassword = async (req, res) => {
   try {
     const userId = req.user.id; // From JWT token via verifyToken middleware
@@ -509,13 +507,6 @@ const changePassword = async (req, res) => {
     );
 
     console.log(`✅ Password changed successfully for user ${userId} (${user.email})`);
-
-    // 🔔 NOTIFICATION : Changement de mot de passe
-    try {
-      await notifyPasswordChanged(userId);
-    } catch (notifError) {
-      console.error('❌ Erreur notification changement mot de passe:', notifError.message);
-    }
 
     return res.status(200).json({ 
       success: true, 

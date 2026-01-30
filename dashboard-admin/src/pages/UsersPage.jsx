@@ -392,39 +392,7 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">
                         {(() => {
-                          const now = new Date();
-                          const lastConnexion = user.derniere_connexion ? new Date(user.derniere_connexion) : null;
-                          const lastDeconnexion = user.derniere_deconnexion ? new Date(user.derniere_deconnexion) : null;
-                          
-                          // Timeout de 5 minutes (300000 ms)
-                          const TIMEOUT_MS = 5 * 60 * 1000;
-                          
-                          // L'utilisateur est connecté si:
-                          // 1. Il a une connexion ET pas de déconnexion
-                          // 2. OU la connexion est plus récente que la déconnexion
-                          // 3. ET la dernière activité (connexion) est dans les 5 dernières minutes
-                          const hasRecentActivity = lastConnexion && (now - lastConnexion) < TIMEOUT_MS;
-                          const isConnected = lastConnexion && 
-                            (!lastDeconnexion || lastConnexion > lastDeconnexion) &&
-                            hasRecentActivity;
-                          
-                          // Fonction pour formater la date (correction timezone)
-                          // Le serveur PostgreSQL stocke les dates en heure locale (UTC+1)
-                          // mais JavaScript les interprète comme UTC, donc on doit soustraire 1h
-                          const formatLocalDate = (dateString) => {
-                            if (!dateString) return null;
-                            const date = new Date(dateString);
-                            // Soustraire 1 heure pour afficher l'heure correcte de Côte d'Ivoire
-                            date.setHours(date.getHours() - 1);
-                            return date.toLocaleString('fr-FR', { 
-                              day: '2-digit', 
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            });
-                          };
-                          
+                          const isConnected = user.derniere_connexion && (!user.derniere_deconnexion || new Date(user.derniere_connexion) > new Date(user.derniere_deconnexion));
                           return (
                             <>
                               <div className={`h-3 w-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} 
@@ -433,8 +401,13 @@ export default function UsersPage() {
                                 <span className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
                                   {isConnected ? '🟢 En ligne' : '⚫ Hors ligne'}
                                 </span>
-                                <span className="text-xs text-gray-500" title={isConnected ? 'Dernière connexion' : 'Aucune connexion'}>
-                                  {user.derniere_connexion ? formatLocalDate(user.derniere_connexion) : 'Jamais'}
+                                <span className="text-xs text-gray-500">
+                                  {user.derniere_connexion ? new Date(user.derniere_connexion).toLocaleString('fr-FR', { 
+                                    day: '2-digit', 
+                                    month: '2-digit',
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  }) : 'Jamais'}
                                 </span>
                               </div>
                             </>
@@ -445,21 +418,14 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {user.derniere_deconnexion ? (
                         <span className="text-xs">
-                          {(() => {
-                            const date = new Date(user.derniere_deconnexion);
-                            date.setHours(date.getHours() - 1);
-                            return date.toLocaleString('fr-FR', { 
-                              day: '2-digit', 
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            });
-                          })()}
+                          {new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
+                            day: '2-digit', 
+                            month: '2-digit',
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
                         </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
+                      ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
                       {new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}

@@ -114,10 +114,6 @@ export default function SimulationsPage() {
           <h1 className="text-3xl font-bold text-gray-800">Simulations</h1>
           <p className="text-gray-600 mt-1">Analyse des simulations effectuées par les clients</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-dark transition">
-          <Download className="w-4 h-4" />
-          Exporter
-        </button>
       </div>
 
       {/* Filtres */}
@@ -167,19 +163,19 @@ export default function SimulationsPage() {
             placeholder="Date fin"
           />
         </div>
-        <div className="mt-4 flex gap-2">
+        <div className="flex gap-2 mt-4">
           <button
             onClick={applyFilters}
-            className="px-6 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-dark transition"
+            className="px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Appliquer
+            Appliquer les filtres
           </button>
           <button
             onClick={() => {
               setFilters({ produit: '', type_simulation: '', date_debut: '', date_fin: '' })
               loadData()
             }}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
           >
             Réinitialiser
           </button>

@@ -776,6 +776,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       // Préparer les données de souscription spécifiques à Coris Assure Prestige
       final subscriptionData = {
         'product_type': 'coris_assure_prestige',
+        'montant': double.parse(_montantVersementController.text.replaceAll(' ', '')).toInt(),
         'versement_initial':
             double.parse(_montantVersementController.text.replaceAll(' ', ''))
                 .toInt(),

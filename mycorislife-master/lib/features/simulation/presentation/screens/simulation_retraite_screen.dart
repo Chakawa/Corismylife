@@ -5,7 +5,6 @@ import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
 import 'package:mycorislife/services/local_data_service.dart';
-import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
 class CorisRetraiteScreen extends StatefulWidget {
   const CorisRetraiteScreen({super.key});
@@ -21,6 +20,8 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   String selectedOption = 'capital';
   String selectedPeriodicite = 'annuel';
   double? result;
+  double calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double calculatedCapital = 0.0; // Capital calculé (toujours afficher)
   String resultLabel = '';
   bool isLoading = false;
   bool _useLocalData = false;
@@ -858,17 +859,21 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       }
 
       if (selectedOption == 'capital') {
-        double calculatedPremium =
-            await calculatePremium(duree, selectedPeriodicite, montant);
-        if (calculatedPremium != -1) {
-          result = calculatedPremium;
+        // Utilisateur saisit le capital souhaité
+        calculatedCapital = montant;
+        double premium = await calculatePremium(duree, selectedPeriodicite, montant);
+        if (premium != -1) {
+          calculatedPrime = premium;
+          result = premium;
           resultLabel = "Prime $selectedPeriodicite à verser";
         }
       } else {
-        double calculatedCapital =
-            await calculateCapital(duree, selectedPeriodicite, montant);
-        if (calculatedCapital != -1) {
-          result = calculatedCapital;
+        // Utilisateur saisit la prime qu'il peut verser
+        calculatedPrime = montant;
+        double capital = await calculateCapital(duree, selectedPeriodicite, montant);
+        if (capital != -1) {
+          calculatedCapital = capital;
+          result = capital;
           resultLabel = "Capital estimé au terme";
         }
       }
@@ -878,23 +883,6 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     }
 
     setState(() => isLoading = false);
-
-    // Sauvegarder la simulation en base de données
-    if (result != null && result! > 0) {
-      int duree = int.tryParse(_dureeController.text) ?? 0;
-      double montant = double.tryParse(_valeurController.text.replaceAll(' ', '').replaceAll(',', '')) ?? 0;
-      
-      SimulationService.saveSimulation(
-        produitNom: 'CORIS RETRAITE',
-        typeSimulation: selectedOption == 'capital' ? 'Par Capital' : 'Par Prime',
-        dureeMois: duree * 12, // Convertir années en mois
-        capital: selectedOption == 'capital' ? montant : result,
-        prime: selectedOption == 'capital' ? result : montant,
-        periodicite: selectedPeriodicite,
-        resultatPrime: selectedOption == 'capital' ? result : null,
-        resultatCapital: selectedOption == 'capital' ? null : result,
-      );
-    }
   }
 
   Widget _buildModernHeader() {
@@ -1304,6 +1292,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Afficher TOUJOURS capital ET prime (pas seulement l'un ou l'autre)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -1312,14 +1301,55 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Color.fromRGBO(0, 166, 80, 0.1)),
               ),
-              child: Text(
-                '${_formatNumber(result!)} FCFA',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: vertCoris,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Prime périodique
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Prime $selectedPeriodicite :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(calculatedPrime)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bleuCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  // Capital au terme
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Capital au terme :',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(calculatedCapital)} FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: vertCoris,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

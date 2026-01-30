@@ -2697,6 +2697,27 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
+    // ⚠️ TODO - INTÉGRATION API DE PAIEMENT ⚠️
+    // ==========================================
+    // Cette section valide les champs de paiement mais N'APPELLE PAS encore l'API réelle.
+    // 
+    // Actions à effectuer pour l'intégration :
+    // 1. Importer les packages SDK Wave/Orange Money
+    // 2. Initialiser les clients API avec les clés (depuis .env ou config)
+    // 3. Appeler l'API de paiement après validation des champs
+    // 4. Gérer les réponses : succès, échec, timeout
+    // 5. Afficher un loader pendant le traitement
+    // 6. Rediriger vers la confirmation ou afficher l'erreur
+    // 
+    // Exemple de flux :
+    // - Wave : WavePaymentService.initiatePayment(phone, amount)
+    // - Orange Money : OrangeMoneyService.requestPayment(phone, amount)
+    // 
+    // Documentation :
+    // - Wave API: https://developer.wave.com/
+    // - Orange Money API: Contact Orange CI
+    // ==========================================
+
     if (_selectedModePaiement == null) {
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;

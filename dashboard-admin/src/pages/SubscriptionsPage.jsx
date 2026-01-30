@@ -19,7 +19,27 @@ export default function SubscriptionsPage() {
   function mapSubscription(sub) {
     const data = sub?.souscriptiondata || {}
     const clientInfo = data.client_info || {}
-    const montant = sub?.montant ?? data.montant ?? data.prime_totale ?? data.montant_total ?? data.prime ?? null
+    
+    // Extraire le montant selon le produit
+    let montant = sub?.montant ?? data.montant ?? data.prime_totale ?? data.montant_total ?? data.prime ?? null
+    
+    // Pour Assure Prestige : versement_initial
+    if (!montant && data.versement_initial) {
+      montant = data.versement_initial
+    }
+    
+    // Pour Mon Bon Plan : montant_cotisation
+    if (!montant && data.montant_cotisation) {
+      montant = data.montant_cotisation
+    }
+    
+    // Pour Epargne Bonus : prime_mensuelle ou capital
+    if (!montant && data.prime_mensuelle) {
+      montant = data.prime_mensuelle
+    }
+    if (!montant && data.capital) {
+      montant = data.capital
+    }
 
     return {
       ...sub,
@@ -78,6 +98,46 @@ export default function SubscriptionsPage() {
     return new Date(date).toLocaleDateString('fr-FR')
   }
 
+  const handleDownloadPDF = async (subscription) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) {
+        throw new Error('Vous devez être connecté pour télécharger le PDF')
+      }
+      
+      const response = await fetch(`http://127.0.0.1:5000/api/subscriptions/${subscription.id}/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        // Essayer de lire le message d'erreur du serveur
+        let errorMessage = 'Erreur lors du téléchargement du PDF'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `souscription_${subscription.numero_souscription || subscription.id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Erreur téléchargement PDF:', error)
+      alert(`Erreur: ${error.message}`)
+    }
+  }
+
   const formatMontant = (montant) => {
     if (!montant && montant !== 0) return 'N/A'
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(montant)
@@ -108,22 +168,6 @@ export default function SubscriptionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Souscriptions</h1>
           <p className="text-gray-600 mt-1">Consultation des souscriptions</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportExcel}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-          >
-            <Download className="w-4 h-4" />
-            Export Excel
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-          >
-            <FileText className="w-4 h-4" />
-            Export PDF
-          </button>
         </div>
       </div>
 
@@ -223,16 +267,25 @@ export default function SubscriptionsPage() {
                       {getStatusBadge(sub.statut)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <button
-                        onClick={() => {
-                          setSelectedSubscription(sub)
-                          setShowViewModal(true)
-                        }}
-                        className="text-coris-blue hover:bg-blue-50 p-2 rounded transition"
-                        title="Voir détails"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedSubscription(sub)
+                            setShowViewModal(true)
+                          }}
+                          className="text-coris-blue hover:bg-blue-50 p-2 rounded transition"
+                          title="Voir détails"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDownloadPDF(sub)}
+                          className="text-green-600 hover:bg-green-50 p-2 rounded transition"
+                          title="Télécharger PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
