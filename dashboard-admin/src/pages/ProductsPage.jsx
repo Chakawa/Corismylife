@@ -136,7 +136,7 @@ export default function ProductsPage() {
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-gray-600 text-sm mb-1">Catégories</p>
-          <p className="text-3xl font-bold text-coris-orange">7</p>
+          <p className="text-3xl font-bold text-coris-orange">10</p>
         </div>
       </div>
 

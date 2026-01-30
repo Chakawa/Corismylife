@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { dashboardService } from '../services/api.service'
-import { Link } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Users,
   FileText,
