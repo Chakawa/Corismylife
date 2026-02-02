@@ -516,6 +516,59 @@ router.get('/profile', verifyToken, async (req, res) => {
   }
 });
 
+// Route alias pour /me (utilise la même logique que /profile)
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🔍 Route /me - Recherche utilisateur ID:', userId);
+    
+    const query = `
+      SELECT 
+        id, 
+        email, 
+        COALESCE(nom, '') as nom, 
+        COALESCE(prenom, '') as prenom,
+        COALESCE(civilite, '') as civilite,
+        date_naissance, 
+        COALESCE(lieu_naissance, '') as lieu_naissance,
+        COALESCE(telephone, '') as telephone,
+        COALESCE(adresse, '') as adresse,
+        COALESCE(pays, '') as pays,
+        role,
+        created_at
+      FROM users 
+      WHERE id = $1
+    `;
+    
+    const result = await pool.query(query, [userId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    const userData = result.rows[0];
+    console.log('✅ Route /me - Données utilisateur:', userData);
+
+    // Formater la date si elle existe
+    if (userData.date_naissance) {
+      userData.date_naissance = userData.date_naissance.toISOString().split('T')[0];
+    }
+
+    res.json(userData);
+    
+  } catch (error) {
+    console.error('❌ Erreur route /me:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Erreur interne'
+    });
+  }
+});
+
 // =========================
 // 2FA (OTP) Endpoints
 // =========================

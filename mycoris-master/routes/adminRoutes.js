@@ -1631,4 +1631,59 @@ router.post('/tarifs/import', async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/admin/update-profile
+ * Met à jour le profil de l'admin connecté
+ */
+router.put('/update-profile', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { email, telephone, address, city, country } = req.body;
+
+    console.log('📝 Mise à jour profil admin:', { userId, email, telephone, address, city, country });
+
+    // Mettre à jour les informations de l'utilisateur (utiliser les noms de colonnes français)
+    const updateQuery = `
+      UPDATE users 
+      SET 
+        email = COALESCE($1, email),
+        telephone = COALESCE($2, telephone),
+        adresse = $3,
+        pays = $4,
+        updated_at = NOW()
+      WHERE id = $5
+      RETURNING id, nom, prenom, email, telephone, adresse, pays, role
+    `;
+
+    const result = await pool.query(updateQuery, [
+      email,
+      telephone,
+      address,
+      country,
+      userId
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Utilisateur non trouvé' 
+      });
+    }
+
+    console.log('✅ Profil admin mis à jour:', result.rows[0]);
+
+    res.json({
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error('❌ Erreur mise à jour profil admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour du profil' 
+    });
+  }
+});
+
 module.exports = router;
