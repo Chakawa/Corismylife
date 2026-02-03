@@ -3,6 +3,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> subscription;
@@ -136,7 +137,49 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   Future<void> _processPayment(String paymentMethod) async {
     if (_isProcessingPayment) return;
 
-    // Afficher message en cours de développement
+    // Si c'est CORIS Money, afficher le modal de paiement
+    if (paymentMethod == 'CORIS Money') {
+      // Extraire le montant depuis souscriptiondata
+      final souscriptionData = _fullSubscriptionData?['souscriptiondata'] as Map<String, dynamic>? ?? {};
+      double montant = 0.0;
+
+      // Essayer de récupérer le montant selon le produit
+      montant = (souscriptionData['prime_totale'] ?? 
+                 souscriptionData['montant_total'] ?? 
+                 souscriptionData['prime'] ??
+                 souscriptionData['montant'] ??
+                 souscriptionData['versement_initial'] ??
+                 souscriptionData['montant_cotisation'] ??
+                 souscriptionData['prime_mensuelle'] ??
+                 souscriptionData['capital'] ?? 0.0).toDouble();
+
+      final subscriptionId = widget.subscription['id'];
+      final productType = widget.subscription['product_type'] ?? widget.subscription['produit_type'] ?? 'Souscription';
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => CorisMoneyPaymentModal(
+          subscriptionId: subscriptionId,
+          montant: montant,
+          description: 'Paiement $productType #$subscriptionId',
+          onPaymentSuccess: () {
+            // Rafraîchir les données après paiement réussi
+            _loadFullSubscriptionData();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Paiement effectué ! La proposition est devenue un contrat.'),
+                backgroundColor: vertSucces,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
+        ),
+      );
+      return;
+    }
+
+    // Afficher message en cours de développement pour les autres méthodes
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -144,7 +187,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             const Icon(Icons.construction, color: blanc, size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('Paiement via $paymentMethod - Fonctionnalité en cours de développement'),
+              child: Text('$paymentMethod bientôt disponible - Utilisez CORIS Money pour le moment'),
             ),
           ],
         ),
@@ -152,60 +195,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         duration: const Duration(seconds: 3),
       ),
     );
-
-    /* Code original commenté pour future intégration API
-    setState(() {
-      _isProcessingPayment = true;
-    });
-
-    try {
-      final subscriptionId = widget.subscription['id'];
-      final paymentSuccess = await _simulatePayment(paymentMethod);
-
-      await _service.updatePaymentStatus(
-        subscriptionId,
-        paymentSuccess,
-        paymentMethod: paymentMethod,
-      );
-
-      if (mounted) {
-        setState(() {
-          _isProcessingPayment = false;
-        });
-
-        if (paymentSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Paiement effectué avec succès. La proposition est devenue un contrat.'),
-              backgroundColor: vertSucces,
-            ),
-          );
-          // Recharger les données
-          _loadFullSubscriptionData();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Paiement échoué. Veuillez réessayer.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isProcessingPayment = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du paiement: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-    */
   }
 
   void _viewDocument(String documentName, [String? displayLabel]) {

@@ -8,6 +8,7 @@ import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'dart:convert';
@@ -5448,6 +5449,70 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   void _processPayment(String paymentMethod) async {
     if (!mounted) return;
+
+    // ✅ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        // Afficher loading pendant la sauvegarde initiale
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: bleuCoris),
+          ),
+        );
+
+        // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
+        final subscriptionId = await _saveSubscriptionData();
+
+        // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
+        if (_questionnaireMedicalReponses.isNotEmpty) {
+          try {
+            final questionnaireService = QuestionnaireMedicalService();
+            await questionnaireService.saveReponses(
+              subscriptionId: subscriptionId,
+              reponses: _questionnaireMedicalReponses,
+            );
+            debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          } catch (e) {
+            debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+          }
+        }
+
+        // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+        if (_pieceIdentite != null) {
+          await _uploadDocument(subscriptionId);
+        }
+
+        if (mounted) {
+          Navigator.pop(context); // Fermer le loading
+
+          // Afficher le modal CorisMoney pour le paiement
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => CorisMoneyPaymentModal(
+              subscriptionId: subscriptionId,
+              montant: _calculatedPrime,
+              description: 'Souscription CORIS SÉRÉNITÉ #$subscriptionId',
+              onPaymentSuccess: () async {
+                // Le paiement a réussi via CorisMoney
+                // Afficher le dialogue de succès
+                _showSuccessDialog(true); // Contrat activé
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context);
+          _showErrorSnackBar('Erreur lors de la création de la souscription: $e');
+        }
+      }
+      return;
+    }
+
+    // ✅ POUR LES AUTRES MODES DE PAIEMENT (Wave, Orange Money, Virement, etc.)
     showDialog(
         context: context,
         barrierDismissible: false,
@@ -5476,7 +5541,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         await _uploadDocument(subscriptionId);
       }
 
-      // ÉTAPE 2: Simuler le paiement
+      // ÉTAPE 2: Simuler le paiement (pour Wave, Orange Money, etc.)
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
       // ÉTAPE 3: Mettre à jour le statut selon le résultat du paiement

@@ -48,6 +48,7 @@ app.use('/api/commercial', require('./routes/commercialRoutes'));
 app.use('/api/password-reset', require('./routes/passwordResetRoutes'));
 app.use('/api/commissions', require('./routes/commissionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
 app.get('/api/config/support', (_, res) => {
   res.json({ success: true, phone: process.env.SUPPORT_PHONE || '+2250700000000' });
 });

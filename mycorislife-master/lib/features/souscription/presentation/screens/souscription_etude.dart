@@ -14,6 +14,7 @@ import 'package:mycorislife/features/souscription/presentation/widgets/questionn
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -2564,6 +2565,60 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // ⚠️ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        // 1. Sauvegarder d'abord la souscription en tant que 'proposition'
+        final subscriptionId = await _saveSubscriptionData();
+
+        // 2. Sauvegarder le questionnaire médical si présent
+        if (_questionnaireMedicalReponses.isNotEmpty) {
+          try {
+            final questionnaireService = QuestionnaireMedicalService();
+            await questionnaireService.saveReponses(
+              subscriptionId: subscriptionId,
+              reponses: _questionnaireMedicalReponses,
+            );
+          } catch (e) {
+            debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+          }
+        }
+
+        // 3. Upload du document si présent
+        if (_pieceIdentite != null) {
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document: $uploadError');
+          }
+        }
+
+        // 4. Afficher le modal de paiement CorisMoney
+        if (!mounted) return;
+        
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => CorisMoneyPaymentModal(
+            subscriptionId: subscriptionId,
+            montant: _primeCalculee,
+            description: 'Paiement prime CORIS ÉTUDE',
+            onPaymentSuccess: () {
+              // Le modal se ferme automatiquement
+              // Afficher le message de succès
+              _showSuccessDialog(true);
+            },
+          ),
+        );
+        
+        return; // Sortir de la fonction
+      } catch (e) {
+        _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
+        return;
+      }
+    }
+
+    // 👇 POUR LES AUTRES MÉTHODES DE PAIEMENT (Wave, Orange Money)
     // Éviter les soumissions multiples
     if (_isProcessing) return;
 

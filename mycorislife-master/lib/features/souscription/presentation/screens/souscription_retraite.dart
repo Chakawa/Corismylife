@@ -13,6 +13,7 @@ import '../../../../services/local_data_service.dart';
 import '../../../../core/widgets/subscription_recap_widgets.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 // Enum pour le type de simulation
 enum SimulationType { parPrime, parCapital }
@@ -4367,6 +4368,45 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // ✅ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        // 1. Sauvegarder la souscription
+        final subscriptionId = await _saveSubscriptionData();
+
+        // 2. Upload document si présent
+        if (_pieceIdentite != null) {
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document: $uploadError');
+          }
+        }
+
+        // 3. Afficher le modal CorisMoney
+        if (!mounted) return;
+        
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => CorisMoneyPaymentModal(
+            subscriptionId: subscriptionId,
+            montant: _calculatedPrime,
+            description: 'Paiement prime CORIS RETRAITE',
+            onPaymentSuccess: () {
+              _showSuccessDialog(true);
+            },
+          ),
+        );
+        
+        return;
+      } catch (e) {
+        _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
+        return;
+      }
+    }
+
+    // 👇 AUTRES MÉTHODES
     if (!mounted) return;
     showDialog(
         context: context,

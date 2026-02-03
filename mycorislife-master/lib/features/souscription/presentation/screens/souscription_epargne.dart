@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -1140,6 +1141,43 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // Si CORIS Money est sélectionné, utiliser le modal de paiement
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        final subscriptionId = await _saveSubscriptionData();
+
+        // Upload du document pièce d'identité si présent
+        if (_pieceIdentite != null) {
+          await _uploadDocument(subscriptionId);
+        }
+
+        // Afficher le modal de paiement CorisMoney
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => CorisMoneyPaymentModal(
+              subscriptionId: subscriptionId,
+              montant: _selectedPrime?.toDouble() ?? 0.0,
+              description: 'Paiement prime CORIS ÉPARGNE',
+              onPaymentSuccess: () {
+                if (mounted) {
+                  Navigator.pop(context);
+                  _showSuccessDialog(true);
+                }
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Erreur lors du processus: $e');
+        if (mounted) {
+          _showErrorSnackBar('Erreur lors du traitement: $e');
+        }
+      }
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,

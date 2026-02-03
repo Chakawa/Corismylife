@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
@@ -1019,6 +1020,54 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     setState(() {
       _isProcessing = true;
     });
+
+    // Si CORIS Money est sélectionné, utiliser le modal de paiement
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        // ÉTAPE 1: Sauvegarder la souscription
+        final subscriptionId = await _saveSubscriptionData();
+
+        // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+        if (_pieceIdentite != null) {
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          }
+        }
+
+        // Afficher le modal de paiement CorisMoney
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => CorisMoneyPaymentModal(
+              subscriptionId: subscriptionId,
+              montant: double.tryParse(_montantCotisationController.text.replaceAll(' ', '')) ?? 0.0,
+              description: 'Paiement prime CORIS MON BON PLAN',
+              onPaymentSuccess: () {
+                if (mounted) {
+                  Navigator.pop(context);
+                  _showSuccessDialog(true);
+                }
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Erreur lors du processus: $e');
+        if (mounted) {
+          _showErrorSnackBar('Erreur lors du traitement: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      }
+      return;
+    }
 
     showDialog(
       context: context,

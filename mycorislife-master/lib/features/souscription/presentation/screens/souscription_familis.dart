@@ -13,6 +13,7 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 /// Page de souscription pour le produit CORIS FAMILIS
 /// Permet de souscrire à une assurance famille
@@ -3742,6 +3743,60 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // ✅ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    if (paymentMethod == 'CORIS Money') {
+      try {
+        // 1. Sauvegarder d'abord la souscription en tant que 'proposition'
+        final subscriptionId = await _saveSubscriptionData();
+
+        // 2. Sauvegarder le questionnaire médical si présent
+        if (_questionnaireMedicalReponses.isNotEmpty) {
+          try {
+            final questionnaireService = QuestionnaireMedicalService();
+            await questionnaireService.saveReponses(
+              subscriptionId: subscriptionId,
+              reponses: _questionnaireMedicalReponses,
+            );
+          } catch (e) {
+            debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+          }
+        }
+
+        // 3. Upload du document si présent
+        if (_pieceIdentite != null) {
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document: $uploadError');
+          }
+        }
+
+        // 4. Afficher le modal de paiement CorisMoney
+        if (!mounted) return;
+        
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => CorisMoneyPaymentModal(
+            subscriptionId: subscriptionId,
+            montant: _calculatedPrime ?? 0.0,
+            description: 'Paiement prime CORIS FAMILIS',
+            onPaymentSuccess: () {
+              // Le modal se ferme automatiquement
+              // Afficher le message de succès
+              _showSuccessDialog(true);
+            },
+          ),
+        );
+        
+        return; // Sortir de la fonction
+      } catch (e) {
+        _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
+        return;
+      }
+    }
+
+    // 👇 POUR LES AUTRES MÉTHODES DE PAIEMENT (Wave, Orange Money)
     if (!mounted) return;
     showDialog(
       context: context,

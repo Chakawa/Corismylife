@@ -4,6 +4,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/models/subscription.dart';
 import 'package:mycorislife/features/client/presentation/screens/proposition_detail_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 /// ============================================
 /// PAGE DES PROPOSITIONS
@@ -1013,52 +1014,93 @@ class _PropositionsPageState extends State<PropositionsPage>
   void _processPayment(Subscription subscription, String paymentMethod) {
     Navigator.pop(context); // Fermer le bottom sheet
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF59E0B), // orangeWarning
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.construction, color: Colors.white, size: 24),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Fonctionnalité en cours de développement',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Le paiement sera bientôt disponible',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+    // Si c'est CORIS Money, afficher le modal de paiement
+    if (paymentMethod == 'CORIS Money') {
+      // Extraire le montant depuis souscriptionData
+      final souscriptionData = subscription.souscriptionData;
+      double montant = 0.0;
+
+      // Essayer de récupérer le montant selon le produit
+      if (souscriptionData != null) {
+        montant = (souscriptionData['prime_totale'] ?? 
+                   souscriptionData['montant_total'] ?? 
+                   souscriptionData['prime'] ??
+                   souscriptionData['montant'] ??
+                   souscriptionData['versement_initial'] ??
+                   souscriptionData['montant_cotisation'] ??
+                   souscriptionData['prime_mensuelle'] ??
+                   souscriptionData['capital'] ?? 0.0).toDouble();
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => CorisMoneyPaymentModal(
+          subscriptionId: subscription.id,
+          montant: montant,
+          description: 'Paiement ${subscription.produitNom} #${subscription.id}',
+          onPaymentSuccess: () {
+            // Rafraîchir la liste après paiement réussi
+            _loadPropositions();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Votre proposition a été transformée en contrat !'),
+                backgroundColor: Color(0xFF10B981),
+                duration: Duration(seconds: 3),
               ),
-            ],
-          ),
+            );
+          },
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
-      ),
-    );
+      );
+    } else {
+      // Pour les autres modes de paiement (Wave, Orange Money)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B), // orangeWarning
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.construction, color: Colors.white, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$paymentMethod bientôt disponible',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Utilisez CORIS Money pour le moment',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   void _showFilterMenu() {
