@@ -10,11 +10,24 @@ class CorisMoneyService {
     this.clientSecret = process.env.CORIS_MONEY_CLIENT_SECRET || '';
     this.codePv = process.env.CORIS_MONEY_CODE_PV || '';
     
+    // Mode développement - Simule les réponses sans appeler l'API
+    this.devMode = process.env.CORIS_MONEY_DEV_MODE === 'true';
+    this.devOTP = process.env.CORIS_MONEY_DEV_OTP || '123456';
+    
     // Agent HTTPS pour ignorer les erreurs de certificat en environnement de test
     // IMPORTANT: À désactiver en production !
     this.httpsAgent = new https.Agent({
       rejectUnauthorized: process.env.NODE_ENV === 'production' ? true : false
     });
+
+    if (this.devMode) {
+      console.log('🧪 ═══════════════════════════════════════════════════════════');
+      console.log('🧪 MODE DÉVELOPPEMENT CORISMONEY ACTIVÉ');
+      console.log('🧪 Les paiements seront SIMULÉS (aucun appel API réel)');
+      console.log('🧪 Code OTP de test: ' + this.devOTP);
+      console.log('🧪 Pour activer l\'API réelle: CORIS_MONEY_DEV_MODE=false dans .env');
+      console.log('🧪 ═══════════════════════════════════════════════════════════');
+    }
   }
 
   /**
@@ -34,6 +47,11 @@ class CorisMoneyService {
    * @throws {Error} Si les identifiants ne sont pas configurés
    */
   checkCredentials() {
+    // En mode dev, on n'a pas besoin des vrais identifiants
+    if (this.devMode) {
+      return true;
+    }
+    
     if (!this.clientId || !this.clientSecret || !this.codePv) {
       throw new Error('Identifiants CorisMoney non configurés. Veuillez configurer CORIS_MONEY_CLIENT_ID, CORIS_MONEY_CLIENT_SECRET et CORIS_MONEY_CODE_PV dans le fichier .env');
     }
@@ -48,9 +66,36 @@ class CorisMoneyService {
   async sendOTP(codePays, telephone) {
     this.checkCredentials();
 
-    // Hachage: codePays+telephone+clientSecret
+    console.log('📱 ===== ENVOI CODE OTP CORISMONEY =====');
+    console.log('Code Pays:', codePays);
+    console.log('Téléphone:', telephone);
+
+    // MODE DÉVELOPPEMENT - Simulation
+    if (this.devMode) {
+      console.log('🧪 MODE DEV: Simulation d\'envoi OTP');
+      console.log('🔐 ═══════════════════════════════════════');
+      console.log('🔐 CODE OTP DE TEST: ' + this.devOTP);
+      console.log('🔐 ═══════════════════════════════════════');
+      console.log('✅ Simulation réussie');
+      
+      return {
+        success: true,
+        data: {
+          msg: "Code OTP envoyé avec succès (MODE DEV)",
+          codeOTP: this.devOTP,
+          transactionId: 'DEV-' + Date.now(),
+          text: "Code envoyé (simulation)"
+        },
+        message: 'Code OTP envoyé avec succès (MODE DEV)'
+      };
+    }
+
+    // MODE PRODUCTION - Appel API réel
     const hashString = `${codePays}${telephone}${this.clientSecret}`;
     const hashParam = this.getHash256(hashString);
+
+    console.log('Hash généré:', hashParam.substring(0, 20) + '...');
+    console.log('URL:', `${this.baseURL}/send-code-otp`);
 
     try {
       const response = await axios.post(
@@ -70,13 +115,45 @@ class CorisMoneyService {
         }
       );
 
+      console.log('📦 Réponse reçue de CorisMoney:');
+      console.log(JSON.stringify(response.data, null, 2));
+
+      // Vérifier si la réponse contient une erreur
+      if (response.data.msg && response.data.msg.toLowerCase().includes('erroné')) {
+        console.error('❌ ERREUR CORISMONEY: Paramètres erronés !');
+        console.error('💡 SOLUTION: Vérifiez que:');
+        console.error('   - Le numéro ne commence pas par 0 (ex: 576097537 et non 0576097537)');
+        console.error('   - Le code pays est correct (225 pour Côte d\'Ivoire)');
+        console.error('   - Les identifiants CLIENT_ID et CLIENT_SECRET sont valides');
+        return {
+          success: false,
+          error: response.data.msg,
+          message: 'Paramètres erronés. Vérifiez le format du numéro de téléphone (sans le 0 initial).'
+        };
+      }
+
+      // Si le code OTP est présent dans la réponse (mode développement)
+      if (response.data.codeOTP) {
+        console.log('🔐 ═══════════════════════════════════════');
+        console.log('🔐 CODE OTP REÇU: ' + response.data.codeOTP);
+        console.log('🔐 ═══════════════════════════════════════');
+      }
+
+      // Si un transactionId est présent
+      if (response.data.transactionId) {
+        console.log('📝 Transaction ID:', response.data.transactionId);
+      }
+
+      console.log('✅ Code OTP envoyé avec succès');
+
       return {
         success: true,
         data: response.data,
         message: 'Code OTP envoyé avec succès'
       };
     } catch (error) {
-      console.error('Erreur lors de l\'envoi du code OTP:', error.response?.data || error.message);
+      console.error('❌ Erreur lors de l\'envoi du code OTP:', error.response?.data || error.message);
+      console.error('Code statut:', error.response?.status);
       return {
         success: false,
         error: error.response?.data || error.message,
@@ -96,9 +173,47 @@ class CorisMoneyService {
   async paiementBien(codePays, telephone, montant, codeOTP) {
     this.checkCredentials();
 
-    // Hachage: codePays+telephone+codePv+montant+codeOTP+clientSecret
+    console.log('💳 ===== PAIEMENT CORISMONEY =====');
+    console.log('Montant:', montant, 'FCFA');
+    console.log('Code OTP fourni:', codeOTP);
+
+    // MODE DÉVELOPPEMENT - Simulation
+    if (this.devMode) {
+      console.log('🧪 MODE DEV: Simulation de paiement');
+      
+      // Vérifier que le code OTP est correct
+      if (codeOTP !== this.devOTP) {
+        console.log('❌ Code OTP incorrect');
+        console.log('   Attendu:', this.devOTP);
+        console.log('   Reçu:', codeOTP);
+        return {
+          success: false,
+          error: 'Code OTP incorrect',
+          message: 'Code OTP invalide'
+        };
+      }
+
+      console.log('✅ Code OTP validé');
+      console.log('💰 Paiement simulé de', montant, 'FCFA');
+      console.log('🎉 Simulation de paiement réussie !');
+
+      return {
+        success: true,
+        data: {
+          msg: "Paiement effectué avec succès (MODE DEV)",
+          transactionId: 'DEV-PAY-' + Date.now(),
+          montant: montant,
+          statut: 'SUCCESS'
+        },
+        message: 'Paiement effectué avec succès (MODE DEV)'
+      };
+    }
+
+    // MODE PRODUCTION - Appel API réel
     const hashString = `${codePays}${telephone}${this.codePv}${montant}${codeOTP}${this.clientSecret}`;
     const hashParam = this.getHash256(hashString);
+
+    console.log('Hash généré:', hashParam.substring(0, 20) + '...');
 
     try {
       const response = await axios.post(

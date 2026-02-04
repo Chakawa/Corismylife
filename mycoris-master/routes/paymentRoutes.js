@@ -13,8 +13,14 @@ router.post('/send-otp', verifyToken, async (req, res) => {
   try {
     const { codePays, telephone } = req.body;
 
+    console.log('📨 ===== REQUÊTE ENVOI OTP =====');
+    console.log('User ID:', req.user?.id);
+    console.log('Code Pays:', codePays);
+    console.log('Téléphone:', telephone);
+
     // Validation des paramètres
     if (!codePays || !telephone) {
+      console.log('⚠️ Paramètres manquants');
       return res.status(400).json({
         success: false,
         message: 'Le code pays et le numéro de téléphone sont requis'
@@ -25,6 +31,7 @@ router.post('/send-otp', verifyToken, async (req, res) => {
     const result = await corisMoneyService.sendOTP(codePays, telephone);
 
     if (result.success) {
+      console.log('✅ OTP envoyé avec succès, enregistrement en BDD...');
       // Enregistrer la demande d'OTP en base de données (optionnel)
       await pool.query(
         `INSERT INTO payment_otp_requests (user_id, code_pays, telephone, created_at)
@@ -32,11 +39,13 @@ router.post('/send-otp', verifyToken, async (req, res) => {
         [req.user.id, codePays, telephone]
       );
 
+      console.log('✅ Enregistré en BDD');
       return res.status(200).json({
         success: true,
         message: result.message
       });
     } else {
+      console.log('❌ Échec envoi OTP:', result.message);
       return res.status(400).json({
         success: false,
         message: result.message,
@@ -44,7 +53,7 @@ router.post('/send-otp', verifyToken, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'OTP:', error);
+    console.error('❌ Erreur lors de l\'envoi de l\'OTP:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur lors de l\'envoi du code OTP',

@@ -96,9 +96,15 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
       _errorMessage = null;
     });
 
+    // Nettoyer le numéro: enlever le 0 au début s'il existe
+    String numeroNettoye = _phoneController.text.trim();
+    if (numeroNettoye.startsWith('0')) {
+      numeroNettoye = numeroNettoye.substring(1);
+    }
+
     final result = await _paymentService.sendOTP(
       codePays: _codePays, // Utilise directement le code téléphonique (ex: "225")
-      telephone: _phoneController.text.trim(),
+      telephone: numeroNettoye,
     );
 
     if (!mounted) return;
@@ -140,10 +146,16 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
       _currentStep = 3;
     });
 
+    // Nettoyer le numéro: enlever le 0 au début s'il existe
+    String numeroNettoye = _phoneController.text.trim();
+    if (numeroNettoye.startsWith('0')) {
+      numeroNettoye = numeroNettoye.substring(1);
+    }
+
     final result = await _paymentService.processPayment(
       subscriptionId: widget.subscriptionId,
       codePays: _codePays,
-      telephone: _phoneController.text.trim(),
+      telephone: numeroNettoye,
       montant: widget.montant,
       codeOTP: _otpController.text.trim(),
       description: widget.description,
@@ -481,18 +493,36 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _currentStep = 1;
-                              _errorMessage = null;
-                            });
-                          },
-                          child: const Text('← Modifier le numéro'),
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _currentStep = 1;
+                                _errorMessage = null;
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_back, size: 16),
+                            label: const Text(
+                              'Modifier',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                          ),
                         ),
-                        TextButton(
-                          onPressed: _isLoading ? null : _sendOTP,
-                          child: const Text('Renvoyer le code'),
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: _isLoading ? null : _sendOTP,
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text(
+                              'Renvoyer',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                          ),
                         ),
                       ],
                     ),

@@ -3750,17 +3750,17 @@ class _PaymentBottomSheet extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 24),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Wave',
-                Icons.waves,
+                'assets/images/icone_wave.jpeg',
                 Colors.blue,
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
               SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Orange Money',
-                Icons.phone_android,
+                'assets/images/icone_orange_money.jpeg',
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
@@ -3849,6 +3849,65 @@ class _PaymentBottomSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF64748B),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
+      String subtitle, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withAlpha(51)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withAlpha(51)),
+              ),
+              child: Image.asset(imagePath, width: 32, height: 32, fit: BoxFit.contain),
             ),
             SizedBox(width: 16),
             Expanded(

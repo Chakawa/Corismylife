@@ -1100,7 +1100,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (souscriptiondata != null) {
       final docs = souscriptiondata['documents'];
       if (docs is List) {
-        docsList = docs.map((d) => d is Map ? Map<String, dynamic>.from(d as Map) : <String, dynamic>{}).toList();
+        docsList = docs.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}).toList();
       } else if (docs is Map) {
         // convert map entries to list
         docsList = docs.entries.map((e) => {'label': e.key, 'path': e.value}).toList();
@@ -1525,17 +1525,17 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 ],
               ),
               const SizedBox(height: 24),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Wave',
-                Icons.waves,
+                'assets/images/icone_wave.jpeg',
                 Colors.blue,
                 'Paiement mobile sécurisé',
                 () => _processPayment('Wave'),
               ),
               const SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Orange Money',
-                Icons.phone_android,
+                'assets/images/icone_orange_money.jpeg',
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => _processPayment('Orange Money'),
@@ -1583,6 +1583,66 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: bleuCoris,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: grisTexte,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: grisTexte, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionWithImage(
+    String title,
+    String imagePath,
+    Color color,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: fondCarte,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+              child: Image.asset(imagePath, width: 32, height: 32, fit: BoxFit.contain),
             ),
             const SizedBox(width: 16),
             Expanded(

@@ -5297,17 +5297,17 @@ class _PaymentBottomSheet extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 24),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Wave',
-                Icons.waves,
+                'assets/images/icone_wave.jpeg',
                 const Color(0xFF1976D2),
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
               SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Orange Money',
-                Icons.phone_android,
+                'assets/images/icone_orange_money.jpeg',
                 const Color(0xFFE65100),
                 'Paiement mobile Orange',
                 () => onPayNow('Orange Money'),
@@ -5398,6 +5398,65 @@ class _PaymentBottomSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: Colors.white, size: 28),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF002B6B),
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: const Color(0xFF64748B),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
+      String subtitle, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: const Color.fromRGBO(158, 158, 158, 51)), // 0.2 alpha
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color.fromRGBO(158, 158, 158, 51)),
+              ),
+              child: Image.asset(imagePath, width: 32, height: 32, fit: BoxFit.contain),
             ),
             SizedBox(width: 16),
             Expanded(
