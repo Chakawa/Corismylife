@@ -1157,6 +1157,7 @@ class SubscriptionRecapWidgets {
     IconData icon;
     Color color;
     String displayName;
+    String? customImagePath;
 
     if (modePaiement.toLowerCase().contains('virement')) {
       icon = Icons.account_balance;
@@ -1166,10 +1167,12 @@ class SubscriptionRecapWidgets {
       icon = Icons.water_drop;
       color = const Color(0xFF00BFFF);
       displayName = 'Wave';
+      customImagePath = 'assets/images/icone_wave.jpeg';
     } else if (modePaiement.toLowerCase().contains('orange')) {
       icon = Icons.phone_android;
       color = Colors.orange;
       displayName = 'Orange Money';
+      customImagePath = 'assets/images/icone_orange_money.jpeg';
     } else if (modePaiement.toLowerCase().contains('prélèvement') || 
                modePaiement.toLowerCase().contains('prelevement')) {
       icon = Icons.business;
@@ -1179,6 +1182,7 @@ class SubscriptionRecapWidgets {
       icon = Icons.account_balance_wallet;
       color = const Color(0xFF1E3A8A);
       displayName = 'CORIS Money';
+      customImagePath = 'assets/images/icone_corismoney.jpeg';
     } else {
       icon = Icons.payment;
       color = bleuCoris;
@@ -1204,10 +1208,23 @@ class SubscriptionRecapWidgets {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
+                  color: customImagePath != null ? Colors.white : color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
+                  border: customImagePath != null ? Border.all(color: Colors.grey.withValues(alpha: 0.2)) : null,
                 ),
-                child: Icon(icon, color: color, size: 28),
+                child: customImagePath != null
+                    ? Center(
+                        child: Image.asset(
+                          customImagePath,
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(icon, color: color, size: 28);
+                          },
+                        ),
+                      )
+                    : Icon(icon, color: color, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(

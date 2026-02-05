@@ -243,9 +243,69 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     );
   }
 
+  Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
+    if (paiementsEnRetard == 0 && paiementsProches == 0) return const SizedBox.shrink();
+
+    final isUrgent = paiementsEnRetard > 0;
+    final color = isUrgent ? const Color(0xFFF44336) : const Color(0xFFFF9800);
+    final icon = isUrgent ? Icons.error : Icons.schedule;
+    
+    String message;
+    if (paiementsEnRetard > 0 && paiementsProches > 0) {
+      message = '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
+    } else if (paiementsEnRetard > 0) {
+      message = '$paiementsEnRetard paiement(s) en retard';
+    } else {
+      message = '$paiementsProches paiement(s) à effectuer dans les 5 jours';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border(
+          left: BorderSide(color: color, width: 4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isUrgent ? 'Paiement(s) en retard !' : 'Paiement(s) à venir',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: color.withOpacity(0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios, color: color, size: 16),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final actifsCount = contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
+    final paiementsEnRetard = contrats.where((c) => c.isPaymentLate).length;
+    final paiementsProches = contrats.where((c) => c.isPaymentDueSoon).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -323,6 +383,10 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
               ? _buildErrorState()
               : Column(
                   children: [
+                    // Alerte paiements urgents (nouveau)
+                    if (paiementsEnRetard > 0 || paiementsProches > 0)
+                      _buildPaymentAlert(paiementsEnRetard, paiementsProches),
+                    
                     // Statistiques
                     Container(
                       width: double.infinity,
@@ -854,6 +918,96 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                   ],
                 ],
               ),
+              
+              // Informations de paiement (nouveau)
+              if (contrat.nextPaymentDate != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(contrat.paymentStatusColor).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Color(contrat.paymentStatusColor).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            contrat.isPaymentLate 
+                                ? Icons.warning_amber_rounded
+                                : contrat.isPaymentDueSoon
+                                    ? Icons.schedule
+                                    : Icons.check_circle,
+                            size: 18,
+                            color: Color(contrat.paymentStatusColor),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  contrat.isPaymentLate
+                                      ? 'Paiement en retard !'
+                                      : contrat.isPaymentDueSoon
+                                          ? 'Échéance proche (${contrat.joursRestants} jours)'
+                                          : 'Prochain paiement',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(contrat.paymentStatusColor),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _formatDate(contrat.nextPaymentDate),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '${_formatNumber(contrat.prime)} FCFA',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(contrat.paymentStatusColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (contrat.periodicite != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.repeat,
+                              size: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Périodicité: ${contrat.periodicite}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -5313,9 +5313,9 @@ class _PaymentBottomSheet extends StatelessWidget {
                 () => onPayNow('Orange Money'),
               ),
               SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'CORIS Money',
-                Icons.account_balance_wallet,
+                'assets/images/icone_corismoney.jpeg',
                 const Color(0xFF1E3A8A),
                 'Paiement par CORIS Money',
                 () => onPayNow('CORIS Money'),
@@ -5456,7 +5456,16 @@ class _PaymentBottomSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color.fromRGBO(158, 158, 158, 51)),
               ),
-              child: Image.asset(imagePath, width: 32, height: 32, fit: BoxFit.contain),
+              child: Image.asset(
+                imagePath,
+                width: 32,
+                height: 32,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  print('❌ Erreur chargement image: $imagePath - $error');
+                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                },
+              ),
             ),
             SizedBox(width: 16),
             Expanded(

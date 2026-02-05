@@ -14,11 +14,17 @@ class CorisMoneyService {
     this.devMode = process.env.CORIS_MONEY_DEV_MODE === 'true';
     this.devOTP = process.env.CORIS_MONEY_DEV_OTP || '123456';
     
-    // Agent HTTPS pour ignorer les erreurs de certificat en environnement de test
-    // IMPORTANT: À désactiver en production !
+    // Agent HTTPS - En production, vérifie les certificats SSL
+    // ⚠️ ATTENTION: L'API testbed CorisMoney a un certificat SSL expiré
+    // En production réelle, il faudra changer l'URL vers l'API production et activer la vérification SSL
+    const isTestbedAPI = this.baseURL.includes('testbed');
     this.httpsAgent = new https.Agent({
-      rejectUnauthorized: process.env.NODE_ENV === 'production' ? true : false
+      rejectUnauthorized: isTestbedAPI ? false : (process.env.NODE_ENV === 'production')
     });
+    
+    if (isTestbedAPI) {
+      console.warn('⚠️  Utilisation de l\'API testbed CorisMoney avec certificat SSL désactivé');
+    }
 
     if (this.devMode) {
       console.log('🧪 ═══════════════════════════════════════════════════════════');
@@ -27,6 +33,14 @@ class CorisMoneyService {
       console.log('🧪 Code OTP de test: ' + this.devOTP);
       console.log('🧪 Pour activer l\'API réelle: CORIS_MONEY_DEV_MODE=false dans .env');
       console.log('🧪 ═══════════════════════════════════════════════════════════');
+    } else {
+      console.log('💰 ═══════════════════════════════════════════════════════════');
+      console.log('💰 MODE PRODUCTION CORISMONEY ACTIVÉ');
+      console.log('💰 API CorisMoney: ' + this.baseURL);
+      console.log('💰 Client ID: ' + this.clientId);
+      console.log('💰 Code PV: ' + this.codePv);
+      console.log('💰 Les paiements seront RÉELS');
+      console.log('💰 ═══════════════════════════════════════════════════════════');
     }
   }
 
@@ -60,7 +74,8 @@ class CorisMoneyService {
   /**
    * Étape 1 : Envoie un code OTP au client
    * @param {string} codePays - Code téléphonique du pays (ex: "225" pour CI)
-   * @param {string} telephone - Numéro de téléphone du client
+   * @param {string} telephone - Numéro de téléphone AVEC le 0 initial (ex: "0799283976")
+   *                             Format complet attendu: 225 + 0799283976 = 2250799283976
    * @returns {Promise<Object>} Réponse de l'API
    */
   async sendOTP(codePays, telephone) {
@@ -69,6 +84,7 @@ class CorisMoneyService {
     console.log('📱 ===== ENVOI CODE OTP CORISMONEY =====');
     console.log('Code Pays:', codePays);
     console.log('Téléphone:', telephone);
+    console.log('Numéro complet:', codePays + telephone);
 
     // MODE DÉVELOPPEMENT - Simulation
     if (this.devMode) {
@@ -122,13 +138,14 @@ class CorisMoneyService {
       if (response.data.msg && response.data.msg.toLowerCase().includes('erroné')) {
         console.error('❌ ERREUR CORISMONEY: Paramètres erronés !');
         console.error('💡 SOLUTION: Vérifiez que:');
-        console.error('   - Le numéro ne commence pas par 0 (ex: 576097537 et non 0576097537)');
+        console.error('   - Le numéro DOIT commencer par 0 (ex: 0799283976 et non 799283976)');
+        console.error('   - Le format complet: codePays + telephone (ex: 225 + 0799283976 = 2250799283976)');
         console.error('   - Le code pays est correct (225 pour Côte d\'Ivoire)');
         console.error('   - Les identifiants CLIENT_ID et CLIENT_SECRET sont valides');
         return {
           success: false,
           error: response.data.msg,
-          message: 'Paramètres erronés. Vérifiez le format du numéro de téléphone (sans le 0 initial).'
+          message: 'Paramètres erronés. Vérifiez le format du numéro de téléphone (avec le 0 initial).'
         };
       }
 
@@ -164,9 +181,9 @@ class CorisMoneyService {
 
   /**
    * Étape 2 : Effectue le paiement de bien
-   * @param {string} codePays - Code téléphonique du pays
-   * @param {string} telephone - Numéro de téléphone du client
-   * @param {number} montant - Montant à payer
+   * @param {string} codePays - Code téléphonique du pays (ex: "225" pour CI)
+   * @param {string} telephone - Numéro de téléphone AVEC le 0 initial (ex: "0799283976")
+   * @param {number} montant - Montant à débiter en FCFA
    * @param {string} codeOTP - Code OTP reçu par le client
    * @returns {Promise<Object>} Réponse de l'API avec transactionId
    */
@@ -174,6 +191,7 @@ class CorisMoneyService {
     this.checkCredentials();
 
     console.log('💳 ===== PAIEMENT CORISMONEY =====');
+    console.log('Numéro complet:', codePays + telephone);
     console.log('Montant:', montant, 'FCFA');
     console.log('Code OTP fourni:', codeOTP);
 

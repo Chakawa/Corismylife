@@ -56,6 +56,16 @@ app.use('/api/produits', require('./routes/produitRoutes'));
 app.use('/api/contrats', require('./routes/contratRoutes'));
 app.use('/api/simulations', require('./routes/simulationRoutes'));
 
+/// ============================================
+/// CRON JOB - NOTIFICATIONS DE PAIEMENT
+/// ============================================
+/// Lance automatiquement le système de rappels de paiement
+/// - Exécution quotidienne à 9h00 (Africa/Abidjan)
+/// - Envoie SMS/Email pour contrats avec échéance dans 5 jours
+/// - Logs détaillés dans la console serveur
+/// ============================================
+require('./cron/paymentReminders');
+
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));
 

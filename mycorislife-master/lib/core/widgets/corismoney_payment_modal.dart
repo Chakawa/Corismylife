@@ -96,11 +96,9 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
       _errorMessage = null;
     });
 
-    // Nettoyer le numéro: enlever le 0 au début s'il existe
+    // Le numéro doit conserver le 0 initial (ex: 0799283976)
+    // L'API CorisMoney nécessite: 225 + 0799283976 = 2250799283976
     String numeroNettoye = _phoneController.text.trim();
-    if (numeroNettoye.startsWith('0')) {
-      numeroNettoye = numeroNettoye.substring(1);
-    }
 
     final result = await _paymentService.sendOTP(
       codePays: _codePays, // Utilise directement le code téléphonique (ex: "225")
@@ -146,11 +144,9 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
       _currentStep = 3;
     });
 
-    // Nettoyer le numéro: enlever le 0 au début s'il existe
+    // Le numéro doit conserver le 0 initial (ex: 0799283976)
+    // L'API CorisMoney nécessite: 225 + 0799283976 = 2250799283976
     String numeroNettoye = _phoneController.text.trim();
-    if (numeroNettoye.startsWith('0')) {
-      numeroNettoye = numeroNettoye.substring(1);
-    }
 
     final result = await _paymentService.processPayment(
       subscriptionId: widget.subscriptionId,

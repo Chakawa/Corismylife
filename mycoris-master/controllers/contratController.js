@@ -31,7 +31,7 @@ exports.getContratsByTelephone = async (req, res) => {
     }
     console.log('📞 Téléphone nettoyé:', cleanPhone);
     
-    // Récupérer tous les contrats du client
+    // Récupérer tous les contrats du client avec informations de paiement
     // On cherche avec les deux formats: avec et sans +225
     const query = `
       SELECT 
@@ -54,13 +54,30 @@ exports.getContratsByTelephone = async (req, res) => {
         telephone1,
         telephone2,
         nom_prenom,
-        datenaissance
+        datenaissance,
+        next_payment_date,
+        last_payment_date,
+        payment_method,
+        payment_status,
+        total_paid,
+        CASE 
+          WHEN next_payment_date IS NULL THEN NULL
+          ELSE EXTRACT(DAY FROM (next_payment_date - CURRENT_DATE))::INTEGER
+        END as jours_restants
       FROM contrats
       WHERE telephone1 = $1 
          OR telephone1 = $2
          OR telephone2 = $1
          OR telephone2 = $2
-      ORDER BY dateeffet DESC
+      ORDER BY 
+        CASE payment_status
+          WHEN 'en_retard' THEN 1
+          WHEN 'echeance_proche' THEN 2
+          WHEN 'a_jour' THEN 3
+          ELSE 4
+        END,
+        next_payment_date NULLS LAST,
+        dateeffet DESC
     `;
     
     const phoneWithPrefix = '+225' + cleanPhone;

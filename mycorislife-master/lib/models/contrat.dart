@@ -22,6 +22,12 @@ class Contrat {
   final String? prenom;
   final String? nom;
   final String? nomProduit;
+  final DateTime? nextPaymentDate;
+  final DateTime? lastPaymentDate;
+  final String? paymentMethod;
+  final String? paymentStatus;
+  final double? totalPaid;
+  final int? joursRestants;
 
   Contrat({
     required this.id,
@@ -47,6 +53,12 @@ class Contrat {
     this.prenom,
     this.nom,
     this.nomProduit,
+    this.nextPaymentDate,
+    this.lastPaymentDate,
+    this.paymentMethod,
+    this.paymentStatus,
+    this.totalPaid,
+    this.joursRestants,
   });
 
   factory Contrat.fromJson(Map<String, dynamic> json) {
@@ -75,6 +87,12 @@ class Contrat {
         prenom: json['prenom']?.toString(),
         nom: json['nom']?.toString(),
         nomProduit: json['nom_produit']?.toString(),
+        nextPaymentDate: _parseDate(json['next_payment_date']),
+        lastPaymentDate: _parseDate(json['last_payment_date']),
+        paymentMethod: json['payment_method']?.toString(),
+        paymentStatus: json['payment_status']?.toString(),
+        totalPaid: _parseDouble(json['total_paid']),
+        joursRestants: json['jours_restants'] != null ? int.tryParse(json['jours_restants'].toString()) : null,
       );
     } catch (e) {
       print('❌ Erreur parsing Contrat: $e');
@@ -164,6 +182,49 @@ class Contrat {
       'prenom': prenom,
       'nom': nom,
       'nom_produit': nomProduit,
+      'next_payment_date': nextPaymentDate?.toIso8601String(),
+      'last_payment_date': lastPaymentDate?.toIso8601String(),
+      'payment_method': paymentMethod,
+      'payment_status': paymentStatus,
+      'total_paid': totalPaid,
+      'jours_restants': joursRestants,
     };
+  }
+
+  /// Retourne true si le paiement est en retard
+  bool get isPaymentLate => paymentStatus == 'en_retard';
+
+  /// Retourne true si l'échéance est proche (5 jours)
+  bool get isPaymentDueSoon => paymentStatus == 'echeance_proche';
+
+  /// Retourne true si le paiement est à jour
+  bool get isPaymentUpToDate => paymentStatus == 'a_jour' || paymentStatus == null;
+
+  /// Retourne le texte formaté pour le statut de paiement
+  String get paymentStatusText {
+    switch (paymentStatus) {
+      case 'en_retard':
+        return 'En retard';
+      case 'echeance_proche':
+        return 'Échéance proche';
+      case 'a_jour':
+        return 'À jour';
+      default:
+        return 'Paiement unique';
+    }
+  }
+
+  /// Retourne la couleur associée au statut de paiement
+  int get paymentStatusColor {
+    switch (paymentStatus) {
+      case 'en_retard':
+        return 0xFFF44336; // Rouge
+      case 'echeance_proche':
+        return 0xFFFF9800; // Orange
+      case 'a_jour':
+        return 0xFF4CAF50; // Vert
+      default:
+        return 0xFF9E9E9E; // Gris
+    }
   }
 }

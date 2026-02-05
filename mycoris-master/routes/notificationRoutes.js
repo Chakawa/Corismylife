@@ -60,4 +60,78 @@ router.put('/mark-all-read', verifyToken, notificationController.markAllAsRead);
  */
 router.delete('/:id', verifyToken, notificationController.deleteNotification);
 
+/// ============================================
+/// ROUTES SYSTÈME - NOTIFICATIONS PAIEMENT
+/// ============================================
+
+/**
+ * POST /api/notifications/process-payment-reminders
+ * Traite toutes les notifications de rappel de paiement en attente
+ * Envoie les SMS/Email pour les contrats ayant une échéance dans 5 jours
+ * Headers : Authorization: Bearer <token>
+ * Access : Admin uniquement
+ * Retour : { success: true, sent: number, failed: number }
+ */
+router.post('/process-payment-reminders', verifyToken, async (req, res) => {
+  try {
+    // Vérifier que l'utilisateur est admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès refusé - Admin uniquement',
+      });
+    }
+
+    const paymentNotificationService = require('../services/notificationService');
+    const results = await paymentNotificationService.processAllNotifications();
+
+    return res.status(200).json({
+      success: true,
+      message: `Notifications envoyées: ${results.sent}/${results.total}`,
+      data: results,
+    });
+  } catch (error) {
+    console.error('Erreur traitement rappels paiement:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur traitement notifications',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/notifications/pending-payment-reminders
+ * Liste les contrats nécessitant un rappel de paiement
+ * Headers : Authorization: Bearer <token>
+ * Access : Admin uniquement
+ * Retour : { success: true, count: number, data: [...] }
+ */
+router.get('/pending-payment-reminders', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès refusé - Admin uniquement',
+      });
+    }
+
+    const paymentNotificationService = require('../services/notificationService');
+    const contrats = await paymentNotificationService.getContratsNeedingNotification();
+
+    return res.status(200).json({
+      success: true,
+      count: contrats.length,
+      data: contrats,
+    });
+  } catch (error) {
+    console.error('Erreur récupération contrats en attente:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

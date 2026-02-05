@@ -922,25 +922,25 @@ class _PropositionsPageState extends State<PropositionsPage>
                 ],
               ),
               const SizedBox(height: 24),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Wave',
-                Icons.waves,
+                'assets/images/icone_wave.jpeg',
                 Colors.blue,
                 'Paiement mobile sécurisé',
                 () => _processPayment(subscription, 'Wave'),
               ),
               const SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'Orange Money',
-                Icons.phone_android,
+                'assets/images/icone_orange_money.jpeg',
                 Colors.orange,
                 'Paiement mobile Orange',
                 () => _processPayment(subscription, 'Orange Money'),
               ),
               const SizedBox(height: 12),
-              _buildPaymentOption(
+              _buildPaymentOptionWithImage(
                 'CORIS Money',
-                Icons.account_balance_wallet,
+                'assets/images/icone_corismoney.jpeg',
                 const Color(0xFF1E3A8A),
                 'Paiement via CORIS Money',
                 () => _processPayment(subscription, 'CORIS Money'),
@@ -980,6 +980,74 @@ class _PropositionsPageState extends State<PropositionsPage>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF002B6B),
+                      fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionWithImage(
+    String title,
+    String imagePath,
+    Color color,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+              child: Image.asset(
+                imagePath,
+                width: 32,
+                height: 32,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  print('❌ Erreur chargement image: $imagePath - $error');
+                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                },
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(

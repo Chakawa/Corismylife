@@ -51,25 +51,4 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/etude.png
-    - assets/images/retraite.png
-    - assets/images/epargne.png
-    - assets/images/logo.png
-    - assets/images/emprunteur.png
-    - assets/images/prets.png
-    - assets/images/solidarite.png
-    - assets/images/serenite.png
-    - assets/images/familis.png
-    - assets/images/retraitee.png
-    - assets/images/etudee.png
-    - assets/images/epargnee.png
-    - assets/images/user_avatar.png
-    - assets/images/man.png
-    - assets/images/bon_plan_coris.jpg
-    - assets/images/coris_assure_prestige.jpg
-    - assets/images/homme_cle.jpg
-    - assets/images/IFC_indemnite_fin_carriere.jpg
-    - assets/images/prevoyance_social_entreprise.jpg
-    - assets/images/retraite_complementaire_entreprise.jpg
-    - assets/images/icone_wave.jpeg
-    - assets/images/icone_orange_money.jpeg
+    - assets/images/

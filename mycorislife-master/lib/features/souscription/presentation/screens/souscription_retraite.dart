@@ -3057,6 +3057,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
+                        Widget? customIconWidget;
 
                         switch (mode) {
                           case 'Virement':
@@ -3066,10 +3067,28 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           case 'Wave':
                             icon = Icons.water_drop;
                             iconColor = Color(0xFF00BFFF);
+                            customIconWidget = Image.asset(
+                              'assets/images/icone_wave.jpeg',
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                              },
+                            );
                             break;
                           case 'Orange Money':
                             icon = Icons.phone_android;
                             iconColor = Colors.orange;
+                            customIconWidget = Image.asset(
+                              'assets/images/icone_orange_money.jpeg',
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                              },
+                            );
                             break;
                           case 'Prélèvement à la source':
                             icon = Icons.business;
@@ -3078,6 +3097,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           case 'CORIS Money':
                             icon = Icons.account_balance_wallet;
                             iconColor = Color(0xFF1E3A8A);
+                            customIconWidget = Image.asset(
+                              'assets/images/icone_corismoney.jpeg',
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                              },
+                            );
                             break;
                           default:
                             icon = Icons.payment;
@@ -3120,7 +3148,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Icon(icon, color: iconColor, size: 28),
+                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -3262,11 +3290,24 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro de téléphone *',
                           hintText: 'Ex: 0707070707',
-                          prefixIcon: Icon(
-                            Icons.phone_android,
-                            color: _selectedModePaiement == 'Wave'
-                                ? Color(0xFF00BFFF)
-                                : Colors.orange,
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Image.asset(
+                              _selectedModePaiement == 'Wave'
+                                  ? 'assets/images/icone_wave.jpeg'
+                                  : 'assets/images/icone_orange_money.jpeg',
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.phone_android,
+                                  color: _selectedModePaiement == 'Wave'
+                                      ? Color(0xFF00BFFF)
+                                      : Colors.orange,
+                                );
+                              },
+                            ),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -4701,16 +4742,16 @@ class PaymentBottomSheet extends StatelessWidget {
                   _buildPaymentOptionWithImage('Wave', 'assets/images/icone_wave.jpeg', Colors.blue,
                       'Paiement mobile sécurisé', () => onPayNow('Wave')),
                   const SizedBox(height: 12),
-                  _buildPaymentOption(
+                  _buildPaymentOptionWithImage(
                       'Orange Money',
-                      Icons.phone_android,
+                      'assets/images/icone_orange_money.jpeg',
                       Colors.orange,
                       'Paiement mobile Orange',
                       () => onPayNow('Orange Money')),
                   const SizedBox(height: 12),
-                  _buildPaymentOption(
+                  _buildPaymentOptionWithImage(
                       'CORIS Money',
-                      Icons.account_balance_wallet,
+                      'assets/images/icone_corismoney.jpeg',
                       Color(0xFF1E3A8A),
                       'Paiement par CORIS Money',
                       () => onPayNow('CORIS Money')),
@@ -4809,7 +4850,16 @@ class PaymentBottomSheet extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
-                  child: Image.asset(imagePath, width: 32, height: 32, fit: BoxFit.contain)),
+                  child: Image.asset(
+                    imagePath,
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ Erreur chargement image: $imagePath - $error');
+                      return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                    },
+                  )),
               const SizedBox(width: 16),
               Expanded(
                   child: Column(

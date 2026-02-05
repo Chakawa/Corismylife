@@ -5,6 +5,41 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 const pool = require('../db');
 
 /**
+ * Calcule la prochaine date de paiement en fonction de la périodicité
+ * @param {Date} startDate - Date de début
+ * @param {string} periodicite - Périodicité (mensuelle, trimestrielle, semestrielle, annuelle, unique)
+ * @returns {Date} Prochaine date de paiement
+ */
+function calculateNextPaymentDate(startDate, periodicite) {
+  const nextDate = new Date(startDate);
+  
+  switch(periodicite?.toLowerCase()) {
+    case 'mensuelle':
+    case 'mensuel':
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case 'trimestrielle':
+    case 'trimestriel':
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case 'semestrielle':
+    case 'semestriel':
+      nextDate.setMonth(nextDate.getMonth() + 6);
+      break;
+    case 'annuelle':
+    case 'annuel':
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    case 'unique':
+    default:
+      // Pour les paiements uniques, pas de prochaine échéance
+      return null;
+  }
+  
+  return nextDate;
+}
+
+/**
  * @route   POST /api/payment/send-otp
  * @desc    Envoie un code OTP au client pour paiement
  * @access  Private
@@ -87,16 +122,86 @@ router.post('/process-payment', verifyToken, async (req, res) => {
       });
     }
 
-    // Appel du service CorisMoney pour le paiement
+    // ✅ ÉTAPE 1 : Vérifier l'existence du client CorisMoney
+    console.log('🔍 Vérification du compte CorisMoney pour:', telephone);
+    const clientInfo = await corisMoneyService.getClientInfo(codePays, telephone);
+    
+    if (!clientInfo.success) {
+      console.error('❌ Client introuvable dans CorisMoney:', clientInfo.error);
+      return res.status(404).json({
+        success: false,
+        message: '❌ Compte CorisMoney introuvable pour ce numéro',
+        detail: 'Veuillez vérifier que votre compte CorisMoney est bien activé pour ce numéro de téléphone.',
+        errorCode: 'ACCOUNT_NOT_FOUND'
+      });
+    }
+
+    console.log('✅ Client CorisMoney trouvé:', clientInfo.data);
+    
+    // Vérifier le solde disponible
+    const soldeDisponible = parseFloat(clientInfo.data.solde || clientInfo.data.balance || 0);
+    const montantRequis = parseFloat(montant);
+    
+    if (soldeDisponible < montantRequis) {
+      console.warn(`⚠️ Solde insuffisant: ${soldeDisponible} FCFA < ${montantRequis} FCFA`);
+      return res.status(400).json({
+        success: false,
+        message: '💰 Solde insuffisant',
+        detail: `Votre solde actuel (${soldeDisponible.toLocaleString()} FCFA) est insuffisant pour effectuer ce paiement (${montantRequis.toLocaleString()} FCFA).`,
+        soldeDisponible: soldeDisponible,
+        montantRequis: montantRequis,
+        errorCode: 'INSUFFICIENT_BALANCE'
+      });
+    }
+
+    console.log(`✅ Solde suffisant: ${soldeDisponible} FCFA >= ${montantRequis} FCFA`);
+
+    // ✅ ÉTAPE 2 : Effectuer le paiement
+    console.log('💳 Lancement du paiement CorisMoney...');
     const result = await corisMoneyService.paiementBien(
       codePays,
       telephone,
-      parseFloat(montant),
+      montantRequis,
       codeOTP
     );
 
     if (result.success) {
-      // Enregistrer la transaction en base de données
+      console.log('✅ Réponse paiement CorisMoney:', result.data);
+      
+      // ⚠️ IMPORTANT : Vérifier le statut réel de la transaction
+      let transactionStatus = 'PENDING';
+      let errorMessage = null;
+      
+      // Si un transactionId est retourné, vérifier son statut
+      if (result.transactionId) {
+        console.log('🔍 Vérification du statut de la transaction:', result.transactionId);
+        
+        // Attendre 2 secondes pour que CorisMoney traite la transaction
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResult = await corisMoneyService.getTransactionStatus(result.transactionId);
+        
+        if (statusResult.success && statusResult.data) {
+          console.log('📊 Statut reçu:', statusResult.data);
+          
+          // Analyser le statut de la transaction
+          const status = statusResult.data.statut || statusResult.data.status;
+          
+          if (status === 'SUCCESS' || status === 'COMPLETED') {
+            transactionStatus = 'SUCCESS';
+          } else if (status === 'FAILED' || status === 'INSUFFICIENT_BALANCE') {
+            transactionStatus = 'FAILED';
+            errorMessage = statusResult.data.message || 'Solde insuffisant ou paiement échoué';
+          } else {
+            transactionStatus = 'PENDING';
+          }
+        } else {
+          console.warn('⚠️ Impossible de vérifier le statut, marquage comme PENDING');
+          transactionStatus = 'PENDING';
+        }
+      }
+      
+      // Enregistrer la transaction en base de données avec le VRAI statut
       const insertQuery = `
         INSERT INTO payment_transactions (
           user_id,
@@ -107,8 +212,9 @@ router.post('/process-payment', verifyToken, async (req, res) => {
           montant,
           statut,
           description,
+          error_message,
           created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         RETURNING id
       `;
 
@@ -119,12 +225,16 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         codePays,
         telephone,
         parseFloat(montant),
-        'SUCCESS',
-        description || 'Paiement de prime d\'assurance'
+        transactionStatus,
+        description || 'Paiement de prime d\'assurance',
+        errorMessage
       ]);
 
-      // Mettre à jour le statut de la souscription si applicable
-      if (subscriptionId) {
+      // ⚠️ Ne transformer en contrat QUE si le paiement est vraiment réussi
+      if (transactionStatus === 'SUCCESS' && subscriptionId) {
+        console.log('🎉 Paiement confirmé ! Transformation de la proposition en contrat...');
+        
+        // Mettre à jour le statut de la souscription
         await pool.query(
           `UPDATE subscriptions 
            SET statut = 'paid', 
@@ -134,15 +244,87 @@ router.post('/process-payment', verifyToken, async (req, res) => {
            WHERE id = $2`,
           [result.transactionId, subscriptionId]
         );
-      }
+        
+        // Créer le contrat
+        const subscriptionData = await pool.query(
+          'SELECT * FROM subscriptions WHERE id = $1',
+          [subscriptionId]
+        );
+        
+        if (subscriptionData.rows.length > 0) {
+          const subscription = subscriptionData.rows[0];
+          
+          // Calculer la prochaine échéance
+          const nextPaymentDate = calculateNextPaymentDate(
+            new Date(),
+            subscription.periodicite
+          );
+          
+          // Créer le contrat
+          await pool.query(
+            `INSERT INTO contracts (
+              subscription_id,
+              user_id,
+              contract_number,
+              product_name,
+              status,
+              amount,
+              periodicite,
+              start_date,
+              next_payment_date,
+              duration_years,
+              payment_method,
+              created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+            ON CONFLICT (subscription_id) DO UPDATE SET
+              status = 'active',
+              next_payment_date = $9,
+              updated_at = NOW()`,
+            [
+              subscriptionId,
+              req.user.id,
+              `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`,
+              subscription.product_name,
+              'active',
+              subscription.montant,
+              subscription.periodicite,
+              new Date(),
+              nextPaymentDate,
+              subscription.duree || 1,
+              'CorisMoney'
+            ]
+          );
+          
+          console.log('✅ Contrat créé avec succès !');
+        }
 
-      return res.status(200).json({
-        success: true,
-        message: result.message,
-        transactionId: result.transactionId,
-        montant: result.data.montant,
-        paymentRecordId: transactionResult.rows[0].id
-      });
+        return res.status(200).json({
+          success: true,
+          message: 'Paiement effectué avec succès',
+          transactionId: result.transactionId,
+          montant: parseFloat(montant),
+          paymentRecordId: transactionResult.rows[0].id,
+          contractCreated: true
+        });
+      } else if (transactionStatus === 'FAILED') {
+        console.error('❌ Paiement échoué:', errorMessage);
+        return res.status(400).json({
+          success: false,
+          message: errorMessage || 'Le paiement a échoué. Vérifiez votre solde CorisMoney.',
+          transactionId: result.transactionId,
+          status: 'FAILED'
+        });
+      } else {
+        // PENDING
+        console.warn('⏳ Transaction en attente de confirmation');
+        return res.status(202).json({
+          success: true,
+          message: 'Transaction en cours de traitement. Vérifiez le statut dans quelques instants.',
+          transactionId: result.transactionId,
+          status: 'PENDING',
+          paymentRecordId: transactionResult.rows[0].id
+        });
+      }
     } else {
       // Enregistrer l'échec de la transaction
       await pool.query(
@@ -167,10 +349,31 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         ]
       );
 
+      // Messages d'erreur plus explicites
+      let errorMessage = result.message || 'Erreur lors du paiement';
+      let errorCode = 'PAYMENT_FAILED';
+      
+      // Analyser le code d'erreur CorisMoney
+      if (result.error && result.error.code) {
+        const code = result.error.code.toString();
+        
+        if (code === '-1') {
+          errorMessage = '❌ Erreur lors du paiement CorisMoney';
+          errorCode = 'CORISMONEY_ERROR';
+        } else if (code.includes('OTP') || code.includes('otp')) {
+          errorMessage = '🔑 Code OTP invalide ou expiré';
+          errorCode = 'INVALID_OTP';
+        } else if (code.includes('BALANCE') || code.includes('INSUFFICIENT')) {
+          errorMessage = '💰 Solde insuffisant';
+          errorCode = 'INSUFFICIENT_BALANCE';
+        }
+      }
+
       return res.status(400).json({
         success: false,
-        message: result.message,
-        error: result.error
+        message: errorMessage,
+        errorCode: errorCode,
+        detail: result.error || result.message
       });
     }
   } catch (error) {
@@ -309,6 +512,136 @@ router.get('/history', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'historique:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/payment/contracts
+ * @desc    Récupère tous les contrats actifs d'un utilisateur
+ * @access  Private
+ */
+router.get('/contracts', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT 
+        c.id,
+        c.contract_number,
+        c.product_name,
+        c.status,
+        c.amount,
+        c.periodicite,
+        c.start_date,
+        c.next_payment_date,
+        c.end_date,
+        c.duration_years,
+        c.payment_method,
+        c.total_paid,
+        c.created_at,
+        s.id as subscription_id,
+        s.beneficiaires,
+        s.capital_garanti,
+        -- Calcul du nombre de paiements restants
+        CASE 
+          WHEN c.periodicite = 'unique' THEN 0
+          WHEN c.periodicite = 'mensuelle' THEN 
+            GREATEST(0, EXTRACT(MONTH FROM AGE(c.end_date, CURRENT_DATE))::INTEGER)
+          WHEN c.periodicite = 'trimestrielle' THEN 
+            GREATEST(0, (EXTRACT(MONTH FROM AGE(c.end_date, CURRENT_DATE)) / 3)::INTEGER)
+          WHEN c.periodicite = 'semestrielle' THEN 
+            GREATEST(0, (EXTRACT(MONTH FROM AGE(c.end_date, CURRENT_DATE)) / 6)::INTEGER)
+          WHEN c.periodicite = 'annuelle' THEN 
+            GREATEST(0, EXTRACT(YEAR FROM AGE(c.end_date, CURRENT_DATE))::INTEGER)
+          ELSE 0
+        END as payments_remaining,
+        -- Statut du prochain paiement
+        CASE 
+          WHEN c.next_payment_date IS NULL THEN 'Paiement unique effectué'
+          WHEN c.next_payment_date < CURRENT_DATE THEN 'En retard'
+          WHEN c.next_payment_date <= CURRENT_DATE + INTERVAL '7 days' THEN 'Échéance proche'
+          ELSE 'À jour'
+        END as payment_status
+       FROM contracts c
+       LEFT JOIN subscriptions s ON c.subscription_id = s.id
+       WHERE c.user_id = $1
+       ORDER BY c.created_at DESC`,
+      [userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des contrats:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/payment/contracts/:id
+ * @desc    Récupère les détails d'un contrat spécifique
+ * @access  Private
+ */
+router.get('/contracts/:id', verifyToken, async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT 
+        c.*,
+        s.beneficiaires,
+        s.capital_garanti,
+        s.questionnaire_medical,
+        s.documents,
+        u.nom_prenom as client_name,
+        u.email as client_email,
+        u.telephone as client_phone,
+        -- Historique des paiements pour ce contrat
+        (
+          SELECT json_agg(
+            json_build_object(
+              'transaction_id', pt.transaction_id,
+              'montant', pt.montant,
+              'statut', pt.statut,
+              'date', pt.created_at
+            ) ORDER BY pt.created_at DESC
+          )
+          FROM payment_transactions pt
+          WHERE pt.subscription_id = c.subscription_id
+        ) as payment_history
+       FROM contracts c
+       LEFT JOIN subscriptions s ON c.subscription_id = s.id
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.id = $1 AND c.user_id = $2`,
+      [contractId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contrat non trouvé'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération du contrat:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
