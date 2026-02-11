@@ -169,12 +169,22 @@ class CorisMoneyService {
         message: 'Code OTP envoyé avec succès'
       };
     } catch (error) {
-      console.error('❌ Erreur lors de l\'envoi du code OTP:', error.response?.data || error.message);
-      console.error('Code statut:', error.response?.status);
+      console.error('❌ Erreur lors de l\'envoi du code OTP');
+      console.error('   Message:', error.message);
+      console.error('   Code HTTP:', error.response?.status);
+      console.error('   Réponse API:', error.response?.data);
+      console.error('   Cause:', error.code || 'Inconnue');
+      
+      // Afficher des suggestions selon le type d'erreur
+      if (error.message.includes('certificate')) {
+        console.error('   💡 PROBLÈME SSL DÉTECTÉ: Vérifiez le certificat SSL du serveur');
+      }
+      
       return {
         success: false,
         error: error.response?.data || error.message,
-        message: 'Erreur lors de l\'envoi du code OTP'
+        message: 'Erreur lors de l\'envoi du code OTP',
+        errorCode: error.code
       };
     }
   }
@@ -261,11 +271,22 @@ class CorisMoneyService {
         message: response.data.message || 'Paiement effectué avec succès'
       };
     } catch (error) {
-      console.error('Erreur lors du paiement:', error.response?.data || error.message);
+      console.error('❌ Erreur lors du paiement');
+      console.error('   Message:', error.message);
+      console.error('   Code HTTP:', error.response?.status);
+      console.error('   Réponse API:', error.response?.data);
+      console.error('   Cause:', error.code || 'Inconnue');
+      
+      // Afficher des suggestions selon le type d'erreur
+      if (error.message.includes('certificate')) {
+        console.error('   💡 PROBLÈME SSL DÉTECTÉ: Vérifiez le certificat SSL du serveur');
+      }
+      
       return {
         success: false,
         error: error.response?.data || error.message,
-        message: 'Erreur lors du paiement'
+        message: 'Erreur lors du paiement',
+        errorCode: error.code
       };
     }
   }
@@ -295,7 +316,8 @@ class CorisMoneyService {
             'Content-Type': 'application/json',
             'clientId': this.clientId,
             'hashParam': hashParam
-          }
+          },
+          httpsAgent: this.httpsAgent
         }
       );
 
@@ -305,11 +327,23 @@ class CorisMoneyService {
         message: 'Informations client récupérées avec succès'
       };
     } catch (error) {
-      console.error('Erreur lors de la récupération des infos client:', error.response?.data || error.message);
+      console.error('❌ Erreur lors de la récupération des infos client');
+      console.error('   Message:', error.message);
+      console.error('   Code HTTP:', error.response?.status);
+      console.error('   Réponse API:', error.response?.data);
+      console.error('   Cause:', error.code || 'Inconnue');
+      
+      // Afficher des suggestions selon le type d'erreur
+      if (error.message.includes('certificate')) {
+        console.error('   💡 PROBLÈME SSL DÉTECTÉ: Vérifiez le certificat SSL du serveur');
+        console.error('   💡 SOLUTION: Assurez-vous que httsAgent est bien configuré');
+      }
+      
       return {
         success: false,
         error: error.response?.data || error.message,
-        message: 'Erreur lors de la récupération des informations client'
+        message: 'Erreur lors de la récupération des informations client',
+        errorCode: error.code
       };
     }
   }
@@ -337,7 +371,8 @@ class CorisMoneyService {
             'Content-Type': 'application/json',
             'clientId': this.clientId,
             'hashParam': hashParam
-          }
+          },
+          httpsAgent: this.httpsAgent
         }
       );
 
@@ -347,11 +382,22 @@ class CorisMoneyService {
         message: 'Statut de la transaction récupéré avec succès'
       };
     } catch (error) {
-      console.error('Erreur lors de la vérification du statut:', error.response?.data || error.message);
+      console.error('❌ Erreur lors de la vérification du statut');
+      console.error('   Message:', error.message);
+      console.error('   Code HTTP:', error.response?.status);
+      console.error('   Réponse API:', error.response?.data);
+      console.error('   Cause:', error.code || 'Inconnue');
+      
+      // Afficher des suggestions selon le type d'erreur
+      if (error.message.includes('certificate')) {
+        console.error('   💡 PROBLÈME SSL DÉTECTÉ: Vérifiez le certificat SSL du serveur');
+      }
+      
       return {
         success: false,
         error: error.response?.data || error.message,
-        message: 'Erreur lors de la vérification du statut de la transaction'
+        message: 'Erreur lors de la vérification du statut de la transaction',
+        errorCode: error.code
       };
     }
   }

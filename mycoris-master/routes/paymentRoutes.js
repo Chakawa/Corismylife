@@ -213,8 +213,9 @@ router.post('/process-payment', verifyToken, async (req, res) => {
           statut,
           description,
           error_message,
+          api_response,
           created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
         RETURNING id
       `;
 
@@ -227,7 +228,8 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         parseFloat(montant),
         transactionStatus,
         description || 'Paiement de prime d\'assurance',
-        errorMessage
+        errorMessage,
+        JSON.stringify(result.data || result) // Sauvegarder la réponse complète de l'API
       ]);
 
       // ⚠️ Ne transformer en contrat QUE si le paiement est vraiment réussi
@@ -277,7 +279,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
               created_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
             ON CONFLICT (subscription_id) DO UPDATE SET
-              status = 'active',
+              status = 'valid',
               next_payment_date = $9,
               updated_at = NOW()`,
             [
@@ -285,7 +287,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
               req.user.id,
               `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`,
               subscription.product_name,
-              'active',
+              'valid',  // Statut 'valid' quand le paiement est effectué
               subscription.montant,
               subscription.periodicite,
               new Date(),
@@ -296,6 +298,33 @@ router.post('/process-payment', verifyToken, async (req, res) => {
           );
           
           console.log('✅ Contrat créé avec succès !');
+          
+          // 📱 ENVOYER SMS DE CONFIRMATION AU CLIENT
+          try {
+            const userQuery = await pool.query(
+              'SELECT nom_prenom, telephone FROM users WHERE id = $1',
+              [req.user.id]
+            );
+            
+            if (userQuery.rows.length > 0) {
+              const user = userQuery.rows[0];
+              const contractNumber = `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`;
+              
+              const smsMessage = `Bonjour ${user.nom_prenom}, votre paiement de ${parseFloat(montant).toLocaleString()} FCFA a été effectué avec succès ! Votre contrat ${contractNumber} est maintenant VALIDE. Merci de votre confiance. CORIS Assurance`;
+              
+              // Envoyer le SMS
+              const smsResult = await sendSMS(`225${user.telephone}`, smsMessage);
+              
+              if (smsResult.success) {
+                console.log('✅ SMS de confirmation envoyé au client');
+              } else {
+                console.error('⚠️ Échec envoi SMS confirmation:', smsResult.error);
+              }
+            }
+          } catch (smsError) {
+            console.error('⚠️ Erreur envoi SMS:', smsError.message);
+            // Ne pas bloquer le flux si le SMS échoue
+          }
         }
 
         return res.status(200).json({
