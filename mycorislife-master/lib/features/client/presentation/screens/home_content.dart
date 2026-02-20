@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/notification_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
@@ -472,34 +473,71 @@ class _HomeContentState extends State<HomeContent> {
                 Padding(
                   padding: EdgeInsets.symmetric(
                       horizontal: MediaQuery.of(context).size.width * 0.05),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/souscription');
-                      },
-                      icon: const Icon(Icons.add_circle_outline,
-                          color: bleuCoris, size: 22),
-                      label: Text(
-                        'Faire une souscription',
-                        style: TextStyle(
-                          color: bleuCoris,
-                          fontSize: MediaQuery.of(context).size.width * 0.045,
-                          fontWeight: FontWeight.w600,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/souscription');
+                          },
+                          icon: const Icon(Icons.add_circle_outline,
+                              color: bleuCoris, size: 22),
+                          label: Text(
+                            'Faire une souscription',
+                            style: TextStyle(
+                              color: bleuCoris,
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.045,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: bleuCoris, width: 2),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical:
+                                    MediaQuery.of(context).size.height * 0.02),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: bleuCoris, width: 2),
-                        backgroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                            vertical:
-                                MediaQuery.of(context).size.height * 0.02),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ContractPaymentFlow.showSearchAndAmountDialog(
+                                context);
+                          },
+                          icon: const Icon(Icons.payment_outlined,
+                              color: bleuCoris, size: 22),
+                          label: Text(
+                            'Payer mon contrat',
+                            style: TextStyle(
+                              color: bleuCoris,
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.045,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: bleuCoris, width: 2),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical:
+                                    MediaQuery.of(context).size.height * 0.02),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
                         ),
-                        elevation: 2,
                       ),
-                    ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -649,13 +687,15 @@ class _HomeContentState extends State<HomeContent> {
                                       width: 40,
                                       height: 40,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                         return Container(
                                           width: 40,
                                           height: 40,
                                           decoration: BoxDecoration(
                                             color: Colors.grey[300],
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: const Icon(
                                             Icons.image_not_supported,

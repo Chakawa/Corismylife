@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:developer' as developer;
 
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/services/pdf_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
 
 class ContratDetailPage extends StatefulWidget {
   final int subscriptionId;
@@ -133,6 +135,22 @@ class ContratDetailPageState extends State<ContratDetailPage>
         ? double.tryParse(montant) ?? 0
         : (montant as num).toDouble();
     return "${numValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
+  }
+
+  double _getSuggestedPaymentAmount() {
+    final details = _getSubscriptionDetails();
+    final montantRaw = _subscriptionData?['prime'] ??
+        _subscriptionData?['montant'] ??
+        _subscriptionData?['prime_totale'] ??
+        details['prime'] ??
+        details['montant'] ??
+        details['prime_totale'];
+
+    if (montantRaw == null) return 0;
+    if (montantRaw is num) return montantRaw.toDouble();
+
+    final parsed = double.tryParse(montantRaw.toString());
+    return parsed ?? 0;
   }
 
   Color _getBadgeColor(String produit) {
@@ -1401,6 +1419,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildBottomBar() {
     final status = _getContractStatus();
+    final suggestedAmount = _getSuggestedPaymentAmount();
 
     return Container(
       decoration: const BoxDecoration(
@@ -1416,37 +1435,32 @@ class ContratDetailPageState extends State<ContratDetailPage>
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _downloadContract,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF002B6B)),
-                    foregroundColor: const Color(0xFF002B6B),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Télécharger',
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ContractPaymentFlow.showSearchAndAmountDialog(
+                      context,
+                      initialPolicyNumber: widget.contractNumber,
+                      knownSubscriptionId: widget.subscriptionId,
+                      initialAmount:
+                          suggestedAmount > 0 ? suggestedAmount : null,
+                      onPaymentSuccess: _loadContractData,
+                    );
+                  },
+                  icon: const Icon(Icons.payment_outlined),
+                  label: const Text(
+                    'Payer mon contrat',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: status == 'Échu' || status == 'Bientôt échu'
-                      ? _renewContract
-                      : _contactSupport,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _getBadgeColor(_getProductType()),
+                    backgroundColor: const Color(0xFF002B6B),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1454,16 +1468,59 @@ class ContratDetailPageState extends State<ContratDetailPage>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    status == 'Échu' || status == 'Bientôt échu'
-                        ? 'Renouveler'
-                        : 'Contacter le support',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _downloadContract,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF002B6B)),
+                        foregroundColor: const Color(0xFF002B6B),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Télécharger',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: status == 'Échu' || status == 'Bientôt échu'
+                          ? _renewContract
+                          : _contactSupport,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _getBadgeColor(_getProductType()),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        status == 'Échu' || status == 'Bientôt échu'
+                            ? 'Renouveler'
+                            : 'Contacter le support',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1482,14 +1539,66 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  void _downloadContract() {
+  Future<void> _downloadContract() async {
     HapticFeedback.lightImpact();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Téléchargement du contrat en cours...'),
         backgroundColor: _getBadgeColor(_getProductType()),
+        behavior: SnackBarBehavior.floating,
       ),
     );
+
+    try {
+      final productType = _getProductType().toLowerCase();
+      final excludeQuestionnaire = productType.contains('etude') ||
+          productType.contains('familis') ||
+          productType.contains('serenite') ||
+          productType.contains('sérénité');
+
+      final tempFile = await PdfService.fetchToTemp(
+        widget.subscriptionId,
+        excludeQuestionnaire: excludeQuestionnaire,
+      );
+      await PdfService.saveToDownloads(tempFile);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text('Contrat téléchargé avec succès.'),
+              ),
+            ],
+          ),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Erreur téléchargement contrat: $e'),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   void _renewContract() {
