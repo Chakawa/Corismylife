@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/services/contrat_service.dart';
+import 'package:mycorislife/services/wave_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContractPaymentFlow {
   static const Color _bleuCoris = Color(0xFF002B6B);
@@ -383,9 +385,12 @@ class ContractPaymentFlow {
                     'Paiement mobile sécurisé',
                     onTap: () {
                       Navigator.pop(context);
-                      _showInfo(
+                      _startWavePayment(
                         context,
-                        'Paiement Wave bientôt disponible. Utilisez CORIS Money pour le moment.',
+                        subscriptionId: subscriptionId,
+                        numeroPolice: numeroPolice,
+                        montant: montant,
+                        onPaymentSuccess: onPaymentSuccess,
                       );
                     },
                   ),
@@ -521,6 +526,107 @@ class ContractPaymentFlow {
         backgroundColor: isError ? const Color(0xFFEF4444) : _bleuCoris,
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  static Future<void> _startWavePayment(
+    BuildContext context, {
+    required int subscriptionId,
+    required String numeroPolice,
+    required double montant,
+    VoidCallback? onPaymentSuccess,
+  }) async {
+    final waveService = WaveService();
+
+    _showInfo(context, 'Initialisation du paiement Wave...');
+
+    final createResult = await waveService.createCheckoutSession(
+      subscriptionId: subscriptionId,
+      amount: montant,
+      description:
+          'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+    );
+
+    if (!(createResult['success'] == true)) {
+      _showInfo(
+        context,
+        createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.',
+        isError: true,
+      );
+      return;
+    }
+
+    final data = createResult['data'] as Map<String, dynamic>? ?? {};
+    final launchUrlValue = data['launchUrl']?.toString();
+    final sessionId = data['sessionId']?.toString() ?? '';
+    final transactionId = data['transactionId']?.toString();
+
+    if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
+      _showInfo(
+        context,
+        'Réponse Wave incomplète (URL/session). Vérifiez la configuration backend.',
+        isError: true,
+      );
+      return;
+    }
+
+    final waveUri = Uri.tryParse(launchUrlValue);
+    if (waveUri == null) {
+      _showInfo(context, 'URL Wave invalide.', isError: true);
+      return;
+    }
+
+    final launched = await launchUrl(
+      waveUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      _showInfo(
+        context,
+        'Impossible d\'ouvrir Wave. Vérifiez la disponibilité de l\'application ou du navigateur.',
+        isError: true,
+      );
+      return;
+    }
+
+    _showInfo(context, 'Paiement Wave lancé. Vérification du statut en cours...');
+
+    for (int attempt = 0; attempt < 8; attempt++) {
+      await Future.delayed(const Duration(seconds: 3));
+
+      final statusResult = await waveService.getCheckoutStatus(
+        sessionId: sessionId,
+        subscriptionId: subscriptionId,
+        transactionId: transactionId,
+      );
+
+      if (!(statusResult['success'] == true)) {
+        continue;
+      }
+
+      final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
+      final status = (statusData['status'] ?? '').toString().toUpperCase();
+
+      if (status == 'SUCCESS') {
+        _showInfo(context, 'Paiement Wave confirmé avec succès.');
+        onPaymentSuccess?.call();
+        return;
+      }
+
+      if (status == 'FAILED') {
+        _showInfo(
+          context,
+          'Le paiement Wave a échoué ou a été annulé.',
+          isError: true,
+        );
+        return;
+      }
+    }
+
+    _showInfo(
+      context,
+      'Paiement initié. Confirmation en attente, vérifiez à nouveau dans quelques instants.',
     );
   }
 }

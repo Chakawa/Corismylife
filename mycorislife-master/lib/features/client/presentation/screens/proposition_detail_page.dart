@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:developer' as developer;
 
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/services/wave_service.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
@@ -14,6 +16,7 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_mon_bon_plan.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_assure_prestige.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// ============================================
 /// PAGE DE DÉTAILS D'UNE PROPOSITION
@@ -1556,65 +1559,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
-  Widget _buildPaymentOption(
-    String title,
-    IconData icon,
-    Color color,
-    String subtitle,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: fondCarte,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: grisTexte,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: grisTexte, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildPaymentOptionWithImage(
     String title,
     String imagePath,
@@ -1684,8 +1628,199 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
+  double _extractPaymentAmount() {
+    final souscriptionData = _subscriptionData?['souscriptiondata'];
+    if (souscriptionData is! Map) return 0.0;
+
+    final rawValue = souscriptionData['prime_totale'] ??
+        souscriptionData['montant_total'] ??
+        souscriptionData['prime'] ??
+        souscriptionData['montant'] ??
+        souscriptionData['versement_initial'] ??
+        souscriptionData['montant_cotisation'] ??
+        souscriptionData['prime_mensuelle'] ??
+        souscriptionData['capital'] ??
+        0;
+
+    if (rawValue is num) return rawValue.toDouble();
+    return double.tryParse(rawValue.toString()) ?? 0.0;
+  }
+
+  Future<void> _startWavePayment() async {
+    final amount = _extractPaymentAmount();
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Montant de paiement introuvable pour cette proposition.'),
+          backgroundColor: orangeWarning,
+        ),
+      );
+      return;
+    }
+
+    final waveService = WaveService();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Initialisation du paiement Wave...'),
+        backgroundColor: bleuCoris,
+      ),
+    );
+
+    final createResult = await waveService.createCheckoutSession(
+      subscriptionId: widget.subscriptionId,
+      amount: amount,
+      description: 'Paiement proposition #${widget.subscriptionId}',
+    );
+
+    if (!(createResult['success'] == true)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final data = createResult['data'] as Map<String, dynamic>? ?? {};
+    final launchUrlValue = data['launchUrl']?.toString();
+    final sessionId = data['sessionId']?.toString() ?? '';
+    final transactionId = data['transactionId']?.toString();
+
+    if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Réponse Wave incomplète (URL/session). Vérifiez la configuration.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(launchUrlValue);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('URL Wave invalide.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir Wave.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Paiement Wave lancé. Vérification du statut en cours...'),
+        backgroundColor: bleuCoris,
+      ),
+    );
+
+    for (int attempt = 0; attempt < 8; attempt++) {
+      await Future.delayed(const Duration(seconds: 3));
+
+      final statusResult = await waveService.getCheckoutStatus(
+        sessionId: sessionId,
+        subscriptionId: widget.subscriptionId,
+        transactionId: transactionId,
+      );
+
+      if (!(statusResult['success'] == true)) {
+        continue;
+      }
+
+      final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
+      final status = (statusData['status'] ?? '').toString().toUpperCase();
+
+      if (status == 'SUCCESS') {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Paiement Wave confirmé ! La proposition est validée.'),
+            backgroundColor: vertSucces,
+          ),
+        );
+        await _loadSubscriptionData();
+        return;
+      }
+
+      if (status == 'FAILED') {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Paiement Wave échoué ou annulé.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Paiement initié. Confirmation en attente, réessayez dans quelques instants.'),
+        backgroundColor: orangeWarning,
+      ),
+    );
+  }
+
   void _processPayment(String paymentMethod) {
     Navigator.pop(context); // Fermer le bottom sheet
+
+    final amount = _extractPaymentAmount();
+
+    if (paymentMethod == 'CORIS Money') {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => CorisMoneyPaymentModal(
+          subscriptionId: widget.subscriptionId,
+          montant: amount,
+          description: 'Paiement proposition #${widget.subscriptionId}',
+          onPaymentSuccess: () {
+            _loadSubscriptionData();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Paiement CORIS Money effectué avec succès.'),
+                backgroundColor: vertSucces,
+              ),
+            );
+          },
+        ),
+      );
+      return;
+    }
+
+    if (paymentMethod == 'Wave') {
+      _startWavePayment();
+      return;
+    }
+
+    if (paymentMethod == 'Orange Money') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Orange Money sera branché juste après Wave. Utilisez Wave ou CORIS Money.'),
+          backgroundColor: orangeWarning,
+        ),
+      );
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

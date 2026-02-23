@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const corisMoneyService = require('../services/corisMoneyService');
+const waveCheckoutService = require('../services/waveCheckoutService');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const pool = require('../db');
 
@@ -37,6 +38,94 @@ function calculateNextPaymentDate(startDate, periodicite) {
   }
   
   return nextDate;
+}
+
+function mapWaveStatusToInternal(status) {
+  const normalized = (status || '').toString().toLowerCase();
+  if (['paid', 'success', 'succeeded', 'completed', 'complete'].includes(normalized)) {
+    return 'SUCCESS';
+  }
+  if (['failed', 'error', 'cancelled', 'canceled', 'expired'].includes(normalized)) {
+    return 'FAILED';
+  }
+  return 'PENDING';
+}
+
+function extractWaveSessionId(payload = {}) {
+  return (
+    payload.sessionId ||
+    payload.session_id ||
+    payload.id ||
+    payload.checkout_session_id ||
+    payload.reference ||
+    null
+  );
+}
+
+async function upsertContractAfterPayment({ subscriptionId, userId, paymentMethod, paymentTransactionId }) {
+  const subscriptionData = await pool.query(
+    'SELECT * FROM subscriptions WHERE id = $1',
+    [subscriptionId]
+  );
+
+  if (subscriptionData.rows.length === 0) {
+    return { contractCreated: false };
+  }
+
+  const subscription = subscriptionData.rows[0];
+  const nextPaymentDate = calculateNextPaymentDate(new Date(), subscription.periodicite);
+
+  await pool.query(
+    `UPDATE subscriptions 
+      SET statut = 'paid',
+          payment_method = $1,
+          payment_transaction_id = $2,
+          updated_at = NOW()
+      WHERE id = $3`,
+    [paymentMethod, paymentTransactionId, subscriptionId]
+  );
+
+  const contractNumber = `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`;
+
+  await pool.query(
+    `INSERT INTO contracts (
+      subscription_id,
+      user_id,
+      contract_number,
+      product_name,
+      status,
+      amount,
+      periodicite,
+      start_date,
+      next_payment_date,
+      duration_years,
+      payment_method,
+      created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+    ON CONFLICT (subscription_id) DO UPDATE SET
+      status = 'valid',
+      payment_method = EXCLUDED.payment_method,
+      next_payment_date = EXCLUDED.next_payment_date,
+      updated_at = NOW()`,
+    [
+      subscriptionId,
+      userId,
+      contractNumber,
+      subscription.product_name,
+      'valid',
+      subscription.montant,
+      subscription.periodicite,
+      new Date(),
+      nextPaymentDate,
+      subscription.duree || 1,
+      paymentMethod
+    ]
+  );
+
+  return {
+    contractCreated: true,
+    contractNumber,
+  };
 }
 
 /**
@@ -411,6 +500,298 @@ router.post('/process-payment', verifyToken, async (req, res) => {
       success: false,
       message: 'Erreur serveur lors du traitement du paiement',
       error: error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/payment/wave/create-session
+ * @desc    Crée une session de paiement Wave Checkout
+ * @access  Private
+ */
+router.post('/wave/create-session', verifyToken, async (req, res) => {
+  try {
+    const {
+      subscriptionId,
+      montant,
+      amount,
+      currency,
+      customerPhone,
+      codePays,
+      description,
+      successUrl,
+      errorUrl,
+      webhookUrl,
+      clientReference,
+      metadata,
+    } = req.body;
+
+    const normalizedAmount = Number(amount ?? montant);
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Montant invalide pour initier le paiement Wave',
+      });
+    }
+
+    const waveResult = await waveCheckoutService.createCheckoutSession({
+      amount: normalizedAmount,
+      currency,
+      customerPhone,
+      description: description || `Paiement souscription #${subscriptionId || 'N/A'}`,
+      successUrl,
+      errorUrl,
+      webhookUrl,
+      clientReference,
+      metadata: {
+        ...(metadata || {}),
+        subscriptionId: subscriptionId || null,
+        userId: req.user.id,
+      },
+    });
+
+    if (!waveResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: waveResult.message || 'Impossible de créer la session Wave',
+        error: waveResult.error,
+      });
+    }
+
+    const sessionId = waveResult.sessionId;
+    const transactionId = `WAVE-${sessionId || Date.now()}`;
+    const internalStatus = mapWaveStatusToInternal(waveResult.status);
+
+    const inserted = await pool.query(
+      `INSERT INTO payment_transactions (
+        user_id,
+        subscription_id,
+        transaction_id,
+        code_pays,
+        telephone,
+        montant,
+        statut,
+        description,
+        api_response,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      RETURNING id`,
+      [
+        req.user.id,
+        subscriptionId || null,
+        transactionId,
+        codePays || '225',
+        customerPhone || 'N/A',
+        normalizedAmount,
+        internalStatus,
+        description || 'Paiement Wave',
+        JSON.stringify({
+          provider: 'WAVE',
+          sessionId,
+          launchUrl: waveResult.launchUrl,
+          status: waveResult.status,
+          data: waveResult.data,
+        }),
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Session Wave créée avec succès',
+      data: {
+        paymentRecordId: inserted.rows[0].id,
+        transactionId,
+        sessionId,
+        launchUrl: waveResult.launchUrl,
+        status: waveResult.status,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur création session Wave:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la création de la session Wave',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * @route   GET /api/payment/wave/status/:sessionId
+ * @desc    Vérifie le statut d'une session Wave
+ * @access  Private
+ */
+router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { subscriptionId, transactionId } = req.query;
+
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionId Wave requis',
+      });
+    }
+
+    const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
+
+    if (!statusResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: statusResult.message || 'Impossible de récupérer le statut Wave',
+        error: statusResult.error,
+      });
+    }
+
+    const internalStatus = mapWaveStatusToInternal(statusResult.status);
+    const resolvedTransactionId = transactionId || `WAVE-${sessionId}`;
+
+    const paymentTxResult = await pool.query(
+      `UPDATE payment_transactions
+       SET statut = $1,
+           api_response = $2,
+           updated_at = NOW()
+       WHERE transaction_id = $3
+          OR (api_response->>'sessionId') = $4
+          OR (api_response->>'id') = $4
+       RETURNING *`,
+      [
+        internalStatus,
+        JSON.stringify({
+          provider: 'WAVE',
+          sessionId,
+          status: statusResult.status,
+          data: statusResult.data,
+        }),
+        resolvedTransactionId,
+        sessionId,
+      ]
+    );
+
+    const paymentTx = paymentTxResult.rows[0] || null;
+    const resolvedSubscriptionId = Number(subscriptionId || paymentTx?.subscription_id || 0) || null;
+
+    let contractCreated = false;
+    let contractNumber = null;
+
+    if (internalStatus === 'SUCCESS' && resolvedSubscriptionId) {
+      const contractResult = await upsertContractAfterPayment({
+        subscriptionId: resolvedSubscriptionId,
+        userId: req.user.id,
+        paymentMethod: 'Wave',
+        paymentTransactionId: resolvedTransactionId,
+      });
+
+      contractCreated = contractResult.contractCreated;
+      contractNumber = contractResult.contractNumber || null;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Statut Wave récupéré',
+      data: {
+        provider: 'WAVE',
+        sessionId,
+        transactionId: paymentTx?.transaction_id || resolvedTransactionId,
+        status: internalStatus,
+        providerStatus: statusResult.status,
+        contractCreated,
+        contractNumber,
+        apiResponse: statusResult.data,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur statut Wave:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la vérification du statut Wave',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * @route   POST /api/payment/wave/webhook
+ * @desc    Reçoit les notifications webhook Wave
+ * @access  Public
+ */
+router.post('/wave/webhook', async (req, res) => {
+  try {
+    const signature = req.headers['x-wave-signature'];
+    const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+
+    const signatureValid = waveCheckoutService.verifyWebhookSignature({ signature, rawBody });
+    if (!signatureValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Signature webhook Wave invalide',
+      });
+    }
+
+    const payload = req.body || {};
+    const sessionId = extractWaveSessionId(payload) || extractWaveSessionId(payload.data || {});
+
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionId introuvable dans le webhook Wave',
+      });
+    }
+
+    const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
+    if (!statusResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: statusResult.message || 'Impossible de vérifier la session Wave',
+      });
+    }
+
+    const internalStatus = mapWaveStatusToInternal(statusResult.status);
+
+    const txResult = await pool.query(
+      `UPDATE payment_transactions
+       SET statut = $1,
+           api_response = $2,
+           updated_at = NOW()
+       WHERE transaction_id = $3
+          OR (api_response->>'sessionId') = $4
+          OR (api_response->>'id') = $4
+       RETURNING *`,
+      [
+        internalStatus,
+        JSON.stringify({
+          provider: 'WAVE',
+          sessionId,
+          webhookPayload: payload,
+          status: statusResult.status,
+          data: statusResult.data,
+        }),
+        `WAVE-${sessionId}`,
+        sessionId,
+      ]
+    );
+
+    const tx = txResult.rows[0] || null;
+
+    if (tx && internalStatus === 'SUCCESS' && tx.subscription_id && tx.user_id) {
+      await upsertContractAfterPayment({
+        subscriptionId: tx.subscription_id,
+        userId: tx.user_id,
+        paymentMethod: 'Wave',
+        paymentTransactionId: tx.transaction_id,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Webhook Wave traité',
+    });
+  } catch (error) {
+    console.error('Erreur webhook Wave:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors du traitement du webhook Wave',
+      error: error.message,
     });
   }
 });
