@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
@@ -1086,6 +1087,23 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         } catch (uploadError) {
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
         }
+      }
+
+      if (paymentMethod == 'Wave') {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: subscriptionId,
+          amount: double.tryParse(
+                  _montantCotisationController.text.replaceAll(' ', '')) ??
+              0.0,
+          description: 'Paiement prime CORIS MON BON PLAN',
+          onSuccess: () => _showSuccessDialog(true),
+        );
+        return;
       }
 
       // ÉTAPE 2: Simuler le paiement

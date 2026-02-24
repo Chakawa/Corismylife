@@ -1,7 +1,11 @@
 class AppConfig {
-  // émulateur
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
-// telephone
+  // PRODUCTION - Serveur déployé
+  static const String baseUrl = 'http://185.98.138.168:5000/api';
+  
+  // DÉVELOPPEMENT - émulateur Android
+  //static const String baseUrl = 'http://10.0.2.2:5000/api';
+  
+  // DÉVELOPPEMENT - téléphone sur même réseau local
   //static const String baseUrl = 'http://192.168.78.19:5000/api';
 }
 

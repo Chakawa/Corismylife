@@ -49,11 +49,16 @@ app.use('/api/password-reset', require('./routes/passwordResetRoutes'));
 app.use('/api/commissions', require('./routes/commissionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
+
+// Pages de reponse Wave Payment (success/error)
+app.use('/', require('./routes/waveResponseRoutes'));
+
 app.get('/api/config/support', (_, res) => {
   res.json({ success: true, phone: process.env.SUPPORT_PHONE || '+2250700000000' });
 });
 app.use('/api/produits', require('./routes/produitRoutes'));
 app.use('/api/contrats', require('./routes/contratRoutes'));
+app.use('/api/contracts/payment', require('./routes/contractPaymentRoutes'));
 app.use('/api/simulations', require('./routes/simulationRoutes'));
 
 /// ============================================

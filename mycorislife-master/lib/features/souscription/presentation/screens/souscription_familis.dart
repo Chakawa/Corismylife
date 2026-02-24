@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 
 /// Page de souscription pour le produit CORIS FAMILIS
 /// Permet de souscrire à une assurance famille
@@ -3825,6 +3826,21 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
+      }
+
+      if (paymentMethod == 'Wave') {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: subscriptionId,
+          amount: _calculatedPrime ?? 0.0,
+          description: 'Paiement prime CORIS FAMILIS',
+          onSuccess: () => _showSuccessDialog(true),
+        );
+        return;
       }
 
       // ÉTAPE 2: Simuler le paiement

@@ -66,7 +66,6 @@ class WaveCheckoutService {
     const normalizedCurrency = currency || this.defaultCurrency;
     const resolvedSuccessUrl = successUrl || this.defaultSuccessUrl;
     const resolvedErrorUrl = errorUrl || this.defaultErrorUrl;
-    const resolvedWebhookUrl = webhookUrl || this.defaultWebhookUrl;
 
     if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
       return {
@@ -90,7 +89,6 @@ class WaveCheckoutService {
           wave_launch_url: `https://wave.com/checkout/${fakeSessionId}`,
           success_url: resolvedSuccessUrl,
           error_url: resolvedErrorUrl,
-          webhook_url: resolvedWebhookUrl,
           customer_phone: customerPhone || null,
           description: description || 'Paiement assurance CORIS',
           metadata,
@@ -100,19 +98,28 @@ class WaveCheckoutService {
       };
     }
 
+    // ✅ Payload SANS webhook (mode polling uniquement)
     const payload = {
       amount: normalizedAmount,
       currency: normalizedCurrency,
-      client_reference: clientReference,
+      client_reference: clientReference || `REF-${Date.now()}`,
       success_url: resolvedSuccessUrl,
       error_url: resolvedErrorUrl,
-      webhook_url: resolvedWebhookUrl,
       description: description || 'Paiement assurance CORIS',
-      customer: {
-        phone_number: customerPhone,
-      },
       metadata,
     };
+
+    // Ajouter webhook SEULEMENT s'il est explicitement fourni
+    if (webhookUrl) {
+      payload.webhook_url = webhookUrl;
+    }
+
+    // Ajouter customer SEULEMENT si numéro fourni
+    if (customerPhone) {
+      payload.customer = {
+        phone_number: customerPhone,
+      };
+    }
 
     try {
       const response = await axios.post(

@@ -15,6 +15,7 @@ import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 
 class SouscriptionEtudePage extends StatefulWidget {
   final int? ageParent;
@@ -2658,6 +2659,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           // On continue même si l'upload échoue
         }
+      }
+
+      if (paymentMethod == 'Wave') {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: subscriptionId,
+          amount: _primeCalculee,
+          description: 'Paiement prime CORIS ÉTUDE',
+          onSuccess: () => _showSuccessDialog(true),
+        );
+        return;
       }
 
       // ÉTAPE 2: Simuler le paiement

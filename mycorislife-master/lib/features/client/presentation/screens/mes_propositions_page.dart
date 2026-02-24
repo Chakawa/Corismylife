@@ -5,6 +5,7 @@ import 'package:mycorislife/models/subscription.dart';
 import 'package:mycorislife/features/client/presentation/screens/proposition_detail_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 
 /// ============================================
 /// PAGE DES PROPOSITIONS
@@ -1079,7 +1080,7 @@ class _PropositionsPageState extends State<PropositionsPage>
     );
   }
 
-  void _processPayment(Subscription subscription, String paymentMethod) {
+  void _processPayment(Subscription subscription, String paymentMethod) async {
     Navigator.pop(context); // Fermer le bottom sheet
 
     // Si c'est CORIS Money, afficher le modal de paiement
@@ -1119,6 +1120,35 @@ class _PropositionsPageState extends State<PropositionsPage>
             );
           },
         ),
+      );
+    } else if (paymentMethod == 'Wave') {
+      final souscriptionData = subscription.souscriptionData;
+      double montant = 0.0;
+
+      if (souscriptionData != null) {
+        final value = souscriptionData['prime_totale'] ??
+            souscriptionData['montant_total'] ??
+            souscriptionData['prime'] ??
+            souscriptionData['montant'] ??
+            souscriptionData['versement_initial'] ??
+            souscriptionData['montant_cotisation'] ??
+            souscriptionData['prime_mensuelle'] ??
+            souscriptionData['capital'] ??
+            0.0;
+
+        if (value is num) {
+          montant = value.toDouble();
+        } else {
+          montant = double.tryParse(value.toString()) ?? 0.0;
+        }
+      }
+
+      await WavePaymentHandler.startPayment(
+        context,
+        subscriptionId: subscription.id,
+        amount: montant,
+        description: 'Paiement ${subscription.produitNom} #${subscription.id}',
+        onSuccess: _loadPropositions,
       );
     } else {
       // Pour les autres modes de paiement (Wave, Orange Money)

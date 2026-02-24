@@ -14,6 +14,7 @@ import '../../../../core/widgets/subscription_recap_widgets.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 
 // Enum pour le type de simulation
 enum SimulationType { parPrime, parCapital }
@@ -4466,6 +4467,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           // On continue même si l'upload échoue
         }
+      }
+
+      if (paymentMethod == 'Wave') {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: subscriptionId,
+          amount: _calculatedPrime,
+          description: 'Paiement prime CORIS RETRAITE',
+          onSuccess: () => _showSuccessDialog(true),
+        );
+        return;
       }
 
       // ÉTAPE 2: Simuler le paiement

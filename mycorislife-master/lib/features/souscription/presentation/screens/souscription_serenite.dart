@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
@@ -5576,6 +5577,21 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
+      }
+
+      if (paymentMethod == 'Wave') {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: subscriptionId,
+          amount: _calculatedPrime,
+          description: 'Paiement prime CORIS SÉRÉNITÉ',
+          onSuccess: () => _showSuccessDialog(true),
+        );
+        return;
       }
 
       // ÉTAPE 2: Simuler le paiement (pour Wave, Orange Money, etc.)
