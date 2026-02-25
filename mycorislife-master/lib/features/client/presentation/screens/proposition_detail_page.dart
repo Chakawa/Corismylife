@@ -1647,128 +1647,144 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   }
 
   Future<void> _startWavePayment() async {
-    final amount = _extractPaymentAmount();
-    if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Montant de paiement introuvable pour cette proposition.'),
-          backgroundColor: orangeWarning,
-        ),
-      );
-      return;
-    }
-
-    final waveService = WaveService();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Initialisation du paiement Wave...'),
-        backgroundColor: bleuCoris,
-      ),
-    );
-
-    final createResult = await waveService.createCheckoutSession(
-      subscriptionId: widget.subscriptionId,
-      amount: amount,
-      description: 'Paiement proposition #${widget.subscriptionId}',
-    );
-
-    if (!(createResult['success'] == true)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final data = createResult['data'] as Map<String, dynamic>? ?? {};
-    final launchUrlValue = data['launchUrl']?.toString();
-    final sessionId = data['sessionId']?.toString() ?? '';
-    final transactionId = data['transactionId']?.toString();
-
-    if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Réponse Wave incomplète (URL/session). Vérifiez la configuration.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final uri = Uri.tryParse(launchUrlValue);
-    if (uri == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('URL Wave invalide.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible d\'ouvrir Wave.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Paiement Wave lancé. Vérification du statut en cours...'),
-        backgroundColor: bleuCoris,
-      ),
-    );
-
-    for (int attempt = 0; attempt < 8; attempt++) {
-      await Future.delayed(const Duration(seconds: 3));
-
-      final statusResult = await waveService.getCheckoutStatus(
-        sessionId: sessionId,
-        subscriptionId: widget.subscriptionId,
-        transactionId: transactionId,
-      );
-
-      if (!(statusResult['success'] == true)) {
-        continue;
-      }
-
-      final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
-      final status = (statusData['status'] ?? '').toString().toUpperCase();
-
-      if (status == 'SUCCESS') {
-        if (!mounted) return;
+    try {
+      final amount = _extractPaymentAmount();
+      if (amount <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Paiement Wave confirmé ! La proposition est validée.'),
-            backgroundColor: vertSucces,
+            content: Text('Montant de paiement introuvable pour cette proposition.'),
+            backgroundColor: orangeWarning,
           ),
         );
-        await _loadSubscriptionData();
         return;
       }
 
-      if (status == 'FAILED') {
+      final waveService = WaveService();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Initialisation du paiement Wave...'),
+          backgroundColor: bleuCoris,
+        ),
+      );
+
+      final createResult = await waveService.createCheckoutSession(
+        subscriptionId: widget.subscriptionId,
+        amount: amount,
+        description: 'Paiement proposition #${widget.subscriptionId}',
+      );
+
+      if (!(createResult['success'] == true)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Paiement Wave échoué ou annulé.'),
+          SnackBar(
+            content: Text(createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.'),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
+
+      final data = createResult['data'] as Map<String, dynamic>? ?? {};
+      final launchUrlValue = data['launchUrl']?.toString();
+      final sessionId = data['sessionId']?.toString() ?? '';
+      final transactionId = data['transactionId']?.toString();
+
+      if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Réponse Wave incomplète (URL/session). Vérifiez la configuration.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final uri = Uri.tryParse(launchUrlValue);
+      if (uri == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('URL Wave invalide.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      bool launched = false;
+      if (await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      if (!launched) {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+      if (!launched) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible d\'ouvrir Wave (application ou navigateur).'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Paiement Wave lancé. Vérification du statut en cours...'),
+          backgroundColor: bleuCoris,
+        ),
+      );
+
+      for (int attempt = 0; attempt < 8; attempt++) {
+        await Future.delayed(const Duration(seconds: 3));
+
+        final statusResult = await waveService.getCheckoutStatus(
+          sessionId: sessionId,
+          subscriptionId: widget.subscriptionId,
+          transactionId: transactionId,
+        );
+
+        if (!(statusResult['success'] == true)) {
+          continue;
+        }
+
+        final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
+        final status = (statusData['status'] ?? '').toString().toUpperCase();
+
+        if (status == 'SUCCESS') {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Paiement Wave confirmé ! La proposition est validée.'),
+              backgroundColor: vertSucces,
+            ),
+          );
+          await _loadSubscriptionData();
+          return;
+        }
+
+        if (status == 'FAILED') {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Paiement Wave échoué ou annulé.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du paiement Wave: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
 
     if (!mounted) return;

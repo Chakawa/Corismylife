@@ -24,6 +24,21 @@ class WaveCheckoutService {
     }
   }
 
+  _isHttpsUrl(value) {
+    if (!value || typeof value !== 'string') return false;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'https:';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  _resolveRequiredHttpsUrl(value, fallbackPath) {
+    if (this._isHttpsUrl(value)) return value;
+    return `https://example.com${fallbackPath}`;
+  }
+
   _checkCredentials() {
     if (this.devMode) return;
     if (!this.apiKey) {
@@ -64,10 +79,21 @@ class WaveCheckoutService {
 
     const normalizedAmount = Number(amount);
     const normalizedCurrency = currency || this.defaultCurrency;
-    const resolvedSuccessUrl = successUrl || this.defaultSuccessUrl;
-    const resolvedErrorUrl = errorUrl || this.defaultErrorUrl;
+    const zeroDecimalCurrencies = new Set(['XOF']);
+    const currencyCode = String(normalizedCurrency).toUpperCase();
+    const amountForProvider = zeroDecimalCurrencies.has(currencyCode)
+      ? Math.round(normalizedAmount)
+      : normalizedAmount;
+    const resolvedSuccessUrl = this._resolveRequiredHttpsUrl(
+      successUrl || this.defaultSuccessUrl,
+      '/wave-success'
+    );
+    const resolvedErrorUrl = this._resolveRequiredHttpsUrl(
+      errorUrl || this.defaultErrorUrl,
+      '/wave-error'
+    );
 
-    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    if (!Number.isFinite(amountForProvider) || amountForProvider <= 0) {
       return {
         success: false,
         message: 'Montant invalide pour la session Wave',
@@ -83,7 +109,7 @@ class WaveCheckoutService {
         status: 'pending',
         data: {
           id: fakeSessionId,
-          amount: normalizedAmount,
+          amount: amountForProvider,
           currency: normalizedCurrency,
           status: 'pending',
           wave_launch_url: `https://wave.com/checkout/${fakeSessionId}`,
@@ -100,13 +126,11 @@ class WaveCheckoutService {
 
     // ✅ Payload SANS webhook (mode polling uniquement)
     const payload = {
-      amount: normalizedAmount,
+      amount: amountForProvider,
       currency: normalizedCurrency,
       client_reference: clientReference || `REF-${Date.now()}`,
       success_url: resolvedSuccessUrl,
       error_url: resolvedErrorUrl,
-      description: description || 'Paiement assurance CORIS',
-      metadata,
     };
 
     // Ajouter webhook SEULEMENT s'il est explicitement fourni

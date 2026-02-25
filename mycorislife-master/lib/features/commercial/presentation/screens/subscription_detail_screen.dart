@@ -224,13 +224,19 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       return;
     }
 
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    bool launched = false;
+    if (await canLaunchUrl(uri)) {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    if (!launched) {
+      launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
     if (!launched) {
       if (!mounted) return;
       setState(() => _isProcessingPayment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible d\'ouvrir Wave.'),
+          content: Text('Impossible d\'ouvrir Wave (application ou navigateur).'),
           backgroundColor: Colors.red,
         ),
       );
