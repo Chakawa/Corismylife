@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:developer' as developer;
 
+import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
@@ -1642,8 +1643,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         souscriptionData['capital'] ??
         0;
 
-    if (rawValue is num) return rawValue.toDouble();
-    return double.tryParse(rawValue.toString()) ?? 0.0;
+    double amount = rawValue is num ? rawValue.toDouble() : double.tryParse(rawValue.toString()) ?? 0.0;
+    
+    // Mode test: forcer 10 XOF pour les tests de paiement Wave
+    if (AppConfig.TEST_MODE_FORCE_10_XOF) {
+      debugPrint('[TEST MODE] Montant forcé à 10 XOF au lieu de $amount');
+      return 10.0;
+    }
+    return amount;
   }
 
   Future<void> _startWavePayment() async {
@@ -1756,14 +1763,73 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
         if (status == 'SUCCESS') {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Paiement Wave confirmé ! La proposition est validée.'),
-              backgroundColor: vertSucces,
-            ),
-          );
-          await _loadSubscriptionData();
-          return;
+          
+          // 🎉 PAIEMENT RÉUSSI - Convertir la proposition en contrat + envoyer SMS
+          try {
+            final waveService = WaveService();
+            final confirmResult = await waveService.confirmWavePayment(widget.subscriptionId);
+            
+            if (confirmResult['success'] == true) {
+              if (!mounted) return;
+              
+              // ✅ Afficher le message de succès avec les détails
+              final confirmData = confirmResult['data'] as Map<String, dynamic>? ?? {};
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        '✅ Paiement Wave correctement effectué !',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Montant: ${confirmData['montant']} FCFA',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'La proposition est maintenant un contrat. Un SMS a été envoyé.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: vertSucces,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+              
+              // Recharger les données pour afficher le nouveau statut
+              await _loadSubscriptionData();
+              return;
+            } else {
+              // Erreur lors de la confirmation
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    confirmResult['message']?.toString() ?? '❌ Erreur lors de la confirmation du paiement.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              // Essayer de recharger quand même
+              await _loadSubscriptionData();
+              return;
+            }
+          } catch (confirmError) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('❌ Erreur confirmation: $confirmError'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            await _loadSubscriptionData();
+            return;
+          }
         }
 
         if (status == 'FAILED') {

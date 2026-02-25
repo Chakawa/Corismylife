@@ -117,4 +117,50 @@ class WaveService {
       };
     }
   }
+
+  /// 🎉 Finaliser le paiement Wave réussi:
+  /// 1. Convertit la proposition en contrat
+  /// 2. Envoie un SMS de confirmation au client
+  /// @param subscriptionId - ID de la souscription
+  /// @returns {success, message, data{subscriptionId, statut, montant, client}}
+  Future<Map<String, dynamic>> confirmWavePayment(int subscriptionId) async {
+    try {
+      final token = await _storage.read(key: 'token');
+      if (token == null || token.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Session expirée. Veuillez vous reconnecter.',
+        };
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/payment/confirm-wave-payment/$subscriptionId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {
+          'success': true,
+          'data': data['data'] ?? data,
+          'message': data['message'] ?? 'Paiement confirmé avec succès',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Impossible de confirmer le paiement',
+        'error': data['error'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Erreur réseau lors de la confirmation: $e',
+      };
+    }
+  }
 }

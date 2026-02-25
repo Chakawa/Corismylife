@@ -1068,4 +1068,103 @@ router.get('/contracts/:id', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/payment/confirm-wave-payment/:subscriptionId
+ * @desc    Finaliser un paiement Wave réussi:
+ *          1. Changer le statut de 'proposition' à 'contrat'
+ *          2. Envoyer un SMS de confirmation au client
+ * @access  Private
+ * @param   subscriptionId - ID de la souscription/proposition
+ */
+router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    const userId = req.user.id;
+
+    // 1️⃣ RÉCUPÉRER LES INFOS DE LA SOUSCRIPTION
+    const subQuery = await pool.query(
+      `SELECT 
+        s.id, s.produit_nom, s.montant, s.user_id,
+        u.nom_prenom, u.telephone, u.email
+       FROM subscriptions s
+       LEFT JOIN users u ON s.user_id = u.id
+       WHERE s.id = $1 AND s.user_id = $2`,
+      [subscriptionId, userId]
+    );
+
+    if (subQuery.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée'
+      });
+    }
+
+    const subscription = subQuery.rows[0];
+
+    // 2️⃣ CHANGER LE STATUT À 'contrat'
+    const updateStatusQuery = await pool.query(
+      `UPDATE subscriptions 
+       SET statut = 'contrat', 
+           date_validation = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [subscriptionId, userId]
+    );
+
+    if (updateStatusQuery.rows.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Impossible de mettre à jour le statut de la proposition'
+      });
+    }
+
+    const updatedSubscription = updateStatusQuery.rows[0];
+
+    // 3️⃣ ENVOYER UN SMS DE CONFIRMATION
+    try {
+      if (subscription.telephone) {
+        const { sendSMS } = require('../services/notificationService');
+        
+        const montantFormatted = parseFloat(subscription.montant).toLocaleString('fr-FR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+
+        const smsMessage = `✅ Paiement Wave confirmé! Montant: ${montantFormatted} FCFA pour ${subscription.produit_nom}. Votre proposition est maintenant un contrat. Merci. CORIS Assurance`;
+
+        const phoneNumber = '225' + subscription.telephone;
+        const smsResult = await sendSMS(phoneNumber, smsMessage);
+
+        console.log('📱 SMS de confirmation envoyé:', smsResult.success ? '✅' : '⚠️');
+      }
+    } catch (smsError) {
+      console.error('⚠️ Erreur envoi SMS:', smsError.message);
+      // Ne pas bloquer si SMS échoue
+    }
+
+    // 4️⃣ RETOURNER LE SUCCÈS
+    return res.status(200).json({
+      success: true,
+      message: '✅ Paiement confirmé ! La proposition est maintenant un contrat.',
+      data: {
+        subscriptionId: updatedSubscription.id,
+        statut: updatedSubscription.statut,
+        date_validation: updatedSubscription.date_validation,
+        produit: subscription.produit_nom,
+        montant: subscription.montant,
+        client: subscription.nom_prenom
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur confirmation Wave payment:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la confirmation du paiement',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

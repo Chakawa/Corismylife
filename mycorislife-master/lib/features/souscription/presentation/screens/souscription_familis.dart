@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
@@ -3836,7 +3837,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: _calculatedPrime ?? 0.0,
+          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime ?? 0.0, context: 'souscription_familis'),
           description: 'Paiement prime CORIS FAMILIS',
           onSuccess: () => _showSuccessDialog(true),
         );

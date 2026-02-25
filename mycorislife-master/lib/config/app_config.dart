@@ -26,6 +26,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 /// - Android emulator -> 10.0.2.2
 /// - iOS simulator / desktop / web -> localhost
 class AppConfig {
+  // Mode test: remplace les montants réels par 10 XOF pour validation paiement
+  // À DÉSACTIVER en production (false)
+  static const bool TEST_MODE_FORCE_10_XOF = true;
+
   static String get baseUrl {
     if (!kIsWeb && Platform.isAndroid) return 'http://185.98.138.168/api';
     return 'http://185.98.138.168/api';

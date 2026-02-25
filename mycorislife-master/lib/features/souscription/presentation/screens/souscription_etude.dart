@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
@@ -2669,7 +2670,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: _primeCalculee,
+          amount: TestModeHelper.applyTestModeIfNeeded(_primeCalculee, context: 'souscription_etude'),
           description: 'Paiement prime CORIS ÉTUDE',
           onSuccess: () => _showSuccessDialog(true),
         );
