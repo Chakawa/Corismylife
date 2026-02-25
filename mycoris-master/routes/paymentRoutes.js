@@ -1167,4 +1167,805 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
   }
 });
 
+/**
+ * @route   GET /wave-success
+ * @desc    Page de succès affichée après paiement réussi Wave
+ * @access  Public (Wave redirige l'utilisateur)
+ * 
+ * URL appelée par Wave après succès du paiement
+ * Affiche un message de confirmation et ferme la session browser
+ */
+router.get('/wave-success', async (req, res) => {
+  try {
+    const { session_id, amount, currency, reference } = req.query;
+
+    console.log('✅ WAVE SUCCESS PAGE APPELÉE');
+    console.log('   Session ID:', session_id);
+    console.log('   Montant:', amount, currency);
+    console.log('   Référence:', reference);
+
+    // 🔒 SÉCURITÉ: Vérifier le statut auprès de Wave
+    if (session_id) {
+      try {
+        const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
+        console.log('📊 Vérification Wave:', sessionStatus.status);
+      } catch (e) {
+        console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
+      }
+    }
+
+    // 🌐 Page HTML de confirmation avec style moderne
+    const htmlPage = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Paiement Réussi - CORIS Assurance</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+
+          .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+          }
+
+          @keyframes slideUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: popIn 0.6s ease-out;
+          }
+
+          @keyframes popIn {
+            0% {
+              transform: scale(0);
+            }
+            50% {
+              transform: scale(1.2);
+            }
+            100% {
+              transform: scale(1);
+            }
+          }
+
+          .checkmark svg {
+            stroke: white;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: drawCheck 0.6s ease-out 0.3s forwards;
+            animation-fill-mode: forwards;
+            opacity: 0;
+          }
+
+          @keyframes drawCheck {
+            to {
+              opacity: 1;
+            }
+          }
+
+          h1 {
+            color: #002B6B;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+          }
+
+          p {
+            color: #64748B;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+          }
+
+          .details {
+            background: #F8FAFC;
+            border-left: 4px solid #10B981;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+          }
+
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: #475569;
+            font-size: 14px;
+          }
+
+          .detail-row strong {
+            color: #002B6B;
+          }
+
+          .actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 30px;
+          }
+
+          button, a {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+          }
+
+          .btn-primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+          }
+
+          .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+          }
+
+          .btn-secondary {
+            background: #E2E8F0;
+            color: #002B6B;
+          }
+
+          .btn-secondary:hover {
+            background: #CBD5E1;
+          }
+
+          .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+          }
+
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #E2E8F0;
+            color: #94A3B8;
+            font-size: 12px;
+          }
+
+          .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #E2E8F0;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            color: #64748B;
+            transition: all 0.3s ease;
+          }
+
+          .close-btn:hover {
+            background: #CBD5E1;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <button class="close-btn" onclick="closeWindow()">✕</button>
+
+          <div class="checkmark">
+            <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+              <path d="M10 25L20 35L40 15" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <h1>Paiement Réussi! 🎉</h1>
+          <p>Votre paiement a été traité avec succès. Votre session se ferme automatiquement dans <span id="countdown">5</span> secondes.</p>
+
+          <div class="details">
+            <div class="detail-row">
+              <strong>Montant payé:</strong>
+              <span>${amount ? (parseInt(amount) / 100).toFixed(0) : 'N/A'} ${currency || 'XOF'}</span>
+            </div>
+            <div class="detail-row">
+              <strong>ID de session:</strong>
+              <span>${session_id ? session_id.substring(0, 15) + '...' : 'N/A'}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Référence:</strong>
+              <span>${reference || 'N/A'}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Heure:</strong>
+              <span>${new Date().toLocaleString('fr-FR')}</span>
+            </div>
+          </div>
+
+          <p>Un SMS de confirmation a été envoyé à votre numéro de téléphone.</p>
+
+          <div class="actions">
+            <button class="btn-primary" onclick="returnToApp()">
+              <span class="loading-spinner"></span> Retourner à l'application
+            </button>
+            <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
+          </div>
+
+          <div class="footer">
+            <p>© 2026 CORIS Assurance - Tous droits réservés</p>
+            <p>Si vous n'êtes pas redirigé automatiquement, cliquez sur "Retourner à l'application"</p>
+          </div>
+        </div>
+
+        <script>
+          let countdown = 5;
+          
+          // Fermer après 5 secondes
+          const timer = setInterval(() => {
+            countdown--;
+            document.getElementById('countdown').textContent = countdown;
+            if (countdown === 0) {
+              clearInterval(timer);
+              closeWindow();
+            }
+          }, 1000);
+
+          function closeWindow() {
+            // Essayer de fermer la fenêtre
+            if (window.opener) {
+              window.opener.focus();
+              window.close();
+            } else {
+              // Si pas de parent, faire retour au protocole custom
+              window.location.href = 'coris://payment-success';
+            }
+          }
+
+          function returnToApp() {
+            // Rediriger vers le protocole custom ou fallback
+            if (window.opener) {
+              window.opener.focus();
+              window.close();
+            } else {
+              // Schema custom pour rediriger vers l'app Flutter
+              window.location.href = 'coris://payment-success?session_id=${session_id}';
+              // Fallback si le schema n'est pas reconnu
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1000);
+            }
+          }
+
+          // Avertir le parent (si ouverture en popup)
+          if (window.opener && typeof window.opener !== 'undefined') {
+            try {
+              window.opener.postMessage({
+                type: 'WAVE_PAYMENT_SUCCESS',
+                sessionId: '${session_id}',
+                amount: ${amount || 0},
+                currency: '${currency || 'XOF'}',
+                reference: '${reference || ''}'
+              }, '*');
+            } catch (e) {
+              console.error('Erreur postMessage:', e);
+            }
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    res.type('text/html').send(htmlPage);
+  } catch (error) {
+    console.error('Erreur page success:', error);
+    res.status(500).type('text/html').send(`
+      <html>
+      <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f0f0;">
+        <div style="background: white; padding: 40px; border-radius: 8px; text-align: center;">
+          <h1 style="color: #e74c3c;">Erreur</h1>
+          <p>Une erreur s'est produite lors du traitement de votre paiement.</p>
+          <p>Code: ${error.message}</p>
+          <a href="/" style="color: #3498db; text-decoration: none;">Retour</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+});
+
+/**
+ * @route   GET /wave-error
+ * @desc    Page d'erreur affichée après échec du paiement Wave
+ * @access  Public (Wave redirige l'utilisateur)
+ */
+router.get('/wave-error', async (req, res) => {
+  try {
+    const { session_id, reason, error_code } = req.query;
+
+    console.log('❌ WAVE ERROR PAGE APPELÉE');
+    console.log('   Session ID:', session_id);
+    console.log('   Raison:', reason);
+    console.log('   Code erreur:', error_code);
+
+    // 🔒 SÉCURITÉ: Vérifier le statut auprès de Wave
+    if (session_id) {
+      try {
+        const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
+        console.log('📊 Vérification Wave:', sessionStatus.status);
+      } catch (e) {
+        console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
+      }
+    }
+
+    // 🌐 Page HTML d'erreur avec style moderne
+    const htmlPage = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Paiement Échoué - CORIS Assurance</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+
+          .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+          }
+
+          @keyframes slideUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .error-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: #EF4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: shake 0.6s ease-out;
+          }
+
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+          }
+
+          .error-icon svg {
+            stroke: white;
+            stroke-width: 3;
+            stroke-linecap: round;
+          }
+
+          h1 {
+            color: #002B6B;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+          }
+
+          p {
+            color: #64748B;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+          }
+
+          .error-details {
+            background: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+          }
+
+          .detail-row {
+            padding: 8px 0;
+            color: #475569;
+            font-size: 14px;
+          }
+
+          .error-reason {
+            background: #FCE7E7;
+            padding: 12px;
+            border-radius: 6px;
+            color: #DC2626;
+            font-weight: 500;
+            margin-bottom: 12px;
+          }
+
+          .actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 30px;
+          }
+
+          button, a {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+          }
+
+          .btn-primary {
+            background: #002B6B;
+            color: white;
+          }
+
+          .btn-primary:hover {
+            transform: translateY(-2px);
+            background: #1a3a5f;
+          }
+
+          .btn-secondary {
+            background: #E2E8F0;
+            color: #002B6B;
+          }
+
+          .btn-secondary:hover {
+            background: #CBD5E1;
+          }
+
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #E2E8F0;
+            color: #94A3B8;
+            font-size: 12px;
+          }
+
+          .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #E2E8F0;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            color: #64748B;
+            transition: all 0.3s ease;
+          }
+
+          .close-btn:hover {
+            background: #CBD5E1;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <button class="close-btn" onclick="closeWindow()">✕</button>
+
+          <div class="error-icon">
+            <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+              <line x1="15" y1="15" x2="35" y2="35"/>
+              <line x1="35" y1="15" x2="15" y2="35"/>
+            </svg>
+          </div>
+
+          <h1>Paiement Échoué ❌</h1>
+          <p>Votre paiement n'a pas pu être complété. Veuillez réessayer.</p>
+
+          <div class="error-details">
+            <div class="error-reason">
+              ${reason ? reason.replace(/^\w/, (c) => c.toUpperCase()) : 'Raison inconnue'}
+            </div>
+            <div class="detail-row">
+              <strong>Code erreur:</strong> ${error_code || 'N/A'}
+            </div>
+            <div class="detail-row">
+              <strong>Session ID:</strong> ${session_id ? session_id.substring(0, 15) + '...' : 'N/A'}
+            </div>
+            <div class="detail-row">
+              <strong>Heure:</strong> ${new Date().toLocaleString('fr-FR')}
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn-primary" onclick="returnToApp()">
+              Retour à l'application
+            </button>
+            <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
+          </div>
+
+          <div class="footer">
+            <p>© 2026 CORIS Assurance - Tous droits réservés</p>
+            <p>Si vous avez besoin d'aide, contactez notre support: support@corisassurance.ci</p>
+          </div>
+        </div>
+
+        <script>
+          function closeWindow() {
+            if (window.opener) {
+              window.opener.focus();
+              window.close();
+            } else {
+              window.location.href = 'coris://payment-error';
+            }
+          }
+
+          function returnToApp() {
+            if (window.opener) {
+              window.opener.focus();
+              window.close();
+            } else {
+              window.location.href = 'coris://payment-error?session_id=${session_id}';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1000);
+            }
+          }
+
+          // Notifier le parent si ouverture en popup
+          if (window.opener && typeof window.opener !== 'undefined') {
+            try {
+              window.opener.postMessage({
+                type: 'WAVE_PAYMENT_ERROR',
+                sessionId: '${session_id}',
+                reason: '${reason || 'unknown'}',
+                errorCode: '${error_code || 'unknown'}'
+              }, '*');
+            } catch (e) {
+              console.error('Erreur postMessage:', e);
+            }
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    res.type('text/html').send(htmlPage);
+  } catch (error) {
+    console.error('Erreur page error:', error);
+    res.status(500).type('text/html').send(`
+      <html>
+      <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f0f0;">
+        <div style="background: white; padding: 40px; border-radius: 8px; text-align: center;">
+          <h1 style="color: #e74c3c;">Erreur</h1>
+          <p>Une erreur s'est produite.</p>
+          <a href="/" style="color: #3498db; text-decoration: none;">Retour</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+});
+
+/**
+ * @route   POST /api/payment/wave/webhook
+ * @desc    Webhook appelé par Wave après chaque événement de paiement
+ * @access  Public (mais sécurisé par signature)
+ * 
+ * Wave envoie les paiements avec une signature HMAC-SHA256 pour vérifier l'authenticité.
+ * Cette route vérifie la signature et traite l'événement.
+ */
+router.post('/wave/webhook', async (req, res) => {
+  try {
+    const signature = req.headers['x-wave-signature'] || req.headers['x-signature-header'];
+    const body = JSON.stringify(req.body);
+
+    console.log('🔔 WEBHOOK WAVE REÇU');
+    console.log('   Event type:', req.body.type);
+    console.log('   Signature présente:', !!signature);
+
+    // 🔒 SÉCURITÉ: Vérifier la signature Wave
+    if (!signature) {
+      console.warn('⚠️ Webhook sans signature, rejet');
+      return res.status(401).json({
+        success: false,
+        message: 'Signature manquante'
+      });
+    }
+
+    // Vérifier la signature
+    const secretKey = process.env.WAVE_WEBHOOK_SECRET;
+    if (!secretKey) {
+      console.error('❌ WAVE_WEBHOOK_SECRET non configurée');
+      return res.status(500).json({
+        success: false,
+        message: 'Configuration serveur incomplète'
+      });
+    }
+
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', secretKey)
+      .update(body)
+      .digest('base64');
+
+    if (signature !== expectedSignature) {
+      console.error('❌ Signature invalide!');
+      console.error('   Reçue:', signature);
+      console.error('   Attendue:', expectedSignature);
+      return res.status(403).json({
+        success: false,
+        message: 'Signature invalide'
+      });
+    }
+
+    console.log('✅ Signature valide');
+
+    const event = req.body;
+    const { type, data } = event;
+
+    // Traiter l'événement
+    if (type === 'checkout.session.completed' || type === 'payment.succeeded') {
+      const sessionId = data?.checkout_session_id || data?.sessionId || data?.id;
+      const status = data?.status || data?.payment_status;
+      const amount = data?.amount;
+      const currency = data?.currency;
+      const reference = data?.client_reference || data?.reference;
+
+      console.log('💳 Paiement réussi via webhook');
+      console.log('   Session:', sessionId);
+      console.log('   Montant:', amount, currency);
+      console.log('   Référence:', reference);
+
+      // Mettre à jour la transaction en base de données
+      if (sessionId) {
+        await pool.query(
+          `UPDATE payment_transactions
+           SET statut = 'SUCCESS',
+               api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $1,
+               webhook_received_at = NOW(),
+               updated_at = NOW()
+           WHERE (api_response->>'sessionId') = $2
+              OR (api_response->>'id') = $2`,
+          [
+            JSON.stringify({
+              webhook_event_type: type,
+              webhook_data: data,
+              webhook_received_at: new Date().toISOString()
+            }),
+            sessionId
+          ]
+        );
+
+        console.log('✅ Transaction mise à jour en base');
+      }
+
+      // ✅ Retourner 200 OK à Wave
+      return res.status(200).json({
+        success: true,
+        message: 'Événement traité',
+        sessionId: sessionId
+      });
+    }
+
+    if (type === 'checkout.session.expired' || type === 'payment.failed') {
+      const sessionId = data?.checkout_session_id || data?.sessionId || data?.id;
+
+      console.log('⏳ Paiement échoué/expiré via webhook');
+      console.log('   Session:', sessionId);
+
+      // Mettre à jour en FAILED
+      if (sessionId) {
+        await pool.query(
+          `UPDATE payment_transactions
+           SET statut = 'FAILED',
+               api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $1,
+               webhook_received_at = NOW(),
+               updated_at = NOW()
+           WHERE (api_response->>'sessionId') = $2
+              OR (api_response->>'id') = $2`,
+          [
+            JSON.stringify({
+              webhook_event_type: type,
+              webhook_data: data,
+              webhook_received_at: new Date().toISOString()
+            }),
+            sessionId
+          ]
+        );
+
+        console.log('✅ Transaction marquée comme FAILED');
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Événement traité',
+        sessionId: sessionId
+      });
+    }
+
+    // Événement non géré
+    console.warn('⚠️ Événement non géré:', type);
+    return res.status(200).json({
+      success: true,
+      message: 'Événement reçu (non traité)'
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur webhook:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur webhook',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

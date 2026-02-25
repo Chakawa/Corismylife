@@ -1740,13 +1740,18 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Paiement Wave lancé. Vérification du statut en cours...'),
+          content: Text('🔄 Paiement Wave lancé. Retournez à l\'application après paiement pour confirmation automatique.'),
           backgroundColor: bleuCoris,
+          duration: Duration(seconds: 5),
         ),
       );
 
-      for (int attempt = 0; attempt < 8; attempt++) {
+      // 🔄 POLLING AMÉLIORÉ: Essayer pendant 2 minutes (40 tentatives × 3s)
+      // Cela permet à l'utilisateur de compléter le paiement même s'il prend du temps
+      for (int attempt = 0; attempt < 40; attempt++) {
         await Future.delayed(const Duration(seconds: 3));
+
+        if (!mounted) return;
 
         final statusResult = await waveService.getCheckoutStatus(
           sessionId: sessionId,
@@ -1755,18 +1760,20 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         );
 
         if (!(statusResult['success'] == true)) {
+          debugPrint('⏳ Tentative ${attempt + 1}/40: Statut non récupéré, réessai...');
           continue;
         }
 
         final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
         final status = (statusData['status'] ?? '').toString().toUpperCase();
 
+        debugPrint('📊 Tentative ${attempt + 1}/40: Statut Wave = $status');
+
         if (status == 'SUCCESS') {
           if (!mounted) return;
           
           // 🎉 PAIEMENT RÉUSSI - Convertir la proposition en contrat + envoyer SMS
           try {
-            final waveService = WaveService();
             final confirmResult = await waveService.confirmWavePayment(widget.subscriptionId);
             
             if (confirmResult['success'] == true) {
@@ -1781,23 +1788,28 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        '✅ Paiement Wave correctement effectué !',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                        '✅ Paiement Wave confirmé avec succès !',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         'Montant: ${confirmData['montant']} FCFA',
-                        style: const TextStyle(fontSize: 12),
+                        style: const TextStyle(fontSize: 13),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'La proposition est maintenant un contrat. Un SMS a été envoyé.',
+                        '🎉 Votre proposition est maintenant un CONTRAT valide.',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '📱 Un SMS de confirmation a été envoyé.',
                         style: TextStyle(fontSize: 12),
                       ),
                     ],
                   ),
                   backgroundColor: vertSucces,
-                  duration: const Duration(seconds: 5),
+                  duration: const Duration(seconds: 8),
                 ),
               );
               
@@ -1813,6 +1825,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     confirmResult['message']?.toString() ?? '❌ Erreur lors de la confirmation du paiement.',
                   ),
                   backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 5),
                 ),
               );
               // Essayer de recharger quand même
@@ -1825,6 +1838,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               SnackBar(
                 content: Text('❌ Erreur confirmation: $confirmError'),
                 backgroundColor: Colors.red,
+                duration: const Duration(seconds: 5),
               ),
             );
             await _loadSubscriptionData();
@@ -1838,9 +1852,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             const SnackBar(
               content: Text('❌ Paiement Wave échoué ou annulé.'),
               backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
             ),
           );
           return;
+        }
+
+        // Si PENDING, continuer à attendre
+        if (status == 'PENDING') {
+          debugPrint('⏳ Paiement en attente (PENDING), continue le polling...');
         }
       }
     } catch (e) {
@@ -1856,8 +1876,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Paiement initié. Confirmation en attente, réessayez dans quelques instants.'),
+        content: Text('⏳ Vérification du paiement en cours. Retournez à "Mes Propositions" pour voir le statut.'),
         backgroundColor: orangeWarning,
+        duration: Duration(seconds: 6),
       ),
     );
   }
