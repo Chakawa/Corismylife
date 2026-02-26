@@ -1178,6 +1178,7 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
 router.get('/wave-success', async (req, res) => {
   try {
     const { session_id, amount, currency, reference } = req.query;
+    let verifiedInternalStatus = 'PENDING';
 
     console.log('✅ WAVE SUCCESS PAGE APPELÉE');
     console.log('   Session ID:', session_id);
@@ -1189,10 +1190,61 @@ router.get('/wave-success', async (req, res) => {
       try {
         const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
         console.log('📊 Vérification Wave:', sessionStatus.status);
+
+        if (sessionStatus?.success) {
+          verifiedInternalStatus = mapWaveStatusToInternal(sessionStatus.status);
+
+          const txResult = await pool.query(
+            `UPDATE payment_transactions
+             SET statut = $1,
+                 api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $2::jsonb,
+                 updated_at = NOW()
+             WHERE transaction_id = $3
+                OR (api_response->>'sessionId') = $4
+                OR (api_response->>'id') = $4
+             RETURNING *`,
+            [
+              verifiedInternalStatus,
+              JSON.stringify({
+                provider: 'WAVE',
+                sessionId: session_id,
+                verifiedFrom: 'success_url',
+                providerStatus: sessionStatus.status,
+                data: sessionStatus.data || null,
+              }),
+              `WAVE-${session_id}`,
+              session_id,
+            ]
+          );
+
+          const tx = txResult.rows[0] || null;
+          if (tx && verifiedInternalStatus === 'SUCCESS' && tx.subscription_id && tx.user_id) {
+            await upsertContractAfterPayment({
+              subscriptionId: tx.subscription_id,
+              userId: tx.user_id,
+              paymentMethod: 'Wave',
+              paymentTransactionId: tx.transaction_id,
+            });
+          }
+        }
       } catch (e) {
         console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
       }
     }
+
+    const successTitle =
+      verifiedInternalStatus === 'SUCCESS'
+        ? 'Paiement Réussi! 🎉'
+        : verifiedInternalStatus === 'FAILED'
+            ? 'Paiement Non Confirmé ⚠️'
+            : 'Paiement En Vérification ⏳';
+
+    const successMessage =
+      verifiedInternalStatus === 'SUCCESS'
+        ? 'Votre paiement a été vérifié avec succès auprès de Wave. Votre session se ferme automatiquement dans '
+        : verifiedInternalStatus === 'FAILED'
+            ? 'Le statut retourné par Wave indique un échec. Veuillez réessayer. Fermeture dans '
+            : 'Votre paiement est en cours de vérification côté Wave. Fermeture dans ';
 
     // 🌐 Page HTML de confirmation avec style moderne
     const htmlPage = `
@@ -1405,8 +1457,8 @@ router.get('/wave-success', async (req, res) => {
             </svg>
           </div>
 
-          <h1>Paiement Réussi! 🎉</h1>
-          <p>Votre paiement a été traité avec succès. Votre session se ferme automatiquement dans <span id="countdown">5</span> secondes.</p>
+          <h1>${successTitle}</h1>
+          <p>${successMessage}<span id="countdown">5</span> secondes.</p>
 
           <div class="details">
             <div class="detail-row">
@@ -1526,6 +1578,7 @@ router.get('/wave-success', async (req, res) => {
 router.get('/wave-error', async (req, res) => {
   try {
     const { session_id, reason, error_code } = req.query;
+    let verifiedInternalStatus = 'FAILED';
 
     console.log('❌ WAVE ERROR PAGE APPELÉE');
     console.log('   Session ID:', session_id);
@@ -1537,10 +1590,61 @@ router.get('/wave-error', async (req, res) => {
       try {
         const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
         console.log('📊 Vérification Wave:', sessionStatus.status);
+
+        if (sessionStatus?.success) {
+          verifiedInternalStatus = mapWaveStatusToInternal(sessionStatus.status);
+
+          const txResult = await pool.query(
+            `UPDATE payment_transactions
+             SET statut = $1,
+                 api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $2::jsonb,
+                 updated_at = NOW()
+             WHERE transaction_id = $3
+                OR (api_response->>'sessionId') = $4
+                OR (api_response->>'id') = $4
+             RETURNING *`,
+            [
+              verifiedInternalStatus,
+              JSON.stringify({
+                provider: 'WAVE',
+                sessionId: session_id,
+                verifiedFrom: 'error_url',
+                providerStatus: sessionStatus.status,
+                data: sessionStatus.data || null,
+              }),
+              `WAVE-${session_id}`,
+              session_id,
+            ]
+          );
+
+          const tx = txResult.rows[0] || null;
+          if (tx && verifiedInternalStatus === 'SUCCESS' && tx.subscription_id && tx.user_id) {
+            await upsertContractAfterPayment({
+              subscriptionId: tx.subscription_id,
+              userId: tx.user_id,
+              paymentMethod: 'Wave',
+              paymentTransactionId: tx.transaction_id,
+            });
+          }
+        }
       } catch (e) {
         console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
       }
     }
+
+    const errorTitle =
+      verifiedInternalStatus === 'SUCCESS'
+        ? 'Paiement Confirmé ✅'
+        : verifiedInternalStatus === 'PENDING'
+            ? 'Paiement En Vérification ⏳'
+            : 'Paiement Échoué ❌';
+
+    const errorMessage =
+      verifiedInternalStatus === 'SUCCESS'
+        ? 'Le paiement a finalement été confirmé côté Wave. Vous pouvez revenir dans l\'application.'
+        : verifiedInternalStatus === 'PENDING'
+            ? 'Le paiement est encore en cours de vérification. Veuillez patienter quelques instants puis vérifier dans l\'application.'
+            : 'Votre paiement n\'a pas pu être complété. Veuillez réessayer.';
 
     // 🌐 Page HTML d'erreur avec style moderne
     const htmlPage = `
@@ -1726,8 +1830,8 @@ router.get('/wave-error', async (req, res) => {
             </svg>
           </div>
 
-          <h1>Paiement Échoué ❌</h1>
-          <p>Votre paiement n'a pas pu être complété. Veuillez réessayer.</p>
+          <h1>${errorTitle}</h1>
+          <p>${errorMessage}</p>
 
           <div class="error-details">
             <div class="error-reason">
