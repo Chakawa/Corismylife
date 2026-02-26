@@ -7,6 +7,12 @@ const router = express.Router();
  * @access  Public (redirection depuis Wave)
  */
 router.get('/wave-success', (req, res) => {
+  const queryString = new URLSearchParams(req.query || {}).toString();
+  const target = queryString
+    ? `/api/payment/wave-success?${queryString}`
+    : '/api/payment/wave-success';
+  return res.redirect(302, target);
+
   const { sessionId, status, reference } = req.query;
   
   const htmlContent = `
@@ -168,6 +174,12 @@ router.get('/wave-success', (req, res) => {
  * @access  Public (redirection depuis Wave)
  */
 router.get('/wave-error', (req, res) => {
+  const queryString = new URLSearchParams(req.query || {}).toString();
+  const target = queryString
+    ? `/api/payment/wave-error?${queryString}`
+    : '/api/payment/wave-error';
+  return res.redirect(302, target);
+
   const { sessionId, status, reason, reference } = req.query;
   
   const htmlContent = `

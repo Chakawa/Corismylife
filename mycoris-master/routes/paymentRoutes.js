@@ -1177,8 +1177,25 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
  */
 router.get('/wave-success', async (req, res) => {
   try {
-    const { session_id, amount, currency, reference } = req.query;
+    const { amount, currency } = req.query;
+    const session_id =
+      req.query.session_id ||
+      req.query.sessionId ||
+      req.query.id ||
+      req.query.checkout_session_id ||
+      null;
+    const reference =
+      req.query.reference ||
+      req.query.client_reference ||
+      req.query.clientReference ||
+      req.query.merchant_reference ||
+      session_id ||
+      null;
     let verifiedInternalStatus = 'PENDING';
+    const parsedAmount = Number(amount);
+    const formattedAmount = Number.isFinite(parsedAmount)
+      ? parsedAmount.toLocaleString('fr-FR', { maximumFractionDigits: 0 })
+      : null;
 
     console.log('✅ WAVE SUCCESS PAGE APPELÉE');
     console.log('   Session ID:', session_id);
@@ -1463,7 +1480,7 @@ router.get('/wave-success', async (req, res) => {
           <div class="details">
             <div class="detail-row">
               <strong>Montant payé:</strong>
-              <span>${amount ? (parseInt(amount) / 100).toFixed(0) : 'N/A'} ${currency || 'XOF'}</span>
+              <span>${formattedAmount || 'N/A'} ${currency || 'XOF'}</span>
             </div>
             <div class="detail-row">
               <strong>ID de session:</strong>
@@ -1515,6 +1532,9 @@ router.get('/wave-success', async (req, res) => {
             } else {
               // Si pas de parent, faire retour au protocole custom
               window.location.href = 'coris://payment-success';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1200);
             }
           }
 
@@ -1577,7 +1597,22 @@ router.get('/wave-success', async (req, res) => {
  */
 router.get('/wave-error', async (req, res) => {
   try {
-    const { session_id, reason, error_code } = req.query;
+    const session_id =
+      req.query.session_id ||
+      req.query.sessionId ||
+      req.query.id ||
+      req.query.checkout_session_id ||
+      null;
+    const reason =
+      req.query.reason ||
+      req.query.error_reason ||
+      req.query.message ||
+      null;
+    const error_code =
+      req.query.error_code ||
+      req.query.code ||
+      req.query.status_code ||
+      null;
     let verifiedInternalStatus = 'FAILED';
 
     console.log('❌ WAVE ERROR PAGE APPELÉE');
