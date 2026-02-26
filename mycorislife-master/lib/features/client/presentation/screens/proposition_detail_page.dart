@@ -63,7 +63,7 @@ class PropositionDetailPage extends StatefulWidget {
 
 
 class PropositionDetailPageState extends State<PropositionDetailPage>
-    with TickerProviderStateMixin {
+  with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -77,6 +77,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -99,6 +100,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     ));
 
     _loadSubscriptionData();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _loadSubscriptionData();
+    }
   }
 
   Future<void> _loadSubscriptionData() async {
@@ -181,6 +189,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
   }

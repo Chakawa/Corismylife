@@ -1192,10 +1192,9 @@ router.get('/wave-success', async (req, res) => {
       session_id ||
       null;
     let verifiedInternalStatus = 'PENDING';
-    const parsedAmount = Number(amount);
-    const formattedAmount = Number.isFinite(parsedAmount)
-      ? parsedAmount.toLocaleString('fr-FR', { maximumFractionDigits: 0 })
-      : null;
+    let verifiedAmount = null;
+    let verifiedCurrency = currency || null;
+    let verifiedReference = reference || null;
 
     console.log('✅ WAVE SUCCESS PAGE APPELÉE');
     console.log('   Session ID:', session_id);
@@ -1210,6 +1209,14 @@ router.get('/wave-success', async (req, res) => {
 
         if (sessionStatus?.success) {
           verifiedInternalStatus = mapWaveStatusToInternal(sessionStatus.status);
+          const sessionData = sessionStatus.data || {};
+          verifiedAmount = sessionData.amount ?? sessionData.amount_paid ?? amount ?? null;
+          verifiedCurrency = sessionData.currency || verifiedCurrency || 'XOF';
+          verifiedReference =
+            sessionData.client_reference ||
+            sessionData.reference ||
+            verifiedReference ||
+            session_id;
 
           const txResult = await pool.query(
             `UPDATE payment_transactions
@@ -1248,6 +1255,14 @@ router.get('/wave-success', async (req, res) => {
         console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
       }
     }
+
+    const displayAmountRaw = verifiedAmount ?? amount;
+    const parsedAmount = Number(displayAmountRaw);
+    const formattedAmount = Number.isFinite(parsedAmount)
+      ? parsedAmount.toLocaleString('fr-FR', { maximumFractionDigits: 0 })
+      : null;
+    const displayCurrency = verifiedCurrency || 'XOF';
+    const displayReference = verifiedReference || 'N/A';
 
     const successTitle =
       verifiedInternalStatus === 'SUCCESS'
@@ -1480,7 +1495,7 @@ router.get('/wave-success', async (req, res) => {
           <div class="details">
             <div class="detail-row">
               <strong>Montant payé:</strong>
-              <span>${formattedAmount || 'N/A'} ${currency || 'XOF'}</span>
+              <span>${formattedAmount || 'N/A'} ${displayCurrency}</span>
             </div>
             <div class="detail-row">
               <strong>ID de session:</strong>
@@ -1488,7 +1503,7 @@ router.get('/wave-success', async (req, res) => {
             </div>
             <div class="detail-row">
               <strong>Référence:</strong>
-              <span>${reference || 'N/A'}</span>
+              <span>${displayReference}</span>
             </div>
             <div class="detail-row">
               <strong>Heure:</strong>
@@ -1533,8 +1548,8 @@ router.get('/wave-success', async (req, res) => {
               // Si pas de parent, faire retour au protocole custom
               window.location.href = 'coris://payment-success';
               setTimeout(() => {
-                window.location.href = '/';
-              }, 1200);
+                window.location.href = 'intent://payment-success?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
+              }, 700);
             }
           }
 
@@ -1548,8 +1563,8 @@ router.get('/wave-success', async (req, res) => {
               window.location.href = 'coris://payment-success?session_id=${session_id}';
               // Fallback si le schema n'est pas reconnu
               setTimeout(() => {
-                window.location.href = '/';
-              }, 1000);
+                window.location.href = 'intent://payment-success?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
+              }, 700);
             }
           }
 
@@ -1903,6 +1918,9 @@ router.get('/wave-error', async (req, res) => {
               window.close();
             } else {
               window.location.href = 'coris://payment-error';
+              setTimeout(() => {
+                window.location.href = 'intent://payment-error?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
+              }, 700);
             }
           }
 
@@ -1913,8 +1931,8 @@ router.get('/wave-error', async (req, res) => {
             } else {
               window.location.href = 'coris://payment-error?session_id=${session_id}';
               setTimeout(() => {
-                window.location.href = '/';
-              }, 1000);
+                window.location.href = 'intent://payment-error?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
+              }, 700);
             }
           }
 
