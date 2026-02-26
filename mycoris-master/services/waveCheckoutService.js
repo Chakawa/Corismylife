@@ -92,6 +92,11 @@ class WaveCheckoutService {
       errorUrl || this.defaultErrorUrl,
       '/wave-error'
     );
+    const resolvedWebhookUrl = this._isHttpsUrl(webhookUrl)
+      ? webhookUrl
+      : this._isHttpsUrl(this.defaultWebhookUrl)
+          ? this.defaultWebhookUrl
+          : null;
 
     if (!Number.isFinite(amountForProvider) || amountForProvider <= 0) {
       return {
@@ -133,9 +138,9 @@ class WaveCheckoutService {
       error_url: resolvedErrorUrl,
     };
 
-    // Ajouter webhook SEULEMENT s'il est explicitement fourni
-    if (webhookUrl) {
-      payload.webhook_url = webhookUrl;
+    // Ajouter webhook si une URL HTTPS est disponible (request ou .env)
+    if (resolvedWebhookUrl) {
+      payload.webhook_url = resolvedWebhookUrl;
     }
 
     // Ajouter customer SEULEMENT si numéro fourni
@@ -245,13 +250,32 @@ class WaveCheckoutService {
       return false;
     }
 
-    const expected = crypto
+    const expectedHex = crypto
       .createHmac('sha256', this.webhookSecret)
       .update(rawBody, 'utf8')
       .digest('hex');
 
+    const expectedBase64 = crypto
+      .createHmac('sha256', this.webhookSecret)
+      .update(rawBody, 'utf8')
+      .digest('base64');
+
+    const normalizedSignature = String(signature).trim().replace(/^sha256=/i, '');
+
     try {
-      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+      const sigHexBuffer = Buffer.from(normalizedSignature, 'utf8');
+      const expectedHexBuffer = Buffer.from(expectedHex, 'utf8');
+      const expectedBase64Buffer = Buffer.from(expectedBase64, 'utf8');
+
+      const matchesHex =
+        sigHexBuffer.length === expectedHexBuffer.length &&
+        crypto.timingSafeEqual(sigHexBuffer, expectedHexBuffer);
+
+      const matchesBase64 =
+        sigHexBuffer.length === expectedBase64Buffer.length &&
+        crypto.timingSafeEqual(sigHexBuffer, expectedBase64Buffer);
+
+      return matchesHex || matchesBase64;
     } catch (error) {
       return false;
     }

@@ -31,8 +31,8 @@ class AppConfig {
   static const bool TEST_MODE_FORCE_10_XOF = true;
 
   static String get baseUrl {
-    if (!kIsWeb && Platform.isAndroid) return 'http://185.98.138.168/api';
-    return 'http://185.98.138.168/api';
+    if (!kIsWeb && Platform.isAndroid) return 'https://www.testmobile.online/api';
+    return 'https://www.testmobile.online/api';
   }
 }
 // ...existing code...

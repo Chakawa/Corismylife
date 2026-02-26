@@ -19,7 +19,11 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf.toString('utf8');
+  }
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Route de base
