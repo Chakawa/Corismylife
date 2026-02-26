@@ -73,6 +73,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
   String _errorMessage = '';
+  bool _autoClosedAfterWaveSuccess = false;
 
   @override
   void initState() {
@@ -186,6 +187,30 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         _userData = data['user'];
         _isLoading = false;
       });
+
+      final currentStatus = (_subscriptionData?['statut'] ?? _subscriptionData?['status'] ?? '')
+          .toString()
+          .toLowerCase();
+      final isContractConfirmed =
+          currentStatus == 'contrat' || currentStatus == 'paid' || currentStatus == 'valid';
+
+      if (mounted && isContractConfirmed && !_autoClosedAfterWaveSuccess) {
+        _autoClosedAfterWaveSuccess = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Paiement confirmé. Votre proposition est devenue un contrat.'),
+            backgroundColor: vertSucces,
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(true);
+          }
+        });
+      }
 
       if (mounted) {
         _animationController.forward();

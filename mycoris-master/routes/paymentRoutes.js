@@ -73,11 +73,15 @@ async function upsertContractAfterPayment({ subscriptionId, userId, paymentMetho
   }
 
   const subscription = subscriptionData.rows[0];
+  const alreadyConfirmed =
+    (subscription.statut || '').toString().toLowerCase() === 'contrat' &&
+    (subscription.payment_transaction_id || '') === (paymentTransactionId || '');
   const nextPaymentDate = calculateNextPaymentDate(new Date(), subscription.periodicite);
 
   await pool.query(
     `UPDATE subscriptions 
       SET statut = 'contrat',
+          date_validation = CURRENT_TIMESTAMP,
           payment_method = $1,
           payment_transaction_id = $2,
           updated_at = NOW()
@@ -125,9 +129,31 @@ async function upsertContractAfterPayment({ subscriptionId, userId, paymentMetho
     ]
   );
 
+  let smsSent = false;
+  if (!alreadyConfirmed && subscription.telephone) {
+    try {
+      const { sendSMS } = require('../services/notificationService');
+      const rawPhone = `${subscription.telephone}`.replace(/\D/g, '');
+      const phoneNumber = rawPhone.startsWith('225') ? rawPhone : `225${rawPhone}`;
+      const montantFormatted = Number(subscription.montant || 0).toLocaleString('fr-FR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+      const productName = subscription.product_name || subscription.produit_nom || 'votre produit';
+      const smsMessage = `✅ Paiement Wave confirmé. Montant: ${montantFormatted} FCFA. Votre proposition est maintenant un contrat (${productName}). CORIS Assurance.`;
+
+      const smsResult = await sendSMS(phoneNumber, smsMessage);
+      smsSent = !!smsResult?.success;
+      console.log('📱 SMS confirmation contrat (auto):', smsSent ? '✅' : '⚠️');
+    } catch (smsError) {
+      console.error('⚠️ Erreur envoi SMS auto contrat:', smsError.message);
+    }
+  }
+
   return {
     contractCreated: true,
     contractNumber,
+    smsSent,
   };
 }
 
@@ -1289,6 +1315,14 @@ router.get('/wave-success', async (req, res) => {
     let verifiedCurrency = currency || null;
     let verifiedReference = reference || null;
 
+    const pick = (obj, paths) => {
+      for (const path of paths) {
+        const value = path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+        if (value !== undefined && value !== null && `${value}` !== '') return value;
+      }
+      return null;
+    };
+
     console.log('✅ WAVE SUCCESS PAGE APPELÉE');
     console.log('   Session ID:', session_id);
     console.log('   Montant:', amount, currency);
@@ -1335,6 +1369,40 @@ router.get('/wave-success', async (req, res) => {
           );
 
           const tx = txResult.rows[0] || null;
+          const txApi = tx?.api_response || {};
+          verifiedAmount = verifiedAmount || pick(sessionData, [
+            'amount',
+            'amount_total',
+            'amount_paid',
+            'checkout_session.amount',
+            'data.amount',
+          ]) || pick(txApi, [
+            'amount',
+            'data.amount',
+            'apiResponse.amount',
+            'apiResponse.data.amount',
+          ]);
+
+          verifiedCurrency = verifiedCurrency || pick(sessionData, [
+            'currency',
+            'checkout_session.currency',
+            'data.currency',
+          ]) || pick(txApi, ['currency', 'data.currency', 'apiResponse.currency', 'apiResponse.data.currency']) || 'XOF';
+
+          verifiedReference = verifiedReference || pick(sessionData, [
+            'client_reference',
+            'reference',
+            'merchant_reference',
+            'checkout_session.client_reference',
+            'data.client_reference',
+          ]) || pick(txApi, [
+            'client_reference',
+            'reference',
+            'data.client_reference',
+            'apiResponse.client_reference',
+            'apiResponse.data.client_reference',
+          ]) || session_id;
+
           if (tx && verifiedInternalStatus === 'SUCCESS' && tx.subscription_id && tx.user_id) {
             await upsertContractAfterPayment({
               subscriptionId: tx.subscription_id,
