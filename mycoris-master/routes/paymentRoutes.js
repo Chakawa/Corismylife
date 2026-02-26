@@ -596,6 +596,8 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
         user_id,
         subscription_id,
         transaction_id,
+        provider,
+        session_id,
         code_pays,
         telephone,
         montant,
@@ -603,12 +605,14 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
         description,
         api_response,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
       RETURNING id`,
       [
         req.user.id,
         subscriptionId || null,
         transactionId,
+        'WAVE',
+        sessionId || null,
         codePays || '225',
         customerPhone || 'N/A',
         normalizedAmount,
@@ -678,14 +682,17 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     const paymentTxResult = await pool.query(
       `UPDATE payment_transactions
        SET statut = $1,
-           api_response = $2,
+           provider = 'WAVE',
+           session_id = COALESCE(session_id, $2),
+           api_response = $3,
            updated_at = NOW()
-       WHERE transaction_id = $3
-          OR (api_response->>'sessionId') = $4
-          OR (api_response->>'id') = $4
+       WHERE transaction_id = $4
+          OR (api_response->>'sessionId') = $5
+          OR (api_response->>'id') = $5
        RETURNING *`,
       [
         internalStatus,
+        sessionId,
         JSON.stringify({
           provider: 'WAVE',
           sessionId,
@@ -787,11 +794,14 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
       await pool.query(
         `UPDATE payment_transactions
          SET statut = $1,
-             api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $2::jsonb,
+             provider = 'WAVE',
+             session_id = COALESCE(session_id, $2),
+             api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $3::jsonb,
              updated_at = NOW()
-         WHERE id = $3`,
+         WHERE id = $4`,
         [
           internalStatus,
+          sessionId,
           JSON.stringify({
             provider: 'WAVE',
             sessionId,
@@ -878,14 +888,17 @@ router.post('/wave/webhook', async (req, res) => {
     const txResult = await pool.query(
       `UPDATE payment_transactions
        SET statut = $1,
-           api_response = $2,
+           provider = 'WAVE',
+           session_id = COALESCE(session_id, $2),
+           api_response = $3,
            updated_at = NOW()
-       WHERE transaction_id = $3
-          OR (api_response->>'sessionId') = $4
-          OR (api_response->>'id') = $4
+       WHERE transaction_id = $4
+          OR (api_response->>'sessionId') = $5
+          OR (api_response->>'id') = $5
        RETURNING *`,
       [
         internalStatus,
+        sessionId,
         JSON.stringify({
           provider: 'WAVE',
           sessionId,
