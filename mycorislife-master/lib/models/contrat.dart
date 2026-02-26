@@ -1,5 +1,7 @@
 class Contrat {
   final int id;
+  final int? subscriptionId;
+  final String? source;
   final String codeprod;
   final String? codeinte;
   final String? codeappo;
@@ -31,6 +33,8 @@ class Contrat {
 
   Contrat({
     required this.id,
+    this.subscriptionId,
+    this.source,
     required this.codeprod,
     this.codeinte,
     this.codeappo,
@@ -65,6 +69,10 @@ class Contrat {
     try {
       return Contrat(
         id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+        subscriptionId: json['subscription_id'] != null
+            ? int.tryParse(json['subscription_id'].toString())
+            : null,
+        source: json['source']?.toString(),
         codeprod: json['codeprod']?.toString() ?? '',
         codeinte: json['codeinte']?.toString(),
         codeappo: json['codeappo']?.toString(),
@@ -160,6 +168,8 @@ class Contrat {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'subscription_id': subscriptionId,
+      'source': source,
       'codeprod': codeprod,
       'codeinte': codeinte,
       'codeappo': codeappo,

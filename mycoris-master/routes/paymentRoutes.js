@@ -669,6 +669,40 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
 
     if (!statusResult.success) {
+      const resolvedTransactionId = transactionId || `WAVE-${sessionId}`;
+      const localTxResult = await pool.query(
+        `SELECT transaction_id, statut, subscription_id, api_response
+         FROM payment_transactions
+         WHERE transaction_id = $1
+            OR session_id = $2
+            OR (api_response->>'sessionId') = $2
+            OR (api_response->>'id') = $2
+         ORDER BY updated_at DESC NULLS LAST, created_at DESC
+         LIMIT 1`,
+        [resolvedTransactionId, sessionId]
+      );
+
+      if (localTxResult.rows.length > 0) {
+        const localTx = localTxResult.rows[0];
+        const localStatus = (localTx.statut || 'PENDING').toString().toUpperCase();
+
+        return res.status(200).json({
+          success: true,
+          message: 'Statut Wave retourné depuis la base locale (fallback)',
+          data: {
+            provider: 'WAVE',
+            sessionId,
+            transactionId: localTx.transaction_id || resolvedTransactionId,
+            status: localStatus,
+            providerStatus: null,
+            contractCreated: false,
+            contractNumber: null,
+            apiResponse: localTx.api_response || null,
+            source: 'local-fallback',
+          },
+        });
+      }
+
       return res.status(400).json({
         success: false,
         message: statusResult.message || 'Impossible de récupérer le statut Wave',

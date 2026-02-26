@@ -11,6 +11,11 @@
 
 const pool = require('../db');
 
+function normalizePoliceNumber(value) {
+  if (!value) return '';
+  return String(value).trim().toUpperCase();
+}
+
 /**
  * Récupère tous les contrats d'un client via son numéro de téléphone
  * Route: GET /api/contrats/client/:telephone
@@ -377,6 +382,8 @@ exports.getMesContrats = async (req, res) => {
       query = `
         SELECT 
           id,
+          NULL::int AS subscription_id,
+          'legacy'::text AS source,
           codeprod,
           codeinte,
           codeappo,
@@ -428,6 +435,8 @@ exports.getMesContrats = async (req, res) => {
       query = `
         SELECT 
           id,
+          NULL::int AS subscription_id,
+          'legacy'::text AS source,
           codeprod,
           codeinte,
           codeappo,
@@ -475,6 +484,8 @@ exports.getMesContrats = async (req, res) => {
       fallbackQuery = `
         SELECT
           s.id,
+          s.id AS subscription_id,
+          'subscription'::text AS source,
           CASE
             WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%solidarit%' THEN '225'
             WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%etude%' THEN '246'
@@ -522,6 +533,8 @@ exports.getMesContrats = async (req, res) => {
       fallbackQuery = `
         SELECT
           s.id,
+          s.id AS subscription_id,
+          'subscription'::text AS source,
           CASE
             WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%solidarit%' THEN '225'
             WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%etude%' THEN '246'
@@ -570,23 +583,50 @@ exports.getMesContrats = async (req, res) => {
     const fallbackResult = await pool.query(fallbackQuery, fallbackParams);
 
     const mergedRows = [...(legacyResult.rows || []), ...(fallbackResult.rows || [])];
-    const seen = new Set();
-    const contrats = [];
+    const byPolice = new Map();
+    const withoutPolice = [];
 
     for (const row of mergedRows) {
-      const dedupeKey = [
-        row.numepoli || '',
+      const normalizedPolice = normalizePoliceNumber(row.numepoli);
+
+      if (!normalizedPolice) {
+        withoutPolice.push(row);
+        continue;
+      }
+
+      const existing = byPolice.get(normalizedPolice);
+      if (!existing) {
+        byPolice.set(normalizedPolice, row);
+        continue;
+      }
+
+      const existingSource = (existing.source || '').toLowerCase();
+      const incomingSource = (row.source || '').toLowerCase();
+
+      // Prioriser la source "subscription" pour conserver subscription_id
+      if (existingSource !== 'subscription' && incomingSource === 'subscription') {
+        byPolice.set(normalizedPolice, row);
+      }
+    }
+
+    const fallbackSeen = new Set();
+    const fallbackUnique = [];
+    for (const row of withoutPolice) {
+      const key = [
+        row.subscription_id || row.id || '',
         row.codeprod || '',
         row.codeappo || '',
         row.telephone1 || '',
         row.dateeffet ? new Date(row.dateeffet).toISOString().slice(0, 10) : '',
       ].join('|');
 
-      if (!seen.has(dedupeKey)) {
-        seen.add(dedupeKey);
-        contrats.push(row);
+      if (!fallbackSeen.has(key)) {
+        fallbackSeen.add(key);
+        fallbackUnique.push(row);
       }
     }
+
+    const contrats = [...byPolice.values(), ...fallbackUnique];
 
     contrats.sort((a, b) => {
       const dateA = a.dateeffet ? new Date(a.dateeffet).getTime() : 0;

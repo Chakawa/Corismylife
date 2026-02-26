@@ -8,6 +8,33 @@ class WaveService {
   static String get baseUrl => AppConfig.baseUrl;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  Map<String, dynamic> _safeDecodeMap(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    return <String, dynamic>{'raw': decoded};
+  }
+
+  String _extractSessionId(Map<String, dynamic> payload) {
+    return (payload['sessionId'] ??
+            payload['session_id'] ??
+            payload['id'] ??
+            payload['checkout_session_id'] ??
+            payload['reference'] ??
+            '')
+        .toString();
+  }
+
+  String _extractLaunchUrl(Map<String, dynamic> payload) {
+    return (payload['launchUrl'] ??
+            payload['wave_launch_url'] ??
+            payload['launch_url'] ??
+            payload['checkout_url'] ??
+            payload['url'] ??
+            '')
+        .toString();
+  }
+
   Future<Map<String, dynamic>> createCheckoutSession({
     required int subscriptionId,
     required double amount,
@@ -41,12 +68,23 @@ class WaveService {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _safeDecodeMap(response.body);
+      final payload = (data['data'] is Map<String, dynamic>)
+          ? data['data'] as Map<String, dynamic>
+          : (data['data'] is Map)
+              ? Map<String, dynamic>.from(data['data'])
+              : data;
+      final normalizedSessionId = _extractSessionId(payload);
+      final normalizedLaunchUrl = _extractLaunchUrl(payload);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           'success': true,
-          'data': data['data'] ?? data,
+          'data': {
+            ...payload,
+            'sessionId': normalizedSessionId,
+            'launchUrl': normalizedLaunchUrl,
+          },
           'message': data['message'] ?? 'Session Wave créée',
         };
       }
@@ -95,7 +133,7 @@ class WaveService {
         },
       );
 
-      final data = jsonDecode(response.body);
+      final data = _safeDecodeMap(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {

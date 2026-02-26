@@ -305,8 +305,8 @@ class _MesContratsPageState extends State<MesContratsPage>
               context,
               MaterialPageRoute(
                 builder: (context) => ContratDetailPage(
-                  subscriptionId: contrat.id,
-                  contractNumber: contrat.id.toString(),
+                    subscriptionId: _resolveSubscriptionId(contrat),
+                    contractNumber: contrat.numepoli ?? contrat.id.toString(),
                 ),
               ),
             );
@@ -410,8 +410,8 @@ class _MesContratsPageState extends State<MesContratsPage>
                             context,
                             MaterialPageRoute(
                               builder: (context) => ContratDetailPage(
-                                subscriptionId: contrat.id,
-                                contractNumber: contrat.id.toString(),
+                                subscriptionId: _resolveSubscriptionId(contrat),
+                                contractNumber: contrat.numepoli ?? contrat.id.toString(),
                               ),
                             ),
                           );
@@ -526,9 +526,9 @@ class _MesContratsPageState extends State<MesContratsPage>
       try {
         await WavePaymentHandler.startPayment(
           context,
-          subscriptionId: contrat.id,
+          subscriptionId: _resolveSubscriptionId(contrat),
           amount: montant,
-          description: 'Paiement prime ${contrat.nomProduit} #${contrat.id}',
+          description: 'Paiement prime ${contrat.nomProduit} #${contrat.numepoli ?? contrat.id}',
           onSuccess: () {
             _loadContrats();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -561,5 +561,9 @@ class _MesContratsPageState extends State<MesContratsPage>
 
   double _extractAmount(Contrat contrat) {
     return contrat.prime ?? 0.0;
+  }
+
+  int _resolveSubscriptionId(Contrat contrat) {
+    return contrat.subscriptionId ?? contrat.id;
   }
 }
