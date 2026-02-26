@@ -77,7 +77,7 @@ async function upsertContractAfterPayment({ subscriptionId, userId, paymentMetho
 
   await pool.query(
     `UPDATE subscriptions 
-      SET statut = 'paid',
+      SET statut = 'contrat',
           payment_method = $1,
           payment_transaction_id = $2,
           updated_at = NOW()
