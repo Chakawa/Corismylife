@@ -113,6 +113,22 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (!mounted) return;
 
     try {
+      final waveService = WaveService();
+      final reconcileResult = await waveService.reconcileWavePayments();
+      if (mounted && reconcileResult['success'] == true) {
+        final data = reconcileResult['data'] as Map<String, dynamic>? ?? {};
+        final successCount = (data['successCount'] as num?)?.toInt() ?? 0;
+        if (successCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Paiement Wave confirmé ($successCount). Votre contrat a été mis à jour.'),
+              backgroundColor: vertSucces,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+
       print('📥 Chargement détails proposition ${widget.subscriptionId}...');
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
 

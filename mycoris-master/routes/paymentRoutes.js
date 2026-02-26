@@ -719,6 +719,99 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
 });
 
 /**
+ * @route   POST /api/payment/wave/reconcile
+ * @desc    Réconcilie les paiements Wave en attente pour l'utilisateur connecté
+ * @access  Private
+ */
+router.post('/wave/reconcile', verifyToken, async (req, res) => {
+  try {
+    const pendingTxResult = await pool.query(
+      `SELECT id, user_id, subscription_id, transaction_id, statut, api_response
+       FROM payment_transactions
+       WHERE user_id = $1
+         AND transaction_id LIKE 'WAVE-%'
+         AND COALESCE(statut, 'PENDING') <> 'SUCCESS'
+         AND created_at >= NOW() - INTERVAL '7 days'
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [req.user.id]
+    );
+
+    let checked = 0;
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const tx of pendingTxResult.rows) {
+      const apiResponse = tx.api_response || {};
+      const sessionId =
+        apiResponse.sessionId ||
+        apiResponse.id ||
+        apiResponse.data?.id ||
+        tx.transaction_id?.replace(/^WAVE-/, '') ||
+        null;
+
+      if (!sessionId) continue;
+
+      checked += 1;
+      const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
+      if (!statusResult.success) continue;
+
+      const internalStatus = mapWaveStatusToInternal(statusResult.status);
+
+      await pool.query(
+        `UPDATE payment_transactions
+         SET statut = $1,
+             api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $2::jsonb,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [
+          internalStatus,
+          JSON.stringify({
+            provider: 'WAVE',
+            sessionId,
+            reconciledAt: new Date().toISOString(),
+            providerStatus: statusResult.status,
+            data: statusResult.data || null,
+          }),
+          tx.id,
+        ]
+      );
+
+      if (internalStatus === 'SUCCESS') {
+        successCount += 1;
+        if (tx.subscription_id && tx.user_id) {
+          await upsertContractAfterPayment({
+            subscriptionId: tx.subscription_id,
+            userId: tx.user_id,
+            paymentMethod: 'Wave',
+            paymentTransactionId: tx.transaction_id,
+          });
+        }
+      } else if (internalStatus === 'FAILED') {
+        failedCount += 1;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Réconciliation Wave terminée',
+      data: {
+        checked,
+        successCount,
+        failedCount,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur réconciliation Wave:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la réconciliation Wave',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * @route   POST /api/payment/wave/webhook
  * @desc    Reçoit les notifications webhook Wave
  * @access  Public

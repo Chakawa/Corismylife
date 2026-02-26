@@ -163,4 +163,45 @@ class WaveService {
       };
     }
   }
+
+  Future<Map<String, dynamic>> reconcileWavePayments() async {
+    try {
+      final token = await _storage.read(key: 'token');
+      if (token == null || token.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Session expirée. Veuillez vous reconnecter.',
+        };
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/payment/wave/reconcile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {
+          'success': true,
+          'data': data['data'] ?? data,
+          'message': data['message'] ?? 'Réconciliation Wave terminée',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Échec réconciliation Wave',
+        'error': data['error'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Erreur réseau réconciliation Wave: $e',
+      };
+    }
+  }
 }

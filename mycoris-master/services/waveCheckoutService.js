@@ -59,9 +59,34 @@ class WaveCheckoutService {
       payload.checkout_session_id ||
       payload.session_id ||
       payload.reference ||
+      payload.checkout_session?.id ||
+      payload.session?.id ||
+      payload.data?.id ||
+      payload.data?.session_id ||
+      payload.data?.checkout_session_id ||
       payload.transaction_id ||
       null
     );
+  }
+
+  _pick(payload, paths = []) {
+    for (const path of paths) {
+      const parts = path.split('.');
+      let current = payload;
+      let found = true;
+      for (const key of parts) {
+        if (current && Object.prototype.hasOwnProperty.call(current, key)) {
+          current = current[key];
+        } else {
+          found = false;
+          break;
+        }
+      }
+      if (found && current !== undefined && current !== null && `${current}` !== '') {
+        return current;
+      }
+    }
+    return null;
   }
 
   async createCheckoutSession({
@@ -221,10 +246,19 @@ class WaveCheckoutService {
       });
 
       const data = response.data || {};
+      const resolvedStatus = this._pick(data, [
+        'status',
+        'payment_status',
+        'checkout_status',
+        'checkout_session.status',
+        'session.status',
+        'data.status',
+      ]) || 'pending';
+
       return {
         success: true,
         sessionId: this._extractSessionId(data) || sessionId,
-        status: data.status || data.payment_status || 'pending',
+        status: resolvedStatus,
         data,
       };
     } catch (error) {
