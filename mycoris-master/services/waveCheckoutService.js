@@ -92,11 +92,6 @@ class WaveCheckoutService {
       errorUrl || this.defaultErrorUrl,
       '/wave-error'
     );
-    const resolvedWebhookUrl = this._isHttpsUrl(webhookUrl)
-      ? webhookUrl
-      : this._isHttpsUrl(this.defaultWebhookUrl)
-          ? this.defaultWebhookUrl
-          : null;
 
     if (!Number.isFinite(amountForProvider) || amountForProvider <= 0) {
       return {
@@ -138,9 +133,9 @@ class WaveCheckoutService {
       error_url: resolvedErrorUrl,
     };
 
-    // Ajouter webhook si une URL HTTPS est disponible (request ou .env)
-    if (resolvedWebhookUrl) {
-      payload.webhook_url = resolvedWebhookUrl;
+    // Ajouter webhook SEULEMENT s'il est explicitement fourni dans la requête
+    if (webhookUrl) {
+      payload.webhook_url = webhookUrl;
     }
 
     // Ajouter customer SEULEMENT si numéro fourni
