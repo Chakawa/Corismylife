@@ -1664,7 +1664,7 @@ router.get('/wave-success', async (req, res) => {
           </div>
 
           <h1>${successTitle}</h1>
-          <p>${successMessage}<span id="countdown">5</span> secondes.</p>
+          <p>${successMessage}</p>
 
           <div class="details">
             <div class="detail-row">
@@ -1696,34 +1696,17 @@ router.get('/wave-success', async (req, res) => {
 
           <div class="footer">
             <p>© 2026 CORIS Assurance - Tous droits réservés</p>
-            <p>Si vous n'êtes pas redirigé automatiquement, cliquez sur "Retourner à l'application"</p>
+            <p>Cliquez sur "Retourner à l'application" pour revenir dans l'app.</p>
           </div>
         </div>
 
         <script>
-          let countdown = 5;
-          
-          // Fermer après 5 secondes
-          const timer = setInterval(() => {
-            countdown--;
-            document.getElementById('countdown').textContent = countdown;
-            if (countdown === 0) {
-              clearInterval(timer);
-              closeWindow();
-            }
-          }, 1000);
-
           function closeWindow() {
-            // Essayer de fermer la fenêtre
             if (window.opener) {
               window.opener.focus();
               window.close();
             } else {
-              // Si pas de parent, faire retour au protocole custom
-              window.location.href = 'coris://payment-success';
-              setTimeout(() => {
-                window.location.href = 'intent://payment-success?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
-              }, 700);
+              window.close();
             }
           }
 
@@ -2091,10 +2074,7 @@ router.get('/wave-error', async (req, res) => {
               window.opener.focus();
               window.close();
             } else {
-              window.location.href = 'coris://payment-error';
-              setTimeout(() => {
-                window.location.href = 'intent://payment-error?session_id=${session_id || ''}#Intent;scheme=coris;package=com.example.mycorislife;end';
-              }, 700);
+              window.close();
             }
           }
 

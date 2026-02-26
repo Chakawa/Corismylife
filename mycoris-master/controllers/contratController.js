@@ -455,14 +455,151 @@ exports.getMesContrats = async (req, res) => {
       params = [cleanPhone, phoneWithPrefix];
     }
     
-    const result = await pool.query(query, params);
-    
-    console.log(`✅ ${result.rows.length} contrat(s) trouvé(s)`);
-    
+    let legacyResult;
+    try {
+      legacyResult = await pool.query(query, params);
+    } catch (dbError) {
+      const errorMessage = (dbError.message || '').toLowerCase();
+      if (errorMessage.includes('relation') && errorMessage.includes('contrats')) {
+        console.warn('⚠️ Table legacy contrats absente, bascule sur subscriptions');
+        legacyResult = { rows: [] };
+      } else {
+        throw dbError;
+      }
+    }
+
+    let fallbackQuery;
+    let fallbackParams;
+
+    if (req.user.role === 'commercial') {
+      fallbackQuery = `
+        SELECT
+          s.id,
+          CASE
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%solidarit%' THEN '225'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%etude%' THEN '246'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%retraite%' THEN '240'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%serenite%' THEN '202'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%familis%' THEN '200'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%flex%' THEN '205'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%epargne%' THEN '242'
+            ELSE '000'
+          END AS codeprod,
+          NULL::text AS codeinte,
+          s.code_apporteur AS codeappo,
+          COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
+          NULL::int AS duree,
+          COALESCE(s.date_validation, s.date_creation) AS dateeffet,
+          NULL::timestamp AS dateeche,
+          NULL::text AS periodicite,
+          NULL::text AS domiciliation,
+          NULL::numeric AS capital,
+          NULL::numeric AS rente,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+              THEN (s.souscriptiondata->>'montant')::numeric
+            ELSE NULL::numeric
+          END AS prime,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+              THEN (s.souscriptiondata->>'montant')::numeric
+            ELSE NULL::numeric
+          END AS montant_encaisse,
+          0::numeric AS impaye,
+          'actif'::text AS etat,
+          u.telephone AS telephone1,
+          NULL::text AS telephone2,
+          TRIM(COALESCE(u.nom, '') || ' ' || COALESCE(u.prenom, '')) AS nom_prenom,
+          u.date_naissance AS datenaissance
+        FROM subscriptions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE s.code_apporteur = $1
+          AND LOWER(COALESCE(s.statut, '')) IN ('contrat', 'paid')
+        ORDER BY COALESCE(s.date_validation, s.date_creation) DESC
+      `;
+      fallbackParams = [req.user.code_apporteur];
+    } else {
+      fallbackQuery = `
+        SELECT
+          s.id,
+          CASE
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%solidarit%' THEN '225'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%etude%' THEN '246'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%retraite%' THEN '240'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%serenite%' THEN '202'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%familis%' THEN '200'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%flex%' THEN '205'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%epargne%' THEN '242'
+            ELSE '000'
+          END AS codeprod,
+          NULL::text AS codeinte,
+          s.code_apporteur AS codeappo,
+          COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
+          NULL::int AS duree,
+          COALESCE(s.date_validation, s.date_creation) AS dateeffet,
+          NULL::timestamp AS dateeche,
+          NULL::text AS periodicite,
+          NULL::text AS domiciliation,
+          NULL::numeric AS capital,
+          NULL::numeric AS rente,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+              THEN (s.souscriptiondata->>'montant')::numeric
+            ELSE NULL::numeric
+          END AS prime,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+              THEN (s.souscriptiondata->>'montant')::numeric
+            ELSE NULL::numeric
+          END AS montant_encaisse,
+          0::numeric AS impaye,
+          'actif'::text AS etat,
+          u.telephone AS telephone1,
+          NULL::text AS telephone2,
+          TRIM(COALESCE(u.nom, '') || ' ' || COALESCE(u.prenom, '')) AS nom_prenom,
+          u.date_naissance AS datenaissance
+        FROM subscriptions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE s.user_id = $1
+          AND LOWER(COALESCE(s.statut, '')) IN ('contrat', 'paid')
+        ORDER BY COALESCE(s.date_validation, s.date_creation) DESC
+      `;
+      fallbackParams = [req.user.id];
+    }
+
+    const fallbackResult = await pool.query(fallbackQuery, fallbackParams);
+
+    const mergedRows = [...(legacyResult.rows || []), ...(fallbackResult.rows || [])];
+    const seen = new Set();
+    const contrats = [];
+
+    for (const row of mergedRows) {
+      const dedupeKey = [
+        row.numepoli || '',
+        row.codeprod || '',
+        row.codeappo || '',
+        row.telephone1 || '',
+        row.dateeffet ? new Date(row.dateeffet).toISOString().slice(0, 10) : '',
+      ].join('|');
+
+      if (!seen.has(dedupeKey)) {
+        seen.add(dedupeKey);
+        contrats.push(row);
+      }
+    }
+
+    contrats.sort((a, b) => {
+      const dateA = a.dateeffet ? new Date(a.dateeffet).getTime() : 0;
+      const dateB = b.dateeffet ? new Date(b.dateeffet).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    console.log(`✅ ${contrats.length} contrat(s) retourné(s)`);
+
     res.json({
       success: true,
-      count: result.rows.length,
-      contrats: result.rows
+      count: contrats.length,
+      contrats,
     });
     
   } catch (error) {
