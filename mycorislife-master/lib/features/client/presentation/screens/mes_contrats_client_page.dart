@@ -243,6 +243,10 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     );
   }
 
+  bool _isAppPendingValidation(Contrat contrat) {
+    return (contrat.source ?? '').toLowerCase() == 'subscription';
+  }
+
   Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
     if (paiementsEnRetard == 0 && paiementsProches == 0) return const SizedBox.shrink();
 
@@ -918,6 +922,42 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                   ],
                 ],
               ),
+
+              if (_isAppPendingValidation(contrat)) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFED7AA),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.hourglass_top_rounded,
+                        color: Color(0xFFB45309),
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'En attente de validation de CORIS Assurance Vie CI',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               
               // Informations de paiement (nouveau)
               if (contrat.nextPaymentDate != null) ...[

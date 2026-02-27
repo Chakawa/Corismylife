@@ -335,10 +335,35 @@ class _MesContratsPageState extends State<MesContratsPage>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Contrat #${contrat.id}',
+                            'Police: ${contrat.numepoli ?? contrat.id}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (contrat.source ?? '').toLowerCase() == 'subscription'
+                                  ? const Color(0xFFDBEAFE)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              (contrat.source ?? '').toLowerCase() == 'subscription'
+                                  ? 'Souscrit via app'
+                                  : 'Contrat historique',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: (contrat.source ?? '').toLowerCase() == 'subscription'
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF4B5563),
+                              ),
                             ),
                           ),
                         ],

@@ -1,10 +1,9 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const corisMoneyService = require('../services/corisMoneyService');
 const waveCheckoutService = require('../services/waveCheckoutService');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const pool = require('../db');
-
 /**
  * Calcule la prochaine date de paiement en fonction de la périodicité
  * @param {Date} startDate - Date de début
@@ -254,17 +253,17 @@ router.post('/process-payment', verifyToken, async (req, res) => {
       });
     }
 
-    console.log('✅ Client CorisMoney trouvé:', clientInfo.data);
+    console.log('âœ… Client CorisMoney trouvÃ©:', clientInfo.data);
     
-    // Vérifier le solde disponible
+    // VÃ©rifier le solde disponible
     const soldeDisponible = parseFloat(clientInfo.data.solde || clientInfo.data.balance || 0);
     const montantRequis = parseFloat(montant);
     
     if (soldeDisponible < montantRequis) {
-      console.warn(`⚠️ Solde insuffisant: ${soldeDisponible} FCFA < ${montantRequis} FCFA`);
+      console.warn(`âš ï¸ Solde insuffisant: ${soldeDisponible} FCFA < ${montantRequis} FCFA`);
       return res.status(400).json({
         success: false,
-        message: '💰 Solde insuffisant',
+        message: 'ðŸ’° Solde insuffisant',
         detail: `Votre solde actuel (${soldeDisponible.toLocaleString()} FCFA) est insuffisant pour effectuer ce paiement (${montantRequis.toLocaleString()} FCFA).`,
         soldeDisponible: soldeDisponible,
         montantRequis: montantRequis,
@@ -272,10 +271,10 @@ router.post('/process-payment', verifyToken, async (req, res) => {
       });
     }
 
-    console.log(`✅ Solde suffisant: ${soldeDisponible} FCFA >= ${montantRequis} FCFA`);
+    console.log(`âœ… Solde suffisant: ${soldeDisponible} FCFA >= ${montantRequis} FCFA`);
 
-    // ✅ ÉTAPE 2 : Effectuer le paiement
-    console.log('💳 Lancement du paiement CorisMoney...');
+    // âœ… Ã‰TAPE 2 : Effectuer le paiement
+    console.log('ðŸ’³ Lancement du paiement CorisMoney...');
     const result = await corisMoneyService.paiementBien(
       codePays,
       telephone,
@@ -284,15 +283,15 @@ router.post('/process-payment', verifyToken, async (req, res) => {
     );
 
     if (result.success) {
-      console.log('✅ Réponse paiement CorisMoney:', result.data);
+      console.log('âœ… RÃ©ponse paiement CorisMoney:', result.data);
       
-      // ⚠️ IMPORTANT : Vérifier le statut réel de la transaction
+      // âš ï¸ IMPORTANT : VÃ©rifier le statut rÃ©el de la transaction
       let transactionStatus = 'PENDING';
       let errorMessage = null;
       
-      // Si un transactionId est retourné, vérifier son statut
+      // Si un transactionId est retournÃ©, vÃ©rifier son statut
       if (result.transactionId) {
-        console.log('🔍 Vérification du statut de la transaction:', result.transactionId);
+        console.log('ðŸ” VÃ©rification du statut de la transaction:', result.transactionId);
         
         // Attendre 2 secondes pour que CorisMoney traite la transaction
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -300,7 +299,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         const statusResult = await corisMoneyService.getTransactionStatus(result.transactionId);
         
         if (statusResult.success && statusResult.data) {
-          console.log('📊 Statut reçu:', statusResult.data);
+          console.log('ðŸ“Š Statut reÃ§u:', statusResult.data);
           
           // Analyser le statut de la transaction
           const status = statusResult.data.statut || statusResult.data.status;
@@ -309,17 +308,17 @@ router.post('/process-payment', verifyToken, async (req, res) => {
             transactionStatus = 'SUCCESS';
           } else if (status === 'FAILED' || status === 'INSUFFICIENT_BALANCE') {
             transactionStatus = 'FAILED';
-            errorMessage = statusResult.data.message || 'Solde insuffisant ou paiement échoué';
+            errorMessage = statusResult.data.message || 'Solde insuffisant ou paiement Ã©chouÃ©';
           } else {
             transactionStatus = 'PENDING';
           }
         } else {
-          console.warn('⚠️ Impossible de vérifier le statut, marquage comme PENDING');
+          console.warn('âš ï¸ Impossible de vÃ©rifier le statut, marquage comme PENDING');
           transactionStatus = 'PENDING';
         }
       }
       
-      // Enregistrer la transaction en base de données avec le VRAI statut
+      // Enregistrer la transaction en base de donnÃ©es avec le VRAI statut
       const insertQuery = `
         INSERT INTO payment_transactions (
           user_id,
@@ -347,14 +346,14 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         transactionStatus,
         description || 'Paiement de prime d\'assurance',
         errorMessage,
-        JSON.stringify(result.data || result) // Sauvegarder la réponse complète de l'API
+        JSON.stringify(result.data || result) // Sauvegarder la rÃ©ponse complÃ¨te de l'API
       ]);
 
-      // ⚠️ Ne transformer en contrat QUE si le paiement est vraiment réussi
+      // âš ï¸ Ne transformer en contrat QUE si le paiement est vraiment rÃ©ussi
       if (transactionStatus === 'SUCCESS' && subscriptionId) {
-        console.log('🎉 Paiement confirmé ! Transformation de la proposition en contrat...');
+        console.log('ðŸŽ‰ Paiement confirmÃ© ! Transformation de la proposition en contrat...');
         
-        // Mettre à jour le statut de la souscription
+        // Mettre Ã  jour le statut de la souscription
         await pool.query(
           `UPDATE subscriptions 
            SET statut = 'paid', 
@@ -365,7 +364,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
           [result.transactionId, subscriptionId]
         );
         
-        // Créer le contrat
+        // CrÃ©er le contrat
         const subscriptionData = await pool.query(
           'SELECT * FROM subscriptions WHERE id = $1',
           [subscriptionId]
@@ -374,13 +373,13 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         if (subscriptionData.rows.length > 0) {
           const subscription = subscriptionData.rows[0];
           
-          // Calculer la prochaine échéance
+          // Calculer la prochaine Ã©chÃ©ance
           const nextPaymentDate = calculateNextPaymentDate(
             new Date(),
             subscription.periodicite
           );
           
-          // Créer le contrat
+          // CrÃ©er le contrat
           await pool.query(
             `INSERT INTO contracts (
               subscription_id,
@@ -405,7 +404,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
               req.user.id,
               `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`,
               subscription.product_name,
-              'valid',  // Statut 'valid' quand le paiement est effectué
+              'valid',  // Statut 'valid' quand le paiement est effectuÃ©
               subscription.montant,
               subscription.periodicite,
               new Date(),
@@ -415,9 +414,9 @@ router.post('/process-payment', verifyToken, async (req, res) => {
             ]
           );
           
-          console.log('✅ Contrat créé avec succès !');
+          console.log('âœ… Contrat crÃ©Ã© avec succÃ¨s !');
           
-          // 📱 ENVOYER SMS DE CONFIRMATION AU CLIENT
+          // ðŸ“± ENVOYER SMS DE CONFIRMATION AU CLIENT
           try {
             const userQuery = await pool.query(
               'SELECT nom_prenom, telephone FROM users WHERE id = $1',
@@ -428,52 +427,52 @@ router.post('/process-payment', verifyToken, async (req, res) => {
               const user = userQuery.rows[0];
               const contractNumber = `CORIS-${subscription.product_name.substring(0, 3).toUpperCase()}-${Date.now()}`;
               
-              const smsMessage = `Bonjour ${user.nom_prenom}, votre paiement de ${parseFloat(montant).toLocaleString()} FCFA a été effectué avec succès ! Votre contrat ${contractNumber} est maintenant VALIDE. Merci de votre confiance. CORIS Assurance`;
+              const smsMessage = `Bonjour ${user.nom_prenom}, votre paiement de ${parseFloat(montant).toLocaleString()} FCFA a Ã©tÃ© effectuÃ© avec succÃ¨s ! Votre contrat ${contractNumber} est maintenant VALIDE. Merci de votre confiance. CORIS Assurance`;
               
               // Envoyer le SMS
               const smsResult = await sendSMS(`225${user.telephone}`, smsMessage);
               
               if (smsResult.success) {
-                console.log('✅ SMS de confirmation envoyé au client');
+                console.log('âœ… SMS de confirmation envoyÃ© au client');
               } else {
-                console.error('⚠️ Échec envoi SMS confirmation:', smsResult.error);
+                console.error('âš ï¸ Ã‰chec envoi SMS confirmation:', smsResult.error);
               }
             }
           } catch (smsError) {
-            console.error('⚠️ Erreur envoi SMS:', smsError.message);
-            // Ne pas bloquer le flux si le SMS échoue
+            console.error('âš ï¸ Erreur envoi SMS:', smsError.message);
+            // Ne pas bloquer le flux si le SMS Ã©choue
           }
         }
 
         return res.status(200).json({
           success: true,
-          message: 'Paiement effectué avec succès',
+          message: 'Paiement effectuÃ© avec succÃ¨s',
           transactionId: result.transactionId,
           montant: parseFloat(montant),
           paymentRecordId: transactionResult.rows[0].id,
           contractCreated: true
         });
       } else if (transactionStatus === 'FAILED') {
-        console.error('❌ Paiement échoué:', errorMessage);
+        console.error('âŒ Paiement Ã©chouÃ©:', errorMessage);
         return res.status(400).json({
           success: false,
-          message: errorMessage || 'Le paiement a échoué. Vérifiez votre solde CorisMoney.',
+          message: errorMessage || 'Le paiement a Ã©chouÃ©. VÃ©rifiez votre solde CorisMoney.',
           transactionId: result.transactionId,
           status: 'FAILED'
         });
       } else {
         // PENDING
-        console.warn('⏳ Transaction en attente de confirmation');
+        console.warn('â³ Transaction en attente de confirmation');
         return res.status(202).json({
           success: true,
-          message: 'Transaction en cours de traitement. Vérifiez le statut dans quelques instants.',
+          message: 'Transaction en cours de traitement. VÃ©rifiez le statut dans quelques instants.',
           transactionId: result.transactionId,
           status: 'PENDING',
           paymentRecordId: transactionResult.rows[0].id
         });
       }
     } else {
-      // Enregistrer l'échec de la transaction
+      // Enregistrer l'Ã©chec de la transaction
       await pool.query(
         `INSERT INTO payment_transactions (
           user_id,
@@ -505,13 +504,13 @@ router.post('/process-payment', verifyToken, async (req, res) => {
         const code = result.error.code.toString();
 
         if (code === '-1') {
-          errorMessage = '❌ Erreur lors du paiement CorisMoney';
+          errorMessage = 'âŒ Erreur lors du paiement CorisMoney';
           errorCode = 'CORISMONEY_ERROR';
         } else if (code.includes('OTP') || code.includes('otp')) {
-          errorMessage = '🔑 Code OTP invalide ou expiré';
+          errorMessage = 'ðŸ”‘ Code OTP invalide ou expirÃ©';
           errorCode = 'INVALID_OTP';
         } else if (code.includes('BALANCE') || code.includes('INSUFFICIENT')) {
-          errorMessage = '💰 Solde insuffisant';
+          errorMessage = 'ðŸ’° Solde insuffisant';
           errorCode = 'INSUFFICIENT_BALANCE';
         }
       }
@@ -535,7 +534,7 @@ router.post('/process-payment', verifyToken, async (req, res) => {
 
 /**
  * @route   POST /api/payment/wave/create-session
- * @desc    Crée une session de paiement Wave Checkout
+ * @desc    CrÃ©e une session de paiement Wave Checkout
  * @access  Private
  */
 router.post('/wave/create-session', verifyToken, async (req, res) => {
@@ -563,7 +562,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       });
     }
 
-    // 1) Créer session Wave chez le provider.
+    // 1) CrÃ©er session Wave chez le provider.
     const waveResult = await waveCheckoutService.createCheckoutSession({
       amount: normalizedAmount,
       currency,
@@ -583,12 +582,12 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
     if (!waveResult.success) {
       return res.status(400).json({
         success: false,
-        message: waveResult.message || 'Impossible de créer la session Wave',
+        message: waveResult.message || 'Impossible de crÃ©er la session Wave',
         error: waveResult.error,
       });
     }
 
-    // 2) Normaliser session/URL pour ne jamais casser l'ouverture côté app.
+    // 2) Normaliser session/URL pour ne jamais casser l'ouverture cÃ´tÃ© app.
     const safeSessionId = waveResult.sessionId;
     const safeLaunchUrl =
       waveResult.launchUrl || (safeSessionId ? `https://pay.wave.com/c/${safeSessionId}` : null);
@@ -596,7 +595,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
     if (!safeSessionId || !safeLaunchUrl) {
       return res.status(400).json({
         success: false,
-        message: 'Réponse Wave incomplète: sessionId/launchUrl manquant',
+        message: 'RÃ©ponse Wave incomplÃ¨te: sessionId/launchUrl manquant',
         error: waveResult.data || waveResult.error || null,
       });
     }
@@ -605,7 +604,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
     const transactionId = `WAVE-${sessionId || Date.now()}`;
     const internalStatus = mapWaveStatusToInternal(waveResult.status);
 
-    // 3) Persister immédiatement la transaction pour suivi/polling/reconcile.
+    // 3) Persister immÃ©diatement la transaction pour suivi/polling/reconcile.
     const inserted = await pool.query(
       `INSERT INTO payment_transactions (
         user_id,
@@ -645,7 +644,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Session Wave créée avec succès',
+      message: 'Session Wave crÃ©Ã©e avec succÃ¨s',
       data: {
         paymentRecordId: inserted.rows[0].id,
         transactionId,
@@ -655,10 +654,10 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Erreur création session Wave:', error);
+    console.error('Erreur crÃ©ation session Wave:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erreur serveur lors de la création de la session Wave',
+      message: 'Erreur serveur lors de la crÃ©ation de la session Wave',
       error: error.message,
     });
   }
@@ -666,7 +665,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
 
 /**
  * @route   GET /api/payment/wave/status/:sessionId
- * @desc    Vérifie le statut d'une session Wave
+ * @desc    VÃ©rifie le statut d'une session Wave
  * @access  Private
  */
 router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
@@ -681,7 +680,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
       });
     }
 
-    // 1) Interroger Wave pour le statut temps réel.
+    // 1) Interroger Wave pour le statut temps rÃ©el.
     const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
 
     if (!statusResult.success) {
@@ -705,7 +704,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
 
         return res.status(200).json({
           success: true,
-          message: 'Statut Wave retourné depuis la base locale (fallback)',
+          message: 'Statut Wave retournÃ© depuis la base locale (fallback)',
           data: {
             provider: 'WAVE',
             sessionId,
@@ -722,7 +721,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: statusResult.message || 'Impossible de récupérer le statut Wave',
+        message: statusResult.message || 'Impossible de rÃ©cupÃ©rer le statut Wave',
         error: statusResult.error,
       });
     }
@@ -730,7 +729,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     const internalStatus = mapWaveStatusToInternal(statusResult.status);
     const resolvedTransactionId = transactionId || `WAVE-${sessionId}`;
 
-    // 3) Mettre à jour la transaction locale avec la réponse provider.
+    // 3) Mettre Ã  jour la transaction locale avec la rÃ©ponse provider.
     const paymentTxResult = await pool.query(
       `UPDATE payment_transactions
        SET statut = $1,
@@ -762,7 +761,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     let contractCreated = false;
     let contractNumber = null;
 
-    // 4) Si succès, transformer la proposition en contrat et tracer le paiement.
+    // 4) Si succÃ¨s, transformer la proposition en contrat et tracer le paiement.
     if (internalStatus === 'SUCCESS' && resolvedSubscriptionId) {
       try {
         const contractResult = await upsertContractAfterPayment({
@@ -775,14 +774,14 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
         contractCreated = contractResult.contractCreated;
         contractNumber = contractResult.contractNumber || null;
       } catch (contractError) {
-        console.warn('⚠️  Impossible de créer le contrat (table manquante?):', contractError.message);
+        console.warn('âš ï¸  Impossible de crÃ©er le contrat (table manquante?):', contractError.message);
         // Continue sans bloquer - utile pour les tests
       }
     }
 
     return res.status(200).json({
       success: true,
-      message: 'Statut Wave récupéré',
+      message: 'Statut Wave rÃ©cupÃ©rÃ©',
       data: {
         provider: 'WAVE',
         sessionId,
@@ -798,7 +797,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     console.error('Erreur statut Wave:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erreur serveur lors de la vérification du statut Wave',
+      message: 'Erreur serveur lors de la vÃ©rification du statut Wave',
       error: error.message,
     });
   }
@@ -806,7 +805,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
 
 /**
  * @route   POST /api/payment/wave/reconcile
- * @desc    Réconcilie les paiements Wave en attente pour l'utilisateur connecté
+ * @desc    RÃ©concilie les paiements Wave en attente pour l'utilisateur connectÃ©
  * @access  Private
  */
 router.post('/wave/reconcile', verifyToken, async (req, res) => {
@@ -883,7 +882,7 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Réconciliation Wave terminée',
+      message: 'RÃ©conciliation Wave terminÃ©e',
       data: {
         checked,
         successCount,
@@ -891,10 +890,10 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Erreur réconciliation Wave:', error);
+    console.error('Erreur rÃ©conciliation Wave:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erreur serveur lors de la réconciliation Wave',
+      message: 'Erreur serveur lors de la rÃ©conciliation Wave',
       error: error.message,
     });
   }
@@ -902,7 +901,7 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
 
 /**
  * @route   POST /api/payment/wave/webhook
- * @desc    Reçoit les notifications webhook Wave
+ * @desc    ReÃ§oit les notifications webhook Wave
  * @access  Public
  */
 router.post('/wave/webhook', async (req, res) => {
@@ -932,7 +931,7 @@ router.post('/wave/webhook', async (req, res) => {
     if (!statusResult.success) {
       return res.status(400).json({
         success: false,
-        message: statusResult.message || 'Impossible de vérifier la session Wave',
+        message: statusResult.message || 'Impossible de vÃ©rifier la session Wave',
       });
     }
 
@@ -977,7 +976,7 @@ router.post('/wave/webhook', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Webhook Wave traité',
+      message: 'Webhook Wave traitÃ©',
     });
   } catch (error) {
     console.error('Erreur webhook Wave:', error);
@@ -991,7 +990,7 @@ router.post('/wave/webhook', async (req, res) => {
 
 /**
  * @route   GET /api/payment/client-info
- * @desc    Récupère les informations d'un client CorisMoney
+ * @desc    RÃ©cupÃ¨re les informations d'un client CorisMoney
  * @access  Private
  */
 router.get('/client-info', verifyToken, async (req, res) => {
@@ -1001,7 +1000,7 @@ router.get('/client-info', verifyToken, async (req, res) => {
     if (!codePays || !telephone) {
       return res.status(400).json({
         success: false,
-        message: 'Le code pays et le numéro de téléphone sont requis'
+        message: 'Le code pays et le numÃ©ro de tÃ©lÃ©phone sont requis'
       });
     }
 
@@ -1021,7 +1020,7 @@ router.get('/client-info', verifyToken, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Erreur lors de la récupération des infos client:', error);
+    console.error('Erreur lors de la rÃ©cupÃ©ration des infos client:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -1032,7 +1031,7 @@ router.get('/client-info', verifyToken, async (req, res) => {
 
 /**
  * @route   GET /api/payment/transaction-status/:transactionId
- * @desc    Vérifie le statut d'une transaction
+ * @desc    VÃ©rifie le statut d'une transaction
  * @access  Private
  */
 router.get('/transaction-status/:transactionId', verifyToken, async (req, res) => {
@@ -1049,7 +1048,7 @@ router.get('/transaction-status/:transactionId', verifyToken, async (req, res) =
     const result = await corisMoneyService.getTransactionStatus(transactionId);
 
     if (result.success) {
-      // Mettre à jour le statut en base de données si nécessaire
+      // Mettre Ã  jour le statut en base de donnÃ©es si nÃ©cessaire
       await pool.query(
         `UPDATE payment_transactions 
          SET statut = $1, updated_at = NOW()
@@ -1070,7 +1069,7 @@ router.get('/transaction-status/:transactionId', verifyToken, async (req, res) =
       });
     }
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error);
+    console.error('Erreur lors de la vÃ©rification du statut:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -1081,7 +1080,7 @@ router.get('/transaction-status/:transactionId', verifyToken, async (req, res) =
 
 /**
  * @route   GET /api/payment/history
- * @desc    Récupère l'historique des paiements d'un utilisateur
+ * @desc    RÃ©cupÃ¨re l'historique des paiements d'un utilisateur
  * @access  Private
  */
 router.get('/history', verifyToken, async (req, res) => {
@@ -1114,7 +1113,7 @@ router.get('/history', verifyToken, async (req, res) => {
       total: result.rows.length
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'historique:', error);
+    console.error('Erreur lors de la rÃ©cupÃ©ration de l\'historique:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -1125,7 +1124,7 @@ router.get('/history', verifyToken, async (req, res) => {
 
 /**
  * @route   GET /api/payment/contracts
- * @desc    Récupère tous les contrats actifs d'un utilisateur
+ * @desc    RÃ©cupÃ¨re tous les contrats actifs d'un utilisateur
  * @access  Private
  */
 router.get('/contracts', verifyToken, async (req, res) => {
@@ -1165,10 +1164,10 @@ router.get('/contracts', verifyToken, async (req, res) => {
         END as payments_remaining,
         -- Statut du prochain paiement
         CASE 
-          WHEN c.next_payment_date IS NULL THEN 'Paiement unique effectué'
+          WHEN c.next_payment_date IS NULL THEN 'Paiement unique effectuÃ©'
           WHEN c.next_payment_date < CURRENT_DATE THEN 'En retard'
-          WHEN c.next_payment_date <= CURRENT_DATE + INTERVAL '7 days' THEN 'Échéance proche'
-          ELSE 'À jour'
+          WHEN c.next_payment_date <= CURRENT_DATE + INTERVAL '7 days' THEN 'Ã‰chÃ©ance proche'
+          ELSE 'Ã€ jour'
         END as payment_status
        FROM contracts c
        LEFT JOIN subscriptions s ON c.subscription_id = s.id
@@ -1183,7 +1182,7 @@ router.get('/contracts', verifyToken, async (req, res) => {
       total: result.rows.length
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des contrats:', error);
+    console.error('Erreur lors de la rÃ©cupÃ©ration des contrats:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -1194,7 +1193,7 @@ router.get('/contracts', verifyToken, async (req, res) => {
 
 /**
  * @route   GET /api/payment/contracts/:id
- * @desc    Récupère les détails d'un contrat spécifique
+ * @desc    RÃ©cupÃ¨re les dÃ©tails d'un contrat spÃ©cifique
  * @access  Private
  */
 router.get('/contracts/:id', verifyToken, async (req, res) => {
@@ -1235,7 +1234,7 @@ router.get('/contracts/:id', verifyToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Contrat non trouvé'
+        message: 'Contrat non trouvÃ©'
       });
     }
 
@@ -1244,7 +1243,7 @@ router.get('/contracts/:id', verifyToken, async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération du contrat:', error);
+    console.error('Erreur lors de la rÃ©cupÃ©ration du contrat:', error);
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -1255,8 +1254,8 @@ router.get('/contracts/:id', verifyToken, async (req, res) => {
 
 /**
  * @route   POST /api/payment/confirm-wave-payment/:subscriptionId
- * @desc    Finaliser un paiement Wave réussi:
- *          1. Changer le statut de 'proposition' à 'contrat'
+ * @desc    Finaliser un paiement Wave rÃ©ussi:
+ *          1. Changer le statut de 'proposition' Ã  'contrat'
  *          2. Envoyer un SMS de confirmation au client
  * @access  Private
  * @param   subscriptionId - ID de la souscription/proposition
@@ -1266,7 +1265,7 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
     const { subscriptionId } = req.params;
     const userId = req.user.id;
 
-    // 1️⃣ RÉCUPÉRER LES INFOS DE LA SOUSCRIPTION
+    // 1ï¸âƒ£ RÃ‰CUPÃ‰RER LES INFOS DE LA SOUSCRIPTION
     const subQuery = await pool.query(
       `SELECT 
         s.id, s.produit_nom, s.montant, s.user_id,
@@ -1280,13 +1279,13 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
     if (subQuery.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Souscription non trouvée'
+        message: 'Souscription non trouvÃ©e'
       });
     }
 
     const subscription = subQuery.rows[0];
 
-    // 2️⃣ CHANGER LE STATUT À 'contrat'
+    // 2ï¸âƒ£ CHANGER LE STATUT Ã€ 'contrat'
     const updateStatusQuery = await pool.query(
       `UPDATE subscriptions 
        SET statut = 'contrat', 
@@ -1300,13 +1299,13 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
     if (updateStatusQuery.rows.length === 0) {
       return res.status(500).json({
         success: false,
-        message: 'Impossible de mettre à jour le statut de la proposition'
+        message: 'Impossible de mettre Ã  jour le statut de la proposition'
       });
     }
 
     const updatedSubscription = updateStatusQuery.rows[0];
 
-    // 3️⃣ ENVOYER UN SMS DE CONFIRMATION
+    // 3ï¸âƒ£ ENVOYER UN SMS DE CONFIRMATION
     try {
       if (subscription.telephone) {
         const { sendSMS } = require('../services/notificationService');
@@ -1316,22 +1315,22 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
           maximumFractionDigits: 0
         });
 
-        const smsMessage = `✅ Paiement Wave confirmé! Montant: ${montantFormatted} FCFA pour ${subscription.produit_nom}. Votre proposition est maintenant un contrat. Merci. CORIS Assurance`;
+        const smsMessage = `âœ… Paiement Wave confirmÃ©! Montant: ${montantFormatted} FCFA pour ${subscription.produit_nom}. Votre proposition est maintenant un contrat. Merci. CORIS Assurance`;
 
         const phoneNumber = '225' + subscription.telephone;
         const smsResult = await sendSMS(phoneNumber, smsMessage);
 
-        console.log('📱 SMS de confirmation envoyé:', smsResult.success ? '✅' : '⚠️');
+        console.log('ðŸ“± SMS de confirmation envoyÃ©:', smsResult.success ? 'âœ…' : 'âš ï¸');
       }
     } catch (smsError) {
-      console.error('⚠️ Erreur envoi SMS:', smsError.message);
-      // Ne pas bloquer si SMS échoue
+      console.error('âš ï¸ Erreur envoi SMS:', smsError.message);
+      // Ne pas bloquer si SMS Ã©choue
     }
 
-    // 4️⃣ RETOURNER LE SUCCÈS
+    // 4ï¸âƒ£ RETOURNER LE SUCCÃˆS
     return res.status(200).json({
       success: true,
-      message: '✅ Paiement confirmé ! La proposition est maintenant un contrat.',
+      message: 'âœ… Paiement confirmÃ© ! La proposition est maintenant un contrat.',
       data: {
         subscriptionId: updatedSubscription.id,
         statut: updatedSubscription.statut,
@@ -1354,10 +1353,10 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
 
 /**
  * @route   GET /wave-success
- * @desc    Page de succès affichée après paiement réussi Wave
+ * @desc    Page de succÃ¨s affichÃ©e aprÃ¨s paiement rÃ©ussi Wave
  * @access  Public (Wave redirige l'utilisateur)
  * 
- * URL appelée par Wave après succès du paiement
+ * URL appelÃ©e par Wave aprÃ¨s succÃ¨s du paiement
  * Affiche un message de confirmation et ferme la session browser
  */
 router.get('/wave-success', async (req, res) => {
@@ -1389,16 +1388,16 @@ router.get('/wave-success', async (req, res) => {
       return null;
     };
 
-    console.log('✅ WAVE SUCCESS PAGE APPELÉE');
+    console.log('âœ… WAVE SUCCESS PAGE APPELÃ‰E');
     console.log('   Session ID:', session_id);
     console.log('   Montant:', amount, currency);
-    console.log('   Référence:', reference);
+    console.log('   RÃ©fÃ©rence:', reference);
 
-    // 🔒 SÉCURITÉ: Vérifier le statut auprès de Wave
+    // ðŸ”’ SÃ‰CURITÃ‰: VÃ©rifier le statut auprÃ¨s de Wave
     if (session_id) {
       try {
         const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
-        console.log('📊 Vérification Wave:', sessionStatus.status);
+        console.log('ðŸ“Š VÃ©rification Wave:', sessionStatus.status);
 
         if (sessionStatus?.success) {
           verifiedInternalStatus = mapWaveStatusToInternal(sessionStatus.status);
@@ -1479,7 +1478,7 @@ router.get('/wave-success', async (req, res) => {
           }
         }
       } catch (e) {
-        console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
+        console.warn('âš ï¸ Impossible de vÃ©rifier le statut Wave:', e.message);
       }
     }
 
@@ -1493,26 +1492,26 @@ router.get('/wave-success', async (req, res) => {
 
     const successTitle =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Paiement Réussi! 🎉'
+        ? 'Paiement RÃ©ussi! ðŸŽ‰'
         : verifiedInternalStatus === 'FAILED'
-            ? 'Paiement Non Confirmé ⚠️'
-            : 'Paiement En Vérification ⏳';
+            ? 'Paiement Non ConfirmÃ© âš ï¸'
+            : 'Paiement En VÃ©rification â³';
 
     const successMessage =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Votre paiement a été vérifié avec succès auprès de Wave. Votre session se ferme automatiquement dans '
+        ? 'Votre paiement a Ã©tÃ© vÃ©rifiÃ© avec succÃ¨s auprÃ¨s de Wave. Votre session se ferme automatiquement dans '
         : verifiedInternalStatus === 'FAILED'
-            ? 'Le statut retourné par Wave indique un échec. Veuillez réessayer. Fermeture dans '
-            : 'Votre paiement est en cours de vérification côté Wave. Fermeture dans ';
+            ? 'Le statut retournÃ© par Wave indique un Ã©chec. Veuillez rÃ©essayer. Fermeture dans '
+            : 'Votre paiement est en cours de vÃ©rification cÃ´tÃ© Wave. Fermeture dans ';
 
-    // 🌐 Page HTML de confirmation avec style moderne
+    // ðŸŒ Page HTML de confirmation avec style moderne
     const htmlPage = `
       <!DOCTYPE html>
       <html lang="fr">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Paiement Réussi - CORIS Assurance</title>
+        <title>Paiement RÃ©ussi - CORIS Assurance</title>
         <style>
           * {
             margin: 0;
@@ -1708,7 +1707,7 @@ router.get('/wave-success', async (req, res) => {
       </head>
       <body>
         <div class="container">
-          <button class="close-btn" onclick="closeWindow()">✕</button>
+          <button class="close-btn" onclick="closeWindow()">âœ•</button>
 
           <div class="checkmark">
             <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
@@ -1721,7 +1720,7 @@ router.get('/wave-success', async (req, res) => {
 
           <div class="details">
             <div class="detail-row">
-              <strong>Montant payé:</strong>
+              <strong>Montant payÃ©:</strong>
               <span>${formattedAmount || 'N/A'} ${displayCurrency}</span>
             </div>
             <div class="detail-row">
@@ -1729,7 +1728,7 @@ router.get('/wave-success', async (req, res) => {
               <span>${session_id ? session_id.substring(0, 15) + '...' : 'N/A'}</span>
             </div>
             <div class="detail-row">
-              <strong>Référence:</strong>
+              <strong>RÃ©fÃ©rence:</strong>
               <span>${displayReference}</span>
             </div>
             <div class="detail-row">
@@ -1738,18 +1737,18 @@ router.get('/wave-success', async (req, res) => {
             </div>
           </div>
 
-          <p>Un SMS de confirmation a été envoyé à votre numéro de téléphone.</p>
+          <p>Un SMS de confirmation a Ã©tÃ© envoyÃ© Ã  votre numÃ©ro de tÃ©lÃ©phone.</p>
 
           <div class="actions">
             <button class="btn-primary" onclick="returnToApp()">
-              <span class="loading-spinner"></span> Retourner à l'application
+              <span class="loading-spinner"></span> Retourner Ã  l'application
             </button>
             <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
           </div>
 
           <div class="footer">
-            <p>© 2026 CORIS Assurance - Tous droits réservés</p>
-            <p>Cliquez sur "Retourner à l'application" pour revenir dans l'app.</p>
+            <p>Â© 2026 CORIS Assurance - Tous droits rÃ©servÃ©s</p>
+            <p>Cliquez sur "Retourner Ã  l'application" pour revenir dans l'app.</p>
           </div>
         </div>
 
@@ -1817,7 +1816,7 @@ router.get('/wave-success', async (req, res) => {
 
 /**
  * @route   GET /wave-error
- * @desc    Page d'erreur affichée après échec du paiement Wave
+ * @desc    Page d'erreur affichÃ©e aprÃ¨s Ã©chec du paiement Wave
  * @access  Public (Wave redirige l'utilisateur)
  */
 router.get('/wave-error', async (req, res) => {
@@ -1840,16 +1839,16 @@ router.get('/wave-error', async (req, res) => {
       null;
     let verifiedInternalStatus = 'FAILED';
 
-    console.log('❌ WAVE ERROR PAGE APPELÉE');
+    console.log('âŒ WAVE ERROR PAGE APPELÃ‰E');
     console.log('   Session ID:', session_id);
     console.log('   Raison:', reason);
     console.log('   Code erreur:', error_code);
 
-    // 🔒 SÉCURITÉ: Vérifier le statut auprès de Wave
+    // ðŸ”’ SÃ‰CURITÃ‰: VÃ©rifier le statut auprÃ¨s de Wave
     if (session_id) {
       try {
         const sessionStatus = await waveCheckoutService.getCheckoutSession(session_id);
-        console.log('📊 Vérification Wave:', sessionStatus.status);
+        console.log('ðŸ“Š VÃ©rification Wave:', sessionStatus.status);
 
         if (sessionStatus?.success) {
           verifiedInternalStatus = mapWaveStatusToInternal(sessionStatus.status);
@@ -1888,32 +1887,32 @@ router.get('/wave-error', async (req, res) => {
           }
         }
       } catch (e) {
-        console.warn('⚠️ Impossible de vérifier le statut Wave:', e.message);
+        console.warn('âš ï¸ Impossible de vÃ©rifier le statut Wave:', e.message);
       }
     }
 
     const errorTitle =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Paiement Confirmé ✅'
+        ? 'Paiement ConfirmÃ© âœ…'
         : verifiedInternalStatus === 'PENDING'
-            ? 'Paiement En Vérification ⏳'
-            : 'Paiement Échoué ❌';
+            ? 'Paiement En VÃ©rification â³'
+            : 'Paiement Ã‰chouÃ© âŒ';
 
     const errorMessage =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Le paiement a finalement été confirmé côté Wave. Vous pouvez revenir dans l\'application.'
+        ? 'Le paiement a finalement Ã©tÃ© confirmÃ© cÃ´tÃ© Wave. Vous pouvez revenir dans l\'application.'
         : verifiedInternalStatus === 'PENDING'
-            ? 'Le paiement est encore en cours de vérification. Veuillez patienter quelques instants puis vérifier dans l\'application.'
-            : 'Votre paiement n\'a pas pu être complété. Veuillez réessayer.';
+            ? 'Le paiement est encore en cours de vÃ©rification. Veuillez patienter quelques instants puis vÃ©rifier dans l\'application.'
+            : 'Votre paiement n\'a pas pu Ãªtre complÃ©tÃ©. Veuillez rÃ©essayer.';
 
-    // 🌐 Page HTML d'erreur avec style moderne
+    // ðŸŒ Page HTML d'erreur avec style moderne
     const htmlPage = `
       <!DOCTYPE html>
       <html lang="fr">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Paiement Échoué - CORIS Assurance</title>
+        <title>Paiement Ã‰chouÃ© - CORIS Assurance</title>
         <style>
           * {
             margin: 0;
@@ -2081,7 +2080,7 @@ router.get('/wave-error', async (req, res) => {
       </head>
       <body>
         <div class="container">
-          <button class="close-btn" onclick="closeWindow()">✕</button>
+          <button class="close-btn" onclick="closeWindow()">âœ•</button>
 
           <div class="error-icon">
             <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
@@ -2110,13 +2109,13 @@ router.get('/wave-error', async (req, res) => {
 
           <div class="actions">
             <button class="btn-primary" onclick="returnToApp()">
-              Retour à l'application
+              Retour Ã  l'application
             </button>
             <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
           </div>
 
           <div class="footer">
-            <p>© 2026 CORIS Assurance - Tous droits réservés</p>
+            <p>Â© 2026 CORIS Assurance - Tous droits rÃ©servÃ©s</p>
             <p>Si vous avez besoin d'aide, contactez notre support: support@corisassurance.ci</p>
           </div>
         </div>

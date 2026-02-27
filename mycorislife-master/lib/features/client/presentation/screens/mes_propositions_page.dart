@@ -28,7 +28,7 @@ class PropositionsPage extends StatefulWidget {
 }
 
 class _PropositionsPageState extends State<PropositionsPage>
-    with TickerProviderStateMixin {
+  with TickerProviderStateMixin, WidgetsBindingObserver {
   // ===================================
   // SERVICES ET DONNÉES
   // ===================================
@@ -49,6 +49,7 @@ class _PropositionsPageState extends State<PropositionsPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Configuration de l'animation de fondu d'apparition
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
@@ -67,8 +68,16 @@ class _PropositionsPageState extends State<PropositionsPage>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _loadPropositions();
+    }
   }
 
   /// Charge la liste des propositions depuis l'API
@@ -855,8 +864,8 @@ class _PropositionsPageState extends State<PropositionsPage>
     );
   }
 
-  void _handlePropositionTap(Subscription subscription) {
-    Navigator.push(
+  Future<void> _handlePropositionTap(Subscription subscription) async {
+    final paymentCompleted = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PropositionDetailPage(
@@ -866,6 +875,19 @@ class _PropositionsPageState extends State<PropositionsPage>
         ),
       ),
     );
+
+    if (!mounted) return;
+    if (paymentCompleted == true) {
+      await _loadPropositions();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Paiement confirmé. La proposition a été retirée de la liste.'),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _handlePayment(Subscription subscription) {
@@ -1148,7 +1170,17 @@ class _PropositionsPageState extends State<PropositionsPage>
         subscriptionId: subscription.id,
         amount: montant,
         description: 'Paiement ${subscription.produitNom} #${subscription.id}',
-        onSuccess: _loadPropositions,
+        onSuccess: () async {
+          await _loadPropositions();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Paiement Wave confirmé. Votre contrat est maintenant actif.'),
+              backgroundColor: Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
       );
     } else {
       // Pour les autres modes de paiement (Wave, Orange Money)

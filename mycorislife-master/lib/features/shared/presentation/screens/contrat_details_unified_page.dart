@@ -164,7 +164,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       print('📄 [DETAILS] Numéro de police: $numepoli');
       print('📦 [DETAILS] Contrat complet: ${widget.contrat}');
 
-      final url = '${AppConfig.baseUrl}/commercial/contrat_details/$numepoli';
+      final encodedNumepoli = Uri.encodeComponent(numepoli?.toString() ?? '');
+      final url = '${AppConfig.baseUrl}/commercial/contrat_details/$encodedNumepoli';
       print('🌐 [DETAILS] URL: $url');
 
       final response = await http.get(

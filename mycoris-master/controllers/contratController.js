@@ -188,22 +188,131 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
     console.log('👤 User ID:', req.user.id);
     console.log('🎭 Role:', req.user.role);
     
-    // Récupérer tous les détails du contrat + bénéficiaires
+    // 1) Source legacy: table contrats
     const contratQuery = `
-      SELECT *
+      SELECT *, 'legacy'::text AS source
       FROM contrats
-      WHERE numepoli = $1
+      WHERE UPPER(TRIM(numepoli)) = UPPER(TRIM($1))
     `;
-    
-    const contratResult = await pool.query(contratQuery, [numepoli]);
-    
+
+    let contratResult = await pool.query(contratQuery, [numepoli]);
+
+    // 2) Fallback source app: subscriptions (statut contrat/paid)
+    if (contratResult.rows.length === 0) {
+      const subscriptionQuery = `
+        SELECT
+          s.id,
+          s.id AS subscription_id,
+          'subscription'::text AS source,
+          s.user_id,
+          CASE
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%solidarit%' THEN '225'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%etude%' THEN '246'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%retraite%' THEN '240'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%serenite%' THEN '202'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%familis%' THEN '200'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%flex%' THEN '205'
+            WHEN LOWER(COALESCE(s.produit_nom, '')) LIKE '%epargne%' THEN '242'
+            ELSE '000'
+          END AS codeprod,
+          NULL::text AS codeinte,
+          s.code_apporteur AS codeappo,
+          s.code_apporteur AS code_apporteur,
+          COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
+          NULL::int AS duree,
+          s.date_creation AS datesous,
+          COALESCE(s.date_validation, s.date_creation) AS dateeffet,
+          NULL::timestamp AS dateeche,
+          NULL::timestamp AS dateecheance,
+          COALESCE(
+            NULLIF(s.souscriptiondata->>'periodicite', ''),
+            s.periodicite,
+            NULL::text
+          ) AS periodicite,
+          NULL::text AS domiciliation,
+          CASE
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital_garanti', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital_garanti', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
+            ELSE NULL::numeric
+          END AS capital,
+          NULL::numeric AS rente,
+          CASE
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
+            ELSE NULL::numeric
+          END AS prime,
+          CASE
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
+            ELSE NULL::numeric
+          END AS montant_encaisse,
+          0::numeric AS impaye,
+          'actif'::text AS etat,
+          u.telephone AS telephone1,
+          NULL::text AS telephone2,
+          TRIM(COALESCE(u.nom, '') || ' ' || COALESCE(u.prenom, '')) AS nom_prenom,
+          u.date_naissance AS datenaissance,
+          s.souscriptiondata
+        FROM subscriptions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE (
+          UPPER(TRIM(COALESCE(s.numero_police, ''))) = UPPER(TRIM($1))
+          OR UPPER(TRIM(COALESCE(s.payment_transaction_id, ''))) = UPPER(TRIM($1))
+          OR UPPER(TRIM('SUB-' || s.id::text)) = UPPER(TRIM($1))
+        )
+          AND LOWER(COALESCE(s.statut, '')) IN ('contrat', 'paid')
+        ORDER BY COALESCE(s.date_validation, s.date_creation) DESC
+        LIMIT 1
+      `;
+
+      contratResult = await pool.query(subscriptionQuery, [numepoli]);
+    }
+
     if (contratResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Contrat non trouvé'
       });
     }
-    
+
     const contrat = contratResult.rows[0];
     
     // Vérifier les droits d'accès
@@ -214,28 +323,35 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
       hasAccess = true;
     }
     // 2. Commercial a accès à ses contrats
-    else if (req.user.role === 'commercial' && req.user.code_apporteur === contrat.codeappo) {
+    else if (
+      req.user.role === 'commercial' &&
+      (req.user.code_apporteur === contrat.codeappo || req.user.code_apporteur === contrat.code_apporteur)
+    ) {
       hasAccess = true;
     }
     // 3. Client a accès à ses contrats (via téléphone)
     else if (req.user.role === 'client') {
-      // Récupérer le téléphone du user
-      const userQuery = `SELECT telephone FROM users WHERE id = $1`;
-      const userResult = await pool.query(userQuery, [req.user.id]);
-      if (userResult.rows.length > 0) {
-        const userPhone = userResult.rows[0].telephone;
-        
-        // Nettoyer le numéro: enlever +225 s'il existe
-        let cleanPhone = userPhone;
-        if (userPhone.startsWith('+225')) {
-          cleanPhone = userPhone.substring(4);
-        }
-        const phoneWithPrefix = '+225' + cleanPhone;
-        
-        // Comparer avec et sans +225
-        if (contrat.telephone1 === cleanPhone || contrat.telephone1 === phoneWithPrefix ||
-            contrat.telephone2 === cleanPhone || contrat.telephone2 === phoneWithPrefix) {
-          hasAccess = true;
+      if ((contrat.source || '').toLowerCase() === 'subscription') {
+        hasAccess = String(contrat.user_id || '') === String(req.user.id || '');
+      } else {
+        // Récupérer le téléphone du user
+        const userQuery = `SELECT telephone FROM users WHERE id = $1`;
+        const userResult = await pool.query(userQuery, [req.user.id]);
+        if (userResult.rows.length > 0) {
+          const userPhone = userResult.rows[0].telephone;
+
+          // Nettoyer le numéro: enlever +225 s'il existe
+          let cleanPhone = userPhone;
+          if (userPhone.startsWith('+225')) {
+            cleanPhone = userPhone.substring(4);
+          }
+          const phoneWithPrefix = '+225' + cleanPhone;
+
+          // Comparer avec et sans +225
+          if (contrat.telephone1 === cleanPhone || contrat.telephone1 === phoneWithPrefix ||
+              contrat.telephone2 === cleanPhone || contrat.telephone2 === phoneWithPrefix) {
+            hasAccess = true;
+          }
         }
       }
     }
@@ -247,22 +363,45 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
       });
     }
     
-    // Récupérer les bénéficiaires
-    const benefQuery = `
-      SELECT *
-      FROM beneficiaires
-      WHERE numepoli = $1
-      ORDER BY id
-    `;
+    // Récupérer les bénéficiaires selon la source
+    let beneficiaires = [];
+
+    if ((contrat.source || '').toLowerCase() === 'subscription') {
+      const data = contrat.souscriptiondata || {};
+      const rawBenefs =
+        data.beneficiaires ||
+        data.beneficiaire ||
+        data.beneficiaries ||
+        [];
+
+      if (Array.isArray(rawBenefs)) {
+        beneficiaires = rawBenefs.map((b, index) => ({
+          id: index + 1,
+          nom_benef: b.nom_benef || b.nom_prenom || b.nom || b.name || 'Bénéficiaire',
+          type_beneficiaires: b.type_beneficiaires || b.relation || b.lien || 'Bénéficiaire',
+        }));
+      }
+    } else {
+      const benefQuery = `
+        SELECT *
+        FROM beneficiaires
+        WHERE numepoli = $1
+        ORDER BY id
+      `;
+
+      const benefResult = await pool.query(benefQuery, [numepoli]);
+      beneficiaires = benefResult.rows;
+    }
+
+    delete contrat.user_id;
+    delete contrat.souscriptiondata;
     
-    const benefResult = await pool.query(benefQuery, [numepoli]);
-    
-    console.log('✅ Contrat trouvé avec', benefResult.rows.length, 'bénéficiaire(s)');
+    console.log('✅ Contrat trouvé avec', beneficiaires.length, 'bénéficiaire(s)');
     
     res.json({
       success: true,
       contrat: contrat,
-      beneficiaires: benefResult.rows
+      beneficiaires
     });
     
   } catch (error) {
@@ -502,18 +641,64 @@ exports.getMesContrats = async (req, res) => {
           NULL::int AS duree,
           COALESCE(s.date_validation, s.date_creation) AS dateeffet,
           NULL::timestamp AS dateeche,
-          NULL::text AS periodicite,
+          COALESCE(
+            NULLIF(s.souscriptiondata->>'periodicite', ''),
+            s.periodicite,
+            NULL::text
+          ) AS periodicite,
           NULL::text AS domiciliation,
-          NULL::numeric AS capital,
+          CASE
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital_garanti', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'capital_garanti', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
+            ELSE NULL::numeric
+          END AS capital,
           NULL::numeric AS rente,
           CASE
-            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
-              THEN (s.souscriptiondata->>'montant')::numeric
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
             ELSE NULL::numeric
           END AS prime,
           CASE
-            WHEN COALESCE(s.souscriptiondata->>'montant', '') ~ '^[0-9]+(\\.[0-9]+)?$'
-              THEN (s.souscriptiondata->>'montant')::numeric
+            WHEN COALESCE(
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+              NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+            ) IS NOT NULL
+              THEN (
+                COALESCE(
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'prime_totale', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'montant_total', ''), '[^0-9.]', '', 'g'), ''),
+                  NULLIF(REGEXP_REPLACE(COALESCE(s.souscriptiondata->>'versement_initial', ''), '[^0-9.]', '', 'g'), '')
+                )
+              )::numeric
             ELSE NULL::numeric
           END AS montant_encaisse,
           0::numeric AS impaye,
@@ -603,8 +788,8 @@ exports.getMesContrats = async (req, res) => {
       const existingSource = (existing.source || '').toLowerCase();
       const incomingSource = (row.source || '').toLowerCase();
 
-      // Prioriser la source "subscription" pour conserver subscription_id
-      if (existingSource !== 'subscription' && incomingSource === 'subscription') {
+      // Prioriser la source "legacy" pour masquer l'attente dès synchronisation métier
+      if (existingSource !== 'legacy' && incomingSource === 'legacy') {
         byPolice.set(normalizedPolice, row);
       }
     }
