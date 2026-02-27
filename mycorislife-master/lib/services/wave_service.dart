@@ -8,6 +8,11 @@ class WaveService {
   static String get baseUrl => AppConfig.baseUrl;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  /// Convertit de manière sûre une réponse JSON en Map.
+  ///
+  /// Pourquoi: certains endpoints peuvent renvoyer des structures inattendues.
+  /// Cette méthode évite les crashs de parsing et permet de remonter un message
+  /// d'erreur exploitable à l'UI.
   Map<String, dynamic> _safeDecodeMap(String body) {
     final decoded = jsonDecode(body);
     if (decoded is Map<String, dynamic>) return decoded;
@@ -15,6 +20,10 @@ class WaveService {
     return <String, dynamic>{'raw': decoded};
   }
 
+  /// Extrait l'identifiant de session Wave depuis plusieurs variantes de payload.
+  ///
+  /// Pourquoi: Wave / backend peuvent renvoyer `sessionId`, `id`,
+  /// `session_id`, etc. On normalise pour le reste du flux.
   String _extractSessionId(Map<String, dynamic> payload) {
     return (payload['sessionId'] ??
             payload['session_id'] ??
@@ -25,6 +34,10 @@ class WaveService {
         .toString();
   }
 
+  /// Extrait l'URL de lancement Wave depuis plusieurs clés possibles.
+  ///
+  /// Pourquoi: selon la version/provider, l'URL peut être dans `launchUrl`,
+  /// `wave_launch_url`, `checkout_url`, etc.
   String _extractLaunchUrl(Map<String, dynamic> payload) {
     return (payload['launchUrl'] ??
             payload['wave_launch_url'] ??
@@ -35,6 +48,10 @@ class WaveService {
         .toString();
   }
 
+  /// Crée une session de paiement Wave et renvoie une réponse normalisée.
+  ///
+  /// Retourne toujours `data.sessionId` et `data.launchUrl` quand disponible,
+  /// afin que les écrans Flutter n'aient pas à gérer plusieurs formats.
   Future<Map<String, dynamic>> createCheckoutSession({
     required int subscriptionId,
     required double amount,
@@ -102,6 +119,10 @@ class WaveService {
     }
   }
 
+  /// Vérifie le statut d'une session Wave.
+  ///
+  /// Cette méthode sert au polling côté app après ouverture de Wave,
+  /// et permet de déclencher la confirmation du contrat quand le statut passe à SUCCESS.
   Future<Map<String, dynamic>> getCheckoutStatus({
     required String sessionId,
     int? subscriptionId,
@@ -202,6 +223,10 @@ class WaveService {
     }
   }
 
+  /// Réconcilie les paiements Wave en attente pour l'utilisateur connecté.
+  ///
+  /// Utile lorsque l'utilisateur revient plus tard dans l'app: on récupère les
+  /// paiements qui auraient pu être confirmés pendant que l'app était en arrière-plan.
   Future<Map<String, dynamic>> reconcileWavePayments() async {
     try {
       final token = await _storage.read(key: 'token');

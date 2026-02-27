@@ -499,11 +499,11 @@ router.post('/process-payment', verifyToken, async (req, res) => {
       // Messages d'erreur plus explicites
       let errorMessage = result.message || 'Erreur lors du paiement';
       let errorCode = 'PAYMENT_FAILED';
-      
+
       // Analyser le code d'erreur CorisMoney
       if (result.error && result.error.code) {
         const code = result.error.code.toString();
-        
+
         if (code === '-1') {
           errorMessage = '❌ Erreur lors du paiement CorisMoney';
           errorCode = 'CORISMONEY_ERROR';
@@ -563,6 +563,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       });
     }
 
+    // 1) Créer session Wave chez le provider.
     const waveResult = await waveCheckoutService.createCheckoutSession({
       amount: normalizedAmount,
       currency,
@@ -587,7 +588,12 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       });
     }
 
-    if (!waveResult.sessionId || !waveResult.launchUrl) {
+    // 2) Normaliser session/URL pour ne jamais casser l'ouverture côté app.
+    const safeSessionId = waveResult.sessionId;
+    const safeLaunchUrl =
+      waveResult.launchUrl || (safeSessionId ? `https://pay.wave.com/c/${safeSessionId}` : null);
+
+    if (!safeSessionId || !safeLaunchUrl) {
       return res.status(400).json({
         success: false,
         message: 'Réponse Wave incomplète: sessionId/launchUrl manquant',
@@ -595,10 +601,11 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       });
     }
 
-    const sessionId = waveResult.sessionId;
+    const sessionId = safeSessionId;
     const transactionId = `WAVE-${sessionId || Date.now()}`;
     const internalStatus = mapWaveStatusToInternal(waveResult.status);
 
+    // 3) Persister immédiatement la transaction pour suivi/polling/reconcile.
     const inserted = await pool.query(
       `INSERT INTO payment_transactions (
         user_id,
@@ -619,7 +626,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
         req.user.id,
         subscriptionId || null,
         transactionId,
-        'WAVE',
+        'Wave',
         sessionId || null,
         codePays || '225',
         customerPhone || 'N/A',
@@ -629,7 +636,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
         JSON.stringify({
           provider: 'WAVE',
           sessionId,
-          launchUrl: waveResult.launchUrl,
+          launchUrl: safeLaunchUrl,
           status: waveResult.status,
           data: waveResult.data,
         }),
@@ -643,7 +650,7 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
         paymentRecordId: inserted.rows[0].id,
         transactionId,
         sessionId,
-        launchUrl: waveResult.launchUrl,
+        launchUrl: safeLaunchUrl,
         status: waveResult.status,
       },
     });
@@ -674,9 +681,11 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
       });
     }
 
+    // 1) Interroger Wave pour le statut temps réel.
     const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
 
     if (!statusResult.success) {
+      // 2) Fallback local: si Wave est indisponible, renvoyer le dernier statut connu en base.
       const resolvedTransactionId = transactionId || `WAVE-${sessionId}`;
       const localTxResult = await pool.query(
         `SELECT transaction_id, statut, subscription_id, api_response
@@ -721,10 +730,11 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     const internalStatus = mapWaveStatusToInternal(statusResult.status);
     const resolvedTransactionId = transactionId || `WAVE-${sessionId}`;
 
+    // 3) Mettre à jour la transaction locale avec la réponse provider.
     const paymentTxResult = await pool.query(
       `UPDATE payment_transactions
        SET statut = $1,
-           provider = 'WAVE',
+           provider = 'Wave',
            session_id = COALESCE(session_id, $2),
            api_response = $3,
            updated_at = NOW()
@@ -752,6 +762,7 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
     let contractCreated = false;
     let contractNumber = null;
 
+    // 4) Si succès, transformer la proposition en contrat et tracer le paiement.
     if (internalStatus === 'SUCCESS' && resolvedSubscriptionId) {
       try {
         const contractResult = await upsertContractAfterPayment({
@@ -836,7 +847,7 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
       await pool.query(
         `UPDATE payment_transactions
          SET statut = $1,
-             provider = 'WAVE',
+             provider = 'Wave',
              session_id = COALESCE(session_id, $2),
              api_response = COALESCE(api_response::jsonb, '{}'::jsonb) || $3::jsonb,
              updated_at = NOW()
@@ -929,8 +940,8 @@ router.post('/wave/webhook', async (req, res) => {
 
     const txResult = await pool.query(
       `UPDATE payment_transactions
-       SET statut = $1,
-           provider = 'WAVE',
+         SET statut = $1,
+           provider = 'Wave',
            session_id = COALESCE(session_id, $2),
            api_response = $3,
            updated_at = NOW()

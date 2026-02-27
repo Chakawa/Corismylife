@@ -5,6 +5,13 @@ import 'package:mycorislife/services/wave_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class WavePaymentHandler {
+  /// Lance un paiement Wave de bout en bout depuis l'UI.
+  ///
+  /// Étapes:
+  /// 1) création session backend,
+  /// 2) ouverture app/navigateur Wave,
+  /// 3) polling du statut,
+  /// 4) confirmation en contrat si succès.
   static Future<bool> startPayment(
     BuildContext context, {
     required int subscriptionId,
@@ -68,6 +75,7 @@ class WavePaymentHandler {
         return false;
       }
 
+      // Ouverture robuste en 3 modes pour couvrir les différences appareil/OS.
       bool launched = false;
       if (await canLaunchUrl(uri)) {
         launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -96,7 +104,7 @@ class WavePaymentHandler {
         ),
       );
 
-      // 🔄 POLLING AMÉLIORÉ: Essayer pendant 2 minutes (40 tentatives × 3s)
+      // 🔄 Polling jusqu'à 2 minutes (40 tentatives × 3s) après lancement Wave.
       for (int attempt = 0; attempt < 40; attempt++) {
         await Future.delayed(const Duration(seconds: 3));
 
@@ -117,7 +125,7 @@ class WavePaymentHandler {
         debugPrint('📊 Tentative ${attempt + 1}/40: Statut Wave = $status');
 
         if (status == 'SUCCESS') {
-          // 🎉 PAIEMENT RÉUSSI - Convertir la proposition/souscription en contrat + envoyer SMS
+          // Paiement confirmé: on finalise côté backend (statut contrat + SMS).
           try {
             final confirmResult = await service.confirmWavePayment(subscriptionId);
             

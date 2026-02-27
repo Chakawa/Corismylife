@@ -24,6 +24,7 @@ class WaveCheckoutService {
     }
   }
 
+  // Vérifie qu'une URL est bien en HTTPS (exigence Wave pour success/error URL).
   _isHttpsUrl(value) {
     if (!value || typeof value !== 'string') return false;
     try {
@@ -34,11 +35,13 @@ class WaveCheckoutService {
     }
   }
 
+  // Retourne une URL HTTPS valide. Si invalide, bascule vers un fallback sûr.
   _resolveRequiredHttpsUrl(value, fallbackPath) {
     if (this._isHttpsUrl(value)) return value;
     return `https://example.com${fallbackPath}`;
   }
 
+  // Contrôle des credentials Wave en mode production.
   _checkCredentials() {
     if (this.devMode) return;
     if (!this.apiKey) {
@@ -46,12 +49,14 @@ class WaveCheckoutService {
     }
   }
 
+  // Construit l'URL provider complète à partir d'un path relatif ou absolu.
   _buildUrl(path) {
     if (!path) return this.baseURL;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     return `${this.baseURL}${path}`;
   }
 
+  // Extrait sessionId depuis plusieurs formats possibles de réponse Wave.
   _extractSessionId(payload = {}) {
     return (
       payload.id ||
@@ -69,6 +74,14 @@ class WaveCheckoutService {
     );
   }
 
+  // Extrait sessionId à partir de l'URL Wave (ex: /c/cos-xxxx) en fallback.
+  _extractSessionIdFromUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    const match = url.match(/\/c\/(cos-[a-z0-9]+)/i);
+    return match ? match[1] : null;
+  }
+
+  // Récupère la première valeur non-vide dans une liste de chemins JSON.
   _pick(payload, paths = []) {
     for (const path of paths) {
       const parts = path.split('.');
@@ -149,7 +162,7 @@ class WaveCheckoutService {
       };
     }
 
-    // ✅ Payload SANS webhook (mode polling uniquement)
+    // Payload de création session: mode polling par défaut (webhook optionnel explicite).
     const payload = {
       amount: amountForProvider,
       currency: normalizedCurrency,
@@ -158,12 +171,12 @@ class WaveCheckoutService {
       error_url: resolvedErrorUrl,
     };
 
-    // Ajouter webhook SEULEMENT s'il est explicitement fourni dans la requête
+    // Ajouter webhook uniquement si explicitement demandé.
     if (webhookUrl) {
       payload.webhook_url = webhookUrl;
     }
 
-    // Ajouter customer SEULEMENT si numéro fourni
+    // Ajouter customer uniquement si numéro fourni.
     if (customerPhone) {
       payload.customer = {
         phone_number: customerPhone,
@@ -184,7 +197,7 @@ class WaveCheckoutService {
       );
 
       const data = response.data || {};
-      const sessionId = this._extractSessionId(data);
+      let sessionId = this._extractSessionId(data);
       const launchUrl = this._pick(data, [
         'wave_launch_url',
         'launch_url',
@@ -201,7 +214,14 @@ class WaveCheckoutService {
         'data.url',
       ]);
 
-      if (!sessionId || !launchUrl) {
+      if (!sessionId && launchUrl) {
+        sessionId = this._extractSessionIdFromUrl(launchUrl);
+      }
+
+      const resolvedLaunchUrl =
+        launchUrl || (sessionId ? `https://pay.wave.com/c/${sessionId}` : null);
+
+      if (!sessionId || !resolvedLaunchUrl) {
         return {
           success: false,
           message: 'Réponse Wave incomplète: sessionId ou URL de lancement manquant',
@@ -212,7 +232,7 @@ class WaveCheckoutService {
       return {
         success: true,
         sessionId,
-        launchUrl,
+        launchUrl: resolvedLaunchUrl,
         status: data.status || 'pending',
         data,
       };
