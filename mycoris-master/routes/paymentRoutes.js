@@ -587,6 +587,14 @@ router.post('/wave/create-session', verifyToken, async (req, res) => {
       });
     }
 
+    if (!waveResult.sessionId || !waveResult.launchUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Réponse Wave incomplète: sessionId/launchUrl manquant',
+        error: waveResult.data || waveResult.error || null,
+      });
+    }
+
     const sessionId = waveResult.sessionId;
     const transactionId = `WAVE-${sessionId || Date.now()}`;
     const internalStatus = mapWaveStatusToInternal(waveResult.status);

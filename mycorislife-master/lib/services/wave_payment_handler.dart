@@ -48,9 +48,9 @@ class WavePaymentHandler {
 
       if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-                'Réponse Wave incomplète (URL/session). Vérifiez la configuration backend.'),
+                'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -76,9 +76,12 @@ class WavePaymentHandler {
         launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
       if (!launched) {
+        launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+      }
+      if (!launched) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impossible d\'ouvrir Wave (application ou navigateur).'),
+          SnackBar(
+            content: Text('Impossible d\'ouvrir Wave. URL: $launchUrlValue'),
             backgroundColor: Colors.red,
           ),
         );

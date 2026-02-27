@@ -564,7 +564,7 @@ class ContractPaymentFlow {
     if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
       _showInfo(
         context,
-        'Réponse Wave incomplète (URL/session). Vérifiez la configuration backend.',
+        'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}',
         isError: true,
       );
       return;
@@ -576,15 +576,29 @@ class ContractPaymentFlow {
       return;
     }
 
-    final launched = await launchUrl(
+    bool launched = await launchUrl(
       waveUri,
       mode: LaunchMode.externalApplication,
     );
 
     if (!launched) {
+      launched = await launchUrl(
+        waveUri,
+        mode: LaunchMode.platformDefault,
+      );
+    }
+
+    if (!launched) {
+      launched = await launchUrl(
+        waveUri,
+        mode: LaunchMode.inAppWebView,
+      );
+    }
+
+    if (!launched) {
       _showInfo(
         context,
-        'Impossible d\'ouvrir Wave. Vérifiez la disponibilité de l\'application ou du navigateur.',
+        'Impossible d\'ouvrir Wave. URL: $launchUrlValue',
         isError: true,
       );
       return;

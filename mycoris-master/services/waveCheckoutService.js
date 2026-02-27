@@ -185,11 +185,34 @@ class WaveCheckoutService {
 
       const data = response.data || {};
       const sessionId = this._extractSessionId(data);
+      const launchUrl = this._pick(data, [
+        'wave_launch_url',
+        'launch_url',
+        'checkout_url',
+        'url',
+        'payment_url',
+        'checkout_session.wave_launch_url',
+        'checkout_session.launch_url',
+        'checkout_session.checkout_url',
+        'checkout_session.url',
+        'data.wave_launch_url',
+        'data.launch_url',
+        'data.checkout_url',
+        'data.url',
+      ]);
+
+      if (!sessionId || !launchUrl) {
+        return {
+          success: false,
+          message: 'Réponse Wave incomplète: sessionId ou URL de lancement manquant',
+          error: data,
+        };
+      }
 
       return {
         success: true,
         sessionId,
-        launchUrl: data.wave_launch_url || data.launch_url || data.checkout_url || null,
+        launchUrl,
         status: data.status || 'pending',
         data,
       };

@@ -1749,8 +1749,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Réponse Wave incomplète (URL/session). Vérifiez la configuration.'),
+          SnackBar(
+            content: Text('Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1777,10 +1777,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
       if (!launched) {
+        launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+      }
+      if (!launched) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impossible d\'ouvrir Wave (application ou navigateur).'),
+          SnackBar(
+            content: Text('Impossible d\'ouvrir Wave. URL: $launchUrlValue'),
             backgroundColor: Colors.red,
           ),
         );
