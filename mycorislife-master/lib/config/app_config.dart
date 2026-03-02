@@ -6,6 +6,10 @@ class AppConfig {
   static const bool TEST_MODE_FORCE_10_XOF = true;
   static const String baseUrl = 'http://10.0.2.2:5000/api';
 
+  // Coordonnées support CORIS Assurance Vie CI (utilisées dans les actions de contact)
+  static const String supportEmail = 'corisvie-ci@coris-assurances.ci';
+  static const String supportPhone = '0778685858';
+
   // DÉVELOPPEMENT - téléphone sur même réseau local
   //static const String baseUrl = 'http://192.168.78.19:5000/api';
 }

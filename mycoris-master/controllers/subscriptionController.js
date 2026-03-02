@@ -719,10 +719,15 @@ exports.uploadDocument = async (req, res) => {
 exports.getDocument = async (req, res) => {
   try {
     const { id, filename } = req.params;
+    // Normaliser le nom reçu (URL encodée, chemin complet, backslashes)
+    // pour éviter les 404 quand l'app envoie un chemin au lieu d'un nom de fichier.
+    const decodedFilename = decodeURIComponent(String(filename || ''));
+    const requestedFilename = path.basename(decodedFilename.split('\\').join('/'));
     
     console.log('=== RÉCUPÉRATION DOCUMENT ===');
     console.log('📄 Souscription ID:', id);
-    console.log('📁 Nom fichier:', filename);
+    console.log('📁 Nom fichier brut:', filename);
+    console.log('📁 Nom fichier normalisé:', requestedFilename);
     console.log('👤 User ID:', req.user.id);
     console.log('🎭 Role:', req.user.role);
     
@@ -732,7 +737,8 @@ exports.getDocument = async (req, res) => {
         s.id, 
         s.user_id, 
         s.code_apporteur,
-        s.souscriptiondata->>'piece_identite' as doc_name
+        s.souscriptiondata->>'piece_identite' as doc_name,
+        s.souscriptiondata->>'piece_identite_url' as doc_url
       FROM subscriptions s
       WHERE s.id = $1
     `;
@@ -786,22 +792,86 @@ exports.getDocument = async (req, res) => {
       });
     }
     
-    // Vérifier que le fichier demandé correspond au document de la souscription
-    // Note: doc_name peut être null si pas de document uploadé
-    if (subscription.doc_name && subscription.doc_name !== filename) {
-      console.error('❌ Fichier non autorisé:', filename, '!==', subscription.doc_name);
-      return res.status(403).json({
-        success: false,
-        message: 'Fichier non autorisé'
-      });
+    // Résolution robuste du fichier:
+    // 1) nom demandé normalisé,
+    // 2) nom stocké en base,
+    // 3) basename de l'URL stockée.
+    const dbDocName = subscription.doc_name
+      ? path.basename(String(subscription.doc_name).split('\\').join('/'))
+      : null;
+    const dbDocUrlName = subscription.doc_url
+      ? path.basename(String(subscription.doc_url).split('\\').join('/'))
+      : null;
+
+    const candidateNames = [...new Set([
+      requestedFilename,
+      dbDocName,
+      dbDocUrlName,
+    ].filter(Boolean))];
+
+    const searchFolders = [
+      path.join(__dirname, '../uploads/identity-cards'),
+      path.join(__dirname, '../uploads/kyc'),
+    ];
+
+    let resolvedFilePath = null;
+
+    for (const candidate of candidateNames) {
+      for (const folder of searchFolders) {
+        const candidatePath = path.join(folder, candidate);
+        if (fs.existsSync(candidatePath)) {
+          resolvedFilePath = candidatePath;
+          break;
+        }
+      }
+      if (resolvedFilePath) break;
     }
-    
-    const filePath = path.join(__dirname, '../uploads/identity-cards', filename);
-    console.log('📂 Chemin fichier:', filePath);
-    console.log('📂 Chemin absolu:', path.resolve(filePath));
-    console.log('🔍 Fichier existe?', fs.existsSync(filePath));
-    
-    if (!fs.existsSync(filePath)) {
+
+    // Fallback: si le fichier précis est introuvable, tenter le dernier document
+    // de l'utilisateur dans les dossiers documents (utile après migration/renommage).
+    if (!resolvedFilePath) {
+      for (const folder of searchFolders) {
+        if (!fs.existsSync(folder)) continue;
+        const userPrefix = `identity_${subscription.user_id}_`;
+        const userFiles = fs
+          .readdirSync(folder)
+          .filter((name) => name.startsWith(userPrefix));
+
+        if (userFiles.length > 0) {
+          userFiles.sort();
+          resolvedFilePath = path.join(folder, userFiles[userFiles.length - 1]);
+          break;
+        }
+      }
+    }
+
+    // Fallback complémentaire: retrouver un fichier avec le même timestamp
+    // (utile si le préfixe utilisateur a changé entre upload et lecture).
+    if (!resolvedFilePath && requestedFilename) {
+      const timestampMatch = requestedFilename.match(/identity_\d+_(\d+)_/i);
+      const timestampToken = timestampMatch ? timestampMatch[1] : null;
+
+      if (timestampToken) {
+        for (const folder of searchFolders) {
+          if (!fs.existsSync(folder)) continue;
+          const byTimestamp = fs
+            .readdirSync(folder)
+            .filter((name) => name.includes(`_${timestampToken}_`));
+
+          if (byTimestamp.length > 0) {
+            byTimestamp.sort();
+            resolvedFilePath = path.join(folder, byTimestamp[byTimestamp.length - 1]);
+            break;
+          }
+        }
+      }
+    }
+
+    console.log('📂 Candidats fichier:', candidateNames);
+    console.log('📂 Chemin résolu:', resolvedFilePath);
+    console.log('🔍 Fichier existe?', resolvedFilePath ? fs.existsSync(resolvedFilePath) : false);
+
+    if (!resolvedFilePath || !fs.existsSync(resolvedFilePath)) {
       console.error('❌ Fichier non trouvé sur le disque');
       console.error('📂 Contenu du dossier identity-cards:');
       const identityCardsDir = path.join(__dirname, '../uploads/identity-cards');
@@ -818,7 +888,7 @@ exports.getDocument = async (req, res) => {
     }
     
     console.log('✅ Envoi du fichier');
-    res.sendFile(filePath);
+    res.sendFile(resolvedFilePath);
   } catch (error) {
     console.error('❌ Erreur récupération document:', error);
     res.status(500).json({

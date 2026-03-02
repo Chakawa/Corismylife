@@ -56,7 +56,7 @@ class ContractPaymentFlow {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Payer mon contrat',
+                        'Payer ma prime',
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w700,
@@ -206,8 +206,8 @@ class ContractPaymentFlow {
 
                                   Navigator.of(dialogContext).pop();
 
-                                  final resolvedSubscriptionId =
-                                      knownSubscriptionId ?? contract.id;
+                                    final resolvedSubscriptionId =
+                                      knownSubscriptionId ?? contract.subscriptionId ?? contract.id;
 
                                   await _showPaymentOptions(
                                     context,
@@ -276,7 +276,7 @@ class ContractPaymentFlow {
 
     if (knownSubscriptionId != null) {
       for (final contrat in contrats) {
-        if (contrat.id == knownSubscriptionId) {
+        if (contrat.id == knownSubscriptionId || contrat.subscriptionId == knownSubscriptionId) {
           return contrat;
         }
       }

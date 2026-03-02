@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart' as path;
+import 'package:share_plus/share_plus.dart';
 
 /// Service pour gérer les PDF des contrats
 /// Fonctionnalités: Télécharger, Sauvegarder, Partager
@@ -83,14 +84,12 @@ class ContratPdfService {
   /// Partage le PDF du contrat via les applications disponibles
   /// [file] : Fichier PDF à partager
   /// [numepoli] : Numéro de police pour le message de partage
-  /// NOTE: Nécessite l'installation de share_plus package
   static Future<void> sharePdf(File file, String numepoli) async {
-    // TODO: Installer share_plus package pour activer le partage
-    // Pour l'instant, le fichier est déjà téléchargé et peut être partagé manuellement
-    throw Exception(
-      'Fonctionnalité de partage temporairement désactivée.\n'
-      'Le PDF a été téléchargé dans: ${file.path}\n'
-      'Vous pouvez le partager manuellement depuis votre gestionnaire de fichiers.'
+    // Partage natif Android/iOS via le plugin share_plus.
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      subject: 'Contrat CORIS $numepoli',
+      text: 'Veuillez trouver ci-joint le contrat CORIS $numepoli.',
     );
   }
 

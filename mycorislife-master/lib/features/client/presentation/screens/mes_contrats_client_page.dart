@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/contrat_service.dart';
 import 'package:mycorislife/models/contrat.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
 
 class MesContratsClientPage extends StatefulWidget {
   const MesContratsClientPage({super.key});
@@ -243,8 +244,53 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     );
   }
 
+  int _resolveSubscriptionId(Contrat contrat) {
+    return contrat.subscriptionId ?? contrat.id;
+  }
+
+  // Contrat souscrit dans l'application mobile.
+  // On combine plusieurs critères pour éviter les faux positifs sur des contrats legacy.
+  bool _isAppSubscriptionContract(Contrat contrat) {
+    final source = (contrat.source ?? '').toLowerCase().trim();
+    final hasSubscriptionId = contrat.subscriptionId != null;
+    final hasLegacyTechnicalCode = (contrat.codeinte ?? '').trim().isNotEmpty;
+
+    return source == 'subscription' && hasSubscriptionId && !hasLegacyTechnicalCode;
+  }
+
+  Future<void> _openContractDetails(Contrat contrat) async {
+    if (_isAppSubscriptionContract(contrat)) {
+      await Navigator.pushNamed(
+        context,
+        '/contrat_details_app',
+        arguments: contrat.toJson(),
+      );
+      return;
+    }
+
+    await Navigator.pushNamed(
+      context,
+      '/contrat_details',
+      arguments: contrat.toJson(),
+    );
+  }
+
+  Future<void> _payPrime(Contrat contrat) async {
+    await ContractPaymentFlow.showSearchAndAmountDialog(
+      context,
+      initialPolicyNumber: contrat.numepoli,
+      knownSubscriptionId: _resolveSubscriptionId(contrat),
+      initialAmount: contrat.prime,
+      onPaymentSuccess: () {
+        _loadContrats();
+      },
+    );
+  }
+
   bool _isAppPendingValidation(Contrat contrat) {
-    return (contrat.source ?? '').toLowerCase() == 'subscription';
+    // Le bandeau "En attente de validation" doit apparaître uniquement
+    // pour les contrats réellement souscrits via l'application.
+    return _isAppSubscriptionContract(contrat);
   }
 
   Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
@@ -669,11 +715,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
           print('🔗 [CLIENT CONTRATS] Navigation vers détails');
           print('📄 [CLIENT CONTRATS] Numéro de police: ${contrat.numepoli}');
           print('📦 [CLIENT CONTRATS] Données contrat: ${contrat.toJson()}');
-          Navigator.pushNamed(
-            context,
-            '/contrat_details',
-            arguments: contrat.toJson(),
-          );
+          _openContractDetails(contrat);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -958,6 +1000,43 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                   ),
                 ),
               ],
+
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openContractDetails(contrat),
+                      icon: const Icon(Icons.info_outline, size: 18),
+                      label: const Text('Détails'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF002B6B),
+                        side: const BorderSide(color: Color(0xFF002B6B)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _payPrime(contrat),
+                      icon: const Icon(Icons.payment_outlined, size: 18),
+                      label: const Text('Payer ma prime'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF002B6B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               
               // Informations de paiement (nouveau)
               if (contrat.nextPaymentDate != null) ...[

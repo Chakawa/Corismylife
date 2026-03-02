@@ -4,8 +4,11 @@ import 'dart:developer' as developer;
 
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/pdf_service.dart';
+import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContratDetailPage extends StatefulWidget {
   final int subscriptionId;
@@ -206,6 +209,18 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Map<String, dynamic> _getSubscriptionDetails() {
     return _subscriptionData?['souscriptiondata'] ?? {};
+  }
+
+  /// Normalise une valeur document en nom de fichier serveur.
+  /// Accepte: URL complète, chemin local, ou nom brut.
+  String? _extractServerFileName(dynamic rawValue) {
+    if (rawValue == null) return null;
+    final asString = rawValue.toString().trim();
+    if (asString.isEmpty || asString.toLowerCase() == 'null') return null;
+    final decoded = Uri.decodeFull(asString).replaceAll('\\\\', '/');
+    final fileName = decoded.split('/').last.trim();
+    if (fileName.isEmpty) return null;
+    return fileName;
   }
 
   String _getContractStatus() {
@@ -1266,7 +1281,19 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
-    final pieceIdentite = subscriptionData['piece_identite'];
+    // Recherche robuste de la pièce d'identité depuis tous les emplacements possibles.
+    final pieceIdentite = _extractServerFileName(
+      subscriptionData['piece_identite'] ??
+      subscriptionData['pieceIdentite'] ??
+      subscriptionData['piece_identite_url'] ??
+      _subscriptionData?['piece_identite'] ??
+      _subscriptionData?['piece_identite_url'],
+    );
+
+    final pieceIdentiteLabel = (subscriptionData['piece_identite_label'] ??
+      _subscriptionData?['piece_identite_label'] ??
+      pieceIdentite)
+      ?.toString();
 
     return Container(
       decoration: BoxDecoration(
@@ -1297,6 +1324,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             _buildDocumentRow(
               'Pièce d\'identité',
               pieceIdentite,
+              pieceIdentiteLabel,
             ),
           ],
         ),
@@ -1304,7 +1332,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  Widget _buildDocumentRow(String label, String? documentName) {
+  Widget _buildDocumentRow(String label, String? documentName, String? displayLabel) {
     final hasDocument = documentName != null &&
         documentName.isNotEmpty &&
         documentName != 'Non téléchargée';
@@ -1349,7 +1377,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  documentName ?? 'Non téléchargée',
+                  displayLabel ?? 'Non téléchargée',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1362,7 +1390,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           if (hasDocument) ...[
             const SizedBox(width: 12),
             InkWell(
-              onTap: () => _viewDocument(documentName),
+              onTap: () => _viewDocument(documentName, displayLabel),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -1382,7 +1410,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  void _viewDocument(String? documentName) {
+  void _viewDocument(String? documentName, String? displayLabel) {
     if (documentName == null ||
         documentName.isEmpty ||
         documentName == 'Non téléchargée') {
@@ -1411,6 +1439,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
           documentName: documentName,
+          displayLabel: displayLabel,
           subscriptionId: widget.subscriptionId,
         ),
       ),
@@ -1453,7 +1482,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   },
                   icon: const Icon(Icons.payment_outlined),
                   label: const Text(
-                    'Payer mon contrat',
+                    'Payer ma prime',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1529,14 +1558,49 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  void _shareContract() {
+  Future<void> _shareContract() async {
     HapticFeedback.lightImpact();
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité de partage en cours de développement'),
-        backgroundColor: Color(0xFF10B981),
+      SnackBar(
+        content: const Text('Préparation du PDF à partager...'),
+        backgroundColor: _getBadgeColor(_getProductType()),
+        behavior: SnackBarBehavior.floating,
       ),
     );
+
+    try {
+      // Réutilise le même endpoint PDF que le bouton Télécharger pour garantir la cohérence.
+      final productType = _getProductType().toLowerCase();
+      final excludeQuestionnaire = productType.contains('etude') ||
+          productType.contains('familis') ||
+          productType.contains('serenite') ||
+          productType.contains('sérénité');
+
+      final tempFile = await PdfService.fetchToTemp(
+        widget.subscriptionId,
+        excludeQuestionnaire: excludeQuestionnaire,
+      );
+
+      final policy = widget.contractNumber.isNotEmpty
+          ? widget.contractNumber
+          : '#${widget.subscriptionId}';
+
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        subject: 'Contrat CORIS $policy',
+        text: 'Veuillez trouver ci-joint mon contrat CORIS $policy.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur de partage du contrat: $e'),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _downloadContract() async {
@@ -1611,13 +1675,66 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  void _contactSupport() {
+  Future<void> _contactSupport() async {
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Ouverture du support client...'),
-        backgroundColor: _getBadgeColor(_getProductType()),
+
+    if (!mounted) return;
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                const Text(
+                  'Contacter le support',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 14),
+                ListTile(
+                  leading: const Icon(Icons.email_outlined, color: Color(0xFF002B6B)),
+                  title: const Text('Par e-mail'),
+                  subtitle: Text(AppConfig.supportEmail),
+                  onTap: () async {
+                    final emailUri = Uri.parse('mailto:${AppConfig.supportEmail}');
+                    Navigator.pop(context);
+                    if (await canLaunchUrl(emailUri)) {
+                      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.phone_outlined, color: Color(0xFF002B6B)),
+                  title: const Text('Par appel'),
+                  subtitle: Text(AppConfig.supportPhone),
+                  onTap: () async {
+                    final phoneUri = Uri.parse('tel:${AppConfig.supportPhone}');
+                    Navigator.pop(context);
+                    if (await canLaunchUrl(phoneUri)) {
+                      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

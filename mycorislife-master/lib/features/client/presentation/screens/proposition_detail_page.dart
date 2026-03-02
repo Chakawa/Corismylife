@@ -1197,12 +1197,29 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       return;
     }
 
+    // Normaliser le document pour transmettre uniquement un nom de fichier serveur.
+    final normalizedDocumentName = Uri.decodeFull(documentName)
+        .replaceAll('\\\\', '/')
+        .split('/')
+        .last
+        .trim();
+
+    if (normalizedDocumentName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nom du document invalide'),
+          backgroundColor: orangeWarning,
+        ),
+      );
+      return;
+    }
+
     // Ouvrir le viewer de documents
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
-          documentName: documentName,
+          documentName: normalizedDocumentName,
           displayLabel: displayLabel,
           subscriptionId: widget.subscriptionId,
         ),

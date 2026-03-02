@@ -516,7 +516,7 @@ class _HomeContentState extends State<HomeContent> {
                           icon: const Icon(Icons.payment_outlined,
                               color: bleuCoris, size: 22),
                           label: Text(
-                            'Payer mon contrat',
+                            'Payer ma prime',
                             style: TextStyle(
                               color: bleuCoris,
                               fontSize:

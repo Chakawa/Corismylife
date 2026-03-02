@@ -194,6 +194,7 @@ router.get('/stats/connexions-mensuelles', async (req, res) => {
  */
 router.post('/users', async (req, res) => {
   const client = await pool.connect();
+  let transactionActive = false;
   try {
     const { 
       civilite, prenom, nom, email, telephone, date_naissance, lieu_naissance, 
@@ -226,6 +227,7 @@ router.post('/users', async (req, res) => {
     }
 
     await client.query('BEGIN');
+    transactionActive = true;
 
     // Vérifier si l'email existe déjà
     const existingUser = await client.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -270,17 +272,21 @@ router.post('/users', async (req, res) => {
     const result = await client.query(query, params);
     const newUser = result.rows[0];
 
-    // Créer une notification pour tous les admins
+    await client.query('COMMIT');
+    transactionActive = false;
+
+    // Créer une notification pour tous les admins (hors transaction principale)
+    // IMPORTANT: ne jamais impacter la persistance du compte utilisateur.
     try {
-      const adminEmails = await client.query(
+      const adminUsers = await pool.query(
         "SELECT id FROM users WHERE role IN ('super_admin', 'admin', 'moderation')"
       );
-      
-      if (adminEmails.rows.length > 0) {
+
+      if (adminUsers.rows.length > 0) {
         const notificationMessage = `Nouvel utilisateur ${role} enregistré: ${prenom} ${nom} (${email})`;
-        
-        for (const admin of adminEmails.rows) {
-          await client.query(`
+
+        for (const admin of adminUsers.rows) {
+          await pool.query(`
             INSERT INTO notifications 
               (admin_id, type, title, message, reference_id, reference_type, action_url, created_at)
             VALUES 
@@ -297,11 +303,8 @@ router.post('/users', async (req, res) => {
         }
       }
     } catch (notifError) {
-      console.error('Erreur création notification:', notifError.message);
-      // Ne pas bloquer la création d'utilisateur si la notification échoue
+      console.error('Erreur création notification (non bloquante):', notifError.message);
     }
-
-    await client.query('COMMIT');
 
     res.status(201).json({
       success: true,
@@ -309,7 +312,9 @@ router.post('/users', async (req, res) => {
       user: newUser
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (transactionActive) {
+      await client.query('ROLLBACK');
+    }
     console.error('Erreur création utilisateur:', error);
     
     let errorMessage = 'Erreur lors de la création de l\'utilisateur';

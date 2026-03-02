@@ -56,6 +56,7 @@ import 'package:mycorislife/features/commercial/presentation/screens/liste_clien
 import 'package:mycorislife/features/commercial/presentation/screens/contrats_actifs_page.dart';
 import 'package:mycorislife/features/commercial/presentation/screens/details_client_page.dart';
 import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
+import 'package:mycorislife/features/client/presentation/screens/contrat_details_app_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
 
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
@@ -197,6 +198,13 @@ final Map<String, WidgetBuilder> appRoutes = {
         ? (args.containsKey('contrat') ? args['contrat'] : args)
         : args as Map<String, dynamic>;
     return ContratDetailsUnifiedPage(contrat: contrat);
+  },
+  '/contrat_details_app': (context) {
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final contrat = args is Map<String, dynamic>
+        ? (args.containsKey('contrat') ? args['contrat'] : args)
+        : args as Map<String, dynamic>;
+    return ContratDetailsAppPage(contrat: contrat);
   },
   '/commercial/create_client': (context) => const CreateClientScreen(),
   '/commercial/select_client': (context) {

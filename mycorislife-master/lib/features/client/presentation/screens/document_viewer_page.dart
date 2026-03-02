@@ -35,6 +35,17 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   File? _documentFile;
   String? _fileExtension;
 
+  /// Extrait un vrai nom de fichier depuis une valeur potentiellement
+  /// URL encodée, chemin complet ou simple label.
+  String? _normalizeDocumentName(String? rawValue) {
+    if (rawValue == null || rawValue.trim().isEmpty) return null;
+    final decoded = Uri.decodeFull(rawValue.trim());
+    final normalized = decoded.replaceAll('\\\\', '/');
+    final fileName = normalized.split('/').last.trim();
+    if (fileName.isEmpty || fileName.toLowerCase() == 'null') return null;
+    return fileName;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -200,15 +211,25 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     try {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'token');
+      final normalizedDocumentName = _normalizeDocumentName(widget.documentName);
+
+      if (normalizedDocumentName == null) {
+        setState(() {
+          _errorMessage = 'Nom du document invalide';
+          _isLoading = false;
+        });
+        return;
+      }
 
       print('=== TÉLÉCHARGEMENT DOCUMENT ===');
       print('subscriptionId: ${widget.subscriptionId}');
-      print('documentName: ${widget.documentName}');
+      print('documentName brut: ${widget.documentName}');
+      print('documentName normalisé: $normalizedDocumentName');
       print('Token présent: ${token != null}');
       print('Token: $token');
 
       final url =
-          '${AppConfig.baseUrl}/subscriptions/${widget.subscriptionId}/document/${widget.documentName}';
+          '${AppConfig.baseUrl}/subscriptions/${widget.subscriptionId}/document/${Uri.encodeComponent(normalizedDocumentName)}';
       print('URL: $url');
 
       final response = await http.get(
@@ -224,12 +245,12 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
 
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/${widget.documentName}');
+        final file = File('${dir.path}/$normalizedDocumentName');
         await file.writeAsBytes(response.bodyBytes);
 
         setState(() {
           _documentFile = file;
-          _fileExtension = widget.documentName!.split('.').last.toLowerCase();
+          _fileExtension = normalizedDocumentName.split('.').last.toLowerCase();
           _isLoading = false;
         });
       } else if (response.statusCode == 401) {
