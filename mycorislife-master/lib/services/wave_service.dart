@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/utils/test_mode_helper.dart';
 
 class WaveService {
   static String get baseUrl => AppConfig.baseUrl;
@@ -61,6 +62,12 @@ class WaveService {
     String? errorUrl,
   }) async {
     try {
+      // Forçage global du mode test pour tous les paiements Wave.
+      final effectiveAmount = TestModeHelper.applyTestModeIfNeeded(
+        amount,
+        context: 'WaveService.createCheckoutSession',
+      );
+
       final token = await _storage.read(key: 'token');
       if (token == null || token.isEmpty) {
         return {
@@ -77,7 +84,7 @@ class WaveService {
         },
         body: jsonEncode({
           'subscriptionId': subscriptionId,
-          'amount': amount,
+          'amount': effectiveAmount,
           'description': description,
           'customerPhone': customerPhone,
           if (successUrl != null) 'successUrl': successUrl,

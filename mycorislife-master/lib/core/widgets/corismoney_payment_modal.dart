@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mycorislife/services/corismoney_service.dart';
+import 'package:mycorislife/utils/test_mode_helper.dart';
 
 /// ============================================
 /// MODAL DE PAIEMENT CORISMONEY
@@ -74,6 +75,12 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
   static const Color rouge = Color(0xFFEF4444); // Rouge erreur
   static const Color fondBlanc = Color(0xFFFFFFFF); // Fond blanc
   static const Color bordure = Color(0xFFE5E7EB); // Bordure grise claire
+
+  // Montant réellement envoyé à l'API (10 XOF en mode test).
+  double get _effectiveAmount => TestModeHelper.applyTestModeIfNeeded(
+        widget.montant,
+        context: 'CorisMoneyPaymentModal',
+      );
 
   @override
   void dispose() {
@@ -152,7 +159,7 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
       subscriptionId: widget.subscriptionId,
       codePays: _codePays,
       telephone: numeroNettoye,
-      montant: widget.montant,
+      montant: _effectiveAmount,
       codeOTP: _otpController.text.trim(),
       description: widget.description,
     );
@@ -296,7 +303,7 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatMontant(widget.montant),
+                          _formatMontant(_effectiveAmount),
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,

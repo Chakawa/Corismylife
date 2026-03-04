@@ -3,6 +3,7 @@ import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/services/contrat_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
+import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContractPaymentFlow {
@@ -184,6 +185,13 @@ class ContractPaymentFlow {
                                     return;
                                   }
 
+                                  // Forçage 10 XOF en mode test (tous produits).
+                                  final effectiveMontant =
+                                      TestModeHelper.applyTestModeIfNeeded(
+                                    montant,
+                                    context: 'ContractPaymentFlow.searchDialog',
+                                  );
+
                                   setDialogState(() => isSearching = true);
 
                                   final contract = await _resolveContract(
@@ -214,7 +222,7 @@ class ContractPaymentFlow {
                                     subscriptionId: resolvedSubscriptionId,
                                     numeroPolice:
                                         contract.numepoli ?? numeroPolice,
-                                    montant: montant,
+                                    montant: effectiveMontant,
                                     onPaymentSuccess: onPaymentSuccess,
                                   );
                                 },
