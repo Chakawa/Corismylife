@@ -26,28 +26,13 @@ class _HomeContentState extends State<HomeContent> {
   static const bleuCoris = Color(0xFF002B6B);
   static const rougeCoris = Color(0xFFE30613);
 
-  final List<Map<String, String>> _carouselData = [
-    {
-      'title': 'CORIS ETUDE',
-      'subtitle': 'Investissez dans l\'éducation',
-      'description': 'Financement des études supérieures',
-      'image': 'assets/images/etude.png',
-      'route': '/etude',
-    },
-    {
-      'title': 'CORIS RETRAITE',
-      'subtitle': 'Préparez votre retraite sereinement',
-      'description': 'Complément retraite personnalisé',
-      'image': 'assets/images/retraite.png',
-      'route': '/retraite',
-    },
-    {
-      'title': 'CORIS ÉPARGNE BONUS',
-      'subtitle': 'Épargnez intelligemment',
-      'description': 'Solutions d\'épargne adaptées à vos besoins',
-      'image': 'assets/images/epargne.png',
-      'route': '/epargne',
-    },
+  final List<String> _carouselData = [
+    'assets/images/Produits_assurances-19.png',
+    'assets/images/Produits_assurances-20.png',
+    'assets/images/Produits_assurances-21.png',
+    'assets/images/Produits_assurances-22.png',
+    'assets/images/Produits_assurances-23.png',
+    'assets/images/Produits_assurances-24.png',
   ];
 
   // Produits pour particuliers
@@ -320,131 +305,26 @@ class _HomeContentState extends State<HomeContent> {
                     },
                     itemCount: _carouselData.length,
                     itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pushNamed(
-                              context, _carouselData[index]['route']!);
-                        },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                              horizontal: screenWidth * 0.03),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(25),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
-                            child: Stack(
-                              children: [
-                                Image.asset(
-                                  _carouselData[index]['image']!,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                                // Gradient overlay pour améliorer la lisibilité
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.45),
-                                        Colors.black.withOpacity(0.25),
-                                        Colors.black.withOpacity(0.1),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: screenHeight * 0.05,
-                                  left: screenWidth * 0.05,
-                                  right: screenWidth * 0.05,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _carouselData[index]['title']!,
-                                        style: TextStyle(
-                                          color: Colors.white, // Blanc
-                                          fontSize: screenWidth * 0.06,
-                                          fontWeight: FontWeight.bold,
-                                          shadows: [
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.9),
-                                              offset: const Offset(2, 2),
-                                              blurRadius: 6,
-                                            ),
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.5),
-                                              offset: const Offset(0, 0),
-                                              blurRadius: 15,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        _carouselData[index]['subtitle']!,
-                                        style: TextStyle(
-                                          color: const Color(
-                                              0xFFFFFFFF), // Blanc pur
-                                          fontSize: screenWidth * 0.035,
-                                          fontWeight: FontWeight.w600,
-                                          shadows: [
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.8),
-                                              offset: const Offset(1, 1),
-                                              blurRadius: 4,
-                                            ),
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.4),
-                                              offset: const Offset(0, 0),
-                                              blurRadius: 10,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        _carouselData[index]['description']!,
-                                        style: TextStyle(
-                                          color: const Color(
-                                              0xFFF0F0F0), // Blanc cassé
-                                          fontSize: screenWidth * 0.03,
-                                          shadows: [
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.8),
-                                              offset: const Offset(1, 1),
-                                              blurRadius: 3,
-                                            ),
-                                            Shadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.4),
-                                              offset: const Offset(0, 0),
-                                              blurRadius: 8,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                      return Container(
+                        margin:
+                            EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(25),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.asset(
+                            _carouselData[index],
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       );
