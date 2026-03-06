@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Eye, FileText, Download } from 'lucide-react'
 import { subscriptionsService } from '../services/api.service'
+import API_URL from '../config'
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState([])
@@ -105,7 +106,7 @@ export default function SubscriptionsPage() {
         throw new Error('Vous devez être connecté pour télécharger le PDF')
       }
       
-      const response = await fetch(`http://127.0.0.1:5000/api/subscriptions/${subscription.id}/pdf`, {
+      const response = await fetch(`${API_URL}/subscriptions/${subscription.id}/pdf`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

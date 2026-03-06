@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Bell, Settings, Save, Upload, Download, DollarSign } from 'lucide-react'
+import API_URL from '../config'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
@@ -35,7 +36,7 @@ export default function SettingsPage() {
   const loadAdminInfo = async () => {
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await fetch('http://localhost:5000/api/auth/me', {
+      const response = await fetch(`${API_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -76,7 +77,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await fetch(`http://localhost:5000/api/admin/tarifs/export?product=${selectedExportProduct}`, {
+      const response = await fetch(`${API_URL}/admin/tarifs/export?product=${selectedExportProduct}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -135,7 +136,7 @@ export default function SettingsPage() {
     setShowProductSelector(false)
     
     try {
-      const response = await fetch('http://localhost:5000/api/admin/tarifs/import', {
+      const response = await fetch(`${API_URL}/admin/tarifs/import`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -175,7 +176,7 @@ export default function SettingsPage() {
       localStorage.setItem('city', formData.city)
       
       const token = localStorage.getItem('adminToken')
-      const response = await fetch('http://localhost:5000/api/admin/update-profile', {
+      const response = await fetch(`${API_URL}/admin/update-profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

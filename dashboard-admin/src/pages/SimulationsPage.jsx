@@ -4,9 +4,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 import { Calculator, TrendingUp, DollarSign, Users, Filter, Download } from 'lucide-react'
+import API_URL from '../config'
 
 const COLORS = ['#002B6B', '#E30613', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
-const API_BASE = 'http://localhost:3000/api'
+const API_BASE = API_URL
 
 export default function SimulationsPage() {
   const [stats, setStats] = useState(null)

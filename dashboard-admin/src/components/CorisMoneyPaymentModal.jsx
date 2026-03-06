@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './CorisMoneyPaymentModal.css';
+import API_URL from '../config';
 
 const CorisMoneyPaymentModal = ({ isOpen, onClose, onPaymentSuccess, montant, subscriptionId, description }) => {
   const [step, setStep] = useState(1); // 1: Formulaire, 2: OTP envoyé, 3: Paiement en cours
@@ -55,7 +56,7 @@ const CorisMoneyPaymentModal = ({ isOpen, onClose, onPaymentSuccess, montant, su
 
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/payment/send-otp', {
+      const response = await fetch(`${API_URL}/payment/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +101,7 @@ const CorisMoneyPaymentModal = ({ isOpen, onClose, onPaymentSuccess, montant, su
 
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/payment/process-payment', {
+      const response = await fetch(`${API_URL}/payment/process-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
