@@ -33,30 +33,6 @@ Le contrat **CORIS RETRAITE** vous permet de constituer, par des versements pér
 
 • Le souscripteur peut, à tout moment, effectuer des versements libres, en complément des cotisations programmées
 
-#### **Caractéristiques principales**
-
-🔒 **Sécurité**
-- Capital garanti à l'échéance
-- Protection contre les aléas de la vie
-
-📈 **Performance**
-- Rendement attractif
-- Participation aux bénéfices
-
-#### **Avantages exclusifs**
-
-💰 **Avantages financiers**
-- Constitution progressive d'un capital retraite
-#### **CORIS RETRAITE, quels sont les avantages ?**
-
-• Le maintien de votre niveau de vie
-
-• Le bénéfice d'un capital de survie pour votre famille
-
-• Une offre souple et accessible à tous
-
-• Une sérénité pour vos vieux jours
-
 #### **CORIS RETRAITE, qui peut souscrire ?**
 
 Toute personne physique âgée d'au moins 18 ans à la souscription.
@@ -178,7 +154,8 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/souscription_retraite');
+                          Navigator.pushNamed(
+                              context, '/souscription_retraite');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF002B6B),

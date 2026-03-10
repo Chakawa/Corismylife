@@ -42,29 +42,6 @@ Le groupe familial assuré est composé au maximum de quatre (04) personnes âg�
 
 Le souscripteur a le choix entre quatre (04) options de capitaux garantis par tête variant de 500 000 à 2 000 000 F CFA.
 
-#### **Caractéristiques principales**
-
-**🛡️ Couverture familiale étendue**
-- Couverture de l'assuré principal
-- Protection des conjoints
-- Assurance des enfants
-- Prise en charge des ascendants
-- Capital versé pour chaque membre assuré
-
-**💰 Garanties financières**
-- Capital forfaitaire garanti en cas de décès
-- Montant défini à la souscription
-- Versement rapide aux bénéficiaires
-- Pas de franchise ni de délai de carence
-
-**🎯 Flexibilité de la couverture**
-- Choix du capital assuré
-- Adaptation selon la composition familiale
-- Prime modulable selon vos besoins
-- Périodicité de paiement flexible
-
-#### **Avantages exclusifs**
-
 #### **CORIS SOLIDARITÉ, quels sont les avantages ?**
 
 • une assistance inédite : mise à la disposition, du bénéficiaire désigné, d'un ensemble de prestations par l'intermédiaire des pompes funèbres partenaires ou le paiement du capital
@@ -78,26 +55,6 @@ Le souscripteur a le choix entre quatre (04) options de capitaux garantis par t�
 #### **CORIS SOLIDARITÉ, comment souscrire ?**
 
 Pour souscrire, choisissez votre option de capital et renseignez votre proposition d'assurance.
-
-#### **Modalités pratiques**
-
-**📝 Membres couverts**
-- **Assuré principal** : La personne qui souscrit le contrat
-- **Conjoint(s)** : Époux/épouse ou partenaire reconnu
-- **Enfants** : De la naissance jusqu'à 25 ans
-- **Ascendants** : Parents et beaux-parents
-
-**💳 Primes et paiements**
-- **Capital flexible** : De 500 000 FCFA à 5 000 000 FCFA par personne
-- **Prime ajustable** : Selon le nombre de personnes couvertes
-- **Périodicité** : Mensuelle, trimestrielle, semestrielle ou annuelle
-- **Modes de paiement** : Virement, prélèvement automatique, mobile money
-
-**📊 Garanties et indemnisation**
-- Versement immédiat du capital en cas de décès
-- Couverture valable 24h/24 et 7j/7
-- Aucune exclusion territoriale
-- Paiement direct aux bénéficiaires désignés
 
 **🏆 Pourquoi choisir CORIS SOLIDARITÉ ?**
 

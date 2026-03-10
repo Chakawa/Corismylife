@@ -306,8 +306,8 @@ class _HomeContentState extends State<HomeContent> {
                     itemCount: _carouselData.length,
                     itemBuilder: (context, index) {
                       return Container(
-                        margin:
-                            EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
+                        margin: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.03),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(15),
                           boxShadow: [
@@ -396,7 +396,7 @@ class _HomeContentState extends State<HomeContent> {
                           icon: const Icon(Icons.payment_outlined,
                               color: bleuCoris, size: 22),
                           label: Text(
-                            'Payer ma prime',
+                            'Payer mes cotisations',
                             style: TextStyle(
                               color: bleuCoris,
                               fontSize:

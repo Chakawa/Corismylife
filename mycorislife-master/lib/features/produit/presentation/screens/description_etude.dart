@@ -44,24 +44,6 @@ Le contrat CORIS ÉTUDE permet aux parents ou tuteurs d'enfants de garantir des 
 
 -au terme de la période contractuelle de cotisation et ce, jusqu'au terme du contrat, CORIS VIE CI verse **la rente annuelle payable à terme échu dont le montant a été défini à la souscription**
 
-#### **Caractéristiques principales**
-
-**🎓 Flexibilité maximale**
-- Choix libre de la durée de l'épargne
-- Montant des cotisations adapté à votre budget
-- Possibilité de versements exceptionnels
-- Suspension temporaire possible
-
-**🔒 Sécurité garantie**
-- Capital garanti, même en cas de décès de l'assuré
-- Protection totale de vos versements
-- Couverture assurée par des organismes de renom
-
-**📈 Rendement attractif**
-- Taux d'intérêt compétitif
-- Valorisation annuelle de votre épargne
-- Participation aux bénéfices
-
 #### **CORIS ÉTUDE, quels sont les avantages ?**
 
 • Un concours financier sûr pour vos enfants pendant leurs études, ou pour leur permettre de s'établir dans la vie professionnelle
@@ -79,18 +61,6 @@ Toute personne physique âgée de 18 ans minimum et au plus 65 ans à la date de
 Pour souscrire, choisissez le montant de la cotisation ou la rente annuelle et renseignez votre proposition d'assurance de même que le questionnaire médical.
 - **Périodicité flexible** : Mensuel, trimestriel, semestriel ou annuel
 - **Versements exceptionnels** : Possibilité d'effectuer des versements ponctuels
-
-**📊 Gestion et suivi**
-- Interface en ligne dédiée pour le suivi de votre contrat
-- Relevés périodiques détaillés
-- Conseils personnalisés de nos experts
-- Service client dédié et réactif
-
-**🏆 Pourquoi choisir CORIS ÉTUDE ?**
-
-Dans un monde où l'éducation est un investissement essentiel, CORIS ÉTUDE représente la solution idéale pour tous les parents qui souhaitent garantir l'avenir scolaire et professionnel de leurs enfants. Ce produit d'épargne dédié vous offre la possibilité de préparer sereinement l'éducation de vos enfants, avec la garantie d'un accompagnement professionnel de qualité.
-
-*Investir dans CORIS ÉTUDE, c'est investir dans l'avenir de vos enfants.*
 """;
 
     return Scaffold(

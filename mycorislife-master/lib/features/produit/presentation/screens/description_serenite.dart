@@ -32,24 +32,6 @@ Après au moins deux primes annuelles ou 15% du cumul des primes prévues dans l
 **⚰️ En cas décès ou de Perte Totale et Irréversible d'Autonomie**
 Pendant la période de garantie, **CORIS VIE CI** règle le capital défini à la souscription, au(x) bénéficiaire(s) désigné(s) dans le contrat.
 
-#### **Caractéristiques principales**
-
-**🔒 Sécurité absolue**
-- Capital 100% garanti à tout moment
-- Protection totale de vos versements initiaux
-- Couverture assurée par des organismes de renom
-
-**📈 Rendement optimisé**
-- Taux d'intérêt compétitif et attractif sur le marché
-- Participation aux bénéfices de la compagnie d'assurance
-- Revalorisation annuelle de votre capital
-
-**⚡ Flexibilité maximale**
-- Versements libres selon vos possibilités
-- Possibilité d'effectuer des versements exceptionnels
-- Adaptation aux variations de vos revenus
-- Suspension temporaire possible sans pénalités
-
 #### **CORIS SÉRÉNITÉ PLUS, quels sont les avantages ?**
 
 • **Une couverture complète** : le décès toutes causes et la Perte Totale et Irréversible d'Autonomie (PTIA)
