@@ -59,8 +59,7 @@ Toute personne physique âgée de 18 ans minimum et au plus 65 ans à la date de
 #### **CORIS ÉTUDE, comment souscrire ?**
 
 Pour souscrire, choisissez le montant de la cotisation ou la rente annuelle et renseignez votre proposition d'assurance de même que le questionnaire médical.
-- **Périodicité flexible** : Mensuel, trimestriel, semestriel ou annuel
-- **Versements exceptionnels** : Possibilité d'effectuer des versements ponctuels
+
 """;
 
     return Scaffold(
