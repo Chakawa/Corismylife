@@ -1320,14 +1320,123 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     }
 
     // =========================================
-    // ÉTAPE 5 : Retourner les deux ensembles de données
+    // ÉTAPE 5 : Enrichir avec les infos de paiement (Wave/OM/etc.)
+    // =========================================
+    let enrichedSubscription = subscription;
+    try {
+      const latestPaymentResult = await pool.query(
+        `SELECT transaction_id, provider, montant, statut, created_at, session_id, api_response
+         FROM payment_transactions
+         WHERE subscription_id = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [id]
+      );
+
+      if (latestPaymentResult.rows.length > 0) {
+        const latestPayment = latestPaymentResult.rows[0];
+        const currentData = enrichedSubscription.souscriptiondata || {};
+        const currentPaymentInfo = currentData.payment_info || {};
+        const apiResponse = latestPayment.api_response || {};
+
+        const pick = (obj, paths = []) => {
+          for (const path of paths) {
+            const value = path
+              .split('.')
+              .reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+            if (value !== undefined && value !== null && `${value}` !== '') return value;
+          }
+          return null;
+        };
+
+        const providerPaymentId =
+          pick(apiResponse, [
+            'payment_id',
+            'provider_payment_id',
+            'id',
+            'transaction_id',
+            'sessionId',
+            'session_id',
+            'data.payment_id',
+            'data.provider_payment_id',
+            'data.id',
+            'data.transaction_id',
+            'data.sessionId',
+            'data.session_id',
+            'apiResponse.payment_id',
+            'apiResponse.provider_payment_id',
+            'apiResponse.id',
+            'apiResponse.transaction_id',
+            'apiResponse.data.payment_id',
+            'apiResponse.data.provider_payment_id',
+            'apiResponse.data.id',
+            'apiResponse.data.transaction_id',
+          ]) ||
+          latestPayment.session_id ||
+          latestPayment.transaction_id ||
+          null;
+
+        const mergedPaymentInfo = {
+          ...currentPaymentInfo,
+          payment_method:
+            currentPaymentInfo.payment_method ||
+            latestPayment.provider ||
+            enrichedSubscription.payment_method ||
+            null,
+          transaction_id:
+            currentPaymentInfo.transaction_id ||
+            latestPayment.transaction_id ||
+            null,
+          payment_id:
+            currentPaymentInfo.payment_id ||
+            currentPaymentInfo.provider_payment_id ||
+            providerPaymentId ||
+            null,
+          payment_date:
+            currentPaymentInfo.payment_date ||
+            latestPayment.created_at ||
+            enrichedSubscription.date_validation ||
+            null,
+          payment_success:
+            typeof currentPaymentInfo.payment_success === 'boolean'
+              ? currentPaymentInfo.payment_success
+              : (latestPayment.statut || '').toString().toUpperCase() === 'SUCCESS',
+          amount:
+            currentPaymentInfo.amount ||
+            latestPayment.montant ||
+            enrichedSubscription.montant ||
+            null,
+          provider_status:
+            currentPaymentInfo.provider_status ||
+            latestPayment.statut ||
+            null,
+          session_id:
+            currentPaymentInfo.session_id ||
+            latestPayment.session_id ||
+            null,
+        };
+
+        enrichedSubscription = {
+          ...enrichedSubscription,
+          souscriptiondata: {
+            ...currentData,
+            payment_info: mergedPaymentInfo,
+          },
+        };
+      }
+    } catch (paymentInfoError) {
+      console.warn('⚠️ Impossible d\'enrichir les infos de paiement:', paymentInfoError.message);
+    }
+
+    // =========================================
+    // ÉTAPE 6 : Retourner les deux ensembles de données
     // =========================================
     console.log(`\n✅ RETOUR COMPLET: subscription + user + ${questionnaireReponses.length} questionnaire_reponses`);
     res.json({ 
       success: true, 
       data: {
         subscription: {
-          ...subscription,
+          ...enrichedSubscription,
           questionnaire_reponses: questionnaireReponses  // ← Inclure dans subscription
         },
         user: userData,                       // Données de l'utilisateur formatées

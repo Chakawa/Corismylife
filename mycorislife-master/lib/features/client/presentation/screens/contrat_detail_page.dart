@@ -4,8 +4,10 @@ import 'dart:developer' as developer;
 
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/pdf_service.dart';
+import 'package:mycorislife/services/download_notification_service.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
+import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -128,6 +130,46 @@ class ContratDetailPageState extends State<ContratDetailPage>
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
       return "Date inconnue";
+    }
+  }
+
+  String _formatDateTime(dynamic dateValue) {
+    try {
+      if (dateValue == null) return 'Non definie';
+
+      DateTime date;
+      if (dateValue is DateTime) {
+        date = dateValue;
+      } else if (dateValue is String) {
+        final raw = dateValue.trim();
+        if (raw.isEmpty) return 'Non definie';
+
+        // Supporte aussi le format fr: dd/MM/yyyy HH:mm[:ss]
+        final fr = RegExp(r'^(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$')
+            .firstMatch(raw);
+        if (fr != null) {
+          final day = int.parse(fr.group(1)!);
+          final month = int.parse(fr.group(2)!);
+          final year = int.parse(fr.group(3)!);
+          final hour = int.tryParse(fr.group(4) ?? '0') ?? 0;
+          final minute = int.tryParse(fr.group(5) ?? '0') ?? 0;
+          final second = int.tryParse(fr.group(6) ?? '0') ?? 0;
+          date = DateTime(year, month, day, hour, minute, second);
+        } else {
+          date = DateTime.parse(raw);
+        }
+      } else {
+        return 'Date inconnue';
+      }
+
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final year = date.year;
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$day/$month/$year a $hour:$minute';
+    } catch (_) {
+      return 'Date inconnue';
     }
   }
 
@@ -347,6 +389,156 @@ class ContratDetailPageState extends State<ContratDetailPage>
     } else {
       return _buildDefaultProductSection(_getSubscriptionDetails());
     }
+  }
+
+  Map<String, dynamic>? _getPaymentInfo() {
+    final details = _getSubscriptionDetails();
+    final paymentInfoRaw = details['payment_info'];
+
+    String? pickText(List<dynamic> values) {
+      for (final value in values) {
+        if (value == null) continue;
+        final text = value.toString().trim();
+        if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+      }
+      return null;
+    }
+
+    dynamic pickValue(List<dynamic> values) {
+      for (final value in values) {
+        if (value == null) continue;
+        final text = value.toString().trim().toLowerCase();
+        if (text.isNotEmpty && text != 'null') return value;
+      }
+      return null;
+    }
+
+    Map<String, dynamic> toMap(dynamic raw) {
+      if (raw is Map<String, dynamic>) return raw;
+      if (raw is Map) return Map<String, dynamic>.from(raw);
+      return <String, dynamic>{};
+    }
+
+    final paymentInfo = toMap(paymentInfoRaw);
+    final paymentMeta = toMap(details['paiement']);
+
+    final paymentMethod = pickText([
+      paymentInfo['payment_method'],
+      paymentInfo['method'],
+      paymentMeta['mode_paiement'],
+      paymentMeta['payment_method'],
+      details['mode_paiement'],
+      details['payment_method'],
+      _subscriptionData?['payment_method'],
+    ]);
+
+    final paymentDate = pickText([
+      paymentInfo['payment_date'],
+      paymentInfo['date_paiement'],
+      paymentMeta['payment_date'],
+      paymentMeta['date_paiement'],
+      details['payment_date'],
+      details['date_paiement'],
+      _subscriptionData?['payment_date'],
+      _subscriptionData?['date_validation'],
+      _subscriptionData?['updated_at'],
+      _subscriptionData?['created_at'],
+    ]);
+
+    final amount = pickValue([
+      paymentInfo['amount'],
+      paymentInfo['montant'],
+      paymentMeta['amount'],
+      paymentMeta['montant'],
+      details['amount'],
+      details['montant'],
+      details['prime'],
+      details['prime_totale'],
+      _subscriptionData?['montant'],
+      _subscriptionData?['prime'],
+      _subscriptionData?['prime_totale'],
+    ]);
+
+    final paymentId = pickText([
+      paymentInfo['payment_id'],
+      paymentInfo['provider_payment_id'],
+      paymentInfo['paymentId'],
+      paymentInfo['id'],
+      paymentMeta['payment_id'],
+      paymentMeta['provider_payment_id'],
+      paymentMeta['paymentId'],
+      paymentMeta['id'],
+      details['payment_id'],
+      details['provider_payment_id'],
+      details['paymentId'],
+      details['id_paiement'],
+      _subscriptionData?['payment_id'],
+      _subscriptionData?['provider_payment_id'],
+      _subscriptionData?['paymentId'],
+      _subscriptionData?['id_paiement'],
+      paymentInfo['transaction_id'],
+      paymentInfo['transactionId'],
+      paymentInfo['reference'],
+      paymentInfo['session_id'],
+      paymentMeta['transaction_id'],
+      paymentMeta['transactionId'],
+      paymentMeta['reference'],
+      details['transaction_id'],
+      details['transactionId'],
+      _subscriptionData?['payment_transaction_id'],
+    ]);
+
+    final providerStatus = pickText([
+      paymentInfo['provider_status'],
+      paymentInfo['status'],
+      paymentMeta['provider_status'],
+      paymentMeta['status'],
+      details['provider_status'],
+      details['status'],
+    ]);
+
+    if (paymentMethod == null && paymentDate == null && amount == null && paymentId == null) {
+      return null;
+    }
+
+    return {
+      'payment_method': paymentMethod,
+      'payment_date': paymentDate,
+      'amount': amount,
+      'payment_id': paymentId,
+      'provider_status': providerStatus,
+    };
+  }
+
+  Widget _buildPaymentInfoCard() {
+    final paymentInfo = _getPaymentInfo();
+    if (paymentInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final paymentMethodRaw = (paymentInfo['payment_method'] ?? '').toString();
+    final paymentMethod = paymentMethodRaw.trim().isEmpty
+        ? 'Non defini'
+        : paymentMethodRaw;
+
+    final amount = paymentInfo['amount'] ?? _subscriptionData?['montant'];
+    final paymentDate = paymentInfo['payment_date'] ?? _subscriptionData?['date_validation'];
+    final paymentId = paymentInfo['payment_id'] ?? _subscriptionData?['payment_transaction_id'];
+    final providerStatusRaw = (paymentInfo['provider_status'] ?? '').toString();
+    final providerStatus = providerStatusRaw.trim().isEmpty
+      ? 'Confirme'
+      : providerStatusRaw.toUpperCase();
+
+    return _buildRecapSection(
+      'Session paiement',
+      Icons.account_balance_wallet_outlined,
+      const Color(0xFF10B981),
+      [
+        _buildCombinedRecapRow('Mode de paiement', paymentMethod, 'Statut', providerStatus),
+        _buildCombinedRecapRow('Montant paye', _formatMontant(amount), 'Date de paiement', _formatDateTime(paymentDate)),
+        _buildCombinedRecapRow('ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
+      ],
+    );
   }
 
   Widget _buildSolidariteSection(Map<String, dynamic> data) {
@@ -932,6 +1124,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
           const SizedBox(height: 16),
           _buildProductSection(),
           const SizedBox(height: 16),
+          _buildPaymentInfoCard(),
+          const SizedBox(height: 16),
           _buildBeneficiariesCard(),
           const SizedBox(height: 16),
           _buildDocumentsCard(),
@@ -1482,7 +1676,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   },
                   icon: const Icon(Icons.payment_outlined),
                   label: const Text(
-                    'Payer ma prime',
+                    'Payer mes cotisations',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1495,6 +1689,29 @@ class ContratDetailPageState extends State<ContratDetailPage>
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _viewContractPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF002B6B)),
+                    foregroundColor: const Color(0xFF002B6B),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  label: const Text(
+                    'Voir le PDF du contrat',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -1558,6 +1775,26 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
+  void _viewContractPdf() {
+    HapticFeedback.lightImpact();
+
+    final productType = _getProductType().toLowerCase();
+    final excludeQuestionnaire = productType.contains('etude') ||
+        productType.contains('familis') ||
+        productType.contains('serenite') ||
+        productType.contains('sérénité');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PdfViewerPage(
+          subscriptionId: widget.subscriptionId,
+          excludeQuestionnaire: excludeQuestionnaire,
+        ),
+      ),
+    );
+  }
+
   Future<void> _shareContract() async {
     HapticFeedback.lightImpact();
 
@@ -1606,6 +1843,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Future<void> _downloadContract() async {
     HapticFeedback.lightImpact();
 
+    final notificationId = 10000 + widget.subscriptionId;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Téléchargement du contrat en cours...'),
@@ -1615,17 +1854,35 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
 
     try {
+      await DownloadNotificationService.showProgress(
+        notificationId,
+        title: 'Telechargement du contrat CORIS',
+        progress: 0,
+      );
+
       final productType = _getProductType().toLowerCase();
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
           productType.contains('sérénité');
 
-      final tempFile = await PdfService.fetchToTemp(
+      final downloadedFile = await PdfService.downloadToDownloadsWithProgress(
         widget.subscriptionId,
         excludeQuestionnaire: excludeQuestionnaire,
+        onProgress: (progress) {
+          DownloadNotificationService.showProgress(
+            notificationId,
+            title: 'Telechargement du contrat CORIS',
+            progress: progress,
+          );
+        },
       );
-      await PdfService.saveToDownloads(tempFile);
+
+      await DownloadNotificationService.showCompleted(
+        notificationId,
+        title: 'Telechargement termine',
+        filePath: downloadedFile.path,
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1635,7 +1892,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
               Icon(Icons.check_circle, color: Colors.white, size: 20),
               SizedBox(width: 12),
               Expanded(
-                child: Text('Contrat téléchargé avec succès.'),
+                child: Text('Contrat telecharge. Ouvrez la notification pour afficher le fichier.'),
               ),
             ],
           ),
@@ -1645,6 +1902,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
         ),
       );
     } catch (e) {
+      await DownloadNotificationService.showFailed(
+        notificationId,
+        title: 'Echec du telechargement',
+        message: 'Impossible de telecharger le contrat',
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

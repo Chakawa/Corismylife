@@ -169,11 +169,11 @@ class WavePaymentHandler {
               }
               return true;
             } else {
-              // Erreur confirmation mais paiement réussi
+              // La confirmation backend peut être asynchrone: informer sans afficher une erreur rouge.
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '✅ Paiement réussi. ${confirmResult['message']?.toString() ?? 'Vérifiez vos contrats.'}',
+                    '⏳ Paiement recu. ${confirmResult['message']?.toString() ?? 'Finalisation du contrat en cours.'}',
                   ),
                   backgroundColor: const Color(0xFFF59E0B),
                   duration: const Duration(seconds: 5),

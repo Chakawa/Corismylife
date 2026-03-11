@@ -12,6 +12,7 @@
     
     <!-- Permission pour gérer les fichiers sur Android 11+ -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application 
         android:label="mycorislife" 

@@ -57,7 +57,7 @@ class ContractPaymentFlow {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Payer ma prime',
+                        'Payer mes cotisations',
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w700,

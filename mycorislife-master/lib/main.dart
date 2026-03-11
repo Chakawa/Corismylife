@@ -3,14 +3,18 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mycorislife/config/routes.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
+import 'package:mycorislife/services/download_notification_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialiser le service de connectivité
   ConnectivityService().initialize();
+
+  // Initialiser les notifications de téléchargement
+  await DownloadNotificationService.initialize();
 
   runApp(const MyCorisLifeApp());
 }

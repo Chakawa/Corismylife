@@ -1887,12 +1887,12 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               await _loadSubscriptionData();
               return;
             } else {
-              // Erreur lors de la confirmation
+              // Ne pas afficher une erreur bloquante: la confirmation peut arriver avec un léger décalage.
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    confirmResult['message']?.toString() ?? '❌ Erreur lors de la confirmation du paiement.',
+                    confirmResult['message']?.toString() ?? '⏳ Paiement recu. Finalisation du contrat en cours, verifiez dans Mes Contrats.',
                   ),
                   backgroundColor: Colors.orange,
                   duration: const Duration(seconds: 5),
@@ -1906,8 +1906,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('❌ Erreur confirmation: $confirmError'),
-                backgroundColor: Colors.red,
+                content: const Text('⏳ Paiement recu. Confirmation du contrat en cours de synchronisation.'),
+                backgroundColor: Colors.orange,
                 duration: const Duration(seconds: 5),
               ),
             );

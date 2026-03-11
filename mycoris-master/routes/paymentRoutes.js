@@ -61,6 +61,14 @@ function extractWaveSessionId(payload = {}) {
   );
 }
 
+function repairMojibake(text) {
+  try {
+    return Buffer.from(String(text), 'latin1').toString('utf8');
+  } catch (_) {
+    return String(text);
+  }
+}
+
 async function upsertContractAfterPayment({ subscriptionId, userId, paymentMethod, paymentTransactionId }) {
   const subscriptionData = await pool.query(
     'SELECT * FROM subscriptions WHERE id = $1',
@@ -1327,10 +1335,10 @@ router.post('/confirm-wave-payment/:subscriptionId', verifyToken, async (req, re
       // Ne pas bloquer si SMS Ã©choue
     }
 
-    // 4ï¸âƒ£ RETOURNER LE SUCCÃˆS
+    // 4) RETOURNER LE SUCCES
     return res.status(200).json({
       success: true,
-      message: 'âœ… Paiement confirmÃ© ! La proposition est maintenant un contrat.',
+      message: 'Paiement confirme. La proposition est maintenant un contrat.',
       data: {
         subscriptionId: updatedSubscription.id,
         statut: updatedSubscription.statut,
@@ -1796,10 +1804,11 @@ router.get('/wave-success', async (req, res) => {
       </html>
     `;
 
-    res.type('text/html').send(htmlPage);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(repairMojibake(htmlPage));
   } catch (error) {
     console.error('Erreur page success:', error);
-    res.status(500).type('text/html').send(`
+    res.status(500).set('Content-Type', 'text/html; charset=utf-8').send(repairMojibake(`
       <html>
       <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f0f0;">
         <div style="background: white; padding: 40px; border-radius: 8px; text-align: center;">
@@ -1810,7 +1819,7 @@ router.get('/wave-success', async (req, res) => {
         </div>
       </body>
       </html>
-    `);
+    `));
   }
 });
 
@@ -2160,7 +2169,8 @@ router.get('/wave-error', async (req, res) => {
       </html>
     `;
 
-    res.type('text/html').send(htmlPage);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(repairMojibake(htmlPage));
   } catch (error) {
     console.error('Erreur page error:', error);
     res.status(500).type('text/html').send(`

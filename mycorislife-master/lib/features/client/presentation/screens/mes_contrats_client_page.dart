@@ -53,7 +53,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
       print('📞 Appel du service getContrats...');
       final result = await _service.getContrats();
       print('✅ Service retourné ${result.length} contrat(s)');
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -65,7 +65,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     } catch (e, stackTrace) {
       print('❌ Erreur dans _loadContrats: $e');
       print('📍 StackTrace: $stackTrace');
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -87,9 +87,10 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
         // Filtre par recherche
         bool matchesSearch = true;
         if (_searchQuery.isNotEmpty) {
-        matchesSearch = 
-          (contrat.numepoli?.toLowerCase().contains(_searchQuery) ?? false) ||
-          (contrat.codeprod.toLowerCase().contains(_searchQuery));
+          matchesSearch =
+              (contrat.numepoli?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
+                  (contrat.codeprod.toLowerCase().contains(_searchQuery));
         }
 
         return matchesStatus && matchesSearch;
@@ -148,7 +149,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   String _getProductName(String? codeprod) {
     if (codeprod == null) return 'Produit CORIS';
-    
+
     switch (codeprod) {
       case '242':
         return 'ÉPARGNE BONUS';
@@ -171,7 +172,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   Color _getProductColor(String? codeprod) {
     if (codeprod == null) return const Color(0xFF002B6B);
-    
+
     switch (codeprod) {
       case '225':
         return const Color(0xFF002B6B); // Bleu CORIS
@@ -201,7 +202,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
       return 'Inconnu';
     }
     final statut = contrat.etat!.toLowerCase().trim();
-    
+
     // Vérifier l'égalité exacte d'abord pour éviter les faux positifs
     if (statut == 'actif' || statut == 'active') {
       return 'ACTIF';
@@ -214,13 +215,13 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     } else if (statut.contains('échu') || statut.contains('echu')) {
       return 'ÉCHU';
     }
-    
+
     return statut.toUpperCase();
   }
 
   Color _getStatutColor(Contrat contrat) {
     final statut = _getStatutDisplay(contrat);
-    
+
     switch (statut) {
       case 'ACTIF':
         return Colors.green;
@@ -239,9 +240,9 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   String _formatNumber(double? number) {
     if (number == null) return 'N/A';
     return number.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]} ',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]} ',
+        );
   }
 
   int _resolveSubscriptionId(Contrat contrat) {
@@ -255,7 +256,9 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     final hasSubscriptionId = contrat.subscriptionId != null;
     final hasLegacyTechnicalCode = (contrat.codeinte ?? '').trim().isNotEmpty;
 
-    return source == 'subscription' && hasSubscriptionId && !hasLegacyTechnicalCode;
+    return source == 'subscription' &&
+        hasSubscriptionId &&
+        !hasLegacyTechnicalCode;
   }
 
   Future<void> _openContractDetails(Contrat contrat) async {
@@ -294,15 +297,17 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
-    if (paiementsEnRetard == 0 && paiementsProches == 0) return const SizedBox.shrink();
+    if (paiementsEnRetard == 0 && paiementsProches == 0)
+      return const SizedBox.shrink();
 
     final isUrgent = paiementsEnRetard > 0;
     final color = isUrgent ? const Color(0xFFF44336) : const Color(0xFFFF9800);
     final icon = isUrgent ? Icons.error : Icons.schedule;
-    
+
     String message;
     if (paiementsEnRetard > 0 && paiementsProches > 0) {
-      message = '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
+      message =
+          '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
     } else if (paiementsEnRetard > 0) {
       message = '$paiementsEnRetard paiement(s) en retard';
     } else {
@@ -353,7 +358,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   @override
   Widget build(BuildContext context) {
-    final actifsCount = contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
+    final actifsCount =
+        contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
     final paiementsEnRetard = contrats.where((c) => c.isPaymentLate).length;
     final paiementsProches = contrats.where((c) => c.isPaymentDueSoon).length;
 
@@ -379,7 +385,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                   hintStyle: const TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.5)),
                   ),
                   focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white, width: 2),
@@ -436,7 +443,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                     // Alerte paiements urgents (nouveau)
                     if (paiementsEnRetard > 0 || paiementsProches > 0)
                       _buildPaymentAlert(paiementsEnRetard, paiementsProches),
-                    
+
                     // Statistiques
                     Container(
                       width: double.infinity,
@@ -484,7 +491,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -578,7 +586,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF002B6B),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -636,8 +645,10 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   Widget _buildContratsList() {
-    final displayContrats = filteredContrats.isEmpty && _searchQuery.isEmpty && _filterStatus == 'tous' 
-        ? contrats 
+    final displayContrats = filteredContrats.isEmpty &&
+            _searchQuery.isEmpty &&
+            _filterStatus == 'tous'
+        ? contrats
         : filteredContrats;
 
     if (displayContrats.isEmpty) {
@@ -691,7 +702,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     final productName = _getProductName(contrat.codeprod);
     final clientName = _formatClientName(contrat);
     // Afficher le numéro de police complet avec codeinte
-    final numpolice = '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
+    final numpolice =
+        '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
     final dateeffet = _formatDate(contrat.dateeffet);
     final dateeche = _formatDate(contrat.dateeche);
     final prime = _formatNumber(contrat.prime);
@@ -969,7 +981,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF7ED),
                     borderRadius: BorderRadius.circular(8),
@@ -1024,7 +1037,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                     child: ElevatedButton.icon(
                       onPressed: () => _payPrime(contrat),
                       icon: const Icon(Icons.payment_outlined, size: 18),
-                      label: const Text('Payer ma prime'),
+                      label: const Text('Payer ma cotisation'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF002B6B),
                         foregroundColor: Colors.white,
@@ -1037,7 +1050,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                   ),
                 ],
               ),
-              
+
               // Informations de paiement (nouveau)
               if (contrat.nextPaymentDate != null) ...[
                 const SizedBox(height: 12),
@@ -1056,7 +1069,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                       Row(
                         children: [
                           Icon(
-                            contrat.isPaymentLate 
+                            contrat.isPaymentLate
                                 ? Icons.warning_amber_rounded
                                 : contrat.isPaymentDueSoon
                                     ? Icons.schedule
@@ -1133,5 +1146,4 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
       ),
     );
   }
-
 }
