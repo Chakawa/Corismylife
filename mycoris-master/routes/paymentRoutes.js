@@ -1500,17 +1500,17 @@ router.get('/wave-success', async (req, res) => {
 
     const successTitle =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Paiement RÃ©ussi! ðŸŽ‰'
+        ? 'Paiement reussi'
         : verifiedInternalStatus === 'FAILED'
-            ? 'Paiement Non ConfirmÃ© âš ï¸'
-            : 'Paiement En VÃ©rification â³';
+            ? 'Paiement non confirme'
+            : 'Paiement en verification';
 
     const successMessage =
       verifiedInternalStatus === 'SUCCESS'
-        ? 'Votre paiement a Ã©tÃ© vÃ©rifiÃ© avec succÃ¨s auprÃ¨s de Wave. Votre session se ferme automatiquement dans '
+        ? 'Votre paiement a ete verifie avec succes aupres de Wave. Votre session se ferme automatiquement dans '
         : verifiedInternalStatus === 'FAILED'
-            ? 'Le statut retournÃ© par Wave indique un Ã©chec. Veuillez rÃ©essayer. Fermeture dans '
-            : 'Votre paiement est en cours de vÃ©rification cÃ´tÃ© Wave. Fermeture dans ';
+            ? 'Le statut retourne par Wave indique un echec. Veuillez reessayer. Fermeture dans '
+            : 'Votre paiement est en cours de verification cote Wave. Fermeture dans ';
 
     // ðŸŒ Page HTML de confirmation avec style moderne
     const htmlPage = `
@@ -1519,7 +1519,7 @@ router.get('/wave-success', async (req, res) => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Paiement RÃ©ussi - CORIS Assurance</title>
+        <title>Paiement reussi - CORIS Assurance</title>
         <style>
           * {
             margin: 0;
@@ -1715,7 +1715,7 @@ router.get('/wave-success', async (req, res) => {
       </head>
       <body>
         <div class="container">
-          <button class="close-btn" onclick="closeWindow()">âœ•</button>
+          <button class="close-btn" onclick="closeWindow()">x</button>
 
           <div class="checkmark">
             <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
@@ -1728,7 +1728,7 @@ router.get('/wave-success', async (req, res) => {
 
           <div class="details">
             <div class="detail-row">
-              <strong>Montant payÃ©:</strong>
+              <strong>Montant paye:</strong>
               <span>${formattedAmount || 'N/A'} ${displayCurrency}</span>
             </div>
             <div class="detail-row">
@@ -1736,7 +1736,7 @@ router.get('/wave-success', async (req, res) => {
               <span>${session_id ? session_id.substring(0, 15) + '...' : 'N/A'}</span>
             </div>
             <div class="detail-row">
-              <strong>RÃ©fÃ©rence:</strong>
+              <strong>Reference:</strong>
               <span>${displayReference}</span>
             </div>
             <div class="detail-row">
@@ -1745,18 +1745,18 @@ router.get('/wave-success', async (req, res) => {
             </div>
           </div>
 
-          <p>Un SMS de confirmation a Ã©tÃ© envoyÃ© Ã  votre numÃ©ro de tÃ©lÃ©phone.</p>
+          <p>Un SMS de confirmation a ete envoye a votre numero de telephone.</p>
 
           <div class="actions">
             <button class="btn-primary" onclick="returnToApp()">
-              <span class="loading-spinner"></span> Retourner Ã  l'application
+              <span class="loading-spinner"></span> Retourner a l'application
             </button>
             <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
           </div>
 
           <div class="footer">
-            <p>Â© 2026 CORIS Assurance - Tous droits rÃ©servÃ©s</p>
-            <p>Cliquez sur "Retourner Ã  l'application" pour revenir dans l'app.</p>
+            <p>(c) 2026 CORIS Assurance - Tous droits reserves</p>
+            <p>Cliquez sur "Retourner a l'application" pour revenir dans l'app.</p>
           </div>
         </div>
 
@@ -2089,7 +2089,7 @@ router.get('/wave-error', async (req, res) => {
       </head>
       <body>
         <div class="container">
-          <button class="close-btn" onclick="closeWindow()">âœ•</button>
+          <button class="close-btn" onclick="closeWindow()">x</button>
 
           <div class="error-icon">
             <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
@@ -2118,13 +2118,13 @@ router.get('/wave-error', async (req, res) => {
 
           <div class="actions">
             <button class="btn-primary" onclick="returnToApp()">
-              Retour Ã  l'application
+              Retour a l'application
             </button>
             <button class="btn-secondary" onclick="closeWindow()">Fermer</button>
           </div>
 
           <div class="footer">
-            <p>Â© 2026 CORIS Assurance - Tous droits rÃ©servÃ©s</p>
+            <p>(c) 2026 CORIS Assurance - Tous droits reserves</p>
             <p>Si vous avez besoin d'aide, contactez notre support: support@corisassurance.ci</p>
           </div>
         </div>

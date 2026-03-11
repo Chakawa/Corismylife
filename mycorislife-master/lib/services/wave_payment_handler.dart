@@ -169,16 +169,7 @@ class WavePaymentHandler {
               }
               return true;
             } else {
-              // La confirmation backend peut être asynchrone: informer sans afficher une erreur rouge.
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '⏳ Paiement recu. ${confirmResult['message']?.toString() ?? 'Finalisation du contrat en cours.'}',
-                  ),
-                  backgroundColor: const Color(0xFFF59E0B),
-                  duration: const Duration(seconds: 5),
-                ),
-              );
+              // Confirmation potentiellement asynchrone: pas de message transitoire.
               if (onSuccess != null) {
                 await onSuccess();
               }
@@ -217,14 +208,7 @@ class WavePaymentHandler {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              '⏳ Vérification du paiement en cours. Vérifiez "Mes Contrats" pour voir le statut.'),
-          backgroundColor: Color(0xFFF59E0B),
-          duration: Duration(seconds: 6),
-        ),
-      );
+      // Timeout de polling: laisser l'UI silencieuse, le statut sera visible dans Mes Contrats.
       return false;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

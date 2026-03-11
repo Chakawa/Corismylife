@@ -145,7 +145,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
         if (raw.isEmpty) return 'Non definie';
 
         // Supporte aussi le format fr: dd/MM/yyyy HH:mm[:ss]
-        final fr = RegExp(r'^(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$')
+        final fr = RegExp(
+                r'^(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$')
             .firstMatch(raw);
         if (fr != null) {
           final day = int.parse(fr.group(1)!);
@@ -448,15 +449,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final amount = pickValue([
       paymentInfo['amount'],
       paymentInfo['montant'],
+      paymentInfo['payment_amount'],
       paymentMeta['amount'],
       paymentMeta['montant'],
-      details['amount'],
-      details['montant'],
-      details['prime'],
-      details['prime_totale'],
-      _subscriptionData?['montant'],
-      _subscriptionData?['prime'],
-      _subscriptionData?['prime_totale'],
+      paymentMeta['payment_amount'],
+      details['payment_amount'],
+      details['dernier_montant_paye'],
+      _subscriptionData?['dernier_montant_paye'],
     ]);
 
     final paymentId = pickText([
@@ -497,7 +496,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
       details['status'],
     ]);
 
-    if (paymentMethod == null && paymentDate == null && amount == null && paymentId == null) {
+    if (paymentMethod == null &&
+        paymentDate == null &&
+        amount == null &&
+        paymentId == null) {
       return null;
     }
 
@@ -517,26 +519,30 @@ class ContratDetailPageState extends State<ContratDetailPage>
     }
 
     final paymentMethodRaw = (paymentInfo['payment_method'] ?? '').toString();
-    final paymentMethod = paymentMethodRaw.trim().isEmpty
-        ? 'Non defini'
-        : paymentMethodRaw;
+    final paymentMethod =
+        paymentMethodRaw.trim().isEmpty ? 'Non defini' : paymentMethodRaw;
 
     final amount = paymentInfo['amount'] ?? _subscriptionData?['montant'];
-    final paymentDate = paymentInfo['payment_date'] ?? _subscriptionData?['date_validation'];
-    final paymentId = paymentInfo['payment_id'] ?? _subscriptionData?['payment_transaction_id'];
+    final paymentDate =
+        paymentInfo['payment_date'] ?? _subscriptionData?['date_validation'];
+    final paymentId = paymentInfo['payment_id'] ??
+        _subscriptionData?['payment_transaction_id'];
     final providerStatusRaw = (paymentInfo['provider_status'] ?? '').toString();
     final providerStatus = providerStatusRaw.trim().isEmpty
-      ? 'Confirme'
-      : providerStatusRaw.toUpperCase();
+        ? 'Confirme'
+        : providerStatusRaw.toUpperCase();
 
     return _buildRecapSection(
-      'Session paiement',
+      'Section paiement',
       Icons.account_balance_wallet_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Mode de paiement', paymentMethod, 'Statut', providerStatus),
-        _buildCombinedRecapRow('Montant paye', _formatMontant(amount), 'Date de paiement', _formatDateTime(paymentDate)),
-        _buildCombinedRecapRow('ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
+        _buildCombinedRecapRow(
+            'Mode de paiement', paymentMethod, 'Statut', providerStatus),
+        _buildCombinedRecapRow('Montant paye', _formatMontant(amount),
+            'Date de paiement', _formatDateTime(paymentDate)),
+        _buildCombinedRecapRow(
+            'ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
       ],
     );
   }
@@ -1478,16 +1484,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
     // Recherche robuste de la pièce d'identité depuis tous les emplacements possibles.
     final pieceIdentite = _extractServerFileName(
       subscriptionData['piece_identite'] ??
-      subscriptionData['pieceIdentite'] ??
-      subscriptionData['piece_identite_url'] ??
-      _subscriptionData?['piece_identite'] ??
-      _subscriptionData?['piece_identite_url'],
+          subscriptionData['pieceIdentite'] ??
+          subscriptionData['piece_identite_url'] ??
+          _subscriptionData?['piece_identite'] ??
+          _subscriptionData?['piece_identite_url'],
     );
 
     final pieceIdentiteLabel = (subscriptionData['piece_identite_label'] ??
-      _subscriptionData?['piece_identite_label'] ??
-      pieceIdentite)
-      ?.toString();
+            _subscriptionData?['piece_identite_label'] ??
+            pieceIdentite)
+        ?.toString();
 
     return Container(
       decoration: BoxDecoration(
@@ -1526,7 +1532,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
-  Widget _buildDocumentRow(String label, String? documentName, String? displayLabel) {
+  Widget _buildDocumentRow(
+      String label, String? documentName, String? displayLabel) {
     final hasDocument = documentName != null &&
         documentName.isNotEmpty &&
         documentName != 'Non téléchargée';
@@ -1892,7 +1899,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
               Icon(Icons.check_circle, color: Colors.white, size: 20),
               SizedBox(width: 12),
               Expanded(
-                child: Text('Contrat telecharge. Ouvrez la notification pour afficher le fichier.'),
+                child: Text(
+                    'Contrat telecharge. Ouvrez la notification pour afficher le fichier.'),
               ),
             ],
           ),
@@ -1970,26 +1978,31 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 ),
                 const SizedBox(height: 14),
                 ListTile(
-                  leading: const Icon(Icons.email_outlined, color: Color(0xFF002B6B)),
+                  leading: const Icon(Icons.email_outlined,
+                      color: Color(0xFF002B6B)),
                   title: const Text('Par e-mail'),
                   subtitle: Text(AppConfig.supportEmail),
                   onTap: () async {
-                    final emailUri = Uri.parse('mailto:${AppConfig.supportEmail}');
+                    final emailUri =
+                        Uri.parse('mailto:${AppConfig.supportEmail}');
                     Navigator.pop(context);
                     if (await canLaunchUrl(emailUri)) {
-                      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+                      await launchUrl(emailUri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.phone_outlined, color: Color(0xFF002B6B)),
+                  leading: const Icon(Icons.phone_outlined,
+                      color: Color(0xFF002B6B)),
                   title: const Text('Par appel'),
                   subtitle: Text(AppConfig.supportPhone),
                   onTap: () async {
                     final phoneUri = Uri.parse('tel:${AppConfig.supportPhone}');
                     Navigator.pop(context);
                     if (await canLaunchUrl(phoneUri)) {
-                      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+                      await launchUrl(phoneUri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                 ),

@@ -1379,22 +1379,22 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
         const mergedPaymentInfo = {
           ...currentPaymentInfo,
           payment_method:
-            currentPaymentInfo.payment_method ||
             latestPayment.provider ||
+            currentPaymentInfo.payment_method ||
             enrichedSubscription.payment_method ||
             null,
           transaction_id:
-            currentPaymentInfo.transaction_id ||
             latestPayment.transaction_id ||
+            currentPaymentInfo.transaction_id ||
             null,
           payment_id:
+            providerPaymentId ||
             currentPaymentInfo.payment_id ||
             currentPaymentInfo.provider_payment_id ||
-            providerPaymentId ||
             null,
           payment_date:
-            currentPaymentInfo.payment_date ||
             latestPayment.created_at ||
+            currentPaymentInfo.payment_date ||
             enrichedSubscription.date_validation ||
             null,
           payment_success:
@@ -1402,17 +1402,17 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
               ? currentPaymentInfo.payment_success
               : (latestPayment.statut || '').toString().toUpperCase() === 'SUCCESS',
           amount:
-            currentPaymentInfo.amount ||
             latestPayment.montant ||
+            currentPaymentInfo.amount ||
             enrichedSubscription.montant ||
             null,
           provider_status:
-            currentPaymentInfo.provider_status ||
             latestPayment.statut ||
+            currentPaymentInfo.provider_status ||
             null,
           session_id:
-            currentPaymentInfo.session_id ||
             latestPayment.session_id ||
+            currentPaymentInfo.session_id ||
             null,
         };
 

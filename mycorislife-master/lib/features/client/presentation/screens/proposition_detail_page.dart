@@ -1887,30 +1887,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               await _loadSubscriptionData();
               return;
             } else {
-              // Ne pas afficher une erreur bloquante: la confirmation peut arriver avec un léger décalage.
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    confirmResult['message']?.toString() ?? '⏳ Paiement recu. Finalisation du contrat en cours, verifiez dans Mes Contrats.',
-                  ),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 5),
-                ),
-              );
-              // Essayer de recharger quand même
+              // La confirmation backend peut être asynchrone si l'utilisateur revient vite depuis Wave.
+              // Ne pas afficher de message d'erreur/info transitoire.
               await _loadSubscriptionData();
               return;
             }
           } catch (confirmError) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('⏳ Paiement recu. Confirmation du contrat en cours de synchronisation.'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 5),
-              ),
-            );
+            debugPrint('Confirmation asynchrone en cours: $confirmError');
             await _loadSubscriptionData();
             return;
           }
@@ -1943,14 +1926,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('⏳ Vérification du paiement en cours. Retournez à "Mes Propositions" pour voir le statut.'),
-        backgroundColor: orangeWarning,
-        duration: Duration(seconds: 6),
-      ),
-    );
+    // Ne pas afficher de message transitoire ici pour éviter les faux positifs perçus comme erreur.
   }
 
   void _processPayment(String paymentMethod) {
