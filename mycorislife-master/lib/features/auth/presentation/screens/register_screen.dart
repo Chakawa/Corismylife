@@ -591,6 +591,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final padding = size.width * 0.05;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: bleuCoris,
         leading: _currentPage > 0

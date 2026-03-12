@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/services/wave_payment_handler.dart';
 import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
+import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
@@ -86,6 +88,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   File? _pieceIdentite;
   // ignore: unused_field
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
 
   // Signature du client
   Uint8List? _clientSignature;
@@ -525,36 +528,36 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty || !mounted) return;
+
+      setState(() {
+        _pieceIdentiteFiles
+          ..clear()
+          ..addAll(picked.files);
+        _pieceIdentite = _pieceIdentiteFiles.first;
+        _pieceIdentiteLabel = picked.labels.isNotEmpty
+            ? picked.labels.first
+            : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: blanc),
+              SizedBox(width: 12),
+              Text(_pieceIdentiteFiles.length > 1
+                  ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
+                  : 'Document ajouté avec succès'),
+            ],
+          ),
+          backgroundColor: vertSucces,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: EdgeInsets.all(16),
+        ),
       );
-
-      if (result != null && mounted) {
-        setState(() {
-          _pieceIdentite = File(result.files.single.path!);
-        });
-
-        // Animation de succès
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: blanc),
-                  SizedBox(width: 12),
-                  Text('Document ajouté avec succès'),
-                ],
-              ),
-              backgroundColor: vertSucces,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              margin: EdgeInsets.all(16),
-            ),
-          );
-        }
-      }
     } catch (e) {
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sélection du fichier');
@@ -1249,13 +1252,20 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
-      final responseData = jsonDecode(response.body);
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
+
+      for (final filePath in paths) {
+        final response = await subscriptionService.uploadDocument(
+          subscriptionId,
+          filePath,
+        );
+        final responseData = jsonDecode(response.body);
+        if (response.statusCode != 200 || !responseData['success']) {
+          debugPrint('❌ Erreur upload: ${responseData['message']}');
+        }
       }
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
@@ -3365,14 +3375,26 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             ],
           ),
         if (_selectedModePaiement != null) SizedBox(height: 20),
-        _buildRecapSection(
-          'Documents',
-          Icons.description,
-          Colors.purple,
-          [
-            _buildRecapRow('Pièce d\'identité',
-                _pieceIdentite?.path.split('/').last ?? 'Non téléchargée'),
-          ],
+        SubscriptionRecapWidgets.buildDocumentsSection(
+          pieceIdentite:
+              _pieceIdentiteLabel ?? _pieceIdentite?.path.split(RegExp(r'[\\/]+')).last,
+          onDocumentTap: _pieceIdentite != null
+              ? () => _viewLocalDocument(
+                    _pieceIdentite!,
+                    _pieceIdentiteLabel ??
+                        _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last,
+                  )
+              : null,
+          documents: _pieceIdentiteFiles
+              .map((file) => {
+                    'label': file.path.split(RegExp(r'[\\/]+')).last,
+                    'path': file.path,
+                  })
+              .toList(),
+          onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+            File(path),
+            label ?? path.split(RegExp(r'[\\/]+')).last,
+          ),
         ),
         SizedBox(height: 20),
         Container(
@@ -3409,6 +3431,21 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         ),
         SizedBox(height: 20),
       ],
+    );
+  }
+
+  void _viewLocalDocument(File file, String displayLabel) {
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerPage(
+          documentName: file.path,
+          displayLabel: displayLabel,
+          subscriptionId: widget.subscriptionId,
+        ),
+      ),
     );
   }
 

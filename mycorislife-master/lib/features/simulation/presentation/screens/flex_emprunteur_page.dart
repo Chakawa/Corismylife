@@ -2074,10 +2074,12 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: grisClairBg,
-      body: Column(
-        children: [
-          _buildModernHeader(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildModernHeader(),
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
@@ -2096,6 +2098,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

@@ -30,6 +30,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   // Contrôleurs pour stocker les données
   final nomController = TextEditingController();
   final prenomController = TextEditingController();
+  final professionController = TextEditingController();
   DateTime? dateNaissance;
   final lieuNaissanceController = TextEditingController();
 
@@ -97,6 +98,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
         "password": passwordController.text,
         "nom": nomController.text.trim(),
         "prenom": prenomController.text.trim(),
+        "profession": professionController.text.trim(),
         "civilite": selectedCivilite ?? "Monsieur",
         "date_naissance": dateNaissance?.toIso8601String().split('T').first,
         "lieu_naissance": lieuNaissanceController.text.trim(),
@@ -504,6 +506,15 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               hintText: 'Drissa',
                               validator: (value) =>
                                   value!.isEmpty ? "Veuillez entrer le prénom." : null,
+                              fontSize: fontSize,
+                            ),
+                            _buildTextField(
+                              'Profession',
+                              professionController,
+                              icon: Icons.work_outline,
+                              hintText: 'Comptable',
+                              validator: (value) =>
+                                  value!.isEmpty ? "Veuillez entrer la profession." : null,
                               fontSize: fontSize,
                             ),
                             _buildDateField(
@@ -922,6 +933,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   void dispose() {
     nomController.dispose();
     prenomController.dispose();
+    professionController.dispose();
     lieuNaissanceController.dispose();
     emailController.dispose();
     telephoneController.dispose();

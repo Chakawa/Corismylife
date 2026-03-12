@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/amount_parser.dart';
 
 // Couleurs partagées
 const Color bleuCoris = Color(0xFF002B6B);
@@ -17,9 +18,7 @@ class SubscriptionRecapWidgets {
   static String formatMontant(dynamic montant) {
     if (montant == null) return '0 FCFA';
 
-    final numValue = montant is String
-        ? double.tryParse(montant) ?? 0
-        : (montant as num).toDouble();
+    final numValue = AmountParser.parse(montant);
 
     return "${numValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
@@ -27,10 +26,7 @@ class SubscriptionRecapWidgets {
   /// Formate un nombre sans FCFA
   /// Accepte int, double ou String et retourne une chaîne formatée avec espaces
   static String formatNumber(dynamic number) {
-    // Convertir en double si c'est un int ou une String
-    final numValue = number is String
-        ? double.tryParse(number) ?? 0
-        : (number as num).toDouble();
+    final numValue = AmountParser.parse(number);
 
     return numValue.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -302,6 +298,9 @@ class SubscriptionRecapWidgets {
     final lieuNaissance = userData['lieu_naissance'] ??
         userData['lieuNaissance'] ??
         userData['lieu_de_naissance'];
+    final profession = userData['profession'] ??
+      userData['metier'] ??
+      userData['métier'];
 
     return buildRecapSection(
       'Informations Personnelles',
@@ -327,6 +326,11 @@ class SubscriptionRecapWidgets {
             lieuNaissance ?? 'Non renseigné',
             'Adresse',
             userData['adresse'] ?? 'Non renseigné'),
+        buildCombinedRecapRow(
+            'Profession',
+            profession ?? 'Non renseigné',
+            'Pays',
+            userData['pays'] ?? 'Non renseigné'),
       ],
     );
   }
@@ -665,9 +669,42 @@ class SubscriptionRecapWidgets {
       return s.split(RegExp(r'[\\/]+')).last;
     }
 
+    bool _isTechnicalGeneratedName(String? value) {
+      if (value == null) return true;
+      final v = value.trim().toLowerCase();
+      if (v.isEmpty) return true;
+      return v.startsWith('scaled_') ||
+          v.startsWith('image_picker') ||
+          v.startsWith('identity_') ||
+          v.startsWith('img_') ||
+          v.contains(RegExp(r'^[a-f0-9]{8,}-[a-f0-9-]{8,}'));
+    }
+
+    String _friendlyIdentityLabel(int index, int total) {
+      if (total >= 2) {
+        if (index == 0) return 'Pièce d\'identité - Recto';
+        if (index == 1) return 'Pièce d\'identité - Verso';
+        return 'Pièce d\'identité - Fichier ${index + 1}';
+      }
+      return 'Pièce d\'identité';
+    }
+
     // Helper to build a single document row
     Widget buildDocRow(String title, String? filename, VoidCallback? onTap) {
-      final has = filename != null && filename.isNotEmpty && filename != 'Non téléchargée' && filename != 'null';
+      final has = filename != null &&
+          filename.isNotEmpty &&
+          filename != 'Non téléchargée' &&
+          filename != 'null';
+
+      final rawName = has ? (_extractNameFromPath(filename) ?? filename) : null;
+      final displayName = rawName ?? 'Non téléchargée';
+      final normalizedTitle = title.trim().toLowerCase();
+      final normalizedName = displayName.trim().toLowerCase();
+      final showFileName = has &&
+        normalizedName.isNotEmpty &&
+        normalizedName != normalizedTitle &&
+        !_isTechnicalGeneratedName(displayName);
+
       return GestureDetector(
         onTap: has ? onTap : null,
         child: Padding(
@@ -675,43 +712,58 @@ class SubscriptionRecapWidgets {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.badge_outlined,
-                    size: 20,
-                    color: has ? bleuCoris : Colors.grey,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: grisTexte,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 20,
+                      color: has ? bleuCoris : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: grisTexte,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (showFileName) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              displayName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: bleuCoris,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        has ? filename! : 'Non téléchargée',
-                        style: TextStyle(
-                          color: has ? bleuCoris : Colors.grey,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
               if (has)
-                Icon(
-                  Icons.visibility,
-                  size: 20,
-                  color: bleuCoris,
+                TextButton.icon(
+                  onPressed: onTap,
+                  icon: Icon(
+                    Icons.visibility,
+                    size: 18,
+                    color: bleuCoris,
+                  ),
+                  label: Text(
+                    'Voir',
+                    style: TextStyle(color: bleuCoris, fontWeight: FontWeight.w700),
+                  ),
                 ),
             ],
           ),
@@ -719,14 +771,16 @@ class SubscriptionRecapWidgets {
       );
     }
 
+    final hasDocuments = documents != null && documents.isNotEmpty;
+
     // Primary identity piece (backwards compatible)
-    if (pieceIdentite != null || (documents == null || documents.isEmpty)) {
+    if (!hasDocuments) {
       // If pieceIdentite looks like a full path, extract filename for display
       String? displayPiece;
       if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
         displayPiece = _extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
       } else {
-        displayPiece = pieceIdentite;
+        displayPiece = 'Non téléchargée';
       }
 
       // Afficher "Pièce d'identité" comme titre et le nom du fichier comme filename
@@ -734,16 +788,28 @@ class SubscriptionRecapWidgets {
     }
 
     // Additional documents list (if provided)
-    if (documents != null && documents.isNotEmpty) {
-      for (var doc in documents) {
+    if (hasDocuments) {
+      final total = documents!.length;
+      for (int i = 0; i < documents.length; i++) {
+        final doc = documents[i];
         final rawLabel = doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'];
         final path = doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
+        final extractedName = _extractNameFromPath(path);
 
-        final label = (rawLabel != null && rawLabel.toString().isNotEmpty)
-            ? rawLabel.toString()
-            : (_extractNameFromPath(path) ?? 'Document');
+        String label;
+        if (rawLabel != null && rawLabel.toString().trim().isNotEmpty) {
+          final candidate = rawLabel.toString().trim();
+          if (_isTechnicalGeneratedName(candidate) ||
+              (extractedName != null && candidate.toLowerCase() == extractedName.toLowerCase())) {
+            label = _friendlyIdentityLabel(i, total);
+          } else {
+            label = candidate;
+          }
+        } else {
+          label = _friendlyIdentityLabel(i, total);
+        }
 
-        children.add(buildDocRow(label, path?.toString(), path != null
+        children.add(buildDocRow(label, extractedName ?? path?.toString(), path != null
             ? () {
                 if (onDocumentTapWithInfo != null) {
                   onDocumentTapWithInfo(path.toString(), label);

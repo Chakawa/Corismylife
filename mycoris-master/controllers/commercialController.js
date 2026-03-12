@@ -164,6 +164,7 @@ exports.getCommercialClients = async (req, res) => {
         u.id,
         u.nom,
         u.prenom,
+        u.profession,
         u.email,
         u.telephone,
         u.date_naissance,
@@ -175,7 +176,7 @@ exports.getCommercialClients = async (req, res) => {
       FROM users u
       LEFT JOIN subscriptions s ON s.user_id = u.id
       WHERE u.code_apporteur = $1 AND u.role = 'client'
-      GROUP BY u.id, u.nom, u.prenom, u.email, u.telephone, u.date_naissance, u.lieu_naissance, u.adresse, u.created_at
+      GROUP BY u.id, u.nom, u.prenom, u.profession, u.email, u.telephone, u.date_naissance, u.lieu_naissance, u.adresse, u.created_at
       ORDER BY u.created_at DESC
     `;
 
@@ -215,6 +216,7 @@ exports.createClient = async (req, res) => {
       password,
       nom,
       prenom,
+      profession,
       civilite,
       telephone,
       date_naissance,
@@ -249,9 +251,9 @@ exports.createClient = async (req, res) => {
     const insertQuery = `
       INSERT INTO users (
         email, password_hash, role, nom, prenom, civilite,
-        telephone, date_naissance, lieu_naissance, adresse, pays, code_apporteur
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING id, email, nom, prenom, telephone, code_apporteur, created_at
+        telephone, date_naissance, lieu_naissance, adresse, pays, code_apporteur, profession
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id, email, nom, prenom, profession, telephone, code_apporteur, created_at
     `;
 
     const values = [
@@ -266,7 +268,8 @@ exports.createClient = async (req, res) => {
       lieu_naissance || null,
       adresse || null,
       pays || "Côte d'Ivoire",
-      codeApporteur
+      codeApporteur,
+      profession || null
     ];
 
     const result = await pool.query(insertQuery, values);
@@ -278,7 +281,7 @@ exports.createClient = async (req, res) => {
     const fullClientQuery = `
       SELECT 
         id, email, nom, prenom, civilite, telephone, 
-        date_naissance, lieu_naissance, adresse, pays, 
+        profession, date_naissance, lieu_naissance, adresse, pays, 
         code_apporteur, role, created_at
       FROM users 
       WHERE id = $1

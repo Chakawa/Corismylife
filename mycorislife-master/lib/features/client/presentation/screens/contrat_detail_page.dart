@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:mycorislife/services/subscription_service.dart';
@@ -9,6 +10,8 @@ import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
+import 'package:mycorislife/core/utils/amount_parser.dart';
+import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -177,9 +180,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   String _formatMontant(dynamic montant) {
     if (montant == null) return '0 FCFA';
 
-    final numValue = montant is String
-        ? double.tryParse(montant) ?? 0
-        : (montant as num).toDouble();
+    final numValue = AmountParser.parse(montant);
     return "${numValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
@@ -193,10 +194,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
         details['prime_totale'];
 
     if (montantRaw == null) return 0;
-    if (montantRaw is num) return montantRaw.toDouble();
-
-    final parsed = double.tryParse(montantRaw.toString());
-    return parsed ?? 0;
+    return AmountParser.parse(montantRaw);
   }
 
   Color _getBadgeColor(String produit) {
@@ -1479,6 +1477,79 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
+  List<Map<String, dynamic>> _extractDocumentsList(dynamic raw) {
+    final docs = <Map<String, dynamic>>[];
+
+    void addDoc(dynamic path, {dynamic label}) {
+      if (path == null) return;
+      final normalizedPath = _extractServerFileName(path);
+      if (normalizedPath == null) return;
+      final normalizedLabel = label?.toString().trim();
+      docs.add({
+        'path': normalizedPath,
+        if (normalizedLabel != null && normalizedLabel.isNotEmpty) 'label': normalizedLabel,
+      });
+    }
+
+    void parse(dynamic value) {
+      if (value == null) return;
+
+      if (value is String) {
+        final trimmed = value.trim();
+        if (trimmed.isEmpty || trimmed.toLowerCase() == 'null') return;
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+            (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+          try {
+            parse(jsonDecode(trimmed));
+            return;
+          } catch (_) {
+            addDoc(trimmed);
+            return;
+          }
+        }
+        addDoc(trimmed);
+        return;
+      }
+
+      if (value is List) {
+        for (final item in value) {
+          parse(item);
+        }
+        return;
+      }
+
+      if (value is Map) {
+        if (value['path'] != null || value['url'] != null || value['filename'] != null) {
+          addDoc(
+            value['path'] ?? value['url'] ?? value['filename'] ?? value['name'],
+            label: value['label'] ?? value['title'] ?? value['name'],
+          );
+          return;
+        }
+
+        for (final entry in value.entries) {
+          final key = entry.key.toString();
+          final entryValue = entry.value;
+          if (entryValue is String) {
+            addDoc(entryValue, label: key);
+          } else {
+            parse(entryValue);
+          }
+        }
+      }
+    }
+
+    parse(raw);
+
+    final seen = <String>{};
+    return docs.where((doc) {
+      final path = doc['path']?.toString() ?? '';
+      if (path.isEmpty || seen.contains(path)) return false;
+      seen.add(path);
+      return true;
+    }).toList();
+  }
+
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
     // Recherche robuste de la pièce d'identité depuis tous les emplacements possibles.
@@ -1494,6 +1565,15 @@ class ContratDetailPageState extends State<ContratDetailPage>
             _subscriptionData?['piece_identite_label'] ??
             pieceIdentite)
         ?.toString();
+
+    final docsList = <Map<String, dynamic>>[
+      ..._extractDocumentsList(subscriptionData['documents']),
+      ..._extractDocumentsList(_subscriptionData?['documents']),
+      ..._extractDocumentsList(subscriptionData['souscription_documents']),
+      ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
+    ];
+
+    final normalizedDocsList = docsList.isEmpty ? null : docsList;
 
     return Container(
       decoration: BoxDecoration(
@@ -1521,10 +1601,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
               ),
             ),
             const SizedBox(height: 16),
-            _buildDocumentRow(
-              'Pièce d\'identité',
-              pieceIdentite,
-              pieceIdentiteLabel,
+            SubscriptionRecapWidgets.buildDocumentsSection(
+              pieceIdentite: pieceIdentiteLabel,
+              documents: normalizedDocsList,
+              onDocumentTap: pieceIdentite != null
+                  ? () => _viewDocument(pieceIdentite, pieceIdentiteLabel)
+                  : null,
+              onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
             ),
           ],
         ),
@@ -1634,12 +1717,28 @@ class ContratDetailPageState extends State<ContratDetailPage>
       return;
     }
 
+    final normalizedDocumentName = Uri.decodeFull(documentName)
+        .replaceAll('\\\\', '/')
+        .split('/')
+        .last
+        .trim();
+
+    if (normalizedDocumentName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nom du document invalide'),
+          backgroundColor: Color(0xFFF59E0B),
+        ),
+      );
+      return;
+    }
+
     // Ouvrir le viewer de documents
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
-          documentName: documentName,
+          documentName: normalizedDocumentName,
           displayLabel: displayLabel,
           subscriptionId: widget.subscriptionId,
         ),

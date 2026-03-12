@@ -5,6 +5,7 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/core/utils/amount_parser.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 
   String _formatMontant(dynamic value) {
     if (value == null) return '0 FCFA';
-    final num = value is String ? double.tryParse(value) ?? 0 : value;
+    final num = AmountParser.parse(value);
     return "${num.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
@@ -146,8 +147,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         souscriptionData['capital'] ??
         0;
 
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0.0;
+    return AmountParser.parse(value);
   }
 
   Future<void> _startWavePayment() async {
@@ -393,12 +393,28 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       return;
     }
 
+    final normalizedDocumentName = Uri.decodeFull(documentName)
+        .replaceAll('\\\\', '/')
+        .split('/')
+        .last
+        .trim();
+
+    if (normalizedDocumentName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nom du document invalide'),
+          backgroundColor: orangeWarning,
+        ),
+      );
+      return;
+    }
+
     final subscriptionId = widget.subscription['id'];
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
-          documentName: documentName,
+          documentName: normalizedDocumentName,
           subscriptionId: subscriptionId,
           displayLabel: displayLabel,
         ),
@@ -1053,83 +1069,39 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         }(),
 
         // Documents
-        if (souscriptionData['piece_identite'] != null)
-          _buildRecapSection(
-            'Documents',
-            Icons.description,
-            bleuSecondaire,
-            [
-              GestureDetector(
-                onTap: () {
-                  final pieceIdentite = souscriptionData['piece_identite'];
-                  final pieceIdentiteLabel = souscriptionData['piece_identite_label'];
-                  if (pieceIdentite != null &&
-                      pieceIdentite != 'Non téléchargée') {
-                    _viewDocument(pieceIdentite, pieceIdentiteLabel);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: bleuCoris.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: bleuCoris.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Row(
-                          children: [
-                            Icon(Icons.badge_outlined,
-                                size: 20, color: bleuCoris),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Pièce d\'identité',
-                              style: TextStyle(
-                                color: grisTexte,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                souscriptionData['piece_identite_label'] ??
-                                    souscriptionData['piece_identite'] ??
-                                    'Non téléchargée',
-                                style: const TextStyle(
-                                  color: bleuCoris,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(Icons.visibility, size: 20, color: bleuCoris),
-                            const SizedBox(width: 12),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+        () {
+          List<Map<String, dynamic>>? docsList;
+          final docsRaw = souscriptionData['documents'];
+          if (docsRaw is List) {
+            docsList = docsRaw
+                .map((d) => d is Map<String, dynamic>
+                    ? d
+                    : (d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}))
+                .where((d) => d.isNotEmpty)
+                .toList();
+          } else if (docsRaw is Map) {
+            docsList = docsRaw.entries
+                .map((e) => <String, dynamic>{
+                      'label': e.key.toString(),
+                      'path': e.value,
+                    })
+                .toList();
+          }
+
+          return SubscriptionRecapWidgets.buildDocumentsSection(
+            pieceIdentite:
+                souscriptionData['piece_identite_label'] ?? souscriptionData['piece_identite'],
+            documents: docsList,
+            onDocumentTap: (souscriptionData['piece_identite'] != null &&
+                    souscriptionData['piece_identite'] != 'Non téléchargée')
+                ? () => _viewDocument(
+                      souscriptionData['piece_identite'].toString(),
+                      souscriptionData['piece_identite_label']?.toString(),
+                    )
+                : null,
+            onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
+          );
+        }(),
 
         // Message de vérification
         Container(

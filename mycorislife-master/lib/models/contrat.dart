@@ -1,3 +1,5 @@
+import 'package:mycorislife/core/utils/amount_parser.dart';
+
 class Contrat {
   final int id;
   final int? subscriptionId;
@@ -122,14 +124,7 @@ class Contrat {
 
   static double? _parseDouble(dynamic value) {
     if (value == null) return null;
-    try {
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      return double.parse(value.toString());
-    } catch (e) {
-      print('⚠️ Erreur parsing double: $value');
-      return null;
-    }
+    return AmountParser.parse(value, fallback: 0.0);
   }
 
   String get productName {

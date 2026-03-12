@@ -80,10 +80,12 @@ Tout acteur du secteur informel :
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Image d'en-tête réduite
-              Container(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 48.0),
+            child: Column(
+              children: [
+                // Image d'en-tête réduite
+                Container(
                 width: double.infinity,
                 height: 150,
                 decoration: BoxDecoration(
@@ -225,8 +227,7 @@ Tout acteur du secteur informel :
                   ],
                 ),
               ),
-            ],
-          ),
+            ],            ),          ),
         ),
       ),
     );

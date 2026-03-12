@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +9,7 @@ import 'dart:io';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
@@ -224,6 +224,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   File? _pieceIdentite; // Fichier de la pièce d'identité uploadée
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
 
   // ============================================
   // SIGNATURE ET TRAITEMENT
@@ -2114,57 +2115,36 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   Future<void> _loadUserData() async {
     try {
-      final token = await storage.read(key: 'token');
-      if (token == null) return;
+      Map<String, dynamic>? userData;
 
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/users/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        Map<String, dynamic>? userData;
-
-        // 1) Cas standard: { success: true, user: { ... } }
-        if (data['success'] == true &&
-            data['user'] != null &&
-            data['user'] is Map) {
-          userData = Map<String, dynamic>.from(data['user']);
-        }
-        // 2) Cas nested: { success: true, data: { ... } }
-        else if (data['success'] == true &&
-            data['data'] != null &&
-            data['data'] is Map) {
-          userData = Map<String, dynamic>.from(data['data']);
-        }
-        // 3) Direct user object
-        else if (data is Map && data.containsKey('id')) {
+      final userDataString = await storage.read(key: 'user_data');
+      if (userDataString != null) {
+        final data = json.decode(userDataString);
+        if (data is Map<String, dynamic>) {
+          userData = data;
+        } else if (data is Map) {
           userData = Map<String, dynamic>.from(data);
         }
+      }
 
-        if (userData != null && userData.isNotEmpty) {
-          if (mounted) {
-            setState(() {
-              _userData = userData!;
-              if (_userData['date_naissance'] != null) {
-                _dateNaissance = DateTime.parse(_userData['date_naissance']);
-                final maintenant = DateTime.now();
-                _age = maintenant.year - _dateNaissance!.year;
-                if (maintenant.month < _dateNaissance!.month ||
-                    (maintenant.month == _dateNaissance!.month &&
-                        maintenant.day < _dateNaissance!.day)) {
-                  _age--;
-                }
+      if (userData != null && userData.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _userData = userData!;
+            if (_userData['date_naissance'] != null) {
+              _dateNaissance = DateTime.parse(_userData['date_naissance']);
+              final maintenant = DateTime.now();
+              _age = maintenant.year - _dateNaissance!.year;
+              if (maintenant.month < _dateNaissance!.month ||
+                  (maintenant.month == _dateNaissance!.month &&
+                      maintenant.day < _dateNaissance!.day)) {
+                _age--;
               }
-            });
-
-            if (_age > 0) {
-              _effectuerCalcul();
             }
+          });
+
+          if (_age > 0) {
+            _effectuerCalcul();
           }
         }
       }
@@ -2376,34 +2356,38 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
 
-      if (result != null) {
-        if (mounted) {
-          setState(() {
-            _pieceIdentite = File(result.files.single.path!);
-          });
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: blanc),
-                  SizedBox(width: 12),
-                  Text('Document ajouté avec succès'),
-                ],
-              ),
-              backgroundColor: vertSucces,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              margin: EdgeInsets.all(16),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: blanc),
+                SizedBox(width: 12),
+                Text(_pieceIdentiteFiles.length > 1
+                    ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
+                    : 'Document ajouté avec succès'),
+              ],
             ),
-          );
-        }
+            backgroundColor: vertSucces,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: EdgeInsets.all(16),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -4471,6 +4455,16 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                 ? () => _viewLocalDocument(
                     _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
                 : null,
+            documents: _pieceIdentiteFiles
+                .map((file) => {
+                      'label': file.path.split(RegExp(r'[\\/]+')).last,
+                      'path': file.path,
+                    })
+                .toList(),
+            onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+              File(path),
+              label ?? path.split(RegExp(r'[\\/]+')).last,
+            ),
           ),
           SizedBox(height: 20),
           Container(
@@ -5040,13 +5034,21 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
-      final responseData = jsonDecode(response.body);
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
+
+      Map<String, dynamic> responseData = {};
+      for (final filePath in paths) {
+        final response = await subscriptionService.uploadDocument(
+          subscriptionId,
+          filePath,
+        );
+        responseData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (response.statusCode != 200 || !responseData['success']) {
+          debugPrint('❌ Erreur upload: ${responseData['message']}');
+        }
       }
       
       // Récupérer le label original si présent dans la réponse

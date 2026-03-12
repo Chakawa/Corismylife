@@ -10,6 +10,7 @@ import 'package:mycorislife/features/client/presentation/screens/document_viewer
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'dart:convert';
@@ -144,6 +145,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
   
   // 📝 SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
@@ -2120,15 +2122,25 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
-      if (result != null) {
-        if (mounted) {
-          setState(() => _pieceIdentite = File(result.files.single.path!));
-          _showSuccessSnackBar('Document ajouté avec succès');
-        }
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
+
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
+        final count = _pieceIdentiteFiles.length;
+        _showSuccessSnackBar(
+          count > 1
+              ? '$count documents ajoutés avec succès'
+              : 'Document ajouté avec succès',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -5104,6 +5116,16 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             ? () => _viewLocalDocument(
                 _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
             : null,
+        documents: _pieceIdentiteFiles
+            .map((file) => {
+                  'label': file.path.split(RegExp(r'[\\/]+')).last,
+                  'path': file.path,
+                })
+            .toList(),
+        onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+          File(path),
+          label ?? path.split(RegExp(r'[\\/]+')).last,
+        ),
       ),
 
       const SizedBox(height: 20),
@@ -5658,15 +5680,20 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
 
-      final responseData = jsonDecode(response.body);
+      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
 
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
+      Map<String, dynamic> responseData = {};
+      for (final response in responses) {
+        final localData = jsonDecode(response.body) as Map<String, dynamic>;
+        responseData = localData;
+        if (response.statusCode != 200 || !(localData['success'] == true)) {
+          debugPrint('❌ Erreur upload: ${localData['message']}');
+        }
       }
 
       // Récupérer le label original si présent dans la réponse

@@ -75,10 +75,12 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Image d'en-tête réduite
-              Container(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 48.0),
+            child: Column(
+              children: [
+                // Image d'en-tête réduite
+                Container(
                 width: double.infinity,
                 height: 150,
                 decoration: BoxDecoration(
@@ -220,8 +222,7 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                   ],
                 ),
               ),
-            ],
-          ),
+            ],            ),          ),
         ),
       ),
     );

@@ -12,6 +12,7 @@ import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
 import '../../../../core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
@@ -142,6 +143,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
 
   // Signature du client
   Uint8List? _clientSignature;
@@ -1343,15 +1345,24 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
-      if (result != null) {
-        if (mounted) {
-          setState(() => _pieceIdentite = File(result.files.single.path!));
-          _showSuccessSnackBar('Document ajouté avec succès');
-        }
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
+
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
+        _showSuccessSnackBar(
+          _pieceIdentiteFiles.length > 1
+              ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
+              : 'Document ajouté avec succès',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -1853,28 +1864,30 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             child: _buildModernProgressIndicator())),
                     ];
                   },
-                  body: Column(
-                    children: [
-                      Expanded(
-                          child: PageView(
-                              controller: _pageController,
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: _isCommercial
-                                  ? [
-                                      _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                                      _buildStep1(), // Page 1: Simulation
-                                      _buildStep2(), // Page 2: Bénéficiaire/Contact
-                                      _buildStepModePaiement(), // Page 3: Mode de paiement
-                                      _buildStep3(), // Page 4: Récapitulatif
-                                    ]
-                                  : [
-                                      _buildStep1(), // Page 0: Simulation
-                                      _buildStep2(), // Page 1: Bénéficiaire/Contact
-                                      _buildStepModePaiement(), // Page 2: Mode de paiement
-                                      _buildStep3(), // Page 3: Récapitulatif
-                                    ])),
-                      _buildNavigationButtons(),
-                    ],
+                  body: SafeArea(
+                    child: Column(
+                      children: [
+                        Expanded(
+                            child: PageView(
+                                controller: _pageController,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: _isCommercial
+                                    ? [
+                                        _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
+                                        _buildStep1(), // Page 1: Simulation
+                                        _buildStep2(), // Page 2: Bénéficiaire/Contact
+                                        _buildStepModePaiement(), // Page 3: Mode de paiement
+                                        _buildStep3(), // Page 4: Récapitulatif
+                                      ]
+                                    : [
+                                        _buildStep1(), // Page 0: Simulation
+                                        _buildStep2(), // Page 1: Bénéficiaire/Contact
+                                        _buildStepModePaiement(), // Page 2: Mode de paiement
+                                        _buildStep3(), // Page 3: Récapitulatif
+                                      ])),
+                        _buildNavigationButtons(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -3642,10 +3655,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (_selectedModePaiement != null) const SizedBox(height: 20),
 
       SubscriptionRecapWidgets.buildDocumentsSection(
-        pieceIdentite: _pieceIdentite?.path.split('/').last,
+        pieceIdentite:
+            _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
         onDocumentTap: _pieceIdentite != null
-            ? () => _viewLocalDocument()
+            ? () => _viewLocalDocument(
+                _pieceIdentite!,
+                _pieceIdentiteLabel ??
+                    _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last,
+              )
             : null,
+        documents: _pieceIdentiteFiles
+            .map((file) => {
+                  'label': file.path.split(RegExp(r'[\\/]+')).last,
+                  'path': file.path,
+                })
+            .toList(),
+        onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+          File(path),
+          label ?? path.split(RegExp(r'[\\/]+')).last,
+        ),
       ),
 
       const SizedBox(height: 20),
@@ -4536,15 +4564,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   /// Upload le document pièce d'identité vers le serveur
-  void _viewLocalDocument() {
-    if (_pieceIdentite == null) return;
+  void _viewLocalDocument(File? documentFile, String fileName) {
+    if (documentFile == null) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentViewerPage(
-          localFile: _pieceIdentite!,
-          documentName: _pieceIdentite!.path.split('/').last,
+          localFile: documentFile,
+          documentName: fileName,
         ),
       ),
     );
@@ -4554,17 +4582,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
 
-      final responseData = jsonDecode(response.body);
+      for (final filePath in paths) {
+        final response = await subscriptionService.uploadDocument(
+          subscriptionId,
+          filePath,
+        );
 
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
-        // Ne pas continuer si erreur
-        throw Exception(responseData['message'] ?? 'Erreur upload document');
+        final responseData = jsonDecode(response.body);
+
+        if (response.statusCode != 200 || !responseData['success']) {
+          debugPrint('❌ Erreur upload: ${responseData['message']}');
+          throw Exception(responseData['message'] ?? 'Erreur upload document');
+        }
       }
 
       debugPrint('✅ Document uploadé avec succès');

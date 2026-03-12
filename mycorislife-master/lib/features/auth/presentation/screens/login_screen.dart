@@ -517,6 +517,7 @@ class _LoginScreenState extends State<LoginScreen>
     final isTablet = size.width > 600;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

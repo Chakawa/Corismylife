@@ -180,6 +180,17 @@ class SubscriptionService {
     return response;
   }
 
+  /// Upload de plusieurs documents d'identité (recto/verso, etc.)
+  /// Les fichiers sont envoyés séquentiellement pour simplifier la gestion d'erreur.
+  Future<List<http.Response>> uploadDocuments(
+      int subscriptionId, List<String> filePaths) async {
+    final responses = <http.Response>[];
+    for (final filePath in filePaths) {
+      responses.add(await uploadDocument(subscriptionId, filePath));
+    }
+    return responses;
+  }
+
   // Récupérer les détails d'une souscription
   Future<Map<String, dynamic>> getSubscriptionDetail(int subscriptionId) async {
     try {

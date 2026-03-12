@@ -603,39 +603,49 @@ exports.uploadDocument = async (req, res) => {
     const documentUrl = `/uploads/identity-cards/${fileName}`;
     console.log('🔗 URL du document:', documentUrl);
     
-    // Récupérer l'ancien document pour le supprimer
+    // Récupérer la souscription cible
     // Note: Un commercial peut uploader pour une souscription créée pour un client
-    // Donc on vérifie soit user_id (souscription du client), soit code_apporteur (souscription créée par commercial)
-    const oldDocQuery = `
-      SELECT souscriptiondata->>'piece_identite' as old_doc,
-             souscriptiondata->>'piece_identite_url' as old_url,
+    const targetQuery = `
+      SELECT souscriptiondata,
              user_id,
              code_apporteur
-      FROM subscriptions 
-      WHERE id = $1 
+      FROM subscriptions
+      WHERE id = $1
         AND (user_id = $2 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $2))
     `;
-    const oldDocResult = await pool.query(oldDocQuery, [id, req.user.id]);
-    
-    // Supprimer l'ancien fichier s'il existe
-    if (oldDocResult.rows.length > 0 && oldDocResult.rows[0].old_doc) {
-      const oldFileName = oldDocResult.rows[0].old_doc;
-      const oldFilePath = path.join(__dirname, '../uploads/identity-cards', oldFileName);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
-        console.log('🗑️ Ancien document supprimé:', oldFileName);
-      }
+    const targetResult = await pool.query(targetQuery, [id, req.user.id]);
+
+    if (targetResult.rows.length === 0) {
+      // Supprimer le fichier uploadé si la souscription n'existe pas
+      fs.unlinkSync(req.file.path);
+      console.log('⚠️ Souscription non trouvée ou accès refusé pour user_id:', req.user.id, 'subscription_id:', id);
+      return res.status(404).json({
+        success: false,
+        message: 'Souscription non trouvée ou accès refusé'
+      });
     }
     
-    // Mettre à jour avec le nom du fichier, l'URL et le nom original (label)
-    // Note: Un commercial peut uploader pour une souscription qu'il a créée pour un client
+    // Mettre à jour:
+    // 1) les champs historiques (piece_identite, piece_identite_url, piece_identite_label)
+    // 2) la collection multi-documents (piece_identite_documents)
     const originalName = req.file.originalname || req.file.filename;
+    const newDocument = {
+      filename: fileName,
+      url: documentUrl,
+      label: originalName,
+      uploaded_at: new Date().toISOString()
+    };
+
     const query2 = `
       UPDATE subscriptions 
       SET souscriptiondata = jsonb_set(
         jsonb_set(
           jsonb_set(
-            souscriptiondata,
+            jsonb_set(
+              COALESCE(souscriptiondata, '{}'::jsonb),
+              '{piece_identite_documents}',
+              COALESCE(COALESCE(souscriptiondata, '{}'::jsonb)->'piece_identite_documents', '[]'::jsonb) || jsonb_build_array($4::jsonb)
+            ),
             '{piece_identite}',
             $1
           ),
@@ -646,8 +656,8 @@ exports.uploadDocument = async (req, res) => {
         $3
       ),
       updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4 
-        AND (user_id = $5 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $5))
+      WHERE id = $5 
+        AND (user_id = $6 OR code_apporteur = (SELECT code_apporteur FROM users WHERE id = $6))
       RETURNING *;
     `;
 
@@ -655,16 +665,14 @@ exports.uploadDocument = async (req, res) => {
       JSON.stringify(fileName),
       JSON.stringify(documentUrl),
       JSON.stringify(originalName),
+      JSON.stringify(newDocument),
       id,
       req.user.id
     ];
 
     const result = await pool.query(query2, values);
-    
+
     if (result.rows.length === 0) {
-      // Supprimer le fichier uploadé si la souscription n'existe pas
-      fs.unlinkSync(req.file.path);
-      console.log('⚠️ Souscription non trouvée ou accès refusé pour user_id:', req.user.id, 'subscription_id:', id);
       return res.status(404).json({
         success: false,
         message: 'Souscription non trouvée ou accès refusé'
@@ -672,6 +680,8 @@ exports.uploadDocument = async (req, res) => {
     }
     
     console.log('✅ Document uploadé avec succès');
+
+    const docs = result.rows[0]?.souscriptiondata?.piece_identite_documents;
     
     res.json({
       success: true,
@@ -680,8 +690,10 @@ exports.uploadDocument = async (req, res) => {
         subscription: result.rows[0],
         document: {
           filename: fileName,
-          url: documentUrl
-        }
+          url: documentUrl,
+          label: originalName
+        },
+        documents: Array.isArray(docs) ? docs : []
       }
     });
   } catch (error) {
@@ -1251,6 +1263,7 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
         civilite: clientInfo.civilite || clientInfo.genre || 'Monsieur',
         nom: clientInfo.nom || '',
         prenom: clientInfo.prenom || '',
+        profession: clientInfo.profession || '',
         email: clientInfo.email || '',
         telephone: clientInfo.telephone || '',
         date_naissance: clientInfo.date_naissance || null,
@@ -1260,7 +1273,7 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     } else {
       // Sinon, récupérer depuis la table users
       const userResult = await pool.query(
-        "SELECT id, civilite, nom, prenom, email, telephone, date_naissance, lieu_naissance, adresse FROM users WHERE id = $1",
+        "SELECT id, civilite, nom, prenom, profession, email, telephone, date_naissance, lieu_naissance, adresse FROM users WHERE id = $1",
         [subscription.user_id || userId]
       );
       userData = userResult.rows[0] || null;

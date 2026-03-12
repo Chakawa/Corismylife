@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +11,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
@@ -116,6 +116,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   File? _pieceIdentite;
   // ignore: unused_field
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
   bool _isProcessing = false;
 
   // Signature du client
@@ -610,22 +611,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
 
-      if (result != null) {
-        if (mounted) {
-          setState(() {
-            _pieceIdentite = File(result.files.single.path!);
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
+      }
 
-        if (mounted) {
-          _showSuccessSnackBar(
-              'Votre pièce d\'identité a été téléchargée avec succès.');
-        }
+      if (mounted) {
+        _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
+            ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
+            : 'Votre pièce d\'identité a été téléchargée avec succès.');
       }
     } catch (e) {
       if (mounted) {
@@ -1054,17 +1058,26 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
 
-      final responseData = jsonDecode(response.body);
+      Map<String, dynamic> responseData = {};
+      for (final filePath in paths) {
+        final response = await subscriptionService.uploadDocument(
+          subscriptionId,
+          filePath,
+        );
 
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
-        throw Exception(
-            responseData['message'] ?? 'Erreur lors de l\'upload du document');
+        final localData = jsonDecode(response.body) as Map<String, dynamic>;
+        responseData = localData;
+
+        if (response.statusCode != 200 || !localData['success']) {
+          debugPrint('❌ Erreur upload: ${localData['message']}');
+          throw Exception(
+              localData['message'] ?? 'Erreur lors de l\'upload du document');
+        }
       }
 
       // Récupérer le label original si présent dans la réponse
@@ -3161,6 +3174,16 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               ? () => _viewLocalDocument(
                   _pieceIdentite!, _pieceIdentite!.path.split('/').last)
               : null,
+          documents: _pieceIdentiteFiles
+              .map((file) => {
+                    'label': file.path.split(RegExp(r'[\\/]+')).last,
+                    'path': file.path,
+                  })
+              .toList(),
+          onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+            File(path),
+            label ?? path.split(RegExp(r'[\\/]+')).last,
+          ),
         ),
 
         const SizedBox(height: 20),

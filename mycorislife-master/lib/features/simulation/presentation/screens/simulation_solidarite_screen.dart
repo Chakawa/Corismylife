@@ -256,6 +256,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: fondGris,
       body: Column(
         children: [

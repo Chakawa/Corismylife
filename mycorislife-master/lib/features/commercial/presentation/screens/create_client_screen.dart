@@ -121,6 +121,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: bleuCoris,
         elevation: 0,

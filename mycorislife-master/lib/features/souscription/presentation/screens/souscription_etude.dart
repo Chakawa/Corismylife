@@ -11,6 +11,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
@@ -112,6 +113,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   double _renteCalculee = 0.0;
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
   
@@ -1573,22 +1575,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
 
-      if (result != null) {
-        if (mounted) {
-          setState(() {
-            _pieceIdentite = File(result.files.single.path!);
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
+      }
 
-        if (mounted) {
-          _showSuccessSnackBar(
-              'Votre pièce d\'identité a été téléchargée avec succès.');
-        }
+      if (mounted) {
+        _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
+            ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
+            : 'Votre pièce d\'identité a été téléchargée avec succès.');
       }
     } catch (e) {
       if (mounted) {
@@ -2748,17 +2753,22 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
 
-      final responseData = jsonDecode(response.body);
+      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
+      Map<String, dynamic> responseData = {};
 
-      if (response.statusCode != 200 || !responseData['success']) {
-        debugPrint('❌ Erreur upload: ${responseData['message']}');
-        throw Exception(
-            responseData['message'] ?? 'Erreur lors de l\'upload du document');
+      for (final response in responses) {
+        final localData = jsonDecode(response.body) as Map<String, dynamic>;
+        responseData = localData;
+        if (response.statusCode != 200 || !(localData['success'] == true)) {
+          debugPrint('❌ Erreur upload: ${localData['message']}');
+          throw Exception(
+              localData['message'] ?? 'Erreur lors de l\'upload du document');
+        }
       }
 
       // Si le serveur renvoie le subscription mis à jour, récupérer le label original
@@ -5030,6 +5040,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               ? () => _viewLocalDocument(
                   _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
               : null,
+          documents: _pieceIdentiteFiles
+              .map((file) => {
+                    'label': file.path.split(RegExp(r'[\\/]+')).last,
+                    'path': file.path,
+                  })
+              .toList(),
+          onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+            File(path),
+            label ?? path.split(RegExp(r'[\\/]+')).last,
+          ),
         ),
 
         const SizedBox(height: 20),

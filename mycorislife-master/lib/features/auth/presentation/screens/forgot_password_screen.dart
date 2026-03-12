@@ -298,6 +298,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: bleuCoris,
         foregroundColor: blanc,
@@ -307,26 +308,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Indicateur d'étape
-            _buildStepIndicator(),
-            const SizedBox(height: 30),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Indicateur d'étape
+              _buildStepIndicator(),
+              const SizedBox(height: 30),
 
-            // Contenu selon l'étape
-            if (_currentStep == STEP_PHONE) _buildPhoneStep(),
-            if (_currentStep == STEP_OTP) _buildOtpStep(),
-            if (_currentStep == STEP_NEW_PASSWORD) _buildNewPasswordStep(),
+              // Contenu selon l'étape
+              if (_currentStep == STEP_PHONE) _buildPhoneStep(),
+              if (_currentStep == STEP_OTP) _buildOtpStep(),
+              if (_currentStep == STEP_NEW_PASSWORD) _buildNewPasswordStep(),
 
-            // Messages d'erreur/succès
-            if (_errorMessage != null)
-              _buildMessage(_errorMessage!, Colors.red, Icons.error_outline),
-            if (_successMessage != null)
-              _buildMessage(_successMessage!, vertSucces, Icons.check_circle),
-          ],
+              // Messages d'erreur/succès
+              if (_errorMessage != null)
+                _buildMessage(_errorMessage!, Colors.red, Icons.error_outline),
+              if (_successMessage != null)
+                _buildMessage(_successMessage!, vertSucces, Icons.check_circle),
+            ],
+          ),
         ),
       ),
     );

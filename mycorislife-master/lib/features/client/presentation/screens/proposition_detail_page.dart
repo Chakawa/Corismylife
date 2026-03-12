@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:mycorislife/config/app_config.dart';
@@ -1070,22 +1071,93 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     return SubscriptionRecapWidgets.buildPaymentModeSection(details);
   }
 
+  List<Map<String, dynamic>> _extractDocumentsList(dynamic raw) {
+    final docs = <Map<String, dynamic>>[];
+
+    void addDoc(dynamic path, {dynamic label}) {
+      if (path == null) return;
+      final normalizedPath = path.toString().trim();
+      if (normalizedPath.isEmpty || normalizedPath.toLowerCase() == 'null') return;
+      final normalizedLabel = label?.toString().trim();
+      docs.add({
+        'path': normalizedPath,
+        if (normalizedLabel != null && normalizedLabel.isNotEmpty) 'label': normalizedLabel,
+      });
+    }
+
+    void parse(dynamic value) {
+      if (value == null) return;
+
+      if (value is String) {
+        final trimmed = value.trim();
+        if (trimmed.isEmpty || trimmed.toLowerCase() == 'null') return;
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+            (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+          try {
+            parse(jsonDecode(trimmed));
+            return;
+          } catch (_) {
+            addDoc(trimmed);
+            return;
+          }
+        }
+        addDoc(trimmed);
+        return;
+      }
+
+      if (value is List) {
+        for (final item in value) {
+          parse(item);
+        }
+        return;
+      }
+
+      if (value is Map) {
+        if (value['path'] != null || value['url'] != null || value['filename'] != null) {
+          addDoc(
+            value['path'] ?? value['url'] ?? value['filename'] ?? value['name'],
+            label: value['label'] ?? value['title'] ?? value['name'],
+          );
+          return;
+        }
+
+        for (final entry in value.entries) {
+          final key = entry.key.toString();
+          final entryValue = entry.value;
+          if (entryValue is String) {
+            addDoc(entryValue, label: key);
+          } else {
+            parse(entryValue);
+          }
+        }
+      }
+    }
+
+    parse(raw);
+
+    final seen = <String>{};
+    return docs.where((doc) {
+      final path = doc['path']?.toString() ?? '';
+      if (path.isEmpty || seen.contains(path)) return false;
+      seen.add(path);
+      return true;
+    }).toList();
+  }
+
   Widget _buildDocumentsSection() {
     // Chercher piece_identite dans tous les endroits possibles
     String? pieceIdentite;
     String? pieceIdentiteLabel; // Nom original du fichier
 
-    // 1. Dans souscriptiondata directement (le plus commun)
     final souscriptiondata = _subscriptionData?['souscriptiondata'];
+    final details = _getSubscriptionDetails();
+
     if (souscriptiondata != null) {
-      // Priorité au label original (piece_identite_label)
       pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-      // Fallback au nom stocké si pas de label
       pieceIdentite = souscriptiondata['piece_identite'] ??
           souscriptiondata['pieceIdentite'] ??
           souscriptiondata['document'];
 
-      // Si c'est un Map avec des sous-clés
       if (pieceIdentite == null && souscriptiondata['documents'] != null) {
         final docs = souscriptiondata['documents'];
         if (docs is Map) {
@@ -1094,19 +1166,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       }
     }
 
-    // 2. Au niveau racine de _subscriptionData
     pieceIdentite ??= _subscriptionData?['piece_identite'];
     pieceIdentite ??= _subscriptionData?['document'];
 
-    // 3. Dans les détails (via getSubscriptionDetails)
     if (pieceIdentite == null) {
-      final details = _getSubscriptionDetails();
       pieceIdentiteLabel ??= details['piece_identite_label'];
       pieceIdentite = details['piece_identite'] ??
           details['pieceIdentite'] ??
           details['document'];
 
-      // Si c'est dans un sous-objet documents
       if (pieceIdentite == null && details['documents'] != null) {
         final docs = details['documents'];
         if (docs is Map) {
@@ -1126,7 +1194,6 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     }
     developer.log('Final pieceIdentite trouvé: $pieceIdentite');
 
-    // Vérifier si le document existe et n'est pas vide
     final hasDocument = pieceIdentite != null &&
         pieceIdentite.toString().isNotEmpty &&
         pieceIdentite != 'Non téléchargée' &&
@@ -1135,37 +1202,33 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     developer.log('hasDocument: $hasDocument');
 
-    // Utiliser le label original si présent, sinon extraire le nom du fichier depuis le chemin
     String? displayLabel;
     if (pieceIdentiteLabel != null && pieceIdentiteLabel.toString().isNotEmpty) {
       displayLabel = pieceIdentiteLabel;
     } else if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
       final s = pieceIdentite.toString();
-      // Extraire seulement le nom du fichier depuis un chemin Windows ou Unix
       displayLabel = s.split(RegExp(r'[\\/]+')).last;
     } else {
       displayLabel = null;
     }
-    // Lors du tap, on doit passer le nom réel du fichier (piece_identite)
+
     final actualFilename = hasDocument ? pieceIdentite : null;
 
-    // Try to collect a documents list from souscriptiondata or details
-    List<Map<String, dynamic>>? docsList;
-    if (souscriptiondata != null) {
-      final docs = souscriptiondata['documents'];
-      if (docs is List) {
-        docsList = docs.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}).toList();
-      } else if (docs is Map) {
-        // convert map entries to list
-        docsList = docs.entries.map((e) => {'label': e.key, 'path': e.value}).toList();
-      }
-    }
+    final docsList = <Map<String, dynamic>>[
+      ..._extractDocumentsList(souscriptiondata?['documents']),
+      ..._extractDocumentsList(_subscriptionData?['documents']),
+      ..._extractDocumentsList(details['documents']),
+    ];
+
+    final normalizedDocsList = docsList.isEmpty ? null : docsList;
 
     return SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: displayLabel,
-      documents: docsList,
+      documents: normalizedDocsList,
       onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
-      onDocumentTap: actualFilename != null ? () => _viewDocument(actualFilename, displayLabel) : null,
+      onDocumentTap: actualFilename != null
+          ? () => _viewDocument(actualFilename, displayLabel)
+          : null,
     );
   }
 

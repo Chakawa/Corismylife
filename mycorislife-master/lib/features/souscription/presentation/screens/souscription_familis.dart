@@ -10,6 +10,7 @@ import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -127,6 +128,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
+  final List<File> _pieceIdentiteFiles = [];
   
   // 📝 SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
@@ -2877,19 +2879,25 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
   Future<void> _pickDocument() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
 
-      if (result != null) {
-        if (mounted) {
-          setState(() {
-            _pieceIdentite = File(result.files.single.path!);
-            _pieceIdentiteLabel = result.files.single.name; // ✅ Sauvegarder le vrai nom du fichier
-          });
-          _showSuccessSnackBar('Document ajouté avec succès');
-        }
+      if (mounted) {
+        setState(() {
+          _pieceIdentiteFiles
+            ..clear()
+            ..addAll(picked.files);
+          _pieceIdentite = _pieceIdentiteFiles.first;
+          _pieceIdentiteLabel = picked.labels.isNotEmpty
+              ? picked.labels.first
+              : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
+        });
+        final count = _pieceIdentiteFiles.length;
+        _showSuccessSnackBar(
+          count > 1
+              ? '$count documents ajoutés avec succès'
+              : 'Document ajouté avec succès',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -3907,27 +3915,40 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
       debugPrint('📤 Upload document pour souscription $subscriptionId');
-      debugPrint('📄 Chemin du fichier: ${_pieceIdentite!.path}');
+      final paths = _pieceIdentiteFiles.isNotEmpty
+          ? _pieceIdentiteFiles.map((f) => f.path).toList()
+          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+      if (paths.isEmpty) return;
+
+      debugPrint('📄 Nombre de fichiers: ${paths.length}');
 
       // Vérifier que le fichier existe
-      final file = File(_pieceIdentite!.path);
-      if (!await file.exists()) {
-        throw Exception('Le fichier n\'existe pas');
+      for (final filePath in paths) {
+        final file = File(filePath);
+        if (!await file.exists()) {
+          throw Exception('Le fichier n\'existe pas: $filePath');
+        }
       }
-      debugPrint('✅ Fichier trouvé, taille: ${await file.length()} bytes');
+      debugPrint('✅ Fichiers prêts pour upload');
 
       final subscriptionService = SubscriptionService();
-      final response = await subscriptionService.uploadDocument(
-        subscriptionId,
-        _pieceIdentite!.path,
-      );
+      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
+      Map<String, dynamic> responseData = {};
+      String? errorMsg;
 
-      debugPrint('📡 Réponse serveur - Status: ${response.statusCode}');
-      debugPrint('📡 Réponse serveur - Body: ${response.body}');
+      for (final response in responses) {
+        debugPrint('📡 Réponse serveur - Status: ${response.statusCode}');
+        debugPrint('📡 Réponse serveur - Body: ${response.body}');
 
-      final responseData = jsonDecode(response.body);
-      if (response.statusCode != 200 || !responseData['success']) {
-        final errorMsg = responseData['message'] ?? 'Erreur inconnue';
+        final localData = jsonDecode(response.body) as Map<String, dynamic>;
+        responseData = localData;
+
+        if (response.statusCode != 200 || !(localData['success'] == true)) {
+          errorMsg = localData['message']?.toString() ?? 'Erreur inconnue';
+        }
+      }
+
+      if (errorMsg != null) {
         debugPrint('❌ Erreur upload: $errorMsg');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -3939,7 +3960,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           );
         }
       } else {
-        debugPrint('✅ Document uploadé avec succès');
+        debugPrint('✅ Documents uploadés avec succès');
         
         // Récupérer le label original si présent dans la réponse
         try {
@@ -3963,10 +3984,14 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Document uploadé avec succès'),
+            SnackBar(
+              content: Text(
+                paths.length > 1
+                    ? '✅ Documents uploadés avec succès'
+                    : '✅ Document uploadé avec succès',
+              ),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -5489,6 +5514,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           onDocumentTap: _pieceIdentite != null
               ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
               : null,
+          documents: _pieceIdentiteFiles
+              .map((file) => {
+                    'label': file.path.split(RegExp(r'[\\/]+')).last,
+                    'path': file.path,
+                  })
+              .toList(),
+          onDocumentTapWithInfo: (path, label) => _viewLocalDocument(
+            File(path),
+            label ?? path.split(RegExp(r'[\\/]+')).last,
+          ),
         ),
 
         const SizedBox(height: 20),
