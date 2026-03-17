@@ -109,11 +109,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Banque Atlantique',
     'Autre',
   ];
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -483,7 +487,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -496,7 +500,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -509,8 +513,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -554,7 +557,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           ),
           backgroundColor: vertSucces,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: EdgeInsets.all(16),
         ),
       );
@@ -937,7 +941,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -1028,7 +1033,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       final subscriptionData = {
         'product_type': 'coris_epargne_bonus',
-        'montant': _selectedPrime ?? _selectedCapital,  // Ajouté pour l'admin
+        'montant': _selectedPrime ?? _selectedCapital, // Ajouté pour l'admin
         'capital': _selectedCapital,
         'prime_mensuelle': _selectedPrime,
         'duree_mois': 180,
@@ -1062,11 +1067,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
       };
@@ -1254,7 +1261,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       for (final filePath in paths) {
@@ -1302,7 +1311,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -2525,7 +2534,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2538,7 +2548,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2555,7 +2566,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2600,7 +2612,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -2674,174 +2689,178 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           });
                         },
                       ),
-                    const SizedBox(height: 16),
-
-                    // Champ texte personnalisé si "Autre" est sélectionné
-                    if (_selectedBanque == 'Autre') ...[
-                      _buildModernTextField(
-                        controller: _banqueController,
-                        label: 'Nom de votre banque',
-                        icon: Icons.edit,
-                      ),
                       const SizedBox(height: 16),
-                    ],
 
-                    // Informations du RIB
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        'Informations du RIB',
+                      // Champ texte personnalisé si "Autre" est sélectionné
+                      if (_selectedBanque == 'Autre') ...[
+                        _buildModernTextField(
+                          controller: _banqueController,
+                          label: 'Nom de votre banque',
+                          icon: Icons.edit,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Informations du RIB
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          'Informations du RIB',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: bleuCoris,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildModernTextField(
+                        controller: _ribUnifiedController,
+                        label: 'Numéro RIB complet (XXXXX / XXXXXXXXXXX / XX)',
+                        icon: Icons.account_balance,
+                        keyboardType: TextInputType.number,
+                        maxLength: 24,
+                        onChanged: (_) => _formatRibInput(),
+                      ),
+                    ] else if (_selectedModePaiement == 'Wave' ||
+                        _selectedModePaiement == 'Orange Money') ...[
+                      Text(
+                        'Numéro Mobile Money',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: bleuCoris,
+                          color: grisTexte,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildModernTextField(
-                      controller: _ribUnifiedController,
-                      label: 'Numéro RIB complet (XXXXX / XXXXXXXXXXX / XX)',
-                      icon: Icons.account_balance,
-                      keyboardType: TextInputType.number,
-                      maxLength: 24,
-                      onChanged: (_) => _formatRibInput(),
-                    ),
-                  ] else if (_selectedModePaiement == 'Wave' ||
-                      _selectedModePaiement == 'Orange Money') ...[
-                    Text(
-                      'Numéro Mobile Money',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _numeroMobileMoneyController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: 'Numéro de téléphone',
-                        labelStyle: TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Image.asset(
-                            _selectedModePaiement == 'Wave'
-                                ? 'assets/images/icone_wave.jpeg'
-                                : 'assets/images/icone_orange_money.jpeg',
-                            width: 24,
-                            height: 24,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.phone,
-                                color: bleuCoris,
-                                size: 20,
-                              );
-                            },
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _numeroMobileMoneyController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Numéro de téléphone',
+                          labelStyle: TextStyle(
+                              color: bleuCoris.withValues(alpha: 0.7)),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Image.asset(
+                              _selectedModePaiement == 'Wave'
+                                  ? 'assets/images/icone_wave.jpeg'
+                                  : 'assets/images/icone_orange_money.jpeg',
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.phone,
+                                  color: bleuCoris,
+                                  size: 20,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: grisLeger),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: grisLeger),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: bleuCoris, width: 2),
-                        ),
-                        filled: true,
-                        fillColor: fondCarte,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      validator: (value) => value == null || value.trim().isEmpty
-                          ? 'Ce champ est obligatoire'
-                          : null,
-                    ),
-                  ] else if (_selectedModePaiement == 'Prélèvement à la source') ...[
-                    Text(
-                      'Informations Prélèvement',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernTextField(
-                      controller: _nomStructureController,
-                      label: 'Nom de la structure',
-                      icon: Icons.business,
-                      keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernTextField(
-                      controller: _numeroMatriculeController,
-                      label: 'Numéro de matricule',
-                      icon: Icons.badge,
-                      keyboardType: TextInputType.text,
-                    ),
-                  ] else if (_selectedModePaiement == 'CORIS Money') ...[
-                    Text(
-                      'Numéro CORIS Money',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: grisTexte,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernTextField(
-                      controller: _corisMoneyPhoneController,
-                      label: 'Numéro de téléphone',
-                      icon: Icons.account_balance_wallet,
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ],
-                ],
-
-                const SizedBox(height: 24),
-
-                // Note informative
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline,
-                          color: Colors.blue.shade700, size: 24),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
-                          style: TextStyle(
-                            color: Colors.blue.shade900,
-                            fontSize: 14,
-                            height: 1.4,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: grisLeger),
                           ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: grisLeger),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: bleuCoris, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: fondCarte,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 16),
                         ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? 'Ce champ est obligatoire'
+                                : null,
+                      ),
+                    ] else if (_selectedModePaiement ==
+                        'Prélèvement à la source') ...[
+                      Text(
+                        'Informations Prélèvement',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _nomStructureController,
+                        label: 'Nom de la structure',
+                        icon: Icons.business,
+                        keyboardType: TextInputType.text,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _numeroMatriculeController,
+                        label: 'Numéro de matricule',
+                        icon: Icons.badge,
+                        keyboardType: TextInputType.text,
+                      ),
+                    ] else if (_selectedModePaiement == 'CORIS Money') ...[
+                      Text(
+                        'Numéro CORIS Money',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: grisTexte,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _corisMoneyPhoneController,
+                        label: 'Numéro de téléphone',
+                        icon: Icons.account_balance_wallet,
+                        keyboardType: TextInputType.phone,
                       ),
                     ],
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // Note informative
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.blue.shade700, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ], // Fin du children du Column
+                ], // Fin du children du Column
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   // ignore: unused_element
   Widget _buildStep4() {
@@ -3376,8 +3395,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           ),
         if (_selectedModePaiement != null) SizedBox(height: 20),
         SubscriptionRecapWidgets.buildDocumentsSection(
-          pieceIdentite:
-              _pieceIdentiteLabel ?? _pieceIdentite?.path.split(RegExp(r'[\\/]+')).last,
+          pieceIdentite: _pieceIdentiteLabel ??
+              _pieceIdentite?.path.split(RegExp(r'[\\/]+')).last,
           onDocumentTap: _pieceIdentite != null
               ? () => _viewLocalDocument(
                     _pieceIdentite!,
@@ -4027,8 +4046,8 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4056,7 +4075,8 @@ class PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

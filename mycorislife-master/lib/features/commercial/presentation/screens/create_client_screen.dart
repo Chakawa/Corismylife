@@ -18,16 +18,22 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
   final _telephoneController = TextEditingController();
   final _adresseController = TextEditingController();
   final _lieuNaissanceController = TextEditingController();
-  
+
   String? _selectedCivilite = 'Monsieur';
   DateTime? _dateNaissance;
   String? _selectedPays = "Côte d'Ivoire";
   bool _isLoading = false;
-  
+
   static const bleuCoris = Color(0xFF002B6B);
 
   final List<String> _civilites = ['Monsieur', 'Madame', 'Mademoiselle'];
-  final List<String> _pays = ["Côte d'Ivoire", "Burkina Faso", "Mali", "Sénégal", "Guinée"];
+  final List<String> _pays = [
+    "Côte d'Ivoire",
+    "Burkina Faso",
+    "Mali",
+    "Sénégal",
+    "Guinée"
+  ];
 
   @override
   void dispose() {
@@ -109,7 +115,8 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content:
+                Text('Erreur: ${e.toString().replaceFirst('Exception: ', '')}'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -121,7 +128,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: bleuCoris,
         elevation: 0,
@@ -151,7 +158,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Civilité
               DropdownButtonFormField<String>(
                 initialValue: _selectedCivilite,
@@ -162,10 +169,12 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   ),
                   prefixIcon: const Icon(Icons.person_outline),
                 ),
-                items: _civilites.map((c) => DropdownMenuItem(
-                  value: c,
-                  child: Text(c),
-                )).toList(),
+                items: _civilites
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c),
+                        ))
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedCivilite = value;
@@ -173,7 +182,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Nom
               TextFormField(
                 controller: _nomController,
@@ -192,7 +201,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Prénom
               TextFormField(
                 controller: _prenomController,
@@ -211,7 +220,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Email
               TextFormField(
                 controller: _emailController,
@@ -234,7 +243,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Mot de passe
               TextFormField(
                 controller: _passwordController,
@@ -257,7 +266,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Téléphone
               TextFormField(
                 controller: _telephoneController,
@@ -277,7 +286,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Date de naissance
               InkWell(
                 onTap: _selectDate,
@@ -294,13 +303,14 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                         ? '${_dateNaissance!.day.toString().padLeft(2, '0')}/${_dateNaissance!.month.toString().padLeft(2, '0')}/${_dateNaissance!.year}'
                         : 'Sélectionner une date',
                     style: TextStyle(
-                      color: _dateNaissance != null ? Colors.black : Colors.grey,
+                      color:
+                          _dateNaissance != null ? Colors.black : Colors.grey,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Lieu de naissance
               TextFormField(
                 controller: _lieuNaissanceController,
@@ -313,7 +323,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Adresse
               TextFormField(
                 controller: _adresseController,
@@ -326,7 +336,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Pays
               DropdownButtonFormField<String>(
                 initialValue: _selectedPays,
@@ -337,10 +347,12 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   ),
                   prefixIcon: const Icon(Icons.public),
                 ),
-                items: _pays.map((p) => DropdownMenuItem(
-                  value: p,
-                  child: Text(p),
-                )).toList(),
+                items: _pays
+                    .map((p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p),
+                        ))
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedPays = value;
@@ -348,7 +360,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Bouton de création
               ElevatedButton(
                 onPressed: _isLoading ? null : _createClient,
@@ -365,7 +377,8 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : const Text(
@@ -385,4 +398,3 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
     );
   }
 }
-

@@ -392,7 +392,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Map<String, dynamic>? _getPaymentInfo() {
     final details = _getSubscriptionDetails();
-    final paymentInfoRaw = details['payment_info'];
+
+    // Support multiple locations for payment info
+    // (some environments store it inside `souscriptiondata`, others at root)
+    final rawPaymentInfo =
+        _subscriptionData?['payment_info'] ??
+            details['payment_info'] ??
+            _subscriptionData?['paiement'] ??
+            details['paiement'] ??
+            _subscriptionData?['payment'] ??
+            details['payment'];
 
     String? pickText(List<dynamic> values) {
       for (final value in values) {
@@ -415,11 +424,30 @@ class ContratDetailPageState extends State<ContratDetailPage>
     Map<String, dynamic> toMap(dynamic raw) {
       if (raw is Map<String, dynamic>) return raw;
       if (raw is Map) return Map<String, dynamic>.from(raw);
+      if (raw is String) {
+        final trimmed = raw.trim();
+        if (trimmed.isEmpty) return <String, dynamic>{};
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is Map<String, dynamic>) return decoded;
+          if (decoded is Map) return Map<String, dynamic>.from(decoded);
+          if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
+            return Map<String, dynamic>.from(decoded.first);
+          }
+        } catch (_) {
+          // ignore
+        }
+        return <String, dynamic>{};
+      }
+      if (raw is List && raw.isNotEmpty && raw.first is Map) {
+        return Map<String, dynamic>.from(raw.first);
+      }
       return <String, dynamic>{};
     }
 
-    final paymentInfo = toMap(paymentInfoRaw);
-    final paymentMeta = toMap(details['paiement']);
+    final paymentInfo = toMap(rawPaymentInfo);
+    final paymentMeta = toMap(
+        _subscriptionData?['paiement'] ?? details['paiement'] ?? details['payment']);
 
     final paymentMethod = pickText([
       paymentInfo['payment_method'],
@@ -448,12 +476,26 @@ class ContratDetailPageState extends State<ContratDetailPage>
       paymentInfo['amount'],
       paymentInfo['montant'],
       paymentInfo['payment_amount'],
+      paymentInfo['amount_paid'],
+      paymentInfo['montant_paye'],
+      paymentInfo['montant_paye'],
       paymentMeta['amount'],
       paymentMeta['montant'],
       paymentMeta['payment_amount'],
+      paymentMeta['amount_paid'],
+      paymentMeta['montant_paye'],
       details['payment_amount'],
+      details['amount_paid'],
+      details['montant_paye'],
       details['dernier_montant_paye'],
+      details['montant'],
+      details['montant_encaisse'],
+      details['total_paid'],
       _subscriptionData?['dernier_montant_paye'],
+      _subscriptionData?['montant_paye'],
+      _subscriptionData?['amount_paid'],
+      _subscriptionData?['montant_encaisse'],
+      _subscriptionData?['total_paid'],
     ]);
 
     final paymentId = pickText([

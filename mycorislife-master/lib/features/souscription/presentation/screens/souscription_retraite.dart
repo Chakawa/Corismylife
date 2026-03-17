@@ -164,11 +164,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Autre',
   ];
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -634,13 +638,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         // Utiliser Future.delayed pour éviter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
-          
+
           // Le champ a perdu le focus - valider maintenant
           if (_dureeController.text.isNotEmpty && _age > 0) {
             int? duree = int.tryParse(_dureeController.text);
             if (duree != null) {
               setState(() {
-                _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+                _dureeEnAnnees =
+                    _selectedUnite == 'années' ? duree : duree ~/ 12;
               });
 
               // Validation de la durée en années
@@ -1117,11 +1122,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
 
     // Récupérer le capital pour la prime de référence
-    double capitalPourPrimeRef = capitalValues[duration]![periodicity]!.toDouble();
+    double capitalPourPrimeRef =
+        capitalValues[duration]![periodicity]!.toDouble();
     double primeReference = primeReferenceValues[periodicity]!;
 
     // NOUVELLE MÉTHODE: Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference
-    double calculatedPremium = (desiredCapital * primeReference) / capitalPourPrimeRef;
+    double calculatedPremium =
+        (desiredCapital * primeReference) / capitalPourPrimeRef;
 
     return calculatedPremium;
   }
@@ -1154,11 +1161,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
 
     // Récupérer le capital pour la prime de référence
-    double capitalPourPrimeRef = capitalValues[duration]![periodicity]!.toDouble();
+    double capitalPourPrimeRef =
+        capitalValues[duration]![periodicity]!.toDouble();
     double primeReference = primeReferenceValues[periodicity]!;
 
     // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
-    double calculatedCapital = (paidPremium * capitalPourPrimeRef) / primeReference;
+    double calculatedCapital =
+        (paidPremium * capitalPourPrimeRef) / primeReference;
 
     return calculatedCapital;
   }
@@ -1401,7 +1410,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -1414,7 +1423,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -1427,8 +1436,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -1612,7 +1620,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   bool _validateStep1() {
     // Vérifier que la date d'effet est sélectionnée
     if (_dateEffetContrat == null) {
-      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      _showErrorSnackBar(
+          'Veuillez sélectionner une date d\'effet pour le contrat');
       return false;
     }
 
@@ -1737,11 +1746,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -1796,7 +1807,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
         return Scaffold(
           backgroundColor: grisLeger,
-          resizeToAvoidBottomInset: false,
+          resizeToAvoidBottomInset: true,
           body: Column(
             children: [
               if (!isConnected) ConnectivityBanner(isConnected: isConnected),
@@ -1858,10 +1869,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 const Icon(Icons.arrow_back_ios, color: blanc),
                             onPressed: () => Navigator.pop(context)),
                       ),
-                        SliverToBoxAdapter(
+                      SliverToBoxAdapter(
                           child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            child: _buildModernProgressIndicator())),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: _buildModernProgressIndicator())),
                     ];
                   },
                   body: SafeArea(
@@ -3088,7 +3100,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -3101,7 +3114,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -3118,7 +3132,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -3163,7 +3178,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -3274,21 +3292,24 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          helperText: 'Format: Code guichet (5) / Compte (11) / Clé (2)',
+                          helperText:
+                              'Format: Code guichet (5) / Compte (11) / Clé (2)',
                           helperMaxLines: 2,
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                      maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
-                      onChanged: (value) => _formatRibInput(),
-                    ),
-                  ],
+                        maxLength:
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                        onChanged: (value) => _formatRibInput(),
+                      ),
+                    ],
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
@@ -3584,7 +3605,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 : _beneficiaireNomController.text),
         SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParente),
+        SubscriptionRecapWidgets.buildRecapRow(
+            'Lien de parenté', _selectedLienParente),
         const SizedBox(height: 12),
         _buildSubsectionTitle('Contact d\'urgence'),
         SubscriptionRecapWidgets.buildRecapRow(
@@ -3594,7 +3616,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 : _personneContactNomController.text),
         SubscriptionRecapWidgets.buildRecapRow('Contact',
             '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-        SubscriptionRecapWidgets.buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
+        SubscriptionRecapWidgets.buildRecapRow(
+            'Lien de parenté', _selectedLienParenteUrgence),
       ]),
       const SizedBox(height: 20),
       // 💳 SECTION MODE DE PAIEMENT
@@ -3612,7 +3635,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           ? Color(0xFF1E3A8A)
                           : orangeCoris,
           [
-            SubscriptionRecapWidgets.buildRecapRow('Mode choisi', _selectedModePaiement!),
+            SubscriptionRecapWidgets.buildRecapRow(
+                'Mode choisi', _selectedModePaiement!),
             const SizedBox(height: 8),
             if (_selectedModePaiement == 'Virement') ...[
               SubscriptionRecapWidgets.buildRecapRow(
@@ -3659,10 +3683,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
         onDocumentTap: _pieceIdentite != null
             ? () => _viewLocalDocument(
-                _pieceIdentite!,
-                _pieceIdentiteLabel ??
-                    _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last,
-              )
+                  _pieceIdentite!,
+                  _pieceIdentiteLabel ??
+                      _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last,
+                )
             : null,
         documents: _pieceIdentiteFiles
             .map((file) => {
@@ -4347,11 +4371,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -4456,7 +4482,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
         // 3. Afficher le modal CorisMoney
         if (!mounted) return;
-        
+
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -4469,7 +4495,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             },
           ),
         );
-        
+
         return;
       } catch (e) {
         _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
@@ -4506,7 +4532,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime, context: 'souscription_retraite'),
+          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime,
+              context: 'souscription_retraite'),
           description: 'Paiement prime CORIS RETRAITE',
           onSuccess: () => _showSuccessDialog(true),
         );
@@ -4584,7 +4611,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       for (final filePath in paths) {
@@ -4790,8 +4819,12 @@ class PaymentBottomSheet extends StatelessWidget {
                             color: Color(0xFF002B6B)))
                   ]),
                   const SizedBox(height: 24),
-                  _buildPaymentOptionWithImage('Wave', 'assets/images/icone_wave.jpeg', Colors.blue,
-                      'Paiement mobile sécurisé', () => onPayNow('Wave')),
+                  _buildPaymentOptionWithImage(
+                      'Wave',
+                      'assets/images/icone_wave.jpeg',
+                      Colors.blue,
+                      'Paiement mobile sécurisé',
+                      () => onPayNow('Wave')),
                   const SizedBox(height: 12),
                   _buildPaymentOptionWithImage(
                       'Orange Money',
@@ -4882,8 +4915,8 @@ class PaymentBottomSheet extends StatelessWidget {
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -4900,7 +4933,8 @@ class PaymentBottomSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+                      border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2))),
                   child: Image.asset(
                     imagePath,
                     width: 32,
@@ -4908,7 +4942,8 @@ class PaymentBottomSheet extends StatelessWidget {
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       print('❌ Erreur chargement image: $imagePath - $error');
-                      return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                      return Icon(Icons.image_not_supported,
+                          size: 32, color: Colors.grey);
                     },
                   )),
               const SizedBox(width: 16),

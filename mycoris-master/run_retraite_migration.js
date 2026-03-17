@@ -43,6 +43,13 @@ async function migrateRetraiteData() {
     console.log(`   ✅ ${deleteResult.rowCount} ancien(s) tarif(s) supprimé(s)`);
 
     // 3. Nouvelles données: Capital à terme pour prime de référence
+    const primeReferenceValues = {
+      mensuel: 10000,
+      trimestriel: 30000,
+      semestriel: 60000,
+      annuel: 120000,
+    };
+
     const capitalValues = {
       5: {mensuel: 605463.405379, trimestriel: 615056.504123, semestriel: 620331.447928, annuel: 625666.388106},
       6: {mensuel: 739294.364577, trimestriel: 752266.795228, semestriel: 758213.774878, annuel: 764734.523010},

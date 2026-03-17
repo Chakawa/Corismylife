@@ -127,11 +127,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -473,8 +477,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           final codeGuichet = infos['code_guichet'] ?? '';
           final numeroCompte = infos['numero_compte'] ?? '';
           final cleRib = infos['cle_rib'] ?? '';
-          if (codeGuichet.isNotEmpty && numeroCompte.isNotEmpty && cleRib.isNotEmpty) {
-            _ribUnifiedController.text = '$codeGuichet / $numeroCompte / $cleRib';
+          if (codeGuichet.isNotEmpty &&
+              numeroCompte.isNotEmpty &&
+              cleRib.isNotEmpty) {
+            _ribUnifiedController.text =
+                '$codeGuichet / $numeroCompte / $cleRib';
           }
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
@@ -566,7 +573,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -579,7 +586,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -592,8 +599,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -782,7 +788,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       // Préparer les données de souscription spécifiques à Coris Assure Prestige
       final subscriptionData = {
         'product_type': 'coris_assure_prestige',
-        'montant': double.parse(_montantVersementController.text.replaceAll(' ', '')).toInt(),
+        'montant':
+            double.parse(_montantVersementController.text.replaceAll(' ', ''))
+                .toInt(),
         'versement_initial':
             double.parse(_montantVersementController.text.replaceAll(' ', ''))
                 .toInt(),
@@ -822,11 +830,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
       };
@@ -931,7 +941,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+            debugPrint(
+                '⚠️ Erreur upload document (non bloquant): $uploadError');
           }
         }
 
@@ -1060,7 +1071,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       Map<String, dynamic> responseData = {};
@@ -1097,7 +1110,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -1339,7 +1353,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -1395,7 +1410,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -2304,7 +2319,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     return GestureDetector(
       onTap: () async {
         final DateTime now = DateTime.now();
-        final DateTime initial = selectedDate ?? now.subtract(Duration(days: 365 * 25));
+        final DateTime initial =
+            selectedDate ?? now.subtract(Duration(days: 365 * 25));
         final DateTime? picked = await showDatePicker(
           context: context,
           initialDate: initial,
@@ -2579,7 +2595,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2592,7 +2609,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2609,7 +2627,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2654,7 +2673,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -2765,8 +2787,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          helperText:
+                              'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -2775,7 +2799,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                        maxLength:
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
                       ),
                     ],
 
@@ -3028,8 +3053,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             'email': _clientEmailController.text,
             'telephone':
                 '$_selectedClientIndicatif ${_clientTelephoneController.text}',
-            'date_naissance':
-                _clientDateNaissance?.toIso8601String(),
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
@@ -3965,8 +3989,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -3994,7 +4018,8 @@ class _PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

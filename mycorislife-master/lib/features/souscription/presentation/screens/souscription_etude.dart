@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
@@ -116,10 +115,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final List<File> _pieceIdentiteFiles = [];
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
-  
+
   // 📝 SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
-  
+
   // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
   bool _messageCapitalAffiche = false;
 
@@ -127,11 +126,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -153,8 +156,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   ];
 
   // 📋 QUESTIONNAIRE MÉDICAL
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalQuestions =
+      []; // ✅ Questions de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalReponses =
+      []; // Réponses locales ou de la BD
 
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -1015,7 +1020,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
-    
+
     // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuestionnaireMedicalQuestions();
@@ -1384,7 +1389,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       if (mounted) {
         setState(() {});
       }
-      
+
       // Charger les réponses questionnaire avec libelle du serveur
       if (widget.subscriptionId != null) {
         _loadQuestionnaireMedicalReponses();
@@ -1396,9 +1401,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Future<void> _loadQuestionnaireMedicalReponses() async {
     try {
       final questionnaireService = QuestionnaireMedicalService();
-      final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+      final completReponses =
+          await questionnaireService.getReponses(widget.subscriptionId!);
       if (completReponses != null && completReponses.isNotEmpty) {
-        debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
+        debugPrint(
+            '✅ Réponses questionnaire chargées (${completReponses.length} items)');
         if (mounted) {
           setState(() {
             _questionnaireMedicalReponses = completReponses;
@@ -1776,7 +1783,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Future<bool> _verifierCapitalSousRisque() async {
     // Fonction désactivée - retourne toujours true pour continuer
     return true;
-    
+
     /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔════════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS ÉTUDE - Vérification Capital Sous Risque       ║');
@@ -1974,13 +1981,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   /// ⚡ Vérification AUTOMATIQUE - DÉSACTIVÉE
   /// (Message formulaire médical supprimé à la demande)
+  // ignore: unused_element
   void _verifierCapitalSousRisqueAuto() {
     // Fonction désactivée - ne fait plus rien
     return;
   }
 
   Future<void> _nextStep() async {
-    debugPrint('\n🔵 [ÉTUDE] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
+    debugPrint(
+        '\n🔵 [ÉTUDE] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
     // Ajout du questionnaire médical: +1 étape avant le récap
     // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (questionnaire médical), 4 (recap)
     // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (questionnaire médical), 5 (recap)
@@ -1998,10 +2007,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [ÉTUDE Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [ÉTUDE Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
           final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+          if (!canContinue)
+            return; // L'utilisateur a choisi de ne pas continuer
           // Validation du mode de paiement avant questionnaire médical
           canProceed = true;
         } else if (_currentStep == 4) {
@@ -2009,7 +2020,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
             debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
+            debugPrint(
+                '[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -2030,11 +2042,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [ÉTUDE Client] Étape 2 validée - Vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [ÉTUDE Client] Étape 2 validée - Vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+            if (!canContinue)
+              return; // L'utilisateur a choisi de ne pas continuer
           }
           // Validation du mode de paiement avant questionnaire médical
           canProceed = true;
@@ -2090,7 +2104,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
-    
+
     // Pour le commercial, vérifier que la date de naissance a bien été saisie à l'étape précédente
     // (elle est déjà synchronisée dans _dateNaissanceParent)
     if (_dateNaissanceParent == null) {
@@ -2098,7 +2112,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           'Veuillez saisir la date de naissance du souscripteur à l\'étape précédente');
       return false;
     }
-    
+
     final maintenant = DateTime.now();
     _clientAgeParent = maintenant.year - _dateNaissanceParent!.year;
     if (maintenant.month < _dateNaissanceParent!.month ||
@@ -2220,11 +2234,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -2288,7 +2304,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -2301,7 +2317,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -2314,8 +2330,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -2379,24 +2394,34 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// Affiche d'abord le dialogue de signature, puis les options de paiement
-  Future<void> _showSignatureAndPayment() async {
-    // 1. Afficher le dialogue de signature
+  /// Assure que le client a signé avant de continuer.
+  ///
+  /// Affiche le dialogue de signature à chaque appel afin que l'utilisateur
+  /// puisse voir (et modifier) sa signature avant le paiement.
+  /// Retourne `true` si une signature est présente après l'appel.
+  Future<bool> _ensureClientSignature() async {
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
-    // Si l'utilisateur annule la signature, on arrête
-    if (signature == null) return;
+    if (signature == null) return false;
 
-    // Sauvegarder la signature
-    setState(() {
-      _clientSignature = signature;
-    });
+    if (mounted) {
+      setState(() {
+        _clientSignature = signature;
+      });
+    }
 
-    // 2. Afficher les options de paiement
+    return true;
+  }
+
+  /// Affiche d'abord le dialogue de signature (si nécessaire), puis les options de paiement
+  Future<void> _showSignatureAndPayment() async {
+    final hasSignature = await _ensureClientSignature();
+    if (!hasSignature) return;
+
     if (!mounted) return;
     _showPaymentOptions();
   }
@@ -2468,7 +2493,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                ...?_parseRibUnified(_ribUnifiedController.text.trim()),
+                ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -2479,11 +2504,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
       };
@@ -2572,6 +2599,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _processPayment(String paymentMethod) async {
+    // Assurer qu'une signature a bien été collectée avant tout paiement
+    if (_clientSignature == null) {
+      _showErrorSnackBar('Veuillez signer avant de procéder au paiement.');
+      return;
+    }
+
     // ⚠️ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
     if (paymentMethod == 'CORIS Money') {
       try {
@@ -2602,7 +2635,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         // 4. Afficher le modal de paiement CorisMoney
         if (!mounted) return;
-        
+
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -2617,7 +2650,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             },
           ),
         );
-        
+
         return; // Sortir de la fonction
       } catch (e) {
         _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
@@ -2651,7 +2684,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -2675,7 +2709,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: TestModeHelper.applyTestModeIfNeeded(_primeCalculee, context: 'souscription_etude'),
+          amount: TestModeHelper.applyTestModeIfNeeded(_primeCalculee,
+              context: 'souscription_etude'),
           description: 'Paiement prime CORIS ÉTUDE',
           onSuccess: () => _showSuccessDialog(true),
         );
@@ -2714,6 +2749,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _saveAsProposition() async {
+    // Assurer qu'une signature a bien été collectée avant de sauvegarder
+    if (_clientSignature == null) {
+      _showErrorSnackBar('Veuillez signer avant de sauvegarder la proposition.');
+      return;
+    }
+
     try {
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
@@ -2726,7 +2767,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -2755,10 +2797,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
-      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
+      final responses =
+          await subscriptionService.uploadDocuments(subscriptionId, paths);
       Map<String, dynamic> responseData = {};
 
       for (final response in responses) {
@@ -2791,7 +2836,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -2976,7 +3022,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -3211,6 +3257,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyClientInfo,
                 child: ListView(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     _buildFormSection(
                       'Informations du Client',
@@ -3323,6 +3371,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyStep1,
                 child: ListView(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     Container(
                       padding: EdgeInsets.all(12),
@@ -3757,6 +3807,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyStep2,
                 child: ListView(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     _buildFormSection(
                       'Bénéficiaire en cas de décès',
@@ -4270,7 +4322,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(20),
+              padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4362,7 +4414,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -4375,7 +4428,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -4392,7 +4446,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -4437,7 +4492,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -4548,21 +4606,24 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          helperText: 'Format: Code guichet (5) / Compte (11) / Clé (2)',
+                          helperText:
+                              'Format: Code guichet (5) / Compte (11) / Clé (2)',
                           helperMaxLines: 2,
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                      maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
-                      onChanged: (value) => _formatRibInput(),
-                    ),
-                  ],
+                        maxLength:
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                        onChanged: (value) => _formatRibInput(),
+                      ),
+                    ],
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
@@ -4738,14 +4799,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               reponses: reponses,
             );
             debugPrint('✅ Questionnaire médical sauvegardé');
-            
+
             // Fetch complete responses with libelle from server
-            final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+            final completReponses =
+                await questionnaireService.getReponses(widget.subscriptionId!);
             if (completReponses != null && completReponses.isNotEmpty) {
               setState(() {
                 _questionnaireMedicalReponses = completReponses;
               });
-              debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+              debugPrint(
+                  '✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
             }
           }
         } catch (e) {
@@ -4872,6 +4935,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         : (userData ?? _userData);
 
     return ListView(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         // Afficher les informations du client (toujours dans "Informations Personnelles")
         SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
@@ -5035,10 +5100,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         const SizedBox(height: 20),
 
         SubscriptionRecapWidgets.buildDocumentsSection(
-          pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+          pieceIdentite:
+              _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
           onDocumentTap: _pieceIdentite != null
-              ? () => _viewLocalDocument(
-                  _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+              ? () => _viewLocalDocument(_pieceIdentite!,
+                  _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
               : null,
           documents: _pieceIdentiteFiles
               .map((file) => {
@@ -5189,6 +5255,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   /// Page étape 4: Paiement
+  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -5363,7 +5430,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
                   // Option 2: Payer plus tard
                   InkWell(
-                    onTap: () => _saveAsProposition(),
+                    onTap: () async {
+                      final hasSignature = await _ensureClientSignature();
+                      if (hasSignature) {
+                        _saveAsProposition();
+                      }
+                    },
                     child: Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -5848,6 +5920,7 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildPaymentOption(String title, IconData icon, Color color,
       String subtitle, VoidCallback onTap) {
     return InkWell(
@@ -5907,8 +5980,9 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  // ignore: unused_element
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -5936,7 +6010,8 @@ class _PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

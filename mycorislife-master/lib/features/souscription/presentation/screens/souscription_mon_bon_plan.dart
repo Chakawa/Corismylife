@@ -132,11 +132,15 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -204,13 +208,14 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         // Utiliser Future.delayed pour éviter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
-          
+
           // Le champ a perdu le focus - valider maintenant
           if (_dureeController.text.isNotEmpty) {
             int? duree = int.tryParse(_dureeController.text);
             if (duree != null) {
               // Convertir en années si nécessaire
-              int dureeEnAnnees = _selectedDureeType == 'ans' ? duree : (duree ~/ 12);
+              int dureeEnAnnees =
+                  _selectedDureeType == 'ans' ? duree : (duree ~/ 12);
 
               // ❌ Validation de la durée minimale (2 ans)
               if (dureeEnAnnees < 2) {
@@ -582,8 +587,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           final codeGuichet = infos['code_guichet'] ?? '';
           final numeroCompte = infos['numero_compte'] ?? '';
           final cleRib = infos['cle_rib'] ?? '';
-          if (codeGuichet.isNotEmpty && numeroCompte.isNotEmpty && cleRib.isNotEmpty) {
-            _ribUnifiedController.text = '$codeGuichet / $numeroCompte / $cleRib';
+          if (codeGuichet.isNotEmpty &&
+              numeroCompte.isNotEmpty &&
+              cleRib.isNotEmpty) {
+            _ribUnifiedController.text =
+                '$codeGuichet / $numeroCompte / $cleRib';
           }
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
@@ -671,7 +679,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -684,7 +692,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -697,8 +705,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -887,7 +894,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
       final subscriptionData = {
         'product_type': 'mon_bon_plan_coris',
-        'montant': double.parse(_montantCotisationController.text.replaceAll(' ', '')).toInt(),
+        'montant':
+            double.parse(_montantCotisationController.text.replaceAll(' ', ''))
+                .toInt(),
         'montant_cotisation':
             double.parse(_montantCotisationController.text.replaceAll(' ', ''))
                 .toInt(),
@@ -912,7 +921,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? () {
-                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
+                final parsed =
+                    _parseRibUnified(_ribUnifiedController.text.trim());
                 return {
                   'banque': _banqueController.text.trim(),
                   'code_guichet': parsed['code_guichet'] ?? '',
@@ -929,11 +939,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
       };
@@ -1038,7 +1050,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+            debugPrint(
+                '⚠️ Erreur upload document (non bloquant): $uploadError');
           }
         }
 
@@ -1049,7 +1062,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             barrierDismissible: false,
             builder: (context) => CorisMoneyPaymentModal(
               subscriptionId: subscriptionId,
-              montant: double.tryParse(_montantCotisationController.text.replaceAll(' ', '')) ?? 0.0,
+              montant: double.tryParse(
+                      _montantCotisationController.text.replaceAll(' ', '')) ??
+                  0.0,
               description: 'Paiement prime CORIS MON BON PLAN',
               onPaymentSuccess: () {
                 if (mounted) {
@@ -1169,7 +1184,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       Map<String, dynamic> responseData = {};
@@ -1206,7 +1223,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -1493,11 +1511,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -1553,7 +1573,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -2528,7 +2548,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     return GestureDetector(
       onTap: () async {
         final DateTime now = DateTime.now();
-        final DateTime initial = selectedDate ?? now.subtract(Duration(days: 365 * 25));
+        final DateTime initial =
+            selectedDate ?? now.subtract(Duration(days: 365 * 25));
         final DateTime? picked = await showDatePicker(
           context: context,
           initialDate: initial,
@@ -2803,7 +2824,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2816,7 +2838,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2833,7 +2856,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -2877,7 +2901,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -2989,8 +3016,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          helperText:
+                              'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -3185,7 +3214,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         // En cas d'erreur, essayer d'utiliser _userData si disponible
                         if (_userData.isNotEmpty) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                             child: _buildRecapContent(userData: _userData),
                           );
                         }
@@ -3210,7 +3240,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       debugPrint(
                           '🟦 Données utilisateur chargées pour récap: ${userData.keys}');
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         child: _buildRecapContent(userData: userData),
                       );
                     },
@@ -3235,8 +3266,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             'email': _clientEmailController.text,
             'telephone':
                 '$_selectedClientIndicatif ${_clientTelephoneController.text}',
-            'date_naissance':
-                _clientDateNaissance?.toIso8601String(),
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
@@ -4168,8 +4198,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4197,7 +4227,8 @@ class _PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

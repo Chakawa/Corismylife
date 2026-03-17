@@ -97,7 +97,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int? _clientAge;
-  
+
   // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
   bool _messageCapitalAffiche = false;
 
@@ -129,13 +129,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
-  
+
   // 📝 SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
 
   // Questionnaire médical
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalQuestions =
+      []; // ✅ Questions de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalReponses =
+      []; // Réponses locales ou de la BD
   Future<bool> Function()? _questionnaireValidate;
 
   // Mode de paiement
@@ -154,11 +156,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     'Autre',
   ];
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -181,7 +187,6 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     18: {
       1: 0.272,
       2: 0.552,
- 
       3: 0.831,
       4: 1.106,
       5: 1.375,
@@ -2302,10 +2307,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   @override
   void initState() {
     super.initState();
-    
+
     // ⚡ LISTENER AUTOMATIQUE - DÉSACTIVÉ (message formulaire médical supprimé)
     // _capitalController.addListener(_verifierCapitalSousRisqueAuto);
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -2334,12 +2339,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     } else {
       _prefillSimulationData();
     }
-    
+
     // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuestionnaireMedicalQuestions();
     });
-    
+
     // Charger les données utilisateur
     _loadUserData();
   }
@@ -2637,14 +2642,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       }
 
       debugPrint('✅ Pré-remplissage FAMILIS terminé');
-      
+
       // Charger les réponses questionnaire avec libelle du serveur
       if (widget.subscriptionId != null) {
         try {
           final questionnaireService = QuestionnaireMedicalService();
-          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+          final completReponses =
+              await questionnaireService.getReponses(widget.subscriptionId!);
           if (completReponses != null && completReponses.isNotEmpty) {
-            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
+            debugPrint(
+                '✅ Réponses questionnaire chargées (${completReponses.length} items)');
             if (mounted) {
               setState(() {
                 _questionnaireMedicalReponses = completReponses;
@@ -2652,7 +2659,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             }
           }
         } catch (e) {
-          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
+          debugPrint(
+              '⚠️ Erreur lors du chargement des réponses questionnaire: $e');
         }
       }
     } catch (e) {
@@ -2815,7 +2823,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -2828,7 +2836,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -2841,8 +2849,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -3102,7 +3109,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   Future<bool> _verifierCapitalSousRisque() async {
     // Fonction désactivée - retourne toujours true pour continuer
     return true;
-    
+
     /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔══════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS FAMILIS - Vérification Capital Sous Risque     ║');
@@ -3317,7 +3324,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   }
 
   Future<void> _nextStep() async {
-    debugPrint('\n🔵 [FAMILIS] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
+    debugPrint(
+        '\n🔵 [FAMILIS] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
     // Recap est la dernière étape (ajout du questionnaire médical avant le récap)
     final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
@@ -3333,11 +3341,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Commercial] Étape 3 validée - Vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [FAMILIS Commercial] Étape 3 validée - Vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+            if (!canContinue)
+              return; // L'utilisateur a choisi de ne pas continuer
           }
           canProceed = true;
         } else if (_currentStep == 4) {
@@ -3345,7 +3355,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
             debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
+            debugPrint(
+                '[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -3366,11 +3377,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           canProceed = true;
           _calculatePrime();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [FAMILIS Client] Étape 2 validée - Vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [FAMILIS Client] Étape 2 validée - Vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+            if (!canContinue)
+              return; // L'utilisateur a choisi de ne pas continuer
           }
           canProceed = true;
         } else if (_currentStep == 3) {
@@ -3457,7 +3470,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   bool _validateStep1() {
     // Vérifier que la date d'effet est sélectionnée
     if (_dateEffetContrat == null) {
-      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      _showErrorSnackBar(
+          'Veuillez sélectionner une date d\'effet pour le contrat');
       return false;
     }
 
@@ -3524,11 +3538,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -3662,11 +3678,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -3783,7 +3801,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
         // 4. Afficher le modal de paiement CorisMoney
         if (!mounted) return;
-        
+
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -3798,7 +3816,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             },
           ),
         );
-        
+
         return; // Sortir de la fonction
       } catch (e) {
         _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
@@ -3826,7 +3844,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -3845,7 +3864,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime ?? 0.0, context: 'souscription_familis'),
+          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime ?? 0.0,
+              context: 'souscription_familis'),
           description: 'Paiement prime CORIS FAMILIS',
           onSuccess: () => _showSuccessDialog(true),
         );
@@ -3890,7 +3910,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -3917,7 +3938,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       debugPrint('📄 Nombre de fichiers: ${paths.length}');
@@ -3932,7 +3955,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       debugPrint('✅ Fichiers prêts pour upload');
 
       final subscriptionService = SubscriptionService();
-      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
+      final responses =
+          await subscriptionService.uploadDocuments(subscriptionId, paths);
       Map<String, dynamic> responseData = {};
       String? errorMsg;
 
@@ -3961,7 +3985,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         }
       } else {
         debugPrint('✅ Documents uploadés avec succès');
-        
+
         // Récupérer le label original si présent dans la réponse
         try {
           final updated = responseData['data']?['subscription'];
@@ -3979,9 +4003,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             }
           }
         } catch (e) {
-          debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+          debugPrint(
+              '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
         }
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -4057,7 +4082,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -4119,7 +4144,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-              SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 child: _buildModernProgressIndicator(),
@@ -4154,26 +4179,35 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
                               if (widget.subscriptionId != null) {
                                 try {
-                                  final questionnaireService = QuestionnaireMedicalService();
+                                  final questionnaireService =
+                                      QuestionnaireMedicalService();
                                   await questionnaireService.saveReponses(
                                     subscriptionId: widget.subscriptionId!,
                                     reponses: reponses,
                                   );
-                                  debugPrint('✅ Questionnaire médical sauvegardé');
-                                  
+                                  debugPrint(
+                                      '✅ Questionnaire médical sauvegardé');
+
                                   // Fetch complete responses with libelle from server
-                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-                                  if (completReponses != null && completReponses.isNotEmpty) {
+                                  final completReponses =
+                                      await questionnaireService
+                                          .getReponses(widget.subscriptionId!);
+                                  if (completReponses != null &&
+                                      completReponses.isNotEmpty) {
                                     setState(() {
-                                      _questionnaireMedicalReponses = completReponses;
+                                      _questionnaireMedicalReponses =
+                                          completReponses;
                                     });
-                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+                                    debugPrint(
+                                        '✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
                                   }
                                 } catch (e) {
-                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+                                  debugPrint(
+                                      '❌ Erreur lors de la sauvegarde du questionnaire: $e');
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                                      content: Text(
+                                          'Erreur lors de la sauvegarde du questionnaire: $e'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -4205,26 +4239,35 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
                               if (widget.subscriptionId != null) {
                                 try {
-                                  final questionnaireService = QuestionnaireMedicalService();
+                                  final questionnaireService =
+                                      QuestionnaireMedicalService();
                                   await questionnaireService.saveReponses(
                                     subscriptionId: widget.subscriptionId!,
                                     reponses: reponses,
                                   );
-                                  debugPrint('✅ Questionnaire médical sauvegardé');
-                                  
+                                  debugPrint(
+                                      '✅ Questionnaire médical sauvegardé');
+
                                   // Fetch complete responses with libelle from server
-                                  final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
-                                  if (completReponses != null && completReponses.isNotEmpty) {
+                                  final completReponses =
+                                      await questionnaireService
+                                          .getReponses(widget.subscriptionId!);
+                                  if (completReponses != null &&
+                                      completReponses.isNotEmpty) {
                                     setState(() {
-                                      _questionnaireMedicalReponses = completReponses;
+                                      _questionnaireMedicalReponses =
+                                          completReponses;
                                     });
-                                    debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+                                    debugPrint(
+                                        '✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
                                   }
                                 } catch (e) {
-                                  debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+                                  debugPrint(
+                                      '❌ Erreur lors de la sauvegarde du questionnaire: $e');
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                                      content: Text(
+                                          'Erreur lors de la sauvegarde du questionnaire: $e'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -5504,15 +5547,17 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         // RÉCAP: Questionnaire médical (questions + réponses)
         // Passe la liste des questions pour afficher toutes les questions avec réponses
         SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-          _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
+            _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
 
         const SizedBox(height: 20),
 
         // Section Documents (affiche les documents et permet de les ouvrir)
         SubscriptionRecapWidgets.buildDocumentsSection(
-          pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+          pieceIdentite:
+              _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
           onDocumentTap: _pieceIdentite != null
-              ? () => _viewLocalDocument(_pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+              ? () => _viewLocalDocument(_pieceIdentite!,
+                  _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
               : null,
           documents: _pieceIdentiteFiles
               .map((file) => {
@@ -5730,8 +5775,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 5 : 4)
-                  ? _showSignatureAndPayment
-                  : _nextStep,
+                    ? _showSignatureAndPayment
+                    : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -5745,7 +5790,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                        _currentStep == (_isCommercial ? 5 : 4)
+                      _currentStep == (_isCommercial ? 5 : 4)
                           ? 'Signer et Finaliser'
                           : 'Suivant',
                       style: const TextStyle(
@@ -5912,7 +5957,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -5925,7 +5971,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -5942,7 +5989,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -5987,7 +6035,10 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     color: iconColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(child: customIconWidget ?? Icon(icon, color: iconColor, size: 28)),
+                                  child: Center(
+                                      child: customIconWidget ??
+                                          Icon(icon,
+                                              color: iconColor, size: 28)),
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(
@@ -6098,21 +6149,24 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          helperText: 'Format: Code guichet (5) / Compte (11) / Clé (2)',
+                          helperText:
+                              'Format: Code guichet (5) / Compte (11) / Clé (2)',
                           helperMaxLines: 2,
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                      maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
-                      onChanged: (value) => _formatRibInput(),
-                    ),
-                  ],
+                        maxLength:
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                        onChanged: (value) => _formatRibInput(),
+                      ),
+                    ],
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
@@ -6989,8 +7043,8 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -7018,7 +7072,8 @@ class PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

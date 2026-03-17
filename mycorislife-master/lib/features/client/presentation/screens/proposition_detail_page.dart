@@ -1218,6 +1218,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ..._extractDocumentsList(souscriptiondata?['documents']),
       ..._extractDocumentsList(_subscriptionData?['documents']),
       ..._extractDocumentsList(details['documents']),
+      // Certaines versions stockent les documents dans "souscription_documents"
+      ..._extractDocumentsList(souscriptiondata?['souscription_documents']),
+      ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
     ];
 
     final normalizedDocsList = docsList.isEmpty ? null : docsList;

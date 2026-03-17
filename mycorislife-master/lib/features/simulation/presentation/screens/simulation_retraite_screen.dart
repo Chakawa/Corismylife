@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_retraite.dart';
-import 'package:mycorislife/services/produit_sync_service.dart';
-import 'package:mycorislife/models/tarif_produit_model.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
 import 'package:mycorislife/services/local_data_service.dart';
+import 'package:mycorislife/services/produit_sync_service.dart';
 
 class CorisRetraiteScreen extends StatefulWidget {
   const CorisRetraiteScreen({super.key});
@@ -20,13 +19,12 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   String selectedOption = 'capital';
   String selectedPeriodicite = 'annuel';
   double? result;
-  double calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double calculatedPrime = 0.0; // Prime calculée (toujours afficher)
   double calculatedCapital = 0.0; // Capital calculé (toujours afficher)
   String resultLabel = '';
   bool isLoading = false;
   bool _useLocalData = false;
 
-  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -34,13 +32,8 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color grisClairBg = Color(0xFFF8FAFB);
 
-  // Primes minimales par périodicité
-  final Map<String, int> minPrimes = {
-    'mensuel': 10000,
-    'trimestriel': 30000,
-    'semestriel': 60000,
-    'annuel': 120000,
-  };
+  // Primes minimales par périodicité (aligné avec la souscription CORIS RETRAITE)
+  final Map<String, int> minPrimes = LocalDataService.retraiteMinPrimes;
 
   // Nouvelles valeurs: CAPITAL À TERME pour une prime de 10000 FCFA (mensuel)
   // ou équivalent (30000 tri, 60000 sem, 120000 ann)
@@ -501,6 +494,35 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
     }
   }
 
+  Future<Map<String, double>?> _getRetraiteTarifFromDb(
+      int duration, String periodicity) async {
+    // Tente d'utiliser les tarifs stockés en base de données (si disponibles).
+    try {
+      final result = await _produitSyncService.getTarifWithSource(
+        produitLibelle: 'CORIS RETRAITE',
+        age: null,
+        dureeContrat: duration,
+        periodicite: periodicity,
+      );
+      final tarifFromDB = result['tarif'] as dynamic;
+      if (tarifFromDB != null) {
+        final capital = tarifFromDB.capital as double?;
+        final prime = tarifFromDB.prime as double?;
+        if (capital != null && prime != null) {
+          print(
+              '   ✅ Tarif RETRAITE trouvé en base (source: ${result['isFromServer'] ? 'serveur' : 'cache local'})');
+          print('      - prime (référence): $prime');
+          print('      - capital (pour cette prime): $capital');
+          return {'capital': capital, 'prime': prime};
+        }
+      }
+    } catch (e) {
+      print(
+          '   ⚠️ Erreur lors de la récupération du tarif RETRAITE depuis la base: $e');
+    }
+    return null;
+  }
+
   Future<double> calculatePremium(
       int duration, String periodicity, double desiredCapital) async {
     print(
@@ -539,74 +561,11 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       }
     }
 
-    // Étape 1: Essayer de récupérer depuis la base de données
-    print('\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES...');
-    try {
-      final result = await _produitSyncService.getTarifWithSource(
-        produitLibelle: 'CORIS RETRAITE',
-        age: null, // RETRAITE n'utilise pas l'âge
-        dureeContrat: duration,
-        periodicite: periodicity,
-      );
-      final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
-
-      if (tarifFromDB != null && tarifFromDB.prime != null) {
-        print('   ✅ Tarif trouvé dans BASE DE DONNÉES');
-        print('      Source: ${isFromServer ? "SERVEUR" : "CACHE LOCAL"}');
-        print('      Capital pour prime ref: ${tarifFromDB.prime} FCFA');
-
-        double capitalForRefPrime = tarifFromDB.prime!;
-
-        // Vérifier si les décimales ont été perdues
-        // Si la valeur se termine par .0 et que nous avons des données locales plus précises, les utiliser
-        bool hasLostDecimals =
-            (capitalForRefPrime == capitalForRefPrime.roundToDouble()) &&
-                (capitalForRefPrime >
-                    100); // Éviter les faux positifs pour les petites valeurs
-
-        if (hasLostDecimals &&
-            capitalValues.containsKey(duration) &&
-            capitalValues[duration]!.containsKey(periodicity)) {
-          double localCapitalForRef = capitalValues[duration]![periodicity]!;
-          // Vérifier que la valeur locale a effectivement plus de précision
-          if ((localCapitalForRef - localCapitalForRef.roundToDouble()).abs() >
-              0.01) {
-            print(
-                '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
-            print('      Valeur DB: $capitalForRefPrime (arrondie)');
-            print('      Valeur locale: $localCapitalForRef (précise)');
-            print(
-                '      → Utilisation des données locales pour plus de précision');
-            capitalForRefPrime = localCapitalForRef;
-          }
-        }
-
-        double primeReference = primeReferenceValues[periodicity]!;
-        double primeCalculee = (desiredCapital * primeReference) / capitalForRefPrime;
-
-        print('   💰 CALCUL (nouvelle méthode):');
-        print('      Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference');
-        print(
-            '      Prime = (${desiredCapital.toStringAsFixed(0)} × ${primeReference.toStringAsFixed(0)}) / $capitalForRefPrime');
-        print('      Prime = ${primeCalculee.toStringAsFixed(2)} FCFA');
-
-        print(
-            '\n╔═══════════════════════════════════════════════════════════════╗');
-        print(
-            '║ ✅ [RETRAITE] CALCUL RÉUSSI                                  ║');
-        print(
-            '╚═══════════════════════════════════════════════════════════════╝\n');
-
-        return primeCalculee;
-      } else {
-        print('   ⚠️  Tarif NON trouvé dans BASE DE DONNÉES');
-        print('      → Passage à l\'ÉTAPE 2 (Fallback)');
-      }
-    } catch (e) {
-      print('   ❌ ERREUR lors de la récupération DB: $e');
-      print('      → Passage à l\'ÉTAPE 2 (Fallback)');
-    }
+    // NOTE: La souscription CORIS RETRAITE utilise des données locales stables
+    // (même table `capitalValues`) pour calculer les primes/capitaux.
+    // Nous faisons de même ici pour éviter les écarts lorsque la base ne contient
+    // pas tous les champs attendus (p.ex. capital absent, prime incohérente).
+    print('\n   📍 UTILISATION DES DONNÉES LOCALES (comme la souscription)');
 
     // Étape 2: Fallback - Utiliser les données codées en dur
     print(
@@ -617,18 +576,19 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         capitalValues[duration]!.containsKey(periodicity);
 
     if (hasHardcodedData) {
-      double capitalPour10K =
-          capitalValues[duration]![periodicity]!.toDouble();
+      double capitalPour10K = capitalValues[duration]![periodicity]!.toDouble();
       double primeReference = primeReferenceValues[periodicity]!;
-      
+
       print('   ✅ Données hardcodées disponibles');
-      print('      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
+      print(
+          '      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
       // NOUVELLE MÉTHODE: Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference
       double primeCalculee = (desiredCapital * primeReference) / capitalPour10K;
 
       print('   💰 CALCUL (nouvelle méthode):');
-      print('      Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference');
+      print(
+          '      Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference');
       print(
           '      Prime = (${desiredCapital.toStringAsFixed(0)} × ${primeReference.toStringAsFixed(0)}) / ${capitalPour10K.toStringAsFixed(2)}');
       print('      Prime = ${primeCalculee.toStringAsFixed(2)} FCFA');
@@ -709,75 +669,12 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       }
     }
 
-    // Étape 1: Essayer de récupérer depuis la base de données
-    print('\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES...');
-    try {
-      final result = await _produitSyncService.getTarifWithSource(
-        produitLibelle: 'CORIS RETRAITE',
-        age: null, // RETRAITE n'utilise pas l'âge
-        dureeContrat: duration,
-        periodicite: periodicity,
-      );
-      final tarifFromDB = result['tarif'] as TarifProduit?;
-      final isFromServer = result['isFromServer'] as bool;
-
-      if (tarifFromDB != null && tarifFromDB.prime != null) {
-        print('   ✅ Tarif trouvé dans BASE DE DONNÉES');
-        print('      Source: ${isFromServer ? "SERVEUR" : "CACHE LOCAL"}');
-        print('      Capital pour prime ref: ${tarifFromDB.prime} FCFA');
-
-        double capitalForRefPrime = tarifFromDB.prime!;
-
-        // Vérifier si les décimales ont été perdues
-        // Si la valeur se termine par .0 et que nous avons des données locales plus précises, les utiliser
-        bool hasLostDecimals =
-            (capitalForRefPrime == capitalForRefPrime.roundToDouble()) &&
-                (capitalForRefPrime >
-                    100); // Éviter les faux positifs pour les petites valeurs
-
-        if (hasLostDecimals &&
-            capitalValues.containsKey(duration) &&
-            capitalValues[duration]!.containsKey(periodicity)) {
-          double localCapitalForRef = capitalValues[duration]![periodicity]!;
-          // Vérifier que la valeur locale a effectivement plus de précision
-          if ((localCapitalForRef - localCapitalForRef.roundToDouble()).abs() >
-              0.01) {
-            print(
-                '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
-            print('      Valeur DB: $capitalForRefPrime (arrondie)');
-            print('      Valeur locale: $localCapitalForRef (précise)');
-            print(
-                '      → Utilisation des données locales pour plus de précision');
-            capitalForRefPrime = localCapitalForRef;
-          }
-        }
-
-        // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
-        double primeReference = primeReferenceValues[periodicity]!;
-        double capitalCalcule = (paidPremium * capitalForRefPrime) / primeReference;
-
-        print('   💰 CALCUL (nouvelle méthode):');
-        print('      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
-        print(
-            '      Capital = (${paidPremium.toStringAsFixed(0)} × $capitalForRefPrime) / ${primeReference.toStringAsFixed(0)}');
-        print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
-
-        print(
-            '\n╔═══════════════════════════════════════════════════════════════╗');
-        print(
-            '║ ✅ [RETRAITE] CALCUL RÉUSSI                                  ║');
-        print(
-            '╚═══════════════════════════════════════════════════════════════╝\n');
-
-        return capitalCalcule;
-      } else {
-        print('   ⚠️  Tarif NON trouvé dans BASE DE DONNÉES');
-        print('      → Passage à l\'ÉTAPE 2 (Fallback)');
-      }
-    } catch (e) {
-      print('   ❌ ERREUR lors de la récupération DB: $e');
-      print('      → Passage à l\'ÉTAPE 2 (Fallback)');
-    }
+    // NOTE: la souscription CORIS RETRAITE utilise des données locales stables
+    // pour le calcul des primes/capitaux (même table `capitalValues`).
+    // Pour éviter les écarts liés à des tarifs DB incomplets ou incorrects,
+    // on calcule directement avec ces valeurs locales.
+    print(
+        '\n   📍 UTILISATION DES DONNÉES LOCALES (même logique que la souscription)');
 
     // Étape 2: Fallback - Utiliser les données codées en dur
     print(
@@ -788,18 +685,19 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         capitalValues[duration]!.containsKey(periodicity);
 
     if (hasHardcodedData) {
-      double capitalPour10K =
-          capitalValues[duration]![periodicity]!.toDouble();
+      double capitalPour10K = capitalValues[duration]![periodicity]!.toDouble();
       double primeReference = primeReferenceValues[periodicity]!;
-      
+
       print('   ✅ Données hardcodées disponibles');
-      print('      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
+      print(
+          '      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
       // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
       double capitalCalcule = (paidPremium * capitalPour10K) / primeReference;
 
       print('   💰 CALCUL (nouvelle méthode):');
-      print('      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
+      print(
+          '      Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference');
       print(
           '      Capital = (${paidPremium.toStringAsFixed(0)} × ${capitalPour10K.toStringAsFixed(2)}) / ${primeReference.toStringAsFixed(0)}');
       print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
@@ -861,7 +759,8 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       if (selectedOption == 'capital') {
         // Utilisateur saisit le capital souhaité
         calculatedCapital = montant;
-        double premium = await calculatePremium(duree, selectedPeriodicite, montant);
+        double premium =
+            await calculatePremium(duree, selectedPeriodicite, montant);
         if (premium != -1) {
           calculatedPrime = premium;
           result = premium;
@@ -870,7 +769,8 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       } else {
         // Utilisateur saisit la prime qu'il peut verser
         calculatedPrime = montant;
-        double capital = await calculateCapital(duree, selectedPeriodicite, montant);
+        double capital =
+            await calculateCapital(duree, selectedPeriodicite, montant);
         if (capital != -1) {
           calculatedCapital = capital;
           result = capital;
@@ -945,7 +845,14 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
               _buildModernHeader(),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: 20 +
+                        MediaQuery.of(context).viewInsets.bottom +
+                        MediaQuery.of(context).viewPadding.bottom,
+                  ),
                   child: Column(
                     children: [
                       Container(

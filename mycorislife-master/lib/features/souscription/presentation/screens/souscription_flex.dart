@@ -2596,7 +2596,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   bool _validateStep1() {
     // Vérifier que la date d'effet est sélectionnée
     if (_dateEffetContrat == null) {
-      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      _showErrorSnackBar(
+          'Veuillez sélectionner une date d\'effet pour le contrat');
       return false;
     }
 
@@ -2697,7 +2698,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
     // Code guichet (5 chiffres)
     if (cleaned.length > 0) {
-      formatted += cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
+      formatted +=
+          cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
       if (cleaned.length > 5) formatted += ' / ';
     }
 
@@ -2759,7 +2761,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -4450,10 +4452,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           ),
           SizedBox(height: 20),
           SubscriptionRecapWidgets.buildDocumentsSection(
-            pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+            pieceIdentite:
+                _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
             onDocumentTap: _pieceIdentite != null
-                ? () => _viewLocalDocument(
-                    _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+                ? () => _viewLocalDocument(_pieceIdentite!,
+                    _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
                 : null,
             documents: _pieceIdentiteFiles
                 .map((file) => {
@@ -5036,7 +5039,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
       Map<String, dynamic> responseData = {};
@@ -5050,7 +5055,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           debugPrint('❌ Erreur upload: ${responseData['message']}');
         }
       }
-      
+
       // Récupérer le label original si présent dans la réponse
       try {
         final updated = responseData['data']?['subscription'];
@@ -5068,9 +5073,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
-      
+
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
@@ -5452,8 +5458,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -5472,7 +5478,8 @@ class _PaymentBottomSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color.fromRGBO(158, 158, 158, 51)),
+                border:
+                    Border.all(color: const Color.fromRGBO(158, 158, 158, 51)),
               ),
               child: Image.asset(
                 imagePath,
@@ -5481,7 +5488,8 @@ class _PaymentBottomSheet extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),

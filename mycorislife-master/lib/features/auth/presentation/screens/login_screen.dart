@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// 5. Si 2FA activée, envoie OTP et affiche l'écran de vérification
   /// 6. Sinon, redirige directement l'utilisateur selon son rôle
   /// 7. Affiche des messages d'erreur clairs en cas d'échec
-  /// 
+  ///
   /// Les erreurs possibles sont :
   /// - Email/mot de passe incorrect
   /// - Pas de connexion Internet
@@ -150,7 +150,8 @@ class _LoginScreenState extends State<LoginScreen>
         // Extraire les données utilisateur depuis la réponse
         final user = result['user'];
         final userId = user['id'];
-        final role = user['role'] ?? 'client'; // Par défaut 'client' si le rôle n'est pas défini
+        final role = user['role'] ??
+            'client'; // Par défaut 'client' si le rôle n'est pas défini
 
         // Désactiver le chargement temporairement pour vérifier la 2FA
         setState(() => isLoading = false);
@@ -161,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen>
         if (has2FA['enabled'] == true) {
           // 2FA activée, envoyer un OTP et afficher l'écran de vérification
           final otpResponse = await _request2FAOtp(userId);
-          
+
           if (otpResponse['success'] == true) {
             // Naviguer vers l'écran de vérification OTP
             final verificationResult = await Navigator.push(
@@ -192,41 +193,41 @@ class _LoginScreenState extends State<LoginScreen>
         }
       } else {
         // La connexion a échoué, afficher le message d'erreur du serveur
-        _showErrorSnackbar(result['message'] ?? 
+        _showErrorSnackbar(result['message'] ??
             'Échec de la connexion. Veuillez vérifier vos identifiants.');
       }
     } catch (e) {
       // Gérer les erreurs avec des messages clairs pour l'utilisateur
       if (mounted) {
         String errorMessage = 'Erreur de connexion';
-        
+
         // Extraire le message d'erreur et le rendre plus lisible
         final errorString = e.toString();
-        
+
         // Vérifier le type d'erreur pour afficher un message approprié
         if (errorString.contains('Email ou mot de passe incorrect') ||
             errorString.contains('incorrect')) {
-          errorMessage = 
+          errorMessage =
               'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants et réessayer.';
         } else if (errorString.contains('connexion Internet') ||
-                   errorString.contains('Internet') ||
-                   errorString.contains('Impossible de se connecter')) {
-          errorMessage = 
+            errorString.contains('Internet') ||
+            errorString.contains('Impossible de se connecter')) {
+          errorMessage =
               'Aucune connexion Internet. Veuillez vérifier votre connexion réseau et réessayer.';
         } else if (errorString.contains('Timeout') ||
-                   errorString.contains('temps') ||
-                   errorString.contains('trop de temps')) {
-          errorMessage = 
+            errorString.contains('temps') ||
+            errorString.contains('trop de temps')) {
+          errorMessage =
               'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet et réessayez.';
-        } else if (errorString.contains('serveur') || 
-                   errorString.contains('Serveur')) {
-          errorMessage = 
-              'Serveur inaccessible. Veuillez réessayer plus tard.';
+        } else if (errorString.contains('serveur') ||
+            errorString.contains('Serveur')) {
+          errorMessage = 'Serveur inaccessible. Veuillez réessayer plus tard.';
         } else {
           // Message générique avec l'erreur technique
-          errorMessage = 'Erreur lors de la connexion. ${e.toString().replaceAll('Exception: ', '')}';
+          errorMessage =
+              'Erreur lors de la connexion. ${e.toString().replaceAll('Exception: ', '')}';
         }
-        
+
         _showErrorSnackbar(errorMessage);
       }
     } finally {
@@ -309,12 +310,12 @@ class _LoginScreenState extends State<LoginScreen>
   /// AFFICHER UN MESSAGE D'ERREUR
   /// ==========================================
   /// Affiche un message d'erreur sous forme de SnackBar en bas de l'écran.
-  /// 
+  ///
   /// Le message est affiché avec :
   /// - Fond rouge pour indiquer l'erreur
   /// - Durée d'affichage de 4 secondes
   /// - Un style flottant pour une meilleure visibilité
-  /// 
+  ///
   /// @param message: Le message d'erreur à afficher à l'utilisateur
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -517,7 +518,7 @@ class _LoginScreenState extends State<LoginScreen>
     final isTablet = size.width > 600;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -652,7 +653,8 @@ class _LoginScreenState extends State<LoginScreen>
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const ForgotPasswordScreen(),
+                                    builder: (context) =>
+                                        const ForgotPasswordScreen(),
                                   ),
                                 );
                               },

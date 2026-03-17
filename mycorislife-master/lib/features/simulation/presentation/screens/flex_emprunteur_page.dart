@@ -2074,30 +2074,30 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: grisClairBg,
       body: SafeArea(
         child: Column(
           children: [
             _buildModernHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding:
-                    EdgeInsets.all(MediaQuery.of(context).size.width * 0.06),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 32),
-                    _buildSimulationCard(),
-                    const SizedBox(height: 24),
-                    if (result != null) _buildResultCard(),
-                  ],
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding:
+                      EdgeInsets.all(MediaQuery.of(context).size.width * 0.06),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 32),
+                      _buildSimulationCard(),
+                      const SizedBox(height: 24),
+                      if (result != null) _buildResultCard(),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );

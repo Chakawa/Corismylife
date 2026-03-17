@@ -109,7 +109,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   bool _isCommercial = false;
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
-  
+
   // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
   bool _messageCapitalAffiche = false;
 
@@ -146,7 +146,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
-  
+
   // 📝 SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
 
@@ -154,11 +154,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String? _selectedModePaiement;
   String? _selectedBanque;
   final _banqueController = TextEditingController();
-  final _ribUnifiedController = TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+  final _ribUnifiedController =
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
-  final _nomStructureController = TextEditingController(); // Pour Prélèvement à la source
-  final _numeroMatriculeController = TextEditingController(); // Pour Prélèvement à la source
-  final _corisMoneyPhoneController = TextEditingController(); // Pour CORIS Money
+  final _nomStructureController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _numeroMatriculeController =
+      TextEditingController(); // Pour Prélèvement à la source
+  final _corisMoneyPhoneController =
+      TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
@@ -180,8 +184,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   ];
 
   // 📋 QUESTIONNAIRE MÉDICAL
-  List<Map<String, dynamic>> _questionnaireMedicalQuestions = [];  // ✅ Questions de la BD
-  List<Map<String, dynamic>> _questionnaireMedicalReponses = [];   // Réponses locales ou de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalQuestions =
+      []; // ✅ Questions de la BD
+  List<Map<String, dynamic>> _questionnaireMedicalReponses =
+      []; // Réponses locales ou de la BD
 
   // Options
   final List<String> _lienParenteOptions = [
@@ -1139,7 +1145,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         // Utiliser Future.delayed pour éviter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
-          
+
           // Le champ a perdu le focus - valider maintenant
           if (_dureeController.text.isNotEmpty && _age > 0) {
             int? duree = int.tryParse(_dureeController.text);
@@ -1617,9 +1623,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       if (widget.subscriptionId != null) {
         try {
           final questionnaireService = QuestionnaireMedicalService();
-          final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+          final completReponses =
+              await questionnaireService.getReponses(widget.subscriptionId!);
           if (completReponses != null && completReponses.isNotEmpty) {
-            debugPrint('✅ Réponses questionnaire chargées (${completReponses.length} items)');
+            debugPrint(
+                '✅ Réponses questionnaire chargées (${completReponses.length} items)');
             if (mounted) {
               setState(() {
                 _questionnaireMedicalReponses = completReponses;
@@ -1627,7 +1635,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             }
           }
         } catch (e) {
-          debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
+          debugPrint(
+              '⚠️ Erreur lors du chargement des réponses questionnaire: $e');
         }
       }
 
@@ -1954,7 +1963,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           // La prime reste celle saisie par l'utilisateur
           _calculatedPrime = prime;
         }
-        
+
         // ⚡ Vérification automatique - DÉSACTIVÉE (message supprimé)
         // _verifierCapitalSousRisqueAuto();
       });
@@ -2077,7 +2086,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
     final cleRib = parts['cle_rib'] ?? '';
-    
+
     return codeGuichet.length == 5 &&
         numeroCompte.length == 11 &&
         cleRib.length == 2 &&
@@ -2090,7 +2099,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (onlyDigits.isEmpty) {
       _ribUnifiedController.text = '';
       return;
@@ -2103,8 +2112,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
     if (onlyDigits.length > 5) {
       buffer.write(' / ');
-      buffer.write(
-          onlyDigits.substring(5, min(16, onlyDigits.length)));
+      buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
     if (onlyDigits.length > 16) {
       buffer.write(' / ');
@@ -2274,7 +2282,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   Future<bool> _verifierCapitalSousRisque() async {
     // Fonction désactivée - retourne toujours true pour continuer
     return true;
-    
+
     /* CODE ORIGINAL DÉSACTIVÉ
     debugPrint('\n╔══════════════════════════════════════════════════════════╗');
     debugPrint('║  🏥 CORIS SÉRÉNITÉ - Vérification Capital Sous Risque    ║');
@@ -2488,8 +2496,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     return;
   }
 
-  Future<void> _nextStep() async{
-    debugPrint('\n🔵 [SÉRÉNITÉ] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
+  Future<void> _nextStep() async {
+    debugPrint(
+        '\n🔵 [SÉRÉNITÉ] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
     // Ajout du questionnaire médical: +1 étape avant le récap
     final maxStep = _isCommercial ? 6 : 5;
     if (_currentStep < maxStep) {
@@ -2504,11 +2513,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [SÉRÉNITÉ Commercial] Étape 3 validée - Vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+            if (!canContinue)
+              return; // L'utilisateur a choisi de ne pas continuer
           }
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 4) {
@@ -2516,7 +2527,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
             debugPrint('[_nextStep] questionnaireValidate returned: $ok');
-            debugPrint('[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
+            debugPrint(
+                '[_nextStep] _questionnaireMedicalReponses (len): ${_questionnaireMedicalReponses.length}');
             if (!ok) return;
           } else if (!_questionnaireCompleted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -2538,11 +2550,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-          debugPrint('\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Vérification capital sous risque...');
+          debugPrint(
+              '\n🔍 [SÉRÉNITÉ Client] Étape 2 validée - Vérification capital sous risque...');
           // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue) return; // L'utilisateur a choisi de ne pas continuer
+            if (!canContinue)
+              return; // L'utilisateur a choisi de ne pas continuer
           }
           canProceed = true; // Mode paiement validé avant questionnaire médical
         } else if (_currentStep == 3) {
@@ -2636,7 +2650,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   bool _validateStep1() {
     // Vérifier que la date d'effet est sélectionnée
     if (_dateEffetContrat == null) {
-      _showErrorSnackBar('Veuillez sélectionner une date d\'effet pour le contrat');
+      _showErrorSnackBar(
+          'Veuillez sélectionner une date d\'effet pour le contrat');
       return false;
     }
 
@@ -2714,7 +2729,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     // ⚠️ TODO - INTÉGRATION API DE PAIEMENT ⚠️
     // ==========================================
     // Cette section valide les champs de paiement mais N'APPELLE PAS encore l'API réelle.
-    // 
+    //
     // Actions à effectuer pour l'intégration :
     // 1. Importer les packages SDK Wave/Orange Money
     // 2. Initialiser les clients API avec les clés (depuis .env ou config)
@@ -2722,11 +2737,11 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     // 4. Gérer les réponses : succès, échec, timeout
     // 5. Afficher un loader pendant le traitement
     // 6. Rediriger vers la confirmation ou afficher l'erreur
-    // 
+    //
     // Exemple de flux :
     // - Wave : WavePaymentService.initiatePayment(phone, amount)
     // - Orange Money : OrangeMoneyService.requestPayment(phone, amount)
-    // 
+    //
     // Documentation :
     // - Wave API: https://developer.wave.com/
     // - Orange Money API: Contact Orange CI
@@ -2743,11 +2758,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+        _showErrorSnackBar(
+            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-        _showErrorSnackBar('Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
+        _showErrorSnackBar(
+            'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
@@ -2800,7 +2817,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: grisLeger,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
@@ -2854,9 +2871,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                   onPressed: () => Navigator.pop(context)),
             ),
             SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: _buildModernProgressIndicator())),
+                child: Container(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: _buildModernProgressIndicator())),
           ];
         },
         body: SafeArea(
@@ -3006,62 +3024,62 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           ]
                         : null),
                 child: Icon(
-                  _isCommercial
-                    ? (i == 0
-                      ? Icons.person
-                      : i == 1
-                        ? Icons.monetization_on
-                        : i == 2
-                          ? Icons.person_add
-                          : i == 3
-                            ? Icons.payment
-                            : i == 4
-                              ? Icons.assignment
-                              : i == 5
-                                ? Icons.check_circle
-                                : Icons.credit_card)
-                    : (i == 0
-                      ? Icons.monetization_on
-                      : i == 1
-                        ? Icons.person_add
-                        : i == 2
-                          ? Icons.payment
-                          : i == 3
-                            ? Icons.assignment
-                            : i == 4
-                              ? Icons.check_circle
-                              : Icons.credit_card),
-                  color: i <= _currentStep ? blanc : grisTexte,
-                  size: 20)),
+                    _isCommercial
+                        ? (i == 0
+                            ? Icons.person
+                            : i == 1
+                                ? Icons.monetization_on
+                                : i == 2
+                                    ? Icons.person_add
+                                    : i == 3
+                                        ? Icons.payment
+                                        : i == 4
+                                            ? Icons.assignment
+                                            : i == 5
+                                                ? Icons.check_circle
+                                                : Icons.credit_card)
+                        : (i == 0
+                            ? Icons.monetization_on
+                            : i == 1
+                                ? Icons.person_add
+                                : i == 2
+                                    ? Icons.payment
+                                    : i == 3
+                                        ? Icons.assignment
+                                        : i == 4
+                                            ? Icons.check_circle
+                                            : Icons.credit_card),
+                    color: i <= _currentStep ? blanc : grisTexte,
+                    size: 20)),
             const SizedBox(height: 4),
             Text(
-              _isCommercial
-                ? (i == 0
-                  ? 'Client'
-                  : i == 1
-                    ? 'Simulation'
-                    : i == 2
-                      ? 'Informations'
-                      : i == 3
-                        ? 'Paiement'
-                        : i == 4
-                          ? 'Questionnaire médical'
-                          : i == 5
-                            ? 'Récapitulatif'
-                            : 'Finaliser')
-                : (i == 0
-                  ? 'Simulation'
-                  : i == 1
-                    ? 'Informations'
-                    : i == 2
-                      ? 'Paiement'
-                      : i == 3
-                        ? 'Questionnaire médical'
-                        : i == 4
-                          ? 'Récapitulatif'
-                          : 'Finaliser'),
+                _isCommercial
+                    ? (i == 0
+                        ? 'Client'
+                        : i == 1
+                            ? 'Simulation'
+                            : i == 2
+                                ? 'Informations'
+                                : i == 3
+                                    ? 'Paiement'
+                                    : i == 4
+                                        ? 'Questionnaire médical'
+                                        : i == 5
+                                            ? 'Récapitulatif'
+                                            : 'Finaliser')
+                    : (i == 0
+                        ? 'Simulation'
+                        : i == 1
+                            ? 'Informations'
+                            : i == 2
+                                ? 'Paiement'
+                                : i == 3
+                                    ? 'Questionnaire médical'
+                                    : i == 4
+                                        ? 'Récapitulatif'
+                                        : 'Finaliser'),
                 style: TextStyle(
-                  fontSize: 10,
+                    fontSize: 10,
                     fontWeight:
                         i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                     color: i <= _currentStep ? bleuCoris : grisTexte)),
@@ -3069,9 +3087,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           if (i < (_isCommercial ? 5 : 4))
             Expanded(
                 child: Container(
-                  height: 2,
-                  margin:
-                    const EdgeInsets.only(bottom: 8, left: 6, right: 6),
+                    height: 2,
+                    margin: const EdgeInsets.only(bottom: 8, left: 6, right: 6),
                     decoration: BoxDecoration(
                         color: i < _currentStep ? bleuCoris : grisLeger,
                         borderRadius: BorderRadius.circular(1)))),
@@ -4018,7 +4035,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         switch (mode) {
                           case 'Virement':
                             iconColor = Colors.blue;
-                            iconWidget = Icon(Icons.account_balance, color: iconColor, size: 28);
+                            iconWidget = Icon(Icons.account_balance,
+                                color: iconColor, size: 28);
                             break;
                           case 'Wave':
                             iconColor = Color(0xFF00BFFF);
@@ -4028,7 +4046,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.water_drop, color: iconColor, size: 28);
+                                return Icon(Icons.water_drop,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
@@ -4040,13 +4059,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.phone_android, color: iconColor, size: 28);
+                                return Icon(Icons.phone_android,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
                           case 'Prélèvement à la source':
                             iconColor = Colors.green;
-                            iconWidget = Icon(Icons.business, color: iconColor, size: 28);
+                            iconWidget = Icon(Icons.business,
+                                color: iconColor, size: 28);
                             break;
                           case 'CORIS Money':
                             iconColor = Color(0xFF1E3A8A);
@@ -4056,13 +4077,15 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.account_balance_wallet, color: iconColor, size: 28);
+                                return Icon(Icons.account_balance_wallet,
+                                    color: iconColor, size: 28);
                               },
                             );
                             break;
                           default:
                             iconColor = bleuCoris;
-                            iconWidget = Icon(Icons.payment, color: iconColor, size: 28);
+                            iconWidget =
+                                Icon(Icons.payment, color: iconColor, size: 28);
                         }
 
                         return InkWell(
@@ -4213,8 +4236,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                         decoration: InputDecoration(
                           labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
-                          helperText: 'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
-                          prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
+                          helperText:
+                              'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                          prefixIcon:
+                              Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -4223,7 +4248,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
-                        maxLength: 24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                        maxLength:
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
                       ),
                     ],
 
@@ -4690,7 +4716,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   Widget _buildStepQuestionnaireMedical() {
     return QuestionnaireMedicalDynamicWidget(
       subscriptionId: widget.subscriptionId,
-        initialReponses: _questionnaireMedicalReponses,
+      initialReponses: _questionnaireMedicalReponses,
       showActions: false,
       registerValidate: (fn) {
         _questionnaireValidate = fn;
@@ -4704,28 +4730,31 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         if (widget.subscriptionId != null) {
           try {
             final questionnaireService = QuestionnaireMedicalService();
-            
+
             // Save responses
             await questionnaireService.saveReponses(
               subscriptionId: widget.subscriptionId!,
               reponses: reponses,
             );
             debugPrint('✅ Questionnaire médical sauvegardé');
-            
+
             // Fetch complete responses with libelle from server
-            final completReponses = await questionnaireService.getReponses(widget.subscriptionId!);
+            final completReponses =
+                await questionnaireService.getReponses(widget.subscriptionId!);
             if (completReponses != null && completReponses.isNotEmpty) {
               setState(() {
                 _questionnaireMedicalReponses = completReponses;
                 _questionnaireCompleted = true;
               });
-              debugPrint('✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+              debugPrint(
+                  '✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
             }
           } catch (e) {
             debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Erreur lors de la sauvegarde du questionnaire: $e'),
+                content:
+                    Text('Erreur lors de la sauvegarde du questionnaire: $e'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -5106,15 +5135,16 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       if (_selectedModePaiement != null) const SizedBox(height: 20),
       // RÉCAP: Questionnaire médical (questions + réponses)
       SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
+          _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
 
       const SizedBox(height: 20),
 
       SubscriptionRecapWidgets.buildDocumentsSection(
-        pieceIdentite: _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
+        pieceIdentite:
+            _pieceIdentiteLabel ?? _pieceIdentite?.path.split('/').last,
         onDocumentTap: _pieceIdentite != null
-            ? () => _viewLocalDocument(
-                _pieceIdentite!, _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
+            ? () => _viewLocalDocument(_pieceIdentite!,
+                _pieceIdentiteLabel ?? _pieceIdentite!.path.split('/').last)
             : null,
         documents: _pieceIdentiteFiles
             .map((file) => {
@@ -5314,9 +5344,9 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
-                  _currentStep == (_isCommercial ? 5 : 4)
-                    ? 'Signer et Finaliser'
-                    : 'Suivant',
+                    _currentStep == (_isCommercial ? 5 : 4)
+                        ? 'Signer et Finaliser'
+                        : 'Suivant',
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -5399,7 +5429,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? () {
-                final parsed = _parseRibUnified(_ribUnifiedController.text.trim());
+                final parsed =
+                    _parseRibUnified(_ribUnifiedController.text.trim());
                 return {
                   'banque': _banqueController.text.trim(),
                   'code_guichet': parsed['code_guichet'] ?? '',
@@ -5416,11 +5447,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule': _numeroMatriculeController.text.trim(),
+                        'numero_matricule':
+                            _numeroMatriculeController.text.trim(),
                       }
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-                            'numero_telephone': _corisMoneyPhoneController.text.trim(),
+                            'numero_telephone':
+                                _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
@@ -5533,7 +5566,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               subscriptionId: subscriptionId,
               reponses: _questionnaireMedicalReponses,
             );
-            debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+            debugPrint(
+                '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
           } catch (e) {
             debugPrint('❌ Erreur sauvegarde questionnaire: $e');
           }
@@ -5566,7 +5600,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       } catch (e) {
         if (mounted) {
           Navigator.pop(context);
-          _showErrorSnackBar('Erreur lors de la création de la souscription: $e');
+          _showErrorSnackBar(
+              'Erreur lors de la création de la souscription: $e');
         }
       }
       return;
@@ -5590,7 +5625,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -5654,7 +5690,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             subscriptionId: subscriptionId,
             reponses: _questionnaireMedicalReponses,
           );
-          debugPrint('✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+          debugPrint(
+              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
         } catch (e) {
           debugPrint('❌ Erreur sauvegarde questionnaire: $e');
         }
@@ -5682,10 +5719,13 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
-          : (_pieceIdentite != null ? <String>[_pieceIdentite!.path] : <String>[]);
+          : (_pieceIdentite != null
+              ? <String>[_pieceIdentite!.path]
+              : <String>[]);
       if (paths.isEmpty) return;
 
-      final responses = await subscriptionService.uploadDocuments(subscriptionId, paths);
+      final responses =
+          await subscriptionService.uploadDocuments(subscriptionId, paths);
 
       Map<String, dynamic> responseData = {};
       for (final response in responses) {
@@ -5713,7 +5753,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
@@ -5875,8 +5916,12 @@ class PaymentBottomSheet extends StatelessWidget {
                             color: Color(0xFF002B6B)))
                   ]),
                   const SizedBox(height: 24),
-                  _buildPaymentOptionWithImage('Wave', 'assets/images/icone_wave.jpeg', Colors.blue,
-                      'Paiement mobile sécurisé', () => onPayNow('Wave')),
+                  _buildPaymentOptionWithImage(
+                      'Wave',
+                      'assets/images/icone_wave.jpeg',
+                      Colors.blue,
+                      'Paiement mobile sécurisé',
+                      () => onPayNow('Wave')),
                   const SizedBox(height: 12),
                   _buildPaymentOptionWithImage(
                       'Orange Money',
@@ -5967,8 +6012,8 @@ class PaymentBottomSheet extends StatelessWidget {
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -5985,7 +6030,8 @@ class PaymentBottomSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+                      border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2))),
                   child: Image.asset(
                     imagePath,
                     width: 32,
@@ -5993,7 +6039,8 @@ class PaymentBottomSheet extends StatelessWidget {
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       print('❌ Erreur chargement image: $imagePath - $error');
-                      return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                      return Icon(Icons.image_not_supported,
+                          size: 32, color: Colors.grey);
                     },
                   )),
               const SizedBox(width: 16),

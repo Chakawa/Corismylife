@@ -4,12 +4,12 @@ import 'package:mycorislife/services/produit_sync_service.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/features/simulation/domain/simulation_service.dart';
 
-
 class SolidariteSimulationPage extends StatefulWidget {
   const SolidariteSimulationPage({super.key});
 
   @override
-  State<SolidariteSimulationPage> createState() => _SolidariteSimulationPageState();
+  State<SolidariteSimulationPage> createState() =>
+      _SolidariteSimulationPageState();
 }
 
 class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
@@ -36,31 +36,108 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
 
   // Tableaux tarifaires (à insérer manuellement)
   final Map<int, Map<String, double>> primeTotaleFamilleBase = {
-    500000: {'mensuel': 2699, 'trimestriel': 8019, 'semestriel': 15882, 'annuelle': 31141},
-    1000000: {'mensuel': 5398, 'trimestriel': 16038, 'semestriel': 31764, 'annuelle': 62283},
-    1500000: {'mensuel': 8097, 'trimestriel': 24057, 'semestriel': 47646, 'annuelle': 93424},
-    2000000: {'mensuel': 10796, 'trimestriel': 32076, 'semestriel': 63529, 'annuelle': 124566},
+    500000: {
+      'mensuel': 2699,
+      'trimestriel': 8019,
+      'semestriel': 15882,
+      'annuelle': 31141
+    },
+    1000000: {
+      'mensuel': 5398,
+      'trimestriel': 16038,
+      'semestriel': 31764,
+      'annuelle': 62283
+    },
+    1500000: {
+      'mensuel': 8097,
+      'trimestriel': 24057,
+      'semestriel': 47646,
+      'annuelle': 93424
+    },
+    2000000: {
+      'mensuel': 10796,
+      'trimestriel': 32076,
+      'semestriel': 63529,
+      'annuelle': 124566
+    },
   };
   final Map<int, Map<String, int>> surprimesConjointsSupplementaires = {
-    500000: {'mensuel': 860, 'trimestriel': 2555, 'semestriel': 5061, 'annuelle': 9924},
-    1000000: {'mensuel': 1720, 'trimestriel': 5111, 'semestriel': 10123, 'annuelle': 19848},
-    1500000: {'mensuel': 2580, 'trimestriel': 7666, 'semestriel': 15184, 'annuelle': 29773},
-    2000000: {'mensuel': 3440, 'trimestriel': 10222, 'semestriel': 20245, 'annuelle': 39697},
-
+    500000: {
+      'mensuel': 860,
+      'trimestriel': 2555,
+      'semestriel': 5061,
+      'annuelle': 9924
+    },
+    1000000: {
+      'mensuel': 1720,
+      'trimestriel': 5111,
+      'semestriel': 10123,
+      'annuelle': 19848
+    },
+    1500000: {
+      'mensuel': 2580,
+      'trimestriel': 7666,
+      'semestriel': 15184,
+      'annuelle': 29773
+    },
+    2000000: {
+      'mensuel': 3440,
+      'trimestriel': 10222,
+      'semestriel': 20245,
+      'annuelle': 39697
+    },
   };
   final Map<int, Map<String, int>> surprimesEnfantsSupplementaires = {
-    500000: {'mensuel': 124, 'trimestriel': 370, 'semestriel': 732, 'annuelle': 1435},
-    1000000: {'mensuel': 249, 'trimestriel': 739, 'semestriel': 1464, 'annuelle': 2870},
-    1500000: {'mensuel': 373, 'trimestriel': 1109, 'semestriel': 2196, 'annuelle': 4306},
-    2000000: {'mensuel': 498, 'trimestriel': 1478, 'semestriel': 2928, 'annuelle': 5741},
-
+    500000: {
+      'mensuel': 124,
+      'trimestriel': 370,
+      'semestriel': 732,
+      'annuelle': 1435
+    },
+    1000000: {
+      'mensuel': 249,
+      'trimestriel': 739,
+      'semestriel': 1464,
+      'annuelle': 2870
+    },
+    1500000: {
+      'mensuel': 373,
+      'trimestriel': 1109,
+      'semestriel': 2196,
+      'annuelle': 4306
+    },
+    2000000: {
+      'mensuel': 498,
+      'trimestriel': 1478,
+      'semestriel': 2928,
+      'annuelle': 5741
+    },
   };
   final Map<int, Map<String, int>> surprimesAscendants = {
-    500000: {'mensuel': 1547, 'trimestriel': 4596, 'semestriel': 9104, 'annuelle': 17850},
-    1000000: {'mensuel': 3094, 'trimestriel': 9193, 'semestriel': 18207, 'annuelle': 35700},
-    1500000: {'mensuel': 4641, 'trimestriel': 13789, 'semestriel': 27311, 'annuelle': 53550},
-    2000000: {'mensuel': 6188, 'trimestriel': 18386, 'semestriel': 36414, 'annuelle': 71400},
-
+    500000: {
+      'mensuel': 1547,
+      'trimestriel': 4596,
+      'semestriel': 9104,
+      'annuelle': 17850
+    },
+    1000000: {
+      'mensuel': 3094,
+      'trimestriel': 9193,
+      'semestriel': 18207,
+      'annuelle': 35700
+    },
+    1500000: {
+      'mensuel': 4641,
+      'trimestriel': 13789,
+      'semestriel': 27311,
+      'annuelle': 53550
+    },
+    2000000: {
+      'mensuel': 6188,
+      'trimestriel': 18386,
+      'semestriel': 36414,
+      'annuelle': 71400
+    },
   };
 
   // Helper pour récupérer un tarif depuis la DB ou fallback
@@ -74,10 +151,12 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     String periodiciteKey = selectedPeriodicite.toLowerCase();
     if (periodiciteKey == 'annuel') periodiciteKey = 'annuelle';
 
-    print('🔍 [SOLIDARITÉ] Recherche tarif: capital=$selectedCapital, periodicite=$periodiciteKey, categorie=$categorie');
+    print(
+        '🔍 [SOLIDARITÉ] Recherche tarif: capital=$selectedCapital, periodicite=$periodiciteKey, categorie=$categorie');
 
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
-    print('   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
+    print(
+        '   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final tarifs = await _produitSyncService.getTarifs(
         produitLibelle: 'CORIS SOLIDARITÉ',
@@ -89,16 +168,21 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       if (tarifs.isNotEmpty && tarifs[0].prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifs[0].prime}');
         print('   💡 Cache local IGNORÉ - Données du serveur uniquement');
-        print('\n╔═══════════════════════════════════════════════════════════════╗');
-        print('║ ✅ [SOLIDARITÉ] Données utilisées depuis SERVEUR               ║');
-        print('╚═══════════════════════════════════════════════════════════════╝\n');
+        print(
+            '\n╔═══════════════════════════════════════════════════════════════╗');
+        print(
+            '║ ✅ [SOLIDARITÉ] Données utilisées depuis SERVEUR               ║');
+        print(
+            '╚═══════════════════════════════════════════════════════════════╝\n');
         return tarifs[0].prime!;
       } else {
-        print('   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print(
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
         print('   💡 Passage au fallback (données hardcodées)');
       }
     } catch (e) {
-      print('   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
+      print(
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
     // Étape 2: Fallback - Utiliser les données codées en dur
@@ -106,14 +190,19 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     final tarif = fallbackData[selectedCapital]?[periodiciteKey] ?? 0.0;
     if (tarif > 0.0) {
       print('   ✅ Tarif depuis FALLBACK (données hardcodées): $tarif');
-      print('\n╔═══════════════════════════════════════════════════════════════╗');
-      print('║ ⚠️  [SOLIDARITÉ] Données utilisées depuis FALLBACK             ║');
-      print('╚═══════════════════════════════════════════════════════════════╝\n');
+      print(
+          '\n╔═══════════════════════════════════════════════════════════════╗');
+      print(
+          '║ ⚠️  [SOLIDARITÉ] Données utilisées depuis FALLBACK             ║');
+      print(
+          '╚═══════════════════════════════════════════════════════════════╝\n');
     } else {
       print('   ❌ Aucun tarif disponible dans le fallback');
-      print('\n╔═══════════════════════════════════════════════════════════════╗');
+      print(
+          '\n╔═══════════════════════════════════════════════════════════════╗');
       print('║ ❌ [SOLIDARITÉ] ERREUR: Aucune donnée disponible              ║');
-      print('╚═══════════════════════════════════════════════════════════════╝\n');
+      print(
+          '╚═══════════════════════════════════════════════════════════════╝\n');
     }
     return tarif;
   }
@@ -127,21 +216,26 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       primeTotaleFamilleBase,
       'famille_base',
     );
-    
+
     final double conjointSupplBase = await _getTarifFromDbOrFallback(
-      surprimesConjointsSupplementaires.map((key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
+      surprimesConjointsSupplementaires.map((key, value) =>
+          MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
       'avec_conjoint',
     );
-    final double conjointSuppl = conjointSupplBase * (nbConjoints > 1 ? nbConjoints - 1 : 0);
-    
+    final double conjointSuppl =
+        conjointSupplBase * (nbConjoints > 1 ? nbConjoints - 1 : 0);
+
     final double enfantsSupplBase = await _getTarifFromDbOrFallback(
-      surprimesEnfantsSupplementaires.map((key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
+      surprimesEnfantsSupplementaires.map((key, value) =>
+          MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
       'avec_enfant',
     );
-    final double enfantsSuppl = enfantsSupplBase * (nbEnfants > 6 ? nbEnfants - 6 : 0);
-    
+    final double enfantsSuppl =
+        enfantsSupplBase * (nbEnfants > 6 ? nbEnfants - 6 : 0);
+
     final double ascendantsSupplBase = await _getTarifFromDbOrFallback(
-      surprimesAscendants.map((key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
+      surprimesAscendants.map((key, value) =>
+          MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
       'avec_ascendant',
     );
     final double ascendantsSuppl = ascendantsSupplBase * nbAscendants;
@@ -164,9 +258,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
 
   String _formatNumber(int number) {
     return number.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]} ',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]} ',
+        );
   }
 
   void _navigateToSubscription() async {
@@ -178,7 +272,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       'nbEnfants': nbEnfants,
       'nbAscendants': nbAscendants,
     };
-    
+
     // Vérifier le rôle et rediriger
     final userRole = await AuthService.getUserRole();
     if (userRole == 'commercial') {
@@ -214,7 +308,10 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [bleuCoris, Color(0xFF002B6B).withAlpha(204)], // .withOpacity(0.8) remplacé
+          colors: [
+            bleuCoris,
+            Color(0xFF002B6B).withAlpha(204)
+          ], // .withOpacity(0.8) remplacé
         ),
         boxShadow: [
           BoxShadow(
@@ -230,7 +327,8 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                icon:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 12),
@@ -256,7 +354,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: fondGris,
       body: Column(
         children: [
@@ -274,7 +372,8 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+                          color: Colors.black
+                              .withAlpha(26), // .withOpacity(0.1) remplacé
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -291,10 +390,12 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacé
+                                  color: bleuCoris.withAlpha(
+                                      26), // .withOpacity(0.1) remplacé
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Icon(Icons.settings, color: bleuCoris, size: 22),
+                                child: Icon(Icons.settings,
+                                    color: bleuCoris, size: 22),
                               ),
                               const SizedBox(width: 12),
                               const Text(
@@ -308,32 +409,36 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          
+
                           // Sélecteur de capital
                           _buildCapitalDropdown(),
                           const SizedBox(height: 16),
-                          
+
                           // Sélecteur de périodicité
                           _buildPeriodiciteDropdown(),
                           const SizedBox(height: 25),
-                          
+
                           // Séparateur
-                          const Divider(color: grisClair, height: 1, thickness: 1),
+                          const Divider(
+                              color: grisClair, height: 1, thickness: 1),
                           const SizedBox(height: 25),
-                          
+
                           // Steppers pour les membres de la famille
-                          _buildStepper("Nombre de conjoints", nbConjoints, 1, 10, (val) {
+                          _buildStepper(
+                              "Nombre de conjoints", nbConjoints, 1, 10, (val) {
                             setState(() => nbConjoints = val);
                           }),
-                          _buildStepper("Nombre d'enfants", nbEnfants, 1, 20, (val) {
+                          _buildStepper("Nombre d'enfants", nbEnfants, 1, 20,
+                              (val) {
                             setState(() => nbEnfants = val);
                           }),
-                          _buildStepper("Nombre d'ascendants", nbAscendants, 0, 4, (val) {
+                          _buildStepper(
+                              "Nombre d'ascendants", nbAscendants, 0, 4, (val) {
                             setState(() => nbAscendants = val);
                           }),
-                          
+
                           const SizedBox(height: 20),
-                          
+
                           // Bouton de simulation
                           SizedBox(
                             width: double.infinity,
@@ -368,9 +473,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Carte de résultat
                   if (primeTotaleResult != null) _buildResultCard(),
                 ],
@@ -409,7 +514,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                     value: val,
                     child: Text(
                       '${_formatNumber(val)} FCFA',
-                      style: const TextStyle(color: Color(0xFF002B6B), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                          color: Color(0xFF002B6B),
+                          fontWeight: FontWeight.w500),
                     ),
                   ))
               .toList(),
@@ -446,7 +553,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                     value: p,
                     child: Text(
                       p,
-                      style: const TextStyle(color: Color(0xFF002B6B), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                          color: Color(0xFF002B6B),
+                          fontWeight: FontWeight.w500),
                     ),
                   ))
               .toList(),
@@ -456,25 +565,32 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     );
   }
 
-  Widget _buildStepper(String label, int value, int min, int max, Function(int) onChanged) {
+  Widget _buildStepper(
+      String label, int value, int min, int max, Function(int) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 16, color: Color(0xFF002B6B))),
+          Text(label,
+              style: const TextStyle(fontSize: 16, color: Color(0xFF002B6B))),
           Row(
             children: [
-              _buildStepperButton(Icons.remove, () => onChanged((value - 1).clamp(min, max)), value > min),
+              _buildStepperButton(Icons.remove,
+                  () => onChanged((value - 1).clamp(min, max)), value > min),
               SizedBox(
                 width: 40,
                 child: Text(
                   "$value",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF002B6B)),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF002B6B)),
                 ),
               ),
-              _buildStepperButton(Icons.add, () => onChanged((value + 1).clamp(min, max)), value < max),
+              _buildStepperButton(Icons.add,
+                  () => onChanged((value + 1).clamp(min, max)), value < max),
             ],
           )
         ],
@@ -482,7 +598,8 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     );
   }
 
-  Widget _buildStepperButton(IconData icon, VoidCallback onPressed, bool isEnabled) {
+  Widget _buildStepperButton(
+      IconData icon, VoidCallback onPressed, bool isEnabled) {
     return Container(
       width: 32,
       height: 32,
@@ -511,7 +628,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: vertCoris.withAlpha(51), width: 1), // .withOpacity(0.2) remplacé
+        border: Border.all(
+            color: vertCoris.withAlpha(51),
+            width: 1), // .withOpacity(0.2) remplacé
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -522,10 +641,12 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
+                    color:
+                        vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.monetization_on, color: vertCoris, size: 22),
+                  child:
+                      Icon(Icons.monetization_on, color: vertCoris, size: 22),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -560,7 +681,9 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacé
+                border: Border.all(
+                    color:
+                        vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacé
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,27 +738,28 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-  width: double.infinity,
-  height: 48,
-  child: ElevatedButton(
-    onPressed: _navigateToSubscription, // Utiliser la nouvelle méthode
-    style: ElevatedButton.styleFrom(
-      backgroundColor: vertCoris,
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 4,
-    ),
-    child: const Text(
-      "Souscrire",
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
-),
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed:
+                    _navigateToSubscription, // Utiliser la nouvelle méthode
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: vertCoris,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: const Text(
+                  "Souscrire",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

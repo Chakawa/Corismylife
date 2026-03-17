@@ -434,8 +434,25 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
     // Récupérer les bénéficiaires selon la source
     let beneficiaires = [];
 
+    // La souscription peut provenir d'un JSON sérialisé dans `souscriptiondata`
+    let subscriptionData = contrat.souscriptiondata;
+    if (typeof subscriptionData === 'string') {
+      try {
+        subscriptionData = JSON.parse(subscriptionData);
+      } catch (e) {
+        console.warn('⚠️ Impossible de parser souscriptiondata (JSON invalide).', e);
+        subscriptionData = {};
+      }
+    }
+    if (subscriptionData == null || typeof subscriptionData !== 'object') {
+      subscriptionData = {};
+    }
+
+    // Assurer que le contrat expose un objet utilisable
+    contrat.souscriptiondata = subscriptionData;
+
     if ((contrat.source || '').toLowerCase() === 'subscription') {
-      const data = contrat.souscriptiondata || {};
+      const data = subscriptionData;
       const rawBenefs =
         data.beneficiaires ||
         data.beneficiaire ||
@@ -461,9 +478,72 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
       beneficiaires = benefResult.rows;
     }
 
+    // Récupérer les informations de paiement les plus récentes (utilisé par la vue mobile)
+    if ((contrat.source || '').toLowerCase() === 'subscription') {
+      try {
+        const paymentResult = await pool.query(
+          `SELECT transaction_id, session_id, provider, montant, amount, statut, created_at, api_response
+           FROM payment_transactions
+           WHERE subscription_id = $1
+             AND LOWER(statut) IN (
+               'success', 'succeeded', 'paid', 'completed',
+               'validated', 'confirmed', 'ok',
+               'validé', 'validée', 'confirmé', 'confirmée'
+             )
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [contrat.id]
+        );
+
+        if (paymentResult.rows.length > 0) {
+          const payment = paymentResult.rows[0];
+          const paymentInfo = {
+            // Identifiants de paiement
+            payment_id: payment.transaction_id || payment.session_id || null,
+            id: payment.transaction_id || payment.session_id || null,
+            provider_payment_id: payment.transaction_id || payment.session_id || null,
+
+            // Mode de paiement
+            payment_method: payment.provider || null,
+            mode_paiement: payment.provider || null,
+
+            // Montants (pour correspondre aux différents champs attendus par l'app)
+            amount: payment.montant ?? payment.amount ?? null,
+            amount_paid: payment.montant ?? payment.amount ?? null,
+            montant_paye: payment.montant ?? payment.amount ?? null,
+            total_paid: payment.montant ?? payment.amount ?? null,
+
+            // Dates
+            payment_date: payment.created_at || null,
+            date_paiement: payment.created_at || null,
+
+            // Statuts
+            provider_status: payment.statut || null,
+            status: payment.statut || null,
+            statut: payment.statut || null,
+
+            raw: payment.api_response || null,
+          };
+
+          contrat.souscriptiondata = contrat.souscriptiondata || {};
+          contrat.souscriptiondata.payment_info = {
+            ...contrat.souscriptiondata.payment_info,
+            ...paymentInfo,
+          };
+
+          // Backwards compatibility for French keys
+          contrat.souscriptiondata.paiement = {
+            ...contrat.souscriptiondata.paiement,
+            ...paymentInfo,
+          };
+        }
+      } catch (paymentError) {
+        console.warn('⚠️ Impossible de récupérer le paiement pour la souscription', contrat.id, paymentError);
+      }
+    }
+
     delete contrat.user_id;
-    delete contrat.souscriptiondata;
-    
+
     console.log('✅ Contrat trouvé avec', beneficiaires.length, 'bénéficiaire(s)');
     
     res.json({
@@ -555,10 +635,74 @@ exports.getContratDetails = async (req, res) => {
     }
     
     console.log('✅ Contrat trouvé et accès autorisé');
-    
+
+    // Enrichir avec paiement si contract est issu de la table `subscriptions`
+    // (la variable `contrat` est déjà définie ci-dessus)
+    if ((contrat.source || '').toLowerCase() === 'subscription') {
+      try {
+        const paymentResult = await pool.query(
+          `SELECT transaction_id, session_id, provider, montant, amount, statut, created_at, api_response
+           FROM payment_transactions
+           WHERE subscription_id = $1
+             AND LOWER(statut) IN (
+               'success', 'succeeded', 'paid', 'completed',
+               'validated', 'confirmed', 'ok',
+               'validé', 'validée', 'confirmé', 'confirmée'
+             )
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [contrat.id]
+        );
+
+        if (paymentResult.rows.length > 0) {
+          const payment = paymentResult.rows[0];
+          const paymentInfo = {
+            // Identifiants de paiement
+            payment_id: payment.transaction_id || payment.session_id || null,
+            id: payment.transaction_id || payment.session_id || null,
+            provider_payment_id: payment.transaction_id || payment.session_id || null,
+
+            // Mode de paiement
+            payment_method: payment.provider || null,
+            mode_paiement: payment.provider || null,
+
+            // Montants (pour correspondre aux différents champs attendus par l'app)
+            amount: payment.montant ?? payment.amount ?? null,
+            amount_paid: payment.montant ?? payment.amount ?? null,
+            montant_paye: payment.montant ?? payment.amount ?? null,
+            total_paid: payment.montant ?? payment.amount ?? null,
+
+            // Dates
+            payment_date: payment.created_at || null,
+            date_paiement: payment.created_at || null,
+
+            // Statuts
+            provider_status: payment.statut || null,
+            status: payment.statut || null,
+            statut: payment.statut || null,
+
+            raw: payment.api_response || null,
+          };
+
+          contrat.souscriptiondata = contrat.souscriptiondata || {};
+          contrat.souscriptiondata.payment_info = {
+            ...contrat.souscriptiondata.payment_info,
+            ...paymentInfo,
+          };
+
+          contrat.souscriptiondata.paiement = {
+            ...contrat.souscriptiondata.paiement,
+            ...paymentInfo,
+          };
+        }
+      } catch (paymentError) {
+        console.warn('⚠️ Impossible de récupérer le paiement pour la souscription', contrat.id, paymentError);
+      }
+    }
+
     res.json({
       success: true,
-      contrat: result.rows[0]
+      contrat: contrat
     });
     
   } catch (error) {
