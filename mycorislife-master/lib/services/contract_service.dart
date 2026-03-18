@@ -1,13 +1,27 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mycorislife/config/app_config.dart';
 
 /// Service pour gérer les contrats d'assurance
 class ContractService {
-  // URL de base de l'API - À configurer selon l'environnement
-  static const String baseUrl = AppConfig.baseUrl;
-  // 'https://www.testmobile.online/api'; // Emulateur: http://localhost:5000
+  /// Build a full API URL for the given relative path.
+  ///
+  /// The app sets [AppConfig.baseUrl] to a value that may already include the
+  /// '/api' prefix (e.g. 'https://www.testmobile.online/api').
+  /// This helper ensures we do not produce URLs like
+  /// '.../api/api/...' when we compose endpoints.
+  String _buildUrl(String path) {
+    var base = AppConfig.baseUrl.trim();
+    if (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$base/$cleanPath';
+  }
 
   /// Récupère le token d'authentification depuis les SharedPreferences
   Future<String?> _getAuthToken() async {
@@ -26,13 +40,19 @@ class ContractService {
         };
       }
 
+      final url = _buildUrl('payment/contracts');
       final response = await http.get(
-        Uri.parse('$baseUrl/api/payment/contracts'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 30));
+
+      if (kDebugMode) {
+        developer.log('ContractService.getContracts url=\"$url\"', name: 'ContractService');
+        developer.log('ContractService.getContracts status=${response.statusCode} body=${response.body}', name: 'ContractService');
+      }
 
       final data = json.decode(response.body);
 
@@ -69,13 +89,19 @@ class ContractService {
         };
       }
 
+      final url = _buildUrl('payment/contracts/$contractId');
       final response = await http.get(
-        Uri.parse('$baseUrl/api/payment/contracts/$contractId'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 30));
+
+      if (kDebugMode) {
+        developer.log('ContractService.getContractDetails url=\"$url\"', name: 'ContractService');
+        developer.log('ContractService.getContractDetails status=${response.statusCode} body=${response.body}', name: 'ContractService');
+      }
 
       final data = json.decode(response.body);
 

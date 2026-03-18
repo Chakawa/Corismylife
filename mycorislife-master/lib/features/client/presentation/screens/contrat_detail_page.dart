@@ -180,6 +180,32 @@ class ContratDetailPageState extends State<ContratDetailPage>
   String _formatMontant(dynamic montant) {
     if (montant == null) return '0 FCFA';
 
+    // Some APIs return a structured object (e.g. {"amount": 1000}).
+    if (montant is Map) {
+      final candidates = [
+        'amount',
+        'montant',
+        'value',
+        'total',
+        'montant_paye',
+        'montant_encaisse',
+        'payment_amount',
+        'amount_paid',
+      ];
+      for (final key in candidates) {
+        if (montant.containsKey(key)) {
+          return _formatMontant(montant[key]);
+        }
+      }
+      if (montant.length == 1) {
+        return _formatMontant(montant.values.first);
+      }
+    }
+
+    if (montant is List && montant.isNotEmpty) {
+      return _formatMontant(montant.first);
+    }
+
     final numValue = AmountParser.parse(montant);
     return "${numValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
@@ -249,7 +275,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   Map<String, dynamic> _getSubscriptionDetails() {
-    return _subscriptionData?['souscriptiondata'] ?? {};
+    // Some backends may use different naming conventions for the "souscriptiondata" field.
+    // Accept multiple variants so that production vs emulator responses both work.
+    return _subscriptionData?['souscriptiondata'] ??
+        _subscriptionData?['souscriptionData'] ??
+        _subscriptionData?['souscription_data'] ??
+        _subscriptionData?['souscription'] ??
+        {};
   }
 
   /// Normalise une valeur document en nom de fichier serveur.
@@ -435,7 +467,19 @@ class ContratDetailPageState extends State<ContratDetailPage>
             return Map<String, dynamic>.from(decoded.first);
           }
         } catch (_) {
-          // ignore
+          // Some backends may store JSON-like strings with single quotes.
+          // Try a relaxed parse by converting single quotes to double quotes.
+          try {
+            final normalized = trimmed.replaceAll("'", '"');
+            final decoded = jsonDecode(normalized);
+            if (decoded is Map<String, dynamic>) return decoded;
+            if (decoded is Map) return Map<String, dynamic>.from(decoded);
+            if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
+              return Map<String, dynamic>.from(decoded.first);
+            }
+          } catch (_) {
+            // ignore
+          }
         }
         return <String, dynamic>{};
       }
@@ -562,10 +606,23 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final paymentMethod =
         paymentMethodRaw.trim().isEmpty ? 'Non defini' : paymentMethodRaw;
 
-    final amount = paymentInfo['amount'] ?? _subscriptionData?['montant'];
-    final paymentDate =
-        paymentInfo['payment_date'] ?? _subscriptionData?['date_validation'];
+    final amount = paymentInfo['amount'] ??
+        paymentInfo['montant'] ??
+        paymentInfo['amount_paid'] ??
+        paymentInfo['montant_paye'] ??
+        paymentInfo['montant_encaisse'] ??
+        _subscriptionData?['montant'] ??
+        _subscriptionData?['montant_encaisse'] ??
+        _subscriptionData?['total_paid'] ??
+        _subscriptionData?['prime'];
+
+    final paymentDate = paymentInfo['payment_date'] ??
+        paymentInfo['date_paiement'] ??
+        _subscriptionData?['date_validation'];
+
     final paymentId = paymentInfo['payment_id'] ??
+        paymentInfo['transactionId'] ??
+        paymentInfo['transaction_id'] ??
         _subscriptionData?['payment_transaction_id'];
     final providerStatusRaw = (paymentInfo['provider_status'] ?? '').toString();
     final providerStatus = providerStatusRaw.trim().isEmpty
