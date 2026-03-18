@@ -3,7 +3,7 @@ class AppConfig {
   static const bool TEST_MODE_FORCE_10_XOF = true;
 
   // TEST LOCAL (emulateur Android)
-  //static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // SERVEUR EN LIGNE (actif pour generation APK)
    static const String baseUrl = 'https://www.testmobile.online/api';

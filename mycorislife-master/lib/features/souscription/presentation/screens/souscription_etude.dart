@@ -2751,7 +2751,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void _saveAsProposition() async {
     // Assurer qu'une signature a bien été collectée avant de sauvegarder
     if (_clientSignature == null) {
-      _showErrorSnackBar('Veuillez signer avant de sauvegarder la proposition.');
+      _showErrorSnackBar(
+          'Veuillez signer avant de sauvegarder la proposition.');
       return;
     }
 
@@ -3257,8 +3258,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyClientInfo,
                 child: ListView(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     _buildFormSection(
                       'Informations du Client',
@@ -3371,8 +3374,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyStep1,
                 child: ListView(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     Container(
                       padding: EdgeInsets.all(12),
@@ -3807,8 +3812,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Form(
                 key: _formKeyStep2,
                 child: ListView(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     _buildFormSection(
                       'Bénéficiaire en cas de décès',
@@ -4322,7 +4329,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+              padding: EdgeInsets.fromLTRB(
+                  20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4935,7 +4943,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         : (userData ?? _userData);
 
     return ListView(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         // Afficher les informations du client (toujours dans "Informations Personnelles")
@@ -5211,7 +5220,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 5 : 4)
-                    ? _showPaymentOptions
+                    ? _showSignatureAndPayment
                     : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
