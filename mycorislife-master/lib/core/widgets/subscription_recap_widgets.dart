@@ -298,9 +298,8 @@ class SubscriptionRecapWidgets {
     final lieuNaissance = userData['lieu_naissance'] ??
         userData['lieuNaissance'] ??
         userData['lieu_de_naissance'];
-    final profession = userData['profession'] ??
-      userData['metier'] ??
-      userData['métier'];
+    final profession =
+        userData['profession'] ?? userData['metier'] ?? userData['métier'];
 
     return buildRecapSection(
       'Informations Personnelles',
@@ -326,11 +325,8 @@ class SubscriptionRecapWidgets {
             lieuNaissance ?? 'Non renseigné',
             'Adresse',
             userData['adresse'] ?? 'Non renseigné'),
-        buildCombinedRecapRow(
-            'Profession',
-            profession ?? 'Non renseigné',
-            'Pays',
-            userData['pays'] ?? 'Non renseigné'),
+        buildCombinedRecapRow('Profession', profession ?? 'Non renseigné',
+            'Pays', userData['pays'] ?? 'Non renseigné'),
       ],
     );
   }
@@ -700,10 +696,19 @@ class SubscriptionRecapWidgets {
       final displayName = rawName ?? 'Non téléchargée';
       final normalizedTitle = title.trim().toLowerCase();
       final normalizedName = displayName.trim().toLowerCase();
+
+      bool isImageFile(String name) {
+        final ext = name.split('.').last.toLowerCase();
+        return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif']
+            .contains(ext);
+      }
+
+      // On affiche toujours le nom du fichier si c'est un fichier (non image),
+      // et pour les images on garde un label recto/verso si possible.
       final showFileName = has &&
-        normalizedName.isNotEmpty &&
-        normalizedName != normalizedTitle &&
-        !_isTechnicalGeneratedName(displayName);
+          normalizedName.isNotEmpty &&
+          (normalizedName != normalizedTitle ||
+              !_isTechnicalGeneratedName(displayName));
 
       return GestureDetector(
         onTap: has ? onTap : null,
@@ -762,7 +767,8 @@ class SubscriptionRecapWidgets {
                   ),
                   label: Text(
                     'Voir',
-                    style: TextStyle(color: bleuCoris, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: bleuCoris, fontWeight: FontWeight.w700),
                   ),
                 ),
             ],
@@ -778,13 +784,15 @@ class SubscriptionRecapWidgets {
       // If pieceIdentite looks like a full path, extract filename for display
       String? displayPiece;
       if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
-        displayPiece = _extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
+        displayPiece =
+            _extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
       } else {
         displayPiece = 'Non téléchargée';
       }
 
       // Afficher "Pièce d'identité" comme titre et le nom du fichier comme filename
-      children.add(buildDocRow('Pièce d\'identité', displayPiece, onDocumentTap));
+      children
+          .add(buildDocRow('Pièce d\'identité', displayPiece, onDocumentTap));
     }
 
     // Additional documents list (if provided)
@@ -792,15 +800,18 @@ class SubscriptionRecapWidgets {
       final total = documents!.length;
       for (int i = 0; i < documents.length; i++) {
         final doc = documents[i];
-        final rawLabel = doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'];
-        final path = doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
+        final rawLabel =
+            doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'];
+        final path =
+            doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
         final extractedName = _extractNameFromPath(path);
 
         String label;
         if (rawLabel != null && rawLabel.toString().trim().isNotEmpty) {
           final candidate = rawLabel.toString().trim();
           if (_isTechnicalGeneratedName(candidate) ||
-              (extractedName != null && candidate.toLowerCase() == extractedName.toLowerCase())) {
+              (extractedName != null &&
+                  candidate.toLowerCase() == extractedName.toLowerCase())) {
             label = _friendlyIdentityLabel(i, total);
           } else {
             label = candidate;
@@ -809,15 +820,18 @@ class SubscriptionRecapWidgets {
           label = _friendlyIdentityLabel(i, total);
         }
 
-        children.add(buildDocRow(label, extractedName ?? path?.toString(), path != null
-            ? () {
-                if (onDocumentTapWithInfo != null) {
-                  onDocumentTapWithInfo(path.toString(), label);
-                } else if (onDocumentTap != null) {
-                  onDocumentTap();
-                }
-              }
-            : null));
+        children.add(buildDocRow(
+            label,
+            extractedName ?? path?.toString(),
+            path != null
+                ? () {
+                    if (onDocumentTapWithInfo != null) {
+                      onDocumentTapWithInfo(path.toString(), label);
+                    } else if (onDocumentTap != null) {
+                      onDocumentTap();
+                    }
+                  }
+                : null));
       }
     }
 
@@ -834,7 +848,7 @@ class SubscriptionRecapWidgets {
   static String _formatDateFromISO(dynamic dateValue) {
     try {
       if (dateValue == null) return '';
-      
+
       DateTime date;
       if (dateValue is DateTime) {
         date = dateValue;
@@ -844,7 +858,7 @@ class SubscriptionRecapWidgets {
       } else {
         return '';
       }
-      
+
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
       return '';
@@ -862,7 +876,8 @@ class SubscriptionRecapWidgets {
       final respById = <dynamic, Map<String, dynamic>>{};
       if (reponses != null) {
         for (final r in reponses) {
-          if (r is Map && r['question_id'] != null) respById[r['question_id']] = r;
+          if (r is Map && r['question_id'] != null)
+            respById[r['question_id']] = r;
         }
       }
 
@@ -873,7 +888,8 @@ class SubscriptionRecapWidgets {
         final mergedItem = <String, dynamic>{
           'question_index': i,
           'question_id': qid,
-          'libelle': q['libelle'] ?? q['question_libelle'] ?? 'Question ${i + 1}',
+          'libelle':
+              q['libelle'] ?? q['question_libelle'] ?? 'Question ${i + 1}',
           'type_question': q['type_question'] ?? q['type'] ?? '',
         };
         if (resp != null) {
@@ -908,29 +924,32 @@ class SubscriptionRecapWidgets {
     final widgets = <Widget>[];
     for (int i = 0; i < merged.length; i++) {
       final r = merged[i];
-      final question = r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
+      final question =
+          r['libelle'] ?? r['question_libelle'] ?? 'Question ${i + 1}';
       final typeQuestion = r['type_question']?.toString() ?? '';
 
       // Build answer string based on response type
       String answer = '';
-      
+
       if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
         final oui_non = r['reponse_oui_non'];
-        answer = (oui_non == true || oui_non == 'OUI' || oui_non == 'true') ? 'OUI' : 'NON';
-        
+        answer = (oui_non == true || oui_non == 'OUI' || oui_non == 'true')
+            ? 'OUI'
+            : 'NON';
+
         // Add detail responses if present - but only if they're meaningful
         if (typeQuestion == 'oui_non_details') {
           final details = <String>[];
           final d1 = r['reponse_detail_1'];
           final d2 = r['reponse_detail_2'];
           final d3 = r['reponse_detail_3'];
-          
+
           // d1 est souvent une date
           if (d1 != null && d1.toString().isNotEmpty) {
             final formatted = _formatDateFromISO(d1);
             details.add(formatted.isNotEmpty ? formatted : d1.toString());
           }
-          
+
           // d2 peut être du texte ou une date
           if (d2 != null && d2.toString().isNotEmpty) {
             // Si ça ressemble à une date ISO, formater
@@ -941,12 +960,12 @@ class SubscriptionRecapWidgets {
               details.add(d2.toString());
             }
           }
-          
+
           // d3 généralement du texte libre
           if (d3 != null && d3.toString().isNotEmpty) {
             details.add(d3.toString());
           }
-          
+
           if (details.isNotEmpty) {
             answer = '$answer — ${details.join(' / ')}';
           }
@@ -1200,20 +1219,21 @@ class SubscriptionRecapWidgets {
   /// Construit une section de mode de paiement avec icône et couleur
   static Widget buildPaymentModeSection(Map<String, dynamic> souscriptionData) {
     final modePaiement = souscriptionData['mode_paiement']?.toString() ?? '';
-    
+
     if (modePaiement.isEmpty) {
       return const SizedBox.shrink();
     }
 
     // Récupérer les infos de paiement (peuvent être au niveau racine ou dans infos_paiement)
     final infosPaiement = souscriptionData['infos_paiement'] ?? {};
-    
+
     // Helper pour chercher une valeur d'abord au niveau racine puis dans infos_paiement
     String _getValue(String key) {
       if (souscriptionData[key]?.toString().isNotEmpty == true) {
         return souscriptionData[key].toString();
       }
-      if (infosPaiement is Map && infosPaiement[key]?.toString().isNotEmpty == true) {
+      if (infosPaiement is Map &&
+          infosPaiement[key]?.toString().isNotEmpty == true) {
         return infosPaiement[key].toString();
       }
       return 'Non renseigné';
@@ -1239,8 +1259,8 @@ class SubscriptionRecapWidgets {
       color = Colors.orange;
       displayName = 'Orange Money';
       customImagePath = 'assets/images/icone_orange_money.jpeg';
-    } else if (modePaiement.toLowerCase().contains('prélèvement') || 
-               modePaiement.toLowerCase().contains('prelevement')) {
+    } else if (modePaiement.toLowerCase().contains('prélèvement') ||
+        modePaiement.toLowerCase().contains('prelevement')) {
       icon = Icons.business;
       color = Colors.green;
       displayName = 'Prélèvement à la source';
@@ -1274,9 +1294,13 @@ class SubscriptionRecapWidgets {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: customImagePath != null ? Colors.white : color.withValues(alpha: 0.15),
+                  color: customImagePath != null
+                      ? Colors.white
+                      : color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: customImagePath != null ? Border.all(color: Colors.grey.withValues(alpha: 0.2)) : null,
+                  border: customImagePath != null
+                      ? Border.all(color: Colors.grey.withValues(alpha: 0.2))
+                      : null,
                 ),
                 child: customImagePath != null
                     ? Center(
@@ -1322,7 +1346,7 @@ class SubscriptionRecapWidgets {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         // Afficher les détails selon le mode
         if (modePaiement.toLowerCase().contains('virement')) ...[
           buildRecapRow('Banque', _getValue('banque')),
@@ -1336,7 +1360,7 @@ class SubscriptionRecapWidgets {
             modePaiement.toLowerCase().contains('orange')) ...[
           buildRecapRow('Numéro de téléphone', _getValue('numero_telephone')),
         ] else if (modePaiement.toLowerCase().contains('prélèvement') ||
-                   modePaiement.toLowerCase().contains('prelevement')) ...[
+            modePaiement.toLowerCase().contains('prelevement')) ...[
           buildRecapRow('Nom de la structure', _getValue('nom_structure')),
           buildRecapRow('Numéro matricule', _getValue('numero_matricule')),
         ] else if (modePaiement.toLowerCase().contains('coris money')) ...[

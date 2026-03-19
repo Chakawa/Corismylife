@@ -1718,6 +1718,21 @@ class ContratDetailPageState extends State<ContratDetailPage>
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
     ];
 
+    // Inclure aussi pieceIdentite s'il existe (pour afficher toutes les pièces d'identité)
+    if (pieceIdentite != null && pieceIdentite.toString().trim().isNotEmpty) {
+      final identityPath = pieceIdentite.toString().trim();
+      final alreadyExists = docsList.any((doc) {
+        final docPath = doc['path']?.toString().trim();
+        return docPath != null && docPath == identityPath;
+      });
+      if (!alreadyExists) {
+        docsList.insert(0, {
+          'path': identityPath,
+          'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+        });
+      }
+    }
+
     final normalizedDocsList = docsList.isEmpty ? null : docsList;
 
     return Container(
