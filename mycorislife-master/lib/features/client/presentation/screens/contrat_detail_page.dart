@@ -223,6 +223,41 @@ class ContratDetailPageState extends State<ContratDetailPage>
     return AmountParser.parse(montantRaw);
   }
 
+  String _getPaymentStatus(Map<String, dynamic>? paymentInfo) {
+    final statusRaw = (paymentInfo?['provider_status'] ??
+            paymentInfo?['status'] ??
+            paymentInfo?['statut'] ??
+            _subscriptionData?['statut'] ??
+            '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    final successKeywords = {
+      'success',
+      'succeeded',
+      'paid',
+      'completed',
+      'validated',
+      'confirmed',
+      'ok',
+      'validé',
+      'validée',
+      'confirmé',
+      'confirmée',
+      'authorised',
+      'authorized',
+      'contrat',
+      'oui'
+    };
+
+    if (statusRaw.isEmpty) {
+      return 'FAILED';
+    }
+
+    return successKeywords.contains(statusRaw) ? 'SUCCESS' : 'FAILED';
+  }
+
   Color _getBadgeColor(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
       return const Color(0xFF002B6B);
@@ -427,13 +462,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     // Support multiple locations for payment info
     // (some environments store it inside `souscriptiondata`, others at root)
-    final rawPaymentInfo =
-        _subscriptionData?['payment_info'] ??
-            details['payment_info'] ??
-            _subscriptionData?['paiement'] ??
-            details['paiement'] ??
-            _subscriptionData?['payment'] ??
-            details['payment'];
+    final rawPaymentInfo = _subscriptionData?['payment_info'] ??
+        details['payment_info'] ??
+        _subscriptionData?['paiement'] ??
+        details['paiement'] ??
+        _subscriptionData?['payment'] ??
+        details['payment'];
 
     String? pickText(List<dynamic> values) {
       for (final value in values) {
@@ -490,8 +524,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
     }
 
     final paymentInfo = toMap(rawPaymentInfo);
-    final paymentMeta = toMap(
-        _subscriptionData?['paiement'] ?? details['paiement'] ?? details['payment']);
+    final paymentMeta = toMap(_subscriptionData?['paiement'] ??
+        details['paiement'] ??
+        details['payment']);
 
     final paymentMethod = pickText([
       paymentInfo['payment_method'],
@@ -555,10 +590,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
       details['provider_payment_id'],
       details['paymentId'],
       details['id_paiement'],
+      details['payment_transaction_id'],
       _subscriptionData?['payment_id'],
       _subscriptionData?['provider_payment_id'],
       _subscriptionData?['paymentId'],
       _subscriptionData?['id_paiement'],
+      _subscriptionData?['payment_transaction_id'],
       paymentInfo['transaction_id'],
       paymentInfo['transactionId'],
       paymentInfo['reference'],
@@ -568,7 +605,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       paymentMeta['reference'],
       details['transaction_id'],
       details['transactionId'],
-      _subscriptionData?['payment_transaction_id'],
     ]);
 
     final providerStatus = pickText([
@@ -624,22 +660,29 @@ class ContratDetailPageState extends State<ContratDetailPage>
         paymentInfo['transactionId'] ??
         paymentInfo['transaction_id'] ??
         _subscriptionData?['payment_transaction_id'];
-    final providerStatusRaw = (paymentInfo['provider_status'] ?? '').toString();
+
+    final providerStatusRaw = (paymentInfo['provider_status'] ??
+            paymentInfo['status'] ??
+            paymentInfo['statut'] ??
+            '')
+        .toString();
     final providerStatus = providerStatusRaw.trim().isEmpty
-        ? 'Confirme'
+        ? 'INCONNU'
         : providerStatusRaw.toUpperCase();
+
+    final validationStatus = _getPaymentStatus(paymentInfo);
 
     return _buildRecapSection(
       'Section paiement',
       Icons.account_balance_wallet_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow(
-            'Mode de paiement', paymentMethod, 'Statut', providerStatus),
+        _buildCombinedRecapRow('Mode de paiement', paymentMethod, '', ''),
         _buildCombinedRecapRow('Montant paye', _formatMontant(amount),
             'Date de paiement', _formatDateTime(paymentDate)),
         _buildCombinedRecapRow(
             'ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
+        _buildCombinedRecapRow('Validation', validationStatus, '', ''),
       ],
     );
   }
@@ -1586,7 +1629,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
       final normalizedLabel = label?.toString().trim();
       docs.add({
         'path': normalizedPath,
-        if (normalizedLabel != null && normalizedLabel.isNotEmpty) 'label': normalizedLabel,
+        if (normalizedLabel != null && normalizedLabel.isNotEmpty)
+          'label': normalizedLabel,
       });
     }
 
@@ -1618,7 +1662,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
       }
 
       if (value is Map) {
-        if (value['path'] != null || value['url'] != null || value['filename'] != null) {
+        if (value['path'] != null ||
+            value['url'] != null ||
+            value['filename'] != null) {
           addDoc(
             value['path'] ?? value['url'] ?? value['filename'] ?? value['name'],
             label: value['label'] ?? value['title'] ?? value['name'],
@@ -1706,7 +1752,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
               onDocumentTap: pieceIdentite != null
                   ? () => _viewDocument(pieceIdentite, pieceIdentiteLabel)
                   : null,
-              onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
+              onDocumentTapWithInfo: (path, label) =>
+                  _viewDocument(path, label),
             ),
           ],
         ),

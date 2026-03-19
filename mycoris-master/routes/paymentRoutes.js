@@ -114,12 +114,14 @@ async function upsertContractAfterPayment({ subscriptionId, userId, paymentMetho
       next_payment_date,
       duration_years,
       payment_method,
+      total_paid,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
     ON CONFLICT (subscription_id) DO UPDATE SET
       status = 'valid',
       payment_method = EXCLUDED.payment_method,
       next_payment_date = EXCLUDED.next_payment_date,
+      total_paid = EXCLUDED.total_paid,
       updated_at = NOW()`,
     [
       subscriptionId,
@@ -132,7 +134,8 @@ async function upsertContractAfterPayment({ subscriptionId, userId, paymentMetho
       new Date(),
       nextPaymentDate,
       subscription.duree || 1,
-      paymentMethod
+      paymentMethod,
+      subscription.montant || 0
     ]
   );
 

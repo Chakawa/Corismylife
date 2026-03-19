@@ -636,9 +636,10 @@ exports.getContratDetails = async (req, res) => {
     
     console.log('✅ Contrat trouvé et accès autorisé');
 
-    // Enrichir avec paiement si contract est issu de la table `subscriptions`
-    // (la variable `contrat` est déjà définie ci-dessus)
-    if ((contrat.source || '').toLowerCase() === 'subscription') {
+    // Enrichir avec paiement si contract est lié à une souscription
+    // (contrat.subscription_id non-null)
+    const subscriptionId = contrat.subscription_id;
+    if (subscriptionId) {
       try {
         const paymentResult = await pool.query(
           `SELECT transaction_id, session_id, provider, montant, amount, statut, created_at, api_response
@@ -651,11 +652,33 @@ exports.getContratDetails = async (req, res) => {
              )
            ORDER BY created_at DESC
            LIMIT 1`,
-          [contrat.id]
+          [subscriptionId]
         );
 
         if (paymentResult.rows.length > 0) {
           const payment = paymentResult.rows[0];
+
+          // Ajouter les totaux cumulatifs de paiement
+          const totalsResult = await pool.query(
+            `SELECT COALESCE(SUM(montant), 0) AS total_paid
+             FROM payment_transactions
+             WHERE subscription_id = $1
+               AND LOWER(statut) IN (
+                 'success', 'succeeded', 'paid', 'completed',
+                 'validated', 'confirmed', 'ok',
+                 'validé', 'validée', 'confirmé', 'confirmée'
+               )`,
+            [subscriptionId]
+          );
+
+          const totalPaid = Number(totalsResult.rows[0]?.total_paid || 0);
+          contrat.total_paid = totalPaid;
+          contrat.montant_encaisse = totalPaid;
+
+          if (payment.transaction_id || payment.session_id) {
+            contrat.payment_transaction_id = payment.transaction_id || payment.session_id;
+          }
+
           const paymentInfo = {
             // Identifiants de paiement
             payment_id: payment.transaction_id || payment.session_id || null,
@@ -670,7 +693,7 @@ exports.getContratDetails = async (req, res) => {
             amount: payment.montant ?? payment.amount ?? null,
             amount_paid: payment.montant ?? payment.amount ?? null,
             montant_paye: payment.montant ?? payment.amount ?? null,
-            total_paid: payment.montant ?? payment.amount ?? null,
+            total_paid: totalPaid,
 
             // Dates
             payment_date: payment.created_at || null,
@@ -912,6 +935,34 @@ exports.getMesContrats = async (req, res) => {
               )::numeric
             ELSE NULL::numeric
           END AS montant_encaisse,
+          COALESCE(
+            (
+              SELECT SUM(pt.montant)
+              FROM payment_transactions pt
+              WHERE pt.subscription_id = s.id
+                AND LOWER(pt.statut) IN (
+                  'success', 'succeeded', 'paid', 'completed',
+                  'validated', 'confirmed', 'ok',
+                  'validé', 'validée', 'confirmé', 'confirmée'
+                )
+            ), 0
+          )::numeric AS total_paid,
+          COALESCE(
+            (
+              SELECT pt.transaction_id
+              FROM payment_transactions pt
+              WHERE pt.subscription_id = s.id
+                AND LOWER(pt.statut) IN (
+                  'success', 'succeeded', 'paid', 'completed',
+                  'validated', 'confirmed', 'ok',
+                  'validé', 'validée', 'confirmé', 'confirmée'
+                )
+              ORDER BY pt.created_at DESC
+              LIMIT 1
+            ),
+            s.payment_transaction_id,
+            NULL
+          ) AS payment_transaction_id,
           0::numeric AS impaye,
           'actif'::text AS etat,
           u.telephone AS telephone1,
@@ -1013,6 +1064,34 @@ exports.getMesContrats = async (req, res) => {
               )::numeric
             ELSE NULL::numeric
           END AS montant_encaisse,
+          COALESCE(
+            (
+              SELECT SUM(pt.montant)
+              FROM payment_transactions pt
+              WHERE pt.subscription_id = s.id
+                AND LOWER(pt.statut) IN (
+                  'success', 'succeeded', 'paid', 'completed',
+                  'validated', 'confirmed', 'ok',
+                  'validé', 'validée', 'confirmé', 'confirmée'
+                )
+            ), 0
+          )::numeric AS total_paid,
+          COALESCE(
+            (
+              SELECT pt.transaction_id
+              FROM payment_transactions pt
+              WHERE pt.subscription_id = s.id
+                AND LOWER(pt.statut) IN (
+                  'success', 'succeeded', 'paid', 'completed',
+                  'validated', 'confirmed', 'ok',
+                  'validé', 'validée', 'confirmé', 'confirmée'
+                )
+              ORDER BY pt.created_at DESC
+              LIMIT 1
+            ),
+            s.payment_transaction_id,
+            NULL
+          ) AS payment_transaction_id,
           0::numeric AS impaye,
           'actif'::text AS etat,
           u.telephone AS telephone1,

@@ -1352,6 +1352,20 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
         const currentPaymentInfo = currentData.payment_info || {};
         const apiResponse = latestPayment.api_response || {};
 
+        const totalsResult = await pool.query(
+          `SELECT COALESCE(SUM(montant), 0) AS total_paid
+           FROM payment_transactions
+           WHERE subscription_id = $1
+             AND LOWER(statut) IN (
+               'success', 'succeeded', 'paid', 'completed',
+               'validated', 'confirmed', 'ok',
+               'validé', 'validée', 'confirmé', 'confirmée'
+             )`,
+          [id]
+        );
+
+        const totalPaid = Number(totalsResult.rows[0]?.total_paid || 0);
+
         const pick = (obj, paths = []) => {
           for (const path of paths) {
             const value = path
@@ -1419,6 +1433,8 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
             currentPaymentInfo.amount ||
             enrichedSubscription.montant ||
             null,
+          montant_encaisse: totalPaid,
+          total_paid: totalPaid,
           provider_status:
             latestPayment.statut ||
             currentPaymentInfo.provider_status ||
@@ -1431,9 +1447,18 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
 
         enrichedSubscription = {
           ...enrichedSubscription,
+          montant_encaisse: totalPaid,
+          total_paid: totalPaid,
+          payment_transaction_id: latestPayment.transaction_id || latestPayment.session_id || enrichedSubscription.payment_transaction_id || null,
           souscriptiondata: {
             ...currentData,
             payment_info: mergedPaymentInfo,
+            paiement: {
+              ...currentData.paiement,
+              ...mergedPaymentInfo,
+            },
+            montant_encaisse: totalPaid,
+            total_paid: totalPaid,
           },
         };
       }

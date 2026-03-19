@@ -28,7 +28,7 @@ class PropositionsPage extends StatefulWidget {
 }
 
 class _PropositionsPageState extends State<PropositionsPage>
-  with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // ===================================
   // SERVICES ET DONNÉES
   // ===================================
@@ -83,6 +83,12 @@ class _PropositionsPageState extends State<PropositionsPage>
   /// Charge la liste des propositions depuis l'API
   /// Récupère toutes les souscriptions avec le statut 'proposition'
   Future<void> _loadPropositions() async {
+    if (!mounted) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       final result = await _service.getPropositions();
       if (!mounted) return;
@@ -286,6 +292,22 @@ class _PropositionsPageState extends State<PropositionsPage>
       ),
       actions: [
         Container(
+          margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0x26FFFFFF),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: const Color(0x33FFFFFF),
+              width: 1,
+            ),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
+            tooltip: 'Actualiser',
+            onPressed: _loadPropositions,
+          ),
+        ),
+        Container(
           margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
           decoration: BoxDecoration(
             color: const Color(0x26FFFFFF),
@@ -410,7 +432,10 @@ class _PropositionsPageState extends State<PropositionsPage>
         Expanded(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: _buildPropositionsList(),
+            child: RefreshIndicator(
+              onRefresh: _loadPropositions,
+              child: _buildPropositionsList(),
+            ),
           ),
         ),
       ],
@@ -759,9 +784,15 @@ class _PropositionsPageState extends State<PropositionsPage>
                               context,
                               MaterialPageRoute(
                                 builder: (_) {
-                                  final prod = subscription.produitNom.toLowerCase();
-                                  final excludeQ = prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité');
-                                  return PdfViewerPage(subscriptionId: subscription.id, excludeQuestionnaire: excludeQ);
+                                  final prod =
+                                      subscription.produitNom.toLowerCase();
+                                  final excludeQ = prod.contains('etude') ||
+                                      prod.contains('familis') ||
+                                      prod.contains('serenite') ||
+                                      prod.contains('sérénité');
+                                  return PdfViewerPage(
+                                      subscriptionId: subscription.id,
+                                      excludeQuestionnaire: excludeQ);
                                 },
                               ),
                             );
@@ -882,7 +913,8 @@ class _PropositionsPageState extends State<PropositionsPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Paiement confirmé. La proposition a été retirée de la liste.'),
+          content: Text(
+              'Paiement confirmé. La proposition a été retirée de la liste.'),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -1012,9 +1044,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                   Text(
                     title,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF002B6B),
-                      fontSize: 16),
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF002B6B),
+                        fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1027,7 +1059,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Color(0xFF64748B), size: 16),
           ],
         ),
       ),
@@ -1068,7 +1101,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   print('❌ Erreur chargement image: $imagePath - $error');
-                  return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
+                  return Icon(Icons.image_not_supported,
+                      size: 32, color: Colors.grey);
                 },
               ),
             ),
@@ -1080,9 +1114,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                   Text(
                     title,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF002B6B),
-                      fontSize: 16),
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF002B6B),
+                        fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1095,7 +1129,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Color(0xFF64748B), size: 16),
           ],
         ),
       ),
@@ -1113,14 +1148,16 @@ class _PropositionsPageState extends State<PropositionsPage>
 
       // Essayer de récupérer le montant selon le produit
       if (souscriptionData != null) {
-        montant = (souscriptionData['prime_totale'] ?? 
-                   souscriptionData['montant_total'] ?? 
-                   souscriptionData['prime'] ??
-                   souscriptionData['montant'] ??
-                   souscriptionData['versement_initial'] ??
-                   souscriptionData['montant_cotisation'] ??
-                   souscriptionData['prime_mensuelle'] ??
-                   souscriptionData['capital'] ?? 0.0).toDouble();
+        montant = (souscriptionData['prime_totale'] ??
+                souscriptionData['montant_total'] ??
+                souscriptionData['prime'] ??
+                souscriptionData['montant'] ??
+                souscriptionData['versement_initial'] ??
+                souscriptionData['montant_cotisation'] ??
+                souscriptionData['prime_mensuelle'] ??
+                souscriptionData['capital'] ??
+                0.0)
+            .toDouble();
       }
 
       showDialog(
@@ -1129,13 +1166,15 @@ class _PropositionsPageState extends State<PropositionsPage>
         builder: (context) => CorisMoneyPaymentModal(
           subscriptionId: subscription.id,
           montant: montant,
-          description: 'Paiement ${subscription.produitNom} #${subscription.id}',
+          description:
+              'Paiement ${subscription.produitNom} #${subscription.id}',
           onPaymentSuccess: () {
             // Rafraîchir la liste après paiement réussi
             _loadPropositions();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('✅ Votre proposition a été transformée en contrat !'),
+                content:
+                    Text('✅ Votre proposition a été transformée en contrat !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -1175,7 +1214,8 @@ class _PropositionsPageState extends State<PropositionsPage>
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Paiement Wave confirmé. Votre contrat est maintenant actif.'),
+              content: Text(
+                  'Paiement Wave confirmé. Votre contrat est maintenant actif.'),
               backgroundColor: Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
             ),
