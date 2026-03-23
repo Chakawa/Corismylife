@@ -1512,6 +1512,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 beneficiaire['nom'] ?? 'Non spécifié',
                 beneficiaire['lien_parente'] ?? 'Bénéficiaire',
                 beneficiaire['contact'],
+                beneficiaire['date_naissance'] ??
+                    beneficiaire['dateNaissance'] ??
+                    beneficiaire['date_de_naissance'],
                 Icons.person_outline,
               ),
               const SizedBox(height: 12),
@@ -1522,6 +1525,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 contactUrgence['nom'] ?? 'Non spécifié',
                 contactUrgence['lien_parente'] ?? 'Contact',
                 contactUrgence['contact'],
+                contactUrgence['date_naissance'] ??
+                    contactUrgence['dateNaissance'] ??
+                    contactUrgence['date_de_naissance'],
                 Icons.contact_phone_outlined,
               ),
             ],
@@ -1541,7 +1547,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   Widget _buildContactItem(String type, String nom, String relation,
-      String? contact, IconData icon) {
+      String? contact, String? dateNaissance, IconData icon) {
     final badgeColor = _getBadgeColor(_getProductType());
 
     return Container(
@@ -1595,6 +1601,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   const SizedBox(height: 2),
                   Text(
                     relation,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+                if (dateNaissance != null && dateNaissance.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Date de naissance: ${SubscriptionRecapWidgets.formatDate(dateNaissance)}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF64748B),
@@ -1735,6 +1751,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     final normalizedDocsList = docsList.isEmpty ? null : docsList;
 
+    // Calculate total document count
+    int totalDocuments = 0;
+    if (pieceIdentite != null && pieceIdentite.toString().trim().isNotEmpty) totalDocuments++;
+    if (normalizedDocsList != null) totalDocuments += normalizedDocsList.length;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1752,9 +1773,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Documents",
-              style: TextStyle(
+            Text(
+              totalDocuments > 0 ? "Documents (${totalDocuments})" : "Documents",
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
@@ -1769,6 +1790,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   : null,
               onDocumentTapWithInfo: (path, label) =>
                   _viewDocument(path, label),
+              documentCount: totalDocuments,
             ),
           ],
         ),

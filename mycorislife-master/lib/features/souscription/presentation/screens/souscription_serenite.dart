@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_payment_handler.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
@@ -134,6 +135,8 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   final _formKey = GlobalKey<FormState>();
   final _beneficiaireNomController = TextEditingController();
   final _beneficiaireContactController = TextEditingController();
+  final _beneficiaireDateNaissanceController = TextEditingController();
+  DateTime? _beneficiaireDateNaissance;
   String _selectedLienParente = 'Enfant';
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
@@ -1519,6 +1522,16 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         if (beneficiaire['lien_parente'] != null) {
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         }
+        if (beneficiaire['date_naissance'] != null) {
+          try {
+            _beneficiaireDateNaissance =
+                DateTime.parse(beneficiaire['date_naissance'].toString());
+            _beneficiaireDateNaissanceController.text =
+                DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
+          } catch (e) {
+            debugPrint('Erreur parsing date_naissance bénéficiaire: $e');
+          }
+        }
       }
 
       // Pré-remplir contact d'urgence
@@ -1661,6 +1674,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     _dureeFocusNode.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
+    _beneficiaireDateNaissanceController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
     // Dispose des contrôleurs client
@@ -1988,6 +2002,23 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           _dateEcheanceContrat = picked.add(Duration(days: dureeMois * 30));
         });
       }
+    }
+  }
+
+  void _selectBeneficiaireDateNaissance() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      locale: const Locale('fr', 'FR'),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _beneficiaireDateNaissance = picked;
+        _beneficiaireDateNaissanceController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
+      });
     }
   }
 
@@ -3616,6 +3647,36 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                               _selectedBeneficiaireIndicatif = value!;
                             });
                           },
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: _selectBeneficiaireDateNaissance,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _beneficiaireDateNaissanceController,
+                              decoration: InputDecoration(
+                                hintText: 'Date de naissance du bénéficiaire',
+                                prefixIcon: Icon(Icons.calendar_today,
+                                    size: 20, color: bleuCoris.withAlpha(179)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                                ),
+                                filled: true,
+                                fillColor: fondCarte,
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 16),
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         _buildDropdownField(
@@ -5415,6 +5476,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
           'lien_parente': _selectedLienParente,
+          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
         },
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),

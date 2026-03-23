@@ -10,6 +10,7 @@ import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/core/utils/identity_document_picker.dart';
+import 'package:intl/intl.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
@@ -209,6 +210,9 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       TextEditingController(); // Nom du bénéficiaire en cas de décès
   final _beneficiaireContactController =
       TextEditingController(); // Contact du bénéficiaire
+  final _beneficiaireDateNaissanceController =
+      TextEditingController(); // Date de naissance du bénéficiaire
+  DateTime? _beneficiaireDateNaissance;
   String _selectedLienParente =
       'Enfant'; // Lien de parenté avec le bénéficiaire
   final _personneContactNomController =
@@ -2035,6 +2039,15 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         if (beneficiaire['lien_parente'] != null) {
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         }
+        if (beneficiaire['date_naissance'] != null) {
+          try {
+            _beneficiaireDateNaissance = DateTime.parse(beneficiaire['date_naissance']);
+            _beneficiaireDateNaissanceController.text =
+                DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
+          } catch (e) {
+            debugPrint('Erreur parsing date_naissance beneficiaire: $e');
+          }
+        }
       }
 
       // Contact d'urgence
@@ -2742,6 +2755,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
 
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
+        _beneficiaireDateNaissance == null ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
@@ -2755,6 +2769,22 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       return false;
     }
     return true;
+  }
+
+  void _selectBeneficiaireDateNaissance() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _beneficiaireDateNaissance ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _beneficiaireDateNaissance = picked;
+        _beneficiaireDateNaissanceController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
   }
 
   @override
@@ -3550,6 +3580,37 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                             setState(() {
                               _selectedBeneficiaireIndicatif = value!;
                             });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        TextFormField(
+                          controller: _beneficiaireDateNaissanceController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Date de naissance du bénéficiaire',
+                            prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: grisLeger),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: grisLeger),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: bleuCoris, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: blanc,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          ),
+                          onTap: _selectBeneficiaireDateNaissance,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez sélectionner la date de naissance';
+                            }
+                            return null;
                           },
                         ),
                         SizedBox(height: 16),
@@ -4833,6 +4894,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
+          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
@@ -5103,6 +5165,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     _capitalPerteEmploiController.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
+    _beneficiaireDateNaissanceController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
     // Dispose des contrôleurs client

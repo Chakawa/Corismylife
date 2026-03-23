@@ -464,6 +464,8 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
           id: index + 1,
           nom_benef: b.nom_benef || b.nom_prenom || b.nom || b.name || 'Bénéficiaire',
           type_beneficiaires: b.type_beneficiaires || b.relation || b.lien || 'Bénéficiaire',
+          date_naissance:
+            b.date_naissance || b.dateNaissance || b.date_de_naissance || b.dob || null,
         }));
       }
     } else {

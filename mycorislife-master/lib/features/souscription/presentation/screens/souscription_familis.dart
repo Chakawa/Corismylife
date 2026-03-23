@@ -121,6 +121,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   // Step 2 controllers
   final _beneficiaireNomController = TextEditingController();
   final _beneficiaireContactController = TextEditingController();
+  final _beneficiaireDateNaissanceController = TextEditingController();
+  DateTime? _beneficiaireDateNaissance;
   String _selectedLienParente = 'Enfant';
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
@@ -2567,6 +2569,20 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           _beneficiaireContactController.text =
               beneficiaire['contact'].toString();
         }
+        if (beneficiaire['date_naissance'] != null ||
+            beneficiaire['dateNaissance'] != null ||
+            beneficiaire['date_de_naissance'] != null) {
+          final dateValue = beneficiaire['date_naissance'] ??
+              beneficiaire['dateNaissance'] ??
+              beneficiaire['date_de_naissance'];
+          try {
+            _beneficiaireDateNaissance = DateTime.parse(dateValue.toString());
+            _beneficiaireDateNaissanceController.text =
+                '${_beneficiaireDateNaissance!.day}/${_beneficiaireDateNaissance!.month}/${_beneficiaireDateNaissance!.year}';
+          } catch (_) {
+            _beneficiaireDateNaissanceController.text = dateValue.toString();
+          }
+        }
         if (beneficiaire['lien_parente'] != null) {
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         }
@@ -3511,6 +3527,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   bool _validateStep2() {
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
+        _beneficiaireDateNaissance == null ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
@@ -3653,6 +3670,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         'beneficiaire': {
           'nom': _beneficiaireNomController.text.trim(),
           'contact': _beneficiaireContactController.text.trim(),
+          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
@@ -4073,6 +4091,24 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           final duree = int.tryParse(_dureeController.text) ?? 0;
           _dateEcheanceContrat =
               DateTime(picked.year + duree, picked.month, picked.day);
+        });
+      }
+    }
+  }
+
+  void _selectBeneficiaireDateNaissance() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      if (mounted) {
+        setState(() {
+          _beneficiaireDateNaissance = picked;
+          _beneficiaireDateNaissanceController.text =
+              '${picked.day}/${picked.month}/${picked.year}';
         });
       }
     }
@@ -4833,6 +4869,48 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           icon: Icons.person_outline,
                         ),
                         const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: _selectBeneficiaireDateNaissance,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _beneficiaireDateNaissanceController,
+                              decoration: InputDecoration(
+                                labelText: 'Date de naissance du bénéficiaire',
+                                prefixIcon: Container(
+                                  margin: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: bleuCoris.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(Icons.calendar_today, color: bleuCoris, size: 20),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                                ),
+                                filled: true,
+                                fillColor: fondCarte,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Ce champ est obligatoire';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         // Champ avec indicatif
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
@@ -4843,6 +4921,36 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                               _selectedBeneficiaireIndicatif = value!;
                             });
                           },
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: _selectBeneficiaireDateNaissance,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _beneficiaireDateNaissanceController,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                hintText: 'Sélectionner une date',
+                                hintStyle: const TextStyle(fontSize: 14),
+                                prefixIcon: Icon(Icons.calendar_today,
+                                    size: 20,
+                                    color: bleuCoris.withValues(alpha: 0.7)),
+                                filled: true,
+                                fillColor: fondCarte,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      BorderSide(color: bleuCoris, width: 1.5),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         _buildDropdownField(
@@ -5482,7 +5590,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                     ? 'Non renseigné'
                     : _beneficiaireContactController.text),
             _buildCombinedRecapRow(
-                'Lien de parenté', _selectedLienParente, '', ''),
+                'Date de naissance',
+                _beneficiaireDateNaissance == null
+                    ? 'Non renseigné'
+                    : '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}',
+                'Lien de parenté',
+                _selectedLienParente),
             const SizedBox(height: 12),
             _buildSubsectionTitle('Contact d\'urgence'),
             _buildCombinedRecapRow(
@@ -5833,6 +5946,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _clientPrenomController.dispose();
     _clientDateNaissanceController.dispose();
     _clientLieuNaissanceController.dispose();
+    _beneficiaireDateNaissanceController.dispose();
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();

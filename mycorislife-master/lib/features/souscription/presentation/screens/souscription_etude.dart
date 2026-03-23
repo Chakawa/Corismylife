@@ -101,6 +101,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   // Step 2 controllers
   final _beneficiaireNomController = TextEditingController();
   final _beneficiaireContactController = TextEditingController();
+  final _beneficiaireDateNaissanceController = TextEditingController();
+  DateTime? _beneficiaireDateNaissance;
   String _selectedLienParente = 'Enfant';
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
@@ -1320,6 +1322,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _beneficiaireContactController.text = contact;
         }
       }
+      if (benef['date_naissance'] != null) {
+        try {
+          _beneficiaireDateNaissance = DateTime.parse(benef['date_naissance']);
+          _beneficiaireDateNaissanceController.text =
+              DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
+        } catch (e) {
+          debugPrint('Erreur parsing date_naissance bénéficiaire: $e');
+        }
+      }
       _selectedLienParente = benef['lien_parente'] ?? 'Enfant';
     }
 
@@ -1529,6 +1540,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _clientPrenomController.dispose();
     _clientDateNaissanceController.dispose();
     _clientLieuNaissanceController.dispose();
+    _beneficiaireDateNaissanceController.dispose();
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
@@ -2471,6 +2483,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
+          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
@@ -2871,6 +2884,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _dateEffetContrat = picked;
         _dateEffetController.text = DateFormat('dd/MM/yyyy').format(picked);
         _updateEcheanceDate();
+      });
+    }
+  }
+
+  void _selectBeneficiaireDateNaissance() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      locale: const Locale('fr', 'FR'),
+      initialDatePickerMode: DatePickerMode.day,
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _beneficiaireDateNaissance = picked;
+        _beneficiaireDateNaissanceController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
       });
     }
   }
@@ -3292,6 +3324,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                         const SizedBox(height: 16),
                         _buildDateField(
+                          context: context,
                           controller: _clientDateNaissanceController,
                           label: 'Date de naissance du souscripteur',
                           icon: Icons.calendar_today,
@@ -3827,7 +3860,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: 16),
-                        // MODIFICATION ICI - Champ avec indicatif
+                        // Champ avec indicatif
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
                           label: 'Contact du bénéficiaire',
@@ -3837,6 +3870,35 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               _selectedBeneficiaireIndicatif = value;
                             });
                           },
+                        ),
+                        SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: _selectBeneficiaireDateNaissance,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _beneficiaireDateNaissanceController,
+                              decoration: InputDecoration(
+                                hintText: 'Date de naissance du bénéficiaire',
+                                prefixIcon: Icon(Icons.calendar_today,
+                                    size: 20,
+                                    color: bleuCoris.withAlpha(179)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: grisLeger),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: bleuCoris, width:2),
+                                ),
+                                filled: true,
+                                fillColor: fondCarte,
+                              ),
+                            ),
+                          ),
                         ),
                         SizedBox(height: 16),
                         _buildDropdownField(
@@ -3914,7 +3976,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: bleuCoris,
+            color: SouscriptionEtudePageState.bleuCoris,
           ),
         ),
         SizedBox(height: 6),
@@ -3932,7 +3994,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 child: DropdownButton<String>(
                   value: selectedIndicatif,
                   isExpanded: true,
-                  icon: Icon(Icons.arrow_drop_down, size: 20, color: bleuCoris),
+                  icon: Icon(Icons.arrow_drop_down, size: 20, color: SouscriptionEtudePageState.bleuCoris),
                   items: _indicatifOptions.map((option) {
                     return DropdownMenuItem<String>(
                       value: option['code'],
@@ -3971,7 +4033,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: bleuCoris, width: 1.5),
+                    borderSide: BorderSide(color: SouscriptionEtudePageState.bleuCoris, width: 1.5),
                   ),
                   filled: true,
                   fillColor: fondCarte,
@@ -4081,6 +4143,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   Widget _buildDateField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -4094,7 +4157,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: bleuCoris,
+            color: SouscriptionEtudePageState.bleuCoris,
           ),
         ),
         const SizedBox(height: 6),
@@ -4109,11 +4172,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: ColorScheme.light(
-                      primary: bleuCoris,
-                      onPrimary: blanc,
+                      primary: SouscriptionEtudePageState.bleuCoris,
+                      onPrimary: SouscriptionEtudePageState.blanc,
                     ),
                     dialogTheme: DialogThemeData(
-                      backgroundColor: blanc,
+                      backgroundColor: SouscriptionEtudePageState.blanc,
                     ),
                   ),
                   child: child!,
@@ -4133,10 +4196,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   margin: const EdgeInsets.all(8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: bleuCoris.withValues(alpha: 0.1),
+                    color: SouscriptionEtudePageState.bleuCoris.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: bleuCoris, size: 20),
+                  child: Icon(icon, color: SouscriptionEtudePageState.bleuCoris, size: 20),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -4148,13 +4211,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                  borderSide: BorderSide(color: SouscriptionEtudePageState.bleuCoris, width: 2),
                 ),
                 filled: true,
                 fillColor: fondCarte,
                 contentPadding:
                     EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                suffixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+                suffixIcon: Icon(Icons.calendar_today, color: SouscriptionEtudePageState.bleuCoris),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -5030,6 +5093,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     : 'Non renseigné',
                 'Lien de parenté',
                 _selectedLienParente),
+            SubscriptionRecapWidgets.buildRecapRow(
+                'Date de naissance',
+                _beneficiaireDateNaissance != null
+                    ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}'
+                    : 'Non renseigné'),
             SubscriptionRecapWidgets.buildRecapRow(
                 'Téléphone',
                 _beneficiaireContactController.text.isNotEmpty

@@ -606,6 +606,7 @@ class SubscriptionRecapWidgets {
   /// Construit le récapitulatif des bénéficiaires et contacts d'urgence
   static Widget buildBeneficiariesSection({
     String? beneficiaireNom,
+    String? beneficiaireDateNaissance,
     String? beneficiaireContact,
     String? beneficiaireLienParente,
     String? contactUrgenceNom,
@@ -625,6 +626,12 @@ class SubscriptionRecapWidgets {
                 : beneficiaireNom!,
             'Lien de parenté',
             beneficiaireLienParente ?? 'Non renseigné'),
+        if (beneficiaireDateNaissance != null &&
+            beneficiaireDateNaissance.isNotEmpty)
+          buildRecapRow(
+            'Date de naissance',
+            SubscriptionRecapWidgets.formatDate(beneficiaireDateNaissance),
+          ),
         buildRecapRow(
             'Téléphone',
             beneficiaireContact?.isEmpty ?? true
@@ -654,6 +661,7 @@ class SubscriptionRecapWidgets {
     VoidCallback? onDocumentTap,
     List<Map<String, dynamic>>? documents,
     void Function(String path, String? label)? onDocumentTapWithInfo,
+    int? documentCount,
   }) {
     final children = <Widget>[];
 
@@ -836,7 +844,9 @@ class SubscriptionRecapWidgets {
     }
 
     return buildRecapSection(
-      'Documents',
+      documentCount != null && documentCount > 0
+          ? 'Documents (${documentCount})'
+          : 'Documents',
       Icons.description,
       bleuSecondaire,
       children,

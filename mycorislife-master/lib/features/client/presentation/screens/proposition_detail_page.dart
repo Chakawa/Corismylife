@@ -1064,6 +1064,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     return SubscriptionRecapWidgets.buildBeneficiariesSection(
       beneficiaireNom: beneficiaire?['nom'],
+      beneficiaireDateNaissance: beneficiaire?['date_naissance'] ??
+          beneficiaire?['dateNaissance'] ??
+          beneficiaire?['date_de_naissance'],
       beneficiaireContact: beneficiaire?['contact'],
       beneficiaireLienParente: beneficiaire?['lien_parente'],
       contactUrgenceNom: contactUrgence?['nom'],
@@ -1254,6 +1257,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     final normalizedDocsList = docsList.isEmpty ? null : docsList;
 
+    // Calculate total document count
+    int totalDocuments = 0;
+    if (hasDocument) totalDocuments++;
+    if (normalizedDocsList != null) totalDocuments += normalizedDocsList.length;
+
     return SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: null,
       documents: normalizedDocsList,
@@ -1261,6 +1269,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       onDocumentTap: actualFilename != null
           ? () => _viewDocument(actualFilename, displayLabel)
           : null,
+      documentCount: totalDocuments, // Add document count
     );
   }
 
