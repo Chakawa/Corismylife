@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
@@ -420,6 +422,50 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         ),
       ),
     );
+  }
+
+  List<Map<String, dynamic>> _extractDocumentsList(dynamic rawDocs) {
+    if (rawDocs == null) return [];
+    final List<Map<String, dynamic>> docs = [];
+
+    try {
+      if (rawDocs is String) {
+        final trimmed = rawDocs.trim();
+        if (trimmed.isEmpty) return [];
+
+        // Try JSON decode all types de formats
+        final decoded = jsonDecode(trimmed);
+        return _extractDocumentsList(decoded);
+      }
+
+      if (rawDocs is List) {
+        for (final item in rawDocs) {
+          if (item is Map<String, dynamic>) {
+            docs.add(item);
+          } else if (item is Map) {
+            docs.add(Map<String, dynamic>.from(item));
+          } else if (item is String) {
+            docs.add({'path': item, 'label': item});
+          }
+        }
+        return docs;
+      }
+
+      if (rawDocs is Map) {
+        rawDocs.forEach((key, value) {
+          if (value is String || value is num || value is bool) {
+            docs.add({'path': value, 'label': key});
+          } else if (value is Map || value is List) {
+            docs.addAll(_extractDocumentsList(value));
+          }
+        });
+        return docs;
+      }
+    } catch (_) {
+      // ignore decode error - fallback empty
+    }
+
+    return [];
   }
 
   void _modifyProposition() {
@@ -1070,34 +1116,72 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 
         // Documents
         () {
-          List<Map<String, dynamic>>? docsList;
-          final docsRaw = souscriptionData['documents'];
-          if (docsRaw is List) {
-            docsList = docsRaw
-                .map((d) => d is Map<String, dynamic>
-                    ? d
-                    : (d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}))
-                .where((d) => d.isNotEmpty)
-                .toList();
-          } else if (docsRaw is Map) {
-            docsList = docsRaw.entries
-                .map((e) => <String, dynamic>{
-                      'label': e.key.toString(),
-                      'path': e.value,
-                    })
-                .toList();
+          String? pieceIdentite =
+              (souscriptionData['piece_identite'] ??
+                      _fullSubscriptionData?['piece_identite'])
+                  ?.toString()
+                  .trim();
+          String? pieceIdentiteLabel =
+              (souscriptionData['piece_identite_label'] ??
+                      _fullSubscriptionData?['piece_identite_label'])
+                  ?.toString()
+                  .trim();
+
+          List<Map<String, dynamic>> docsList = [];
+
+          void addFrom(dynamic raw) {
+            final extracted = _extractDocumentsList(raw);
+            for (final item in extracted) {
+              final path = item['path']?.toString().trim() ??
+                  item['url']?.toString().trim() ??
+                  item['filename']?.toString().trim();
+              if (path == null || path.isEmpty || path.toLowerCase() == 'null') {
+                continue;
+              }
+              if (docsList.any((d) {
+                final existing = d['path']?.toString().trim() ??
+                    d['url']?.toString().trim() ??
+                    d['filename']?.toString().trim();
+                return existing != null && existing == path;
+              })) {
+                continue;
+              }
+              docsList.add(item);
+            }
           }
 
+          addFrom(souscriptionData['documents']);
+          addFrom(_fullSubscriptionData?['documents']);
+          addFrom(souscriptionData['souscription_documents']);
+          addFrom(_fullSubscriptionData?['souscription_documents']);
+          addFrom(souscriptionData['piece_identite_documents']);
+          addFrom(_fullSubscriptionData?['piece_identite_documents']);
+
+          if (pieceIdentite != null && pieceIdentite.isNotEmpty) {
+            final existing = docsList.any((d) {
+              final path = d['path']?.toString().trim() ??
+                  d['url']?.toString().trim() ??
+                  d['filename']?.toString().trim();
+              return path == pieceIdentite;
+            });
+            if (!existing) {
+              docsList.insert(0, {
+                'path': pieceIdentite,
+                'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+              });
+            }
+          }
+
+          final totalDocuments = docsList.length;
+
           return SubscriptionRecapWidgets.buildDocumentsSection(
-            pieceIdentite:
-                souscriptionData['piece_identite_label'] ?? souscriptionData['piece_identite'],
-            documents: docsList,
-            onDocumentTap: (souscriptionData['piece_identite'] != null &&
-                    souscriptionData['piece_identite'] != 'Non téléchargée')
-                ? () => _viewDocument(
-                      souscriptionData['piece_identite'].toString(),
-                      souscriptionData['piece_identite_label']?.toString(),
-                    )
+            pieceIdentite: pieceIdentiteLabel ?? pieceIdentite,
+            documents: docsList.isNotEmpty ? docsList : null,
+            documentCount: totalDocuments,
+            onDocumentTap: pieceIdentite != null &&
+                    pieceIdentite.isNotEmpty &&
+                    pieceIdentite != 'Non téléchargée'
+                ? () => _viewDocument(pieceIdentite!, pieceIdentiteLabel)
                 : null,
             onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
           );

@@ -1732,6 +1732,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
       ..._extractDocumentsList(_subscriptionData?['documents']),
       ..._extractDocumentsList(subscriptionData['souscription_documents']),
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
+      // Extraire les documents d'identité multiples
+      ..._extractDocumentsList(subscriptionData['piece_identite_documents']),
+      ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
     ];
 
     // Inclure aussi pieceIdentite s'il existe (pour afficher toutes les pièces d'identité)

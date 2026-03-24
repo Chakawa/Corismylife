@@ -1238,6 +1238,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       // Certaines versions stockent les documents dans "souscription_documents"
       ..._extractDocumentsList(souscriptiondata?['souscription_documents']),
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
+      // Extraire les documents d'identité multiples
+      ..._extractDocumentsList(souscriptiondata?['piece_identite_documents']),
+      ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
     ];
 
     // S'assurer que pieceIdentite est toujours affiché parmi les documents
