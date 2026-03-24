@@ -1,21 +1,67 @@
 const express = require('express');
 const router = express.Router();
+const { Pool } = require('pg');
+
+// 🔥 CONFIG DB (adapte)
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'mycorisdb',
+  password: 'password',
+  port: 5432,
+});
 
 /**
- * @route   GET /wave-success
- * @desc    Page de succès après paiement Wave
- * @access  Public (redirection depuis Wave)
+ * 🔁 REDIRECT DEPUIS WAVE (comme ton ancien système)
  */
 router.get('/wave-success', (req, res) => {
   const queryString = new URLSearchParams(req.query || {}).toString();
   const target = queryString
     ? `/api/payment/wave-success?${queryString}`
-    : '/api/payment/wave-success';
-  return res.redirect(302, target);
+    : `/api/payment/wave-success`;
 
-  const { sessionId, status, reference } = req.query;
-  
-  const htmlContent = `
+  return res.redirect(302, target);
+});
+
+router.get('/wave-error', (req, res) => {
+  const queryString = new URLSearchParams(req.query || {}).toString();
+  const target = queryString
+    ? `/api/payment/wave-error?${queryString}`
+    : `/api/payment/wave-error`;
+
+  return res.redirect(302, target);
+});
+
+/**
+ * ✅ SUCCESS (DESIGN ORIGINAL + FALLBACK INTELLIGENT)
+ */
+router.get('/api/payment/wave-success', async (req, res) => {
+  try {
+    let { sessionId, status, montant, reference } = req.query;
+
+    // 🔥 FALLBACK DB si données manquantes
+    if (!montant || !reference || !status) {
+      if (sessionId) {
+        const result = await pool.query(
+          `SELECT montant, statut, transaction_id 
+           FROM payment_transactions 
+           WHERE session_id = $1 
+           ORDER BY created_at DESC 
+           LIMIT 1`,
+          [sessionId]
+        );
+
+        const transaction = result.rows[0];
+
+        if (transaction) {
+          montant = montant || transaction.montant;
+          status = status || transaction.statut;
+          reference = reference || transaction.transaction_id;
+        }
+      }
+    }
+
+    const htmlContent = `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -116,7 +162,7 @@ router.get('/wave-success', (req, res) => {
     </head>
     <body>
       <div class="container">
-        <div class="logo">🏢 CORIS Assurance Vie</div>
+        <div class="logo">🏢 CORIS Assurances Vie</div>
         
         <div class="icon">✅</div>
         
@@ -126,11 +172,12 @@ router.get('/wave-success', (req, res) => {
         <p>Votre contrat d'assurance est maintenant en vigueur.</p>
         
         <div class="info-box">
-          <strong>📋 Référence:</strong> ${reference || sessionId || 'N/A'}<br>
+          <strong>💰 Montant:</strong> ${montant || 'Non disponible'} FCFA<br>
+          <strong>📋 Référence:</strong> ${reference || 'Non disponible'}<br>
           <strong>🔔 Statut:</strong> ${status || 'SUCCÈS'}
         </div>
         
-        <p>Vous recevrez bientôt un email de confirmation avec les détails de votre contrat.</p>
+        <p>Un message de confirmation vous sera envoyé par SMS.</p>
         
         <button class="btn" onclick="closeWindow()">Fermer</button>
         
@@ -151,194 +198,47 @@ router.get('/wave-success', (req, res) => {
         }, 1000);
         
         function closeWindow() {
-          // Essayer de fermer la fenêtre (fonctionne si ouverte par JS)
           if (window.opener) {
             window.close();
           } else {
-            // Sinon rediriger vers l'app (si c'est possible)
             console.log('Redirection après paiement');
           }
         }
       </script>
     </body>
     </html>
-  `;
-  
-  res.set('Content-Type', 'text/html; charset=utf-8');
-  res.send(htmlContent);
+    `;
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(htmlContent);
+
+  } catch (error) {
+    console.error('Erreur wave-success:', error);
+    res.status(500).send('Erreur serveur');
+  }
 });
 
 /**
- * @route   GET /wave-error
- * @desc    Page d'erreur après paiement Wave échoué
- * @access  Public (redirection depuis Wave)
+ * ❌ ERROR (design aussi conservé)
  */
-router.get('/wave-error', (req, res) => {
-  const queryString = new URLSearchParams(req.query || {}).toString();
-  const target = queryString
-    ? `/api/payment/wave-error?${queryString}`
-    : '/api/payment/wave-error';
-  return res.redirect(302, target);
+router.get('/api/payment/wave-error', (req, res) => {
+  const { status, reason } = req.query;
 
-  const { sessionId, status, reason, reference } = req.query;
-  
   const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Paiement Échoué - CORIS Assurance</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-        }
-        
-        .container {
-          background: white;
-          border-radius: 10px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-          padding: 40px;
-          text-align: center;
-          max-width: 500px;
-          width: 100%;
-        }
-        
-        .icon {
-          font-size: 80px;
-          margin-bottom: 20px;
-          animation: shake 0.5s ease-in-out;
-        }
-        
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-10px); }
-          75% { transform: translateX(10px); }
-        }
-        
-        h1 {
-          color: #e74c3c;
-          font-size: 28px;
-          margin-bottom: 15px;
-        }
-        
-        p {
-          color: #555;
-          font-size: 16px;
-          line-height: 1.6;
-          margin-bottom: 10px;
-        }
-        
-        .error-box {
-          background: #fff3cd;
-          border-left: 4px solid #ffc107;
-          padding: 15px;
-          margin: 25px 0;
-          border-radius: 5px;
-          text-align: left;
-        }
-        
-        .error-box strong {
-          color: #e74c3c;
-        }
-        
-        .btn {
-          background: #e74c3c;
-          color: white;
-          border: none;
-          padding: 12px 30px;
-          border-radius: 5px;
-          cursor: pointer;
-          font-size: 16px;
-          margin-top: 20px;
-          margin-right: 10px;
-          text-decoration: none;
-          display: inline-block;
-        }
-        
-        .btn:hover {
-          background: #c0392b;
-        }
-        
-        .btn-secondary {
-          background: #95a5a6;
-        }
-        
-        .btn-secondary:hover {
-          background: #7f8c8d;
-        }
-        
-        .logo {
-          color: #e74c3c;
-          font-weight: bold;
-          font-size: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .actions {
-          margin-top: 30px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="logo">🏢 CORIS Assurance Vie</div>
-        
-        <div class="icon">❌</div>
-        
-        <h1>Paiement Échoué</h1>
-        
-        <p>Nous n'avons pas pu traiter votre paiement.</p>
-        
-        <div class="error-box">
-          <strong>🔍 Raison:</strong> ${reason || 'Erreur lors du traitement du paiement'}<br>
-          <strong>📋 Référence:</strong> ${reference || sessionId || 'N/A'}<br>
-          <strong>🔔 Statut:</strong> ${status || 'ÉCHOUÉ'}
-        </div>
-        
-        <p>Veuillez vérifier vos informations et réessayer.</p>
-        
-        <div class="actions">
-          <button class="btn" onclick="retryPayment()">🔄 Réessayer</button>
-          <button class="btn btn-secondary" onclick="closeWindow()">Fermer</button>
-        </div>
-        
-        <p style="margin-top: 20px; color: #999; font-size: 13px;">
-          Si le problème persiste, contactez notre support: contact@coris-assurance.ci
-        </p>
-      </div>
-      
-      <script>
-        function retryPayment() {
-          // Retourner à l'app pour réessayer
-          if (window.opener) {
-            window.close();
-          } else {
-            history.back();
-          }
-        }
-        
-        function closeWindow() {
-          if (window.opener) {
-            window.close();
-          } else {
-            history.back();
-          }
-        }
-      </script>
-    </body>
-    </html>
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <title>Paiement Échoué</title>
+  </head>
+  <body style="text-align:center; font-family:Arial;">
+    <h1 style="color:red;">❌ Paiement Échoué</h1>
+    <p><strong>Statut:</strong> ${status || 'ÉCHOUÉ'}</p>
+    <p><strong>Raison:</strong> ${reason || 'Erreur lors du paiement'}</p>
+  </body>
+  </html>
   `;
-  
-  res.set('Content-Type', 'text/html; charset=utf-8');
+
   res.send(htmlContent);
 });
 

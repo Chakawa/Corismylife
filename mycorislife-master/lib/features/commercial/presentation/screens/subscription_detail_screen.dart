@@ -1069,6 +1069,16 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                   souscriptionData['beneficiaire']['lien_parente'] ??
                       'Non renseigné',
                 ),
+                if (souscriptionData['beneficiaire'] != null &&
+                    (souscriptionData['beneficiaire']['date_naissance'] != null ||
+                     souscriptionData['beneficiaire']['dateNaissance'] != null ||
+                     souscriptionData['beneficiaire']['date_de_naissance'] != null))
+                  _buildRecapRow(
+                    'Date de naissance',
+                    _formatDate(souscriptionData['beneficiaire']['date_naissance'] ??
+                        souscriptionData['beneficiaire']['dateNaissance'] ??
+                        souscriptionData['beneficiaire']['date_de_naissance']),
+                  ),
                 const SizedBox(height: 12),
               ],
               if (souscriptionData['contact_urgence'] != null) ...[
@@ -1150,26 +1160,33 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             }
           }
 
+          // Collecte tous les documents depuis les différentes sources
           addFrom(souscriptionData['documents']);
           addFrom(_fullSubscriptionData?['documents']);
           addFrom(souscriptionData['souscription_documents']);
           addFrom(_fullSubscriptionData?['souscription_documents']);
+
+          // Ajoute les documents de pièce d'identité seulement s'ils ne sont pas déjà inclus
           addFrom(souscriptionData['piece_identite_documents']);
           addFrom(_fullSubscriptionData?['piece_identite_documents']);
 
+          // Vérifie si pieceIdentite est déjà dans la liste avant de l'ajouter
+          bool pieceIdentiteAlreadyIncluded = false;
           if (pieceIdentite != null && pieceIdentite.isNotEmpty) {
-            final existing = docsList.any((d) {
+            pieceIdentiteAlreadyIncluded = docsList.any((d) {
               final path = d['path']?.toString().trim() ??
                   d['url']?.toString().trim() ??
                   d['filename']?.toString().trim();
               return path == pieceIdentite;
             });
-            if (!existing) {
-              docsList.insert(0, {
-                'path': pieceIdentite,
-                'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
-              });
-            }
+          }
+
+          // Ajoute pieceIdentite seulement si elle n'est pas déjà incluse
+          if (pieceIdentite != null && pieceIdentite.isNotEmpty && !pieceIdentiteAlreadyIncluded) {
+            docsList.insert(0, {
+              'path': pieceIdentite,
+              'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+            });
           }
 
           final totalDocuments = docsList.length;

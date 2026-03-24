@@ -3184,6 +3184,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     : 'Non renseigné',
                 'Lien de parenté',
                 _selectedLienParente),
+            if (_beneficiaireDateNaissanceController.text.isNotEmpty)
+              SubscriptionRecapWidgets.buildRecapRow(
+                  'Date de naissance',
+                  SubscriptionRecapWidgets.formatDate(_beneficiaireDateNaissanceController.text)),
             SubscriptionRecapWidgets.buildRecapRow(
                 'Téléphone',
                 _beneficiaireContactController.text.isNotEmpty

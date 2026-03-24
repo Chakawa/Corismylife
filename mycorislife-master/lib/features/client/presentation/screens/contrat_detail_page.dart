@@ -1752,12 +1752,19 @@ class ContratDetailPageState extends State<ContratDetailPage>
       }
     }
 
-    final normalizedDocsList = docsList.isEmpty ? null : docsList;
+    // Déduplication globale de tous les documents
+    final seenPaths = <String>{};
+    final deduplicatedDocsList = docsList.where((doc) {
+      final path = doc['path']?.toString().trim() ?? '';
+      if (path.isEmpty || seenPaths.contains(path)) return false;
+      seenPaths.add(path);
+      return true;
+    }).toList();
 
-    // Calculate total document count
-    int totalDocuments = 0;
-    if (pieceIdentite != null && pieceIdentite.toString().trim().isNotEmpty) totalDocuments++;
-    if (normalizedDocsList != null) totalDocuments += normalizedDocsList.length;
+    final normalizedDocsList = deduplicatedDocsList.isEmpty ? null : deduplicatedDocsList;
+
+    // Calculate total document count - seulement compter les documents uniques dans la liste
+    final totalDocuments = normalizedDocsList?.length ?? 0;
 
     return Container(
       decoration: BoxDecoration(

@@ -1231,39 +1231,50 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     final actualFilename = hasDocument ? pieceIdentite : null;
 
-    final docsList = <Map<String, dynamic>>[
+    final docsList = [
       ..._extractDocumentsList(souscriptiondata?['documents']),
       ..._extractDocumentsList(_subscriptionData?['documents']),
       ..._extractDocumentsList(details['documents']),
-      // Certaines versions stockent les documents dans "souscription_documents"
       ..._extractDocumentsList(souscriptiondata?['souscription_documents']),
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
-      // Extraire les documents d'identité multiples
       ..._extractDocumentsList(souscriptiondata?['piece_identite_documents']),
       ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
     ];
 
-    // S'assurer que pieceIdentite est toujours affiché parmi les documents
-    if (pieceIdentite != null && pieceIdentite.toString().trim().isNotEmpty) {
-      final identityPath = pieceIdentite.toString().trim();
+    // Ne plus ajouter manuellement pieceIdentite - elle devrait déjà être incluse dans piece_identite_documents
+    // Si elle n'y est pas, c'est un problème de données côté serveur
+// Ajouter pieceIdentite seulement si elle n'existe pas déjà
+    if (actualFilename != null && actualFilename.isNotEmpty) {
       final alreadyExists = docsList.any((doc) {
-        final docPath = doc['path']?.toString().trim();
-        return docPath != null && docPath == identityPath;
+        final path = doc['path']?.toString().trim() ?? '';
+        final normalized = path.replaceAll('\\', '/').split('/').last.trim();
+        final currentFile =
+            actualFilename.replaceAll('\\', '/').split('/').last.trim();
+        return normalized == currentFile;
       });
+
       if (!alreadyExists) {
-        docsList.insert(0, {
-          'path': identityPath,
-          'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
-        });
+        docsList.add(
+            {'path': actualFilename, 'label': displayLabel ?? actualFilename});
       }
     }
+    // Déduplication stricte par nom de fichier
+    final seenFiles = <String>{};
+    final deduplicatedDocsList = docsList.where((doc) {
+      final path = doc['path']?.toString().trim() ?? '';
+      final filename = path.replaceAll('\\', '/').split('/').last.trim();
+      if (filename.isEmpty || seenFiles.contains(filename)) return false;
+      seenFiles.add(filename);
+      return true;
+    }).toList();
+    developer.log(
+        'Documents finaux uniques: ${deduplicatedDocsList.map((d) => d['path']).toList()}');
 
-    final normalizedDocsList = docsList.isEmpty ? null : docsList;
+    final normalizedDocsList =
+        deduplicatedDocsList.isEmpty ? null : deduplicatedDocsList;
 
-    // Calculate total document count
-    int totalDocuments = 0;
-    if (hasDocument) totalDocuments++;
-    if (normalizedDocsList != null) totalDocuments += normalizedDocsList.length;
+    // Calculate total document count - seulement compter les documents uniques dans la liste
+    final totalDocuments = normalizedDocsList?.length ?? 0;
 
     return SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: null,
@@ -1272,7 +1283,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       onDocumentTap: actualFilename != null
           ? () => _viewDocument(actualFilename, displayLabel)
           : null,
-      documentCount: totalDocuments, // Add document count
+      documentCount: totalDocuments, // Compte seulement les documents uniques
     );
   }
 
