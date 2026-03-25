@@ -427,7 +427,8 @@ class _SouscriptionSolidaritePageState
   Future<void> _selectBeneficiaireDateNaissance(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _beneficiaireDateNaissance ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      initialDate: _beneficiaireDateNaissance ??
+          DateTime.now().subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -798,7 +799,8 @@ class _SouscriptionSolidaritePageState
     _beneficiaireContactController.text = data['beneficiaire_contact'] ?? '';
     if (data['beneficiaire_date_naissance'] != null) {
       try {
-        _beneficiaireDateNaissance = DateTime.parse(data['beneficiaire_date_naissance']);
+        _beneficiaireDateNaissance =
+            DateTime.parse(data['beneficiaire_date_naissance']);
         _beneficiaireDateNaissanceController.text =
             "${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}";
       } catch (e) {
@@ -1826,14 +1828,16 @@ class _SouscriptionSolidaritePageState
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Date de naissance du bénéficiaire',
-                    labelStyle: TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
+                    labelStyle:
+                        TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
                     prefixIcon: Container(
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                             color: bleuCoris.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8)),
-                        child: Icon(Icons.calendar_today, color: bleuCoris, size: 20)),
+                        child: Icon(Icons.calendar_today,
+                            color: bleuCoris, size: 20)),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: grisLeger)),
@@ -1845,7 +1849,8 @@ class _SouscriptionSolidaritePageState
                         borderSide: BorderSide(color: bleuCoris, width: 2)),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                   ),
                   onTap: () => _selectBeneficiaireDateNaissance(context),
                 ),
@@ -3217,34 +3222,64 @@ class _SouscriptionSolidaritePageState
             const SizedBox(height: 12),
           ],
 
-          // Bénéficiaire et Contact d'urgence dans une seule carte
-          _buildRecapSection('Bénéficiaire et Contact d\'urgence',
-              Icons.contacts, bleuSecondaire, [
-            _buildSubsectionTitle('Bénéficiaire'),
-            _buildRecapRow(
+          _buildRecapSection(
+            'Bénéficiaire et Contact d\'urgence',
+            Icons.contacts,
+            bleuSecondaire,
+            [
+              // 🔹 Bénéficiaire
+              _buildSubsectionTitle('Bénéficiaire'),
+              _buildRecapRow(
                 'Nom complet',
-                _beneficiaireNomController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _beneficiaireNomController.text),
-            _buildRecapRow(
+                _beneficiaireNomController.text.isNotEmpty
+                    ? _beneficiaireNomController.text
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
                 'Date de naissance',
-                _beneficiaireDateNaissance == null
-                    ? 'Non renseigné'
-                    : "${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}"),
-            _buildRecapRow('Contact',
-                '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-            _buildRecapRow('Lien de parenté', _selectedLienParente),
-            const SizedBox(height: 8),
-            _buildSubsectionTitle('Contact d\'urgence'),
-            _buildRecapRow(
+                _beneficiaireDateNaissance != null
+                    ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
+                        '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
+                        '${_beneficiaireDateNaissance!.year}'
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
+                'Contact',
+                _beneficiaireContactController.text.isNotEmpty
+                    ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
+                'Lien de parenté',
+                _selectedLienParente.isNotEmpty
+                    ? _selectedLienParente
+                    : 'Non renseigné',
+              ),
+
+              const SizedBox(height: 8),
+
+              // 🔹 Contact d'urgence
+              _buildSubsectionTitle('Contact d\'urgence'),
+              _buildRecapRow(
                 'Nom complet',
-                _personneContactNomController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _personneContactNomController.text),
-            _buildRecapRow('Contact',
-                '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-            _buildRecapRow('Lien de parenté', _selectedLienParenteUrgence),
-          ]),
+                _personneContactNomController.text.isNotEmpty
+                    ? _personneContactNomController.text
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
+                'Contact',
+                _personneContactTelController.text.isNotEmpty
+                    ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
+                'Lien de parenté',
+                _selectedLienParenteUrgence.isNotEmpty
+                    ? _selectedLienParenteUrgence
+                    : 'Non renseigné',
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
 
           // 💳 Mode de Paiement
@@ -3695,7 +3730,8 @@ class _SouscriptionSolidaritePageState
       return false;
     }
     if (_beneficiaireDateNaissance == null) {
-      _showErrorSnackBar('Veuillez saisir la date de naissance du bénéficiaire');
+      _showErrorSnackBar(
+          'Veuillez saisir la date de naissance du bénéficiaire');
       return false;
     }
     if (_beneficiaireContactController.text.trim().isEmpty) {

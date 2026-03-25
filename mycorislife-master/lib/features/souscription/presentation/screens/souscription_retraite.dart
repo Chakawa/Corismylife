@@ -2609,7 +2609,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                                  borderSide:
+                                      BorderSide(color: bleuCoris, width: 2),
                                 ),
                                 filled: true,
                                 fillColor: fondCarte,
@@ -3656,29 +3657,63 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       ]),
       const SizedBox(height: 20),
       SubscriptionRecapWidgets.buildRecapSection(
-          'Bénéficiaire et Contact d\'urgence', Icons.contacts, orangeWarning, [
-        _buildSubsectionTitle('Bénéficiaire'),
-        SubscriptionRecapWidgets.buildRecapRow(
+        'Bénéficiaire et Contact d\'urgence',
+        Icons.contacts,
+        orangeWarning,
+        [
+          // 🔹 Bénéficiaire
+          _buildSubsectionTitle('Bénéficiaire'),
+          SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
-            _beneficiaireNomController.text.isEmpty
-                ? 'Non renseigné'
-                : _beneficiaireNomController.text),
-        SubscriptionRecapWidgets.buildRecapRow('Contact',
-            '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.isEmpty ? 'Non renseigné' : _beneficiaireContactController.text}'),
-        SubscriptionRecapWidgets.buildRecapRow(
-            'Lien de parenté', _selectedLienParente),
-        const SizedBox(height: 12),
-        _buildSubsectionTitle('Contact d\'urgence'),
-        SubscriptionRecapWidgets.buildRecapRow(
+            _beneficiaireNomController.text.isNotEmpty
+                ? _beneficiaireNomController.text
+                : 'Non renseigné',
+          ),
+          SubscriptionRecapWidgets.buildRecapRow(
+            'Date de naissance',
+            _beneficiaireDateNaissance != null
+                ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
+                    '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
+                    '${_beneficiaireDateNaissance!.year}'
+                : 'Non renseigné',
+          ),
+          SubscriptionRecapWidgets.buildRecapRow(
+            'Contact',
+            _beneficiaireContactController.text.isNotEmpty
+                ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
+                : 'Non renseigné',
+          ),
+          SubscriptionRecapWidgets.buildRecapRow(
+            'Lien de parenté',
+            _selectedLienParente.isNotEmpty
+                ? _selectedLienParente
+                : 'Non renseigné',
+          ),
+
+          const SizedBox(height: 12),
+
+          // 🔹 Contact d'urgence
+          _buildSubsectionTitle('Contact d\'urgence'),
+          SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
-            _personneContactNomController.text.isEmpty
-                ? 'Non renseigné'
-                : _personneContactNomController.text),
-        SubscriptionRecapWidgets.buildRecapRow('Contact',
-            '$_selectedContactIndicatif ${_personneContactTelController.text.isEmpty ? 'Non renseigné' : _personneContactTelController.text}'),
-        SubscriptionRecapWidgets.buildRecapRow(
-            'Lien de parenté', _selectedLienParenteUrgence),
-      ]),
+            _personneContactNomController.text.isNotEmpty
+                ? _personneContactNomController.text
+                : 'Non renseigné',
+          ),
+          SubscriptionRecapWidgets.buildRecapRow(
+            'Contact',
+            _personneContactTelController.text.isNotEmpty
+                ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                : 'Non renseigné',
+          ),
+          SubscriptionRecapWidgets.buildRecapRow(
+            'Lien de parenté',
+            _selectedLienParenteUrgence.isNotEmpty
+                ? _selectedLienParenteUrgence
+                : 'Non renseigné',
+          ),
+        ],
+      ),
       const SizedBox(height: 20),
       // 💳 SECTION MODE DE PAIEMENT
       if (_selectedModePaiement != null)

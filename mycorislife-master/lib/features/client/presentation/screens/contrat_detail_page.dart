@@ -1713,7 +1713,22 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
-    // Recherche robuste de la pièce d'identité depuis tous les emplacements possibles.
+
+    // Récupération robuste des documents d'identité multiples
+    final identityDocs = <Map<String, dynamic>>[];
+    final rawIdentityDocs = [
+      subscriptionData['piece_identite_documents'],
+      _subscriptionData?['piece_identite_documents'],
+    ];
+
+    for (var docList in rawIdentityDocs) {
+      if (docList != null) {
+        final extracted = _extractDocumentsList(docList);
+        if (extracted.isNotEmpty) identityDocs.addAll(extracted);
+      }
+    }
+
+    // Ajouter pièce d'identité unique si elle existe
     final pieceIdentite = _extractServerFileName(
       subscriptionData['piece_identite'] ??
           subscriptionData['pieceIdentite'] ??
@@ -1721,7 +1736,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
           _subscriptionData?['piece_identite'] ??
           _subscriptionData?['piece_identite_url'],
     );
-
     final pieceIdentiteLabel = (subscriptionData['piece_identite_label'] ??
             _subscriptionData?['piece_identite_label'] ??
             pieceIdentite)
@@ -1732,14 +1746,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
       ..._extractDocumentsList(_subscriptionData?['documents']),
       ..._extractDocumentsList(subscriptionData['souscription_documents']),
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
-      // Extraire les documents d'identité multiples
-      ..._extractDocumentsList(subscriptionData['piece_identite_documents']),
-      ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
+      ...identityDocs, // documents multiples
     ];
 
-    // Inclure aussi pieceIdentite s'il existe (pour afficher toutes les pièces d'identité)
-    if (pieceIdentite != null && pieceIdentite.toString().trim().isNotEmpty) {
-      final identityPath = pieceIdentite.toString().trim();
+    if (pieceIdentite != null && pieceIdentite.trim().isNotEmpty) {
+      final identityPath = pieceIdentite.trim();
       final alreadyExists = docsList.any((doc) {
         final docPath = doc['path']?.toString().trim();
         return docPath != null && docPath == identityPath;
@@ -1752,7 +1763,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       }
     }
 
-    // Déduplication globale de tous les documents
+    // Déduplication globale
     final seenPaths = <String>{};
     final deduplicatedDocsList = docsList.where((doc) {
       final path = doc['path']?.toString().trim() ?? '';
@@ -1761,9 +1772,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
       return true;
     }).toList();
 
-    final normalizedDocsList = deduplicatedDocsList.isEmpty ? null : deduplicatedDocsList;
+    final normalizedDocsList =
+        deduplicatedDocsList.isEmpty ? null : deduplicatedDocsList;
 
-    // Calculate total document count - seulement compter les documents uniques dans la liste
     final totalDocuments = normalizedDocsList?.length ?? 0;
 
     return Container(
@@ -1784,7 +1795,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              totalDocuments > 0 ? "Documents (${totalDocuments})" : "Documents",
+              totalDocuments > 0 ? "Documents ($totalDocuments)" : "Documents",
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

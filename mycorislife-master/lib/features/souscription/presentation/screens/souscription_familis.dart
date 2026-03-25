@@ -4883,7 +4883,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                     color: bleuCoris.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.calendar_today, color: bleuCoris, size: 20),
+                                  child: Icon(Icons.calendar_today,
+                                      color: bleuCoris, size: 20),
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -4895,11 +4896,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: bleuCoris, width: 2),
+                                  borderSide:
+                                      BorderSide(color: bleuCoris, width: 2),
                                 ),
                                 filled: true,
                                 fillColor: fondCarte,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 16, horizontal: 16),
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -5573,45 +5576,60 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
         const SizedBox(height: 20),
 
-        // Section Bénéficiaire et Contact d'urgence
+// Section Bénéficiaire et Contact d'urgence
         _buildRecapSection(
           'Bénéficiaire et Contact d\'urgence',
           Icons.contacts,
           orangeWarning,
           [
+            // 🔹 Bénéficiaire
             _buildSubsectionTitle('Bénéficiaire'),
             _buildCombinedRecapRow(
-                'Nom complet',
-                _beneficiaireNomController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _beneficiaireNomController.text,
-                'Contact',
-                _beneficiaireContactController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _beneficiaireContactController.text),
+              'Nom complet',
+              _beneficiaireNomController.text.isNotEmpty
+                  ? _beneficiaireNomController.text
+                  : 'Non renseigné',
+              'Contact',
+              _beneficiaireContactController.text.isNotEmpty
+                  ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
+                  : 'Non renseigné',
+            ),
             _buildCombinedRecapRow(
-                'Date de naissance',
-                _beneficiaireDateNaissance == null
-                    ? 'Non renseigné'
-                    : '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}',
-                'Lien de parenté',
-                _selectedLienParente),
+              'Date de naissance',
+              _beneficiaireDateNaissance != null
+                  ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
+                      '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
+                      '${_beneficiaireDateNaissance!.year}'
+                  : 'Non renseigné',
+              'Lien de parenté',
+              _selectedLienParente.isNotEmpty
+                  ? _selectedLienParente
+                  : 'Non renseigné',
+            ),
             const SizedBox(height: 12),
+
+            // 🔹 Contact d'urgence
             _buildSubsectionTitle('Contact d\'urgence'),
             _buildCombinedRecapRow(
-                'Nom complet',
-                _personneContactNomController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _personneContactNomController.text,
-                'Contact',
-                _personneContactTelController.text.isEmpty
-                    ? 'Non renseigné'
-                    : _personneContactTelController.text),
+              'Nom complet',
+              _personneContactNomController.text.isNotEmpty
+                  ? _personneContactNomController.text
+                  : 'Non renseigné',
+              'Contact',
+              _personneContactTelController.text.isNotEmpty
+                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  : 'Non renseigné',
+            ),
             _buildCombinedRecapRow(
-                'Lien de parenté', _selectedLienParenteUrgence, '', ''),
+              'Lien de parenté',
+              _selectedLienParenteUrgence.isNotEmpty
+                  ? _selectedLienParenteUrgence
+                  : 'Non renseigné',
+              '',
+              '',
+            ),
           ],
         ),
-
         const SizedBox(height: 20),
 
         // 💳 SECTION MODE DE PAIEMENT

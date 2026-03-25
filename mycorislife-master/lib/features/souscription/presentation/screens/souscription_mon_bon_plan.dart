@@ -2334,7 +2334,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           readOnly: true,
                           decoration: InputDecoration(
                             labelText: 'Date de naissance du bénéficiaire *',
-                            prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+                            prefixIcon:
+                                Icon(Icons.calendar_today, color: bleuCoris),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: grisLeger),
@@ -2345,11 +2346,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: bleuCoris, width: 2),
+                              borderSide:
+                                  BorderSide(color: bleuCoris, width: 2),
                             ),
                             filled: true,
                             fillColor: blanc,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
                           ),
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
@@ -3379,43 +3382,58 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           Icons.contacts,
           Colors.amber,
           [
-            // Bénéficiaire
+            // 🔹 Bénéficiaire
             SubscriptionRecapWidgets.buildSubsectionTitle(
                 'Bénéficiaire en cas de décès'),
             const SizedBox(height: 8),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Nom complet',
-                _beneficiaireNomController.text.isNotEmpty
-                    ? _beneficiaireNomController.text
-                    : 'Non renseigné',
-                'Lien de parenté',
-                _selectedLienParente),
+              'Nom complet',
+              _beneficiaireNomController.text.isNotEmpty
+                  ? _beneficiaireNomController.text
+                  : 'Non renseigné',
+              'Lien de parenté',
+              _selectedLienParente.isNotEmpty
+                  ? _selectedLienParente
+                  : 'Non renseigné',
+            ),
             SubscriptionRecapWidgets.buildRecapRow(
-                'Téléphone',
-                _beneficiaireContactController.text.isNotEmpty
-                    ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                    : 'Non renseigné'),
+              'Date de naissance',
+              _beneficiaireDateNaissance != null
+                  ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
+                      '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
+                      '${_beneficiaireDateNaissance!.year}'
+                  : 'Non renseigné',
+            ),
+            SubscriptionRecapWidgets.buildRecapRow(
+              'Téléphone',
+              _beneficiaireContactController.text.isNotEmpty
+                  ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
+                  : 'Non renseigné',
+            ),
 
             const SizedBox(height: 16),
 
-            // Contact d'urgence
+            // 🔹 Contact d'urgence
             SubscriptionRecapWidgets.buildSubsectionTitle('Contact d\'urgence'),
             const SizedBox(height: 8),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Nom complet',
-                _personneContactNomController.text.isNotEmpty
-                    ? _personneContactNomController.text
-                    : 'Non renseigné',
-                'Lien de parenté',
-                _selectedLienParenteUrgence),
+              'Nom complet',
+              _personneContactNomController.text.isNotEmpty
+                  ? _personneContactNomController.text
+                  : 'Non renseigné',
+              'Lien de parenté',
+              _selectedLienParenteUrgence.isNotEmpty
+                  ? _selectedLienParenteUrgence
+                  : 'Non renseigné',
+            ),
             SubscriptionRecapWidgets.buildRecapRow(
-                'Téléphone',
-                _personneContactTelController.text.isNotEmpty
-                    ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
-                    : 'Non renseigné'),
+              'Téléphone',
+              _personneContactTelController.text.isNotEmpty
+                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  : 'Non renseigné',
+            ),
           ],
         ),
-
         const SizedBox(height: 20),
 
         // 💳 SECTION MODE DE PAIEMENT

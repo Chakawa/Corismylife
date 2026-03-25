@@ -301,7 +301,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         if (beneficiaire['date_naissance'] != null) {
           try {
-            _beneficiaireDateNaissance = DateTime.parse(beneficiaire['date_naissance']);
+            _beneficiaireDateNaissance =
+                DateTime.parse(beneficiaire['date_naissance']);
             _beneficiaireDateNaissanceController.text =
                 DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
           } catch (e) {
@@ -2003,7 +2004,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           readOnly: true,
                           decoration: InputDecoration(
                             labelText: 'Date de naissance du bénéficiaire',
-                            prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
+                            prefixIcon:
+                                Icon(Icons.calendar_today, color: bleuCoris),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: grisLeger),
@@ -2014,11 +2016,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: bleuCoris, width: 2),
+                              borderSide:
+                                  BorderSide(color: bleuCoris, width: 2),
                             ),
                             filled: true,
                             fillColor: blanc,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
                           ),
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
@@ -3384,40 +3388,60 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           ],
         ),
         SizedBox(height: 20),
+// SECTION CONTACTS
         _buildRecapSection(
           'Contacts',
           Icons.contacts,
           bleuSecondaire,
           [
+            // 🔹 Bénéficiaire
             _buildSubsectionTitle('Bénéficiaire en cas de décès'),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildCombinedRecapRow(
-                'Nom complet',
-                _beneficiaireNomController.text.isNotEmpty
-                    ? _beneficiaireNomController.text
-                    : 'Non renseigné',
-                'Lien de parenté',
-                _selectedLienParente),
+              'Nom complet',
+              _beneficiaireNomController.text.isNotEmpty
+                  ? _beneficiaireNomController.text
+                  : 'Non renseigné',
+              'Lien de parenté',
+              _selectedLienParente.isNotEmpty
+                  ? _selectedLienParente
+                  : 'Non renseigné',
+            ),
             _buildRecapRow(
-                'Téléphone',
-                _beneficiaireContactController.text.isNotEmpty
-                    ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                    : 'Non renseigné'),
-            SizedBox(height: 16),
+              'Date de naissance',
+              _beneficiaireDateNaissanceController.text.isNotEmpty
+                  ? SubscriptionRecapWidgets.formatDate(
+                      _beneficiaireDateNaissanceController.text)
+                  : 'Non renseigné',
+            ),
+            _buildRecapRow(
+              'Téléphone',
+              _beneficiaireContactController.text.isNotEmpty
+                  ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
+                  : 'Non renseigné',
+            ),
+
+            const SizedBox(height: 16),
+
+            // 🔹 Contact d'urgence
             _buildSubsectionTitle('Contact d\'urgence'),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildCombinedRecapRow(
-                'Nom complet',
-                _personneContactNomController.text.isNotEmpty
-                    ? _personneContactNomController.text
-                    : 'Non renseigné',
-                'Lien de parenté',
-                _selectedLienParenteUrgence),
+              'Nom complet',
+              _personneContactNomController.text.isNotEmpty
+                  ? _personneContactNomController.text
+                  : 'Non renseigné',
+              'Lien de parenté',
+              _selectedLienParenteUrgence.isNotEmpty
+                  ? _selectedLienParenteUrgence
+                  : 'Non renseigné',
+            ),
             _buildRecapRow(
-                'Téléphone',
-                _personneContactTelController.text.isNotEmpty
-                    ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
-                    : 'Non renseigné'),
+              'Téléphone',
+              _personneContactTelController.text.isNotEmpty
+                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  : 'Non renseigné',
+            ),
           ],
         ),
         SizedBox(height: 20),

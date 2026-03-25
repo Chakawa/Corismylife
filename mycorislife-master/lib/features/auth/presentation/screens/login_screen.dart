@@ -179,7 +179,13 @@ class _LoginScreenState extends State<LoginScreen>
             // Si la vérification réussit, rediriger selon le rôle
             if (verificationResult != null) {
               final route = _getRouteForRole(role);
-              Navigator.pushReplacementNamed(context, route);
+
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                route,
+                (route) => false,
+              );
+
               _showSuccessSnackbar();
             }
           } else {

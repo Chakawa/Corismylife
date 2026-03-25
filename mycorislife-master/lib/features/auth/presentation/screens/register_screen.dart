@@ -268,7 +268,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushNamedAndRemoveUntil(
+  context,
+  '/login',
+  (route) => false,
+);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
