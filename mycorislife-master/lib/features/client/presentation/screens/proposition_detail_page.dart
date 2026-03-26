@@ -508,6 +508,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
                   const SizedBox(height: 20),
 
+                  _buildCommercialAssistanceSection(),
+
+                  const SizedBox(height: 20),
+
                   // 💳 Mode de Paiement
                   _buildPaymentMethodSection(),
 
@@ -1072,6 +1076,32 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       contactUrgenceNom: contactUrgence?['nom'],
       contactUrgenceContact: contactUrgence?['contact'],
       contactUrgenceLienParente: contactUrgence?['lien_parente'],
+    );
+  }
+
+  Widget _buildCommercialAssistanceSection() {
+    final details = _getSubscriptionDetails();
+    final assistanceCommerciale = details['assistance_commerciale'];
+
+    if (assistanceCommerciale is! Map) {
+      return const SizedBox.shrink();
+    }
+
+    final isAideParCommercial =
+        assistanceCommerciale['is_aide_par_commercial'] == true;
+    final nomPrenom = assistanceCommerciale['commercial_nom_prenom']?.toString();
+    final codeApporteur =
+        assistanceCommerciale['commercial_code_apporteur']?.toString();
+
+    if (!isAideParCommercial &&
+        (nomPrenom == null || nomPrenom.trim().isEmpty) &&
+        (codeApporteur == null || codeApporteur.trim().isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+      nomPrenom: nomPrenom,
+      codeApporteur: codeApporteur,
     );
   }
 
@@ -1721,22 +1751,20 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 'Paiement mobile sécurisé',
                 () => _processPayment('Wave'),
               ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => _processPayment('Orange Money'),
-              ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                const Color(0xFF1E3A8A),
-                'Paiement via CORIS Money',
-                () => _processPayment('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   'Orange Money',
+              //   'assets/images/icone_orange_money.jpeg',
+              //   Colors.orange,
+              //   'Paiement mobile Orange',
+              //   () => _processPayment('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   'CORIS Money',
+              //   'assets/images/icone_corismoney.jpeg',
+              //   const Color(0xFF1E3A8A),
+              //   'Paiement via CORIS Money',
+              //   () => _processPayment('CORIS Money'),
+              // ),
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),

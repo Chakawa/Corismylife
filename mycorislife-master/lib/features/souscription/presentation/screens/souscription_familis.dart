@@ -127,6 +127,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
+  bool _isAideParCommercial = false;
+  final _commercialNomPrenomController = TextEditingController();
+  final _commercialCodeApporteurController = TextEditingController();
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
@@ -170,9 +173,9 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money',
+    // 'Orange Money',
     'Prélèvement à la source',
-    'CORIS Money'
+    // 'CORIS Money',
   ];
 
   // Options de lien de parenté
@@ -2604,6 +2607,16 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         }
       }
 
+      if (data['assistance_commerciale'] != null &&
+          data['assistance_commerciale'] is Map) {
+        final assistance = data['assistance_commerciale'];
+        _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
+        _commercialNomPrenomController.text =
+            assistance['commercial_nom_prenom']?.toString() ?? '';
+        _commercialCodeApporteurController.text =
+            assistance['commercial_code_apporteur']?.toString() ?? '';
+      }
+
       // Client info if commercial
       if (data['client_info'] != null && data['client_info'] is Map) {
         final clientInfo = data['client_info'];
@@ -3540,6 +3553,13 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
+    if (_isAideParCommercial &&
+        (_commercialNomPrenomController.text.trim().isEmpty ||
+            _commercialCodeApporteurController.text.trim().isEmpty)) {
+      _showErrorSnackBar(
+          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
+      return false;
+    }
     return true;
   }
 
@@ -3678,6 +3698,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
+        'assistance_commerciale': {
+          'is_aide_par_commercial': _isAideParCommercial,
+          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+          'commercial_code_apporteur':
+              _commercialCodeApporteurController.text.trim(),
+        },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
@@ -3685,7 +3711,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                ...?_parseRibUnified(_ribUnifiedController.text.trim()),
+                ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -5006,6 +5032,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       ],
                     ),
                     const SizedBox(height: 20),
+                    _buildAssistanceCommercialeSection(),
+                    const SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -5270,6 +5298,65 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildAssistanceCommercialeSection() {
+    return _buildFormSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      [
+        Text(
+          'Êtes-vous aidé par un commercial pour la souscription ?',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: grisTexte,
+          ),
+        ),
+        RadioListTile<bool>(
+          value: false,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Non'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+              if (!_isAideParCommercial) {
+                _commercialNomPrenomController.clear();
+                _commercialCodeApporteurController.clear();
+              }
+            });
+          },
+        ),
+        RadioListTile<bool>(
+          value: true,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Oui'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+            });
+          },
+        ),
+        if (_isAideParCommercial) ...[
+          const SizedBox(height: 12),
+          _buildModernTextField(
+            controller: _commercialNomPrenomController,
+            label: 'Nom et prénom du commercial',
+            icon: Icons.person_search,
+          ),
+          const SizedBox(height: 16),
+          _buildModernTextField(
+            controller: _commercialCodeApporteurController,
+            label: 'Code apporteur du commercial',
+            icon: Icons.badge_outlined,
+          ),
+        ],
       ],
     );
   }
@@ -5630,6 +5717,15 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
             ),
           ],
         ),
+        if (_isAideParCommercial ||
+            _commercialNomPrenomController.text.trim().isNotEmpty ||
+            _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 20),
+          SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+            nomPrenom: _commercialNomPrenomController.text,
+            codeApporteur: _commercialCodeApporteurController.text,
+          ),
+        ],
         const SizedBox(height: 20),
 
         // 💳 SECTION MODE DE PAIEMENT
@@ -5969,6 +6065,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
+    _commercialNomPrenomController.dispose();
+    _commercialCodeApporteurController.dispose();
     super.dispose();
   }
 
@@ -7047,22 +7145,20 @@ class PaymentBottomSheet extends StatelessWidget {
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                Color(0xFF1E3A8A),
-                'Paiement par CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   'Orange Money',
+              //   'assets/images/icone_orange_money.jpeg',
+              //   Colors.orange,
+              //   'Paiement mobile Orange',
+              //   () => onPayNow('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   'CORIS Money',
+              //   'assets/images/icone_corismoney.jpeg',
+              //   Color(0xFF1E3A8A),
+              //   'Paiement par CORIS Money',
+              //   () => onPayNow('CORIS Money'),
+              // ),
               const SizedBox(height: 24),
               Row(
                 children: [

@@ -92,6 +92,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   // ignore: unused_field
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
+  bool _isAideParCommercial = false;
+  final _commercialNomPrenomController = TextEditingController();
+  final _commercialCodeApporteurController = TextEditingController();
 
   // Signature du client
   Uint8List? _clientSignature;
@@ -124,9 +127,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money',
     'Prélèvement à la source',
-    'CORIS Money'
   ];
 
   String _selectedBeneficiaireIndicatif = '+225'; // Côte d\'Ivoire par défaut
@@ -328,6 +329,17 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               contactUrgence['lien_parente'].toString();
       }
 
+        if (data['assistance_commerciale'] != null &&
+          data['assistance_commerciale'] is Map) {
+        final assistance = data['assistance_commerciale'];
+        _isAideParCommercial =
+          assistance['is_aide_par_commercial'] == true;
+        _commercialNomPrenomController.text =
+          assistance['commercial_nom_prenom']?.toString() ?? '';
+        _commercialCodeApporteurController.text =
+          assistance['commercial_code_apporteur']?.toString() ?? '';
+        }
+
       debugPrint('✅ Pré-remplissage ÉPARGNE terminé');
     } catch (e) {
       debugPrint('❌ Erreur pré-remplissage ÉPARGNE: $e');
@@ -478,6 +490,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     _beneficiaireDateNaissanceController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
+    _commercialNomPrenomController.dispose();
+    _commercialCodeApporteurController.dispose();
+    _banqueController.dispose();
+    _ribUnifiedController.dispose();
+    _numeroMobileMoneyController.dispose();
+    _nomStructureController.dispose();
+    _numeroMatriculeController.dispose();
+    _corisMoneyPhoneController.dispose();
     super.dispose();
   }
 
@@ -937,6 +957,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
+    if (_isAideParCommercial &&
+        (_commercialNomPrenomController.text.trim().isEmpty ||
+            _commercialCodeApporteurController.text.trim().isEmpty)) {
+      _showErrorSnackBar(
+          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
+      return false;
+    }
     return true;
   }
 
@@ -1064,6 +1091,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           'contact':
               '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
           'lien_parente': _selectedLienParenteUrgence,
+        },
+        'assistance_commerciale': {
+          'is_aide_par_commercial': _isAideParCommercial,
+          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+          'commercial_code_apporteur':
+              _commercialCodeApporteurController.text.trim(),
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_fin': _dateFinContrat?.toIso8601String(),
@@ -2082,6 +2115,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                     SizedBox(height: 20),
+                    _buildAssistanceCommercialeSection(),
+                    SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -2090,6 +2125,65 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAssistanceCommercialeSection() {
+    return _buildFormSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      [
+        Text(
+          'Êtes-vous aidé par un commercial pour la souscription ?',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: grisTexte,
+          ),
+        ),
+        RadioListTile<bool>(
+          value: false,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Non'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+              if (!_isAideParCommercial) {
+                _commercialNomPrenomController.clear();
+                _commercialCodeApporteurController.clear();
+              }
+            });
+          },
+        ),
+        RadioListTile<bool>(
+          value: true,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Oui'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+            });
+          },
+        ),
+        if (_isAideParCommercial) ...[
+          SizedBox(height: 12),
+          _buildModernTextField(
+            controller: _commercialNomPrenomController,
+            label: 'Nom et prénom du commercial',
+            icon: Icons.person_search,
+          ),
+          SizedBox(height: 16),
+          _buildModernTextField(
+            controller: _commercialCodeApporteurController,
+            label: 'Code apporteur du commercial',
+            icon: Icons.badge_outlined,
+          ),
+        ],
+      ],
     );
   }
 
@@ -3444,6 +3538,30 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             ),
           ],
         ),
+        if (_isAideParCommercial ||
+            _commercialNomPrenomController.text.trim().isNotEmpty ||
+            _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
+          SizedBox(height: 20),
+          _buildRecapSection(
+            'Assistance commerciale',
+            Icons.support_agent,
+            orangeCoris,
+            [
+              _buildRecapRow(
+                'Nom et prénom du commercial',
+                _commercialNomPrenomController.text.isNotEmpty
+                    ? _commercialNomPrenomController.text
+                    : 'Non renseigné',
+              ),
+              _buildRecapRow(
+                'Code apporteur',
+                _commercialCodeApporteurController.text.isNotEmpty
+                    ? _commercialCodeApporteurController.text
+                    : 'Non renseigné',
+              ),
+            ],
+          ),
+        ],
         SizedBox(height: 20),
         // 💳 SECTION MODE DE PAIEMENT
         if (_selectedModePaiement != null)
@@ -4004,22 +4122,20 @@ class PaymentBottomSheet extends StatelessWidget {
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                Color(0xFF1E3A8A),
-                'Paiement par CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   'Orange Money',
+              //   'assets/images/icone_orange_money.jpeg',
+              //   Colors.orange,
+              //   'Paiement mobile Orange',
+              //   () => onPayNow('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   'CORIS Money',
+              //   'assets/images/icone_corismoney.jpeg',
+              //   const Color(0xFF1E3A8A),
+              //   'Paiement via CORIS Money',
+              //   () => onPayNow('CORIS Money'),
+              // ),
               SizedBox(height: 24),
               Row(
                 children: [

@@ -483,17 +483,17 @@ class _MesContratsPageState extends State<MesContratsPage>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: Image.asset(
-                'assets/images/corismoney_logo.png',
-                height: 24,
-              ),
-              title: const Text('CORIS Money'),
-              onTap: () {
-                Navigator.pop(context);
-                _processPayment(contrat, 'CORIS Money');
-              },
-            ),
+            // ListTile(
+            //   leading: Image.asset(
+            //     'assets/images/corismoney_logo.png',
+            //     height: 24,
+            //   ),
+            //   title: const Text('CORIS Money'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _processPayment(contrat, 'CORIS Money');
+            //   },
+            // ),
             ListTile(
               leading: Image.asset(
                 'assets/images/icone_wave.jpeg',
@@ -505,17 +505,17 @@ class _MesContratsPageState extends State<MesContratsPage>
                 _processPayment(contrat, 'Wave');
               },
             ),
-            ListTile(
-              leading: Image.asset(
-                'assets/images/OrangeMoney.png',
-                height: 24,
-              ),
-              title: const Text('Orange Money'),
-              onTap: () {
-                Navigator.pop(context);
-                _processPayment(contrat, 'Orange Money');
-              },
-            ),
+            // ListTile(
+            //   leading: Image.asset(
+            //     'assets/images/OrangeMoney.png',
+            //     height: 24,
+            //   ),
+            //   title: const Text('Orange Money'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _processPayment(contrat, 'Orange Money');
+            //   },
+            // ),
           ],
         ),
       ),

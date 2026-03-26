@@ -655,6 +655,31 @@ class SubscriptionRecapWidgets {
     );
   }
 
+  static Widget buildAssistanceCommercialeSection({
+    required String? nomPrenom,
+    required String? codeApporteur,
+  }) {
+    final hasNomPrenom = nomPrenom != null && nomPrenom.trim().isNotEmpty;
+    final hasCodeApporteur =
+        codeApporteur != null && codeApporteur.trim().isNotEmpty;
+
+    return buildRecapSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      bleuCoris,
+      [
+        buildRecapRow(
+          'Nom et prénom du commercial',
+          hasNomPrenom ? nomPrenom.trim() : 'Non renseigné',
+        ),
+        buildRecapRow(
+          'Code apporteur',
+          hasCodeApporteur ? codeApporteur.trim() : 'Non renseigné',
+        ),
+      ],
+    );
+  }
+
   /// Construit le récapitulatif des documents
   static Widget buildDocumentsSection({
     String? pieceIdentite,

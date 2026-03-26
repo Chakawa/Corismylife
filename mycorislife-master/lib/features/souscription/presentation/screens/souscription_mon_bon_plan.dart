@@ -109,6 +109,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
+  bool _isAideParCommercial = false;
+  final _commercialNomPrenomController = TextEditingController();
+  final _commercialCodeApporteurController = TextEditingController();
 
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -146,9 +149,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money',
     'Prélèvement à la source',
-    'CORIS Money'
   ];
   final List<String> _banques = [
     'CORIS BANK',
@@ -586,6 +587,16 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
     }
 
+    if (data['assistance_commerciale'] != null) {
+      final assistance = data['assistance_commerciale'];
+      _isAideParCommercial =
+          assistance['is_aide_par_commercial'] == true;
+      _commercialNomPrenomController.text =
+          assistance['commercial_nom_prenom'] ?? '';
+      _commercialCodeApporteurController.text =
+          assistance['commercial_code_apporteur'] ?? '';
+    }
+
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
@@ -629,6 +640,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     _beneficiaireDateNaissanceController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
+    _commercialNomPrenomController.dispose();
+    _commercialCodeApporteurController.dispose();
 
     // Dispose des contrôleurs client
     _clientNomController.dispose();
@@ -644,6 +657,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     _banqueController.dispose();
     _ribUnifiedController.dispose();
     _numeroMobileMoneyController.dispose();
+    _nomStructureController.dispose();
+    _numeroMatriculeController.dispose();
+    _corisMoneyPhoneController.dispose();
 
     super.dispose();
   }
@@ -927,6 +943,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           'contact':
               '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
           'lien_parente': _selectedLienParenteUrgence,
+        },
+        'assistance_commerciale': {
+          'is_aide_par_commercial': _isAideParCommercial,
+          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+          'commercial_code_apporteur':
+              _commercialCodeApporteurController.text.trim(),
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
@@ -1526,6 +1548,14 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         .hasMatch(_personneContactTelController.text)) {
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
+      return false;
+    }
+
+    if (_isAideParCommercial &&
+        (_commercialNomPrenomController.text.trim().isEmpty ||
+            _commercialCodeApporteurController.text.trim().isEmpty)) {
+      _showErrorSnackBar(
+          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
       return false;
     }
 
@@ -2412,6 +2442,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       ],
                     ),
                     SizedBox(height: 20),
+                    _buildAssistanceCommercialeSection(),
+                    SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -2420,6 +2452,65 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAssistanceCommercialeSection() {
+    return _buildFormSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      [
+        Text(
+          'Êtes-vous aidé par un commercial pour la souscription ?',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: grisTexte,
+          ),
+        ),
+        RadioListTile<bool>(
+          value: false,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Non'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+              if (!_isAideParCommercial) {
+                _commercialNomPrenomController.clear();
+                _commercialCodeApporteurController.clear();
+              }
+            });
+          },
+        ),
+        RadioListTile<bool>(
+          value: true,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Oui'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+            });
+          },
+        ),
+        if (_isAideParCommercial) ...[
+          SizedBox(height: 12),
+          _buildModernTextField(
+            controller: _commercialNomPrenomController,
+            label: 'Nom et prénom du commercial',
+            icon: Icons.person_search,
+          ),
+          SizedBox(height: 16),
+          _buildModernTextField(
+            controller: _commercialCodeApporteurController,
+            label: 'Code apporteur du commercial',
+            icon: Icons.badge_outlined,
+          ),
+        ],
+      ],
     );
   }
 
@@ -3434,6 +3525,15 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             ),
           ],
         ),
+        if (_isAideParCommercial ||
+            _commercialNomPrenomController.text.trim().isNotEmpty ||
+            _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 20),
+          SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+            nomPrenom: _commercialNomPrenomController.text,
+            codeApporteur: _commercialCodeApporteurController.text,
+          ),
+        ],
         const SizedBox(height: 20),
 
         // 💳 SECTION MODE DE PAIEMENT
@@ -4152,22 +4252,20 @@ class _PaymentBottomSheet extends StatelessWidget {
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                Color(0xFF1E3A8A),
-                'Paiement par CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   'Orange Money',
+              //   'assets/images/icone_orange_money.jpeg',
+              //   Colors.orange,
+              //   'Paiement mobile Orange',
+              //   () => onPayNow('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   'CORIS Money',
+              //   'assets/images/icone_corismoney.jpeg',
+              //   const Color(0xFF1E3A8A),
+              //   'Paiement via CORIS Money',
+              //   () => onPayNow('CORIS Money'),
+              // ),
               SizedBox(height: 24),
               Row(
                 children: [

@@ -402,47 +402,47 @@ class ContractPaymentFlow {
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                    context,
-                    'Orange Money',
-                    'assets/images/icone_orange_money.jpeg',
-                    Colors.orange,
-                    'Paiement mobile Orange',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showInfo(
-                        context,
-                        'Paiement Orange Money bientôt disponible. Utilisez CORIS Money pour le moment.',
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                    context,
-                    'CORIS Money',
-                    'assets/images/icone_corismoney.jpeg',
-                    const Color(0xFF1E3A8A),
-                    'Paiement via CORIS Money',
-                    onTap: () {
-                      Navigator.pop(context);
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => CorisMoneyPaymentModal(
-                          subscriptionId: subscriptionId,
-                          montant: montant,
-                          description:
-                              'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
-                          onPaymentSuccess: () {
-                            _showInfo(
-                                context, 'Paiement effectué avec succès.');
-                            onPaymentSuccess?.call();
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                  // const SizedBox(height: 12),
+                  // _buildPaymentOptionWithImage(
+                  //   context,
+                  //   'Orange Money',
+                  //   'assets/images/icone_orange_money.jpeg',
+                  //   Colors.orange,
+                  //   'Paiement mobile Orange',
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     _showInfo(
+                  //       context,
+                  //       'Paiement Orange Money bientôt disponible. Utilisez CORIS Money pour le moment.',
+                  //     );
+                  //   },
+                  // ),
+                  // const SizedBox(height: 12),
+                  // _buildPaymentOptionWithImage(
+                  //   context,
+                  //   'CORIS Money',
+                  //   'assets/images/icone_corismoney.jpeg',
+                  //   const Color(0xFF1E3A8A),
+                  //   'Paiement via CORIS Money',
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     showDialog(
+                  //       context: context,
+                  //       barrierDismissible: false,
+                  //       builder: (_) => CorisMoneyPaymentModal(
+                  //         subscriptionId: subscriptionId,
+                  //         montant: montant,
+                  //         description:
+                  //             'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+                  //         onPaymentSuccess: () {
+                  //           _showInfo(
+                  //               context, 'Paiement effectué avec succès.');
+                  //           onPaymentSuccess?.call();
+                  //         },
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                 ],
               ),
             ),

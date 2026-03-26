@@ -139,6 +139,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   final _personneContactTelController = TextEditingController();
   final _dateEffetController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
+  bool _isAideParCommercial = false;
+  final _commercialNomPrenomController = TextEditingController();
+  final _commercialCodeApporteurController = TextEditingController();
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
   String _selectedBeneficiaireIndicatif = '+225';
@@ -179,9 +182,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money',
+    // 'Orange Money',
     'Prélèvement à la source',
-    'CORIS Money'
+    // 'CORIS Money',
   ];
 
   // Options
@@ -921,6 +924,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           _selectedLienParenteUrgence =
               contactUrgence['lien_parente'].toString();
         }
+      }
+
+      if (data['assistance_commerciale'] != null &&
+          data['assistance_commerciale'] is Map) {
+        final assistance = data['assistance_commerciale'];
+        _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
+        _commercialNomPrenomController.text =
+            assistance['commercial_nom_prenom']?.toString() ?? '';
+        _commercialCodeApporteurController.text =
+            assistance['commercial_code_apporteur']?.toString() ?? '';
       }
 
       // Pré-remplir dates
@@ -1759,6 +1772,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+      return false;
+    }
+    if (_isAideParCommercial &&
+        (_commercialNomPrenomController.text.trim().isEmpty ||
+            _commercialCodeApporteurController.text.trim().isEmpty)) {
+      _showErrorSnackBar(
+          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
       return false;
     }
     return true;
@@ -2671,6 +2691,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                     const SizedBox(height: 20),
+                    _buildAssistanceCommercialeSection(),
+                    const SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -2705,6 +2727,65 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         const SizedBox(height: 16),
         ...children,
       ]),
+    );
+  }
+
+  Widget _buildAssistanceCommercialeSection() {
+    return _buildFormSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      [
+        Text(
+          'Êtes-vous aidé par un commercial pour la souscription ?',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: grisTexte,
+          ),
+        ),
+        RadioListTile<bool>(
+          value: false,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Non'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+              if (!_isAideParCommercial) {
+                _commercialNomPrenomController.clear();
+                _commercialCodeApporteurController.clear();
+              }
+            });
+          },
+        ),
+        RadioListTile<bool>(
+          value: true,
+          groupValue: _isAideParCommercial,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text('Oui'),
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+            });
+          },
+        ),
+        if (_isAideParCommercial) ...[
+          const SizedBox(height: 12),
+          _buildModernTextField(
+            controller: _commercialNomPrenomController,
+            label: 'Nom et prénom du commercial',
+            icon: Icons.person_search,
+          ),
+          const SizedBox(height: 16),
+          _buildModernTextField(
+            controller: _commercialCodeApporteurController,
+            label: 'Code apporteur du commercial',
+            icon: Icons.badge_outlined,
+          ),
+        ],
+      ],
     );
   }
 
@@ -3714,6 +3795,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           ),
         ],
       ),
+      if (_isAideParCommercial ||
+          _commercialNomPrenomController.text.trim().isNotEmpty ||
+          _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
+        const SizedBox(height: 20),
+        SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+          nomPrenom: _commercialNomPrenomController.text,
+          codeApporteur: _commercialCodeApporteurController.text,
+        ),
+      ],
       const SizedBox(height: 20),
       // 💳 SECTION MODE DE PAIEMENT
       if (_selectedModePaiement != null)
@@ -4449,6 +4539,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
           'lien_parente': _selectedLienParenteUrgence,
         },
+        'assistance_commerciale': {
+          'is_aide_par_commercial': _isAideParCommercial,
+          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+          'commercial_code_apporteur':
+              _commercialCodeApporteurController.text.trim(),
+        },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
@@ -4456,7 +4552,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
                 'banque': _banqueController.text.trim(),
-                ...?_parseRibUnified(_ribUnifiedController.text.trim()),
+                ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
@@ -4765,6 +4861,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
     _clientNumeroPieceController.dispose();
+    _commercialNomPrenomController.dispose();
+    _commercialCodeApporteurController.dispose();
     super.dispose();
   }
 }
@@ -4922,20 +5020,18 @@ class PaymentBottomSheet extends StatelessWidget {
                       Colors.blue,
                       'Paiement mobile sécurisé',
                       () => onPayNow('Wave')),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                      'Orange Money',
-                      'assets/images/icone_orange_money.jpeg',
-                      Colors.orange,
-                      'Paiement mobile Orange',
-                      () => onPayNow('Orange Money')),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                      'CORIS Money',
-                      'assets/images/icone_corismoney.jpeg',
-                      Color(0xFF1E3A8A),
-                      'Paiement par CORIS Money',
-                      () => onPayNow('CORIS Money')),
+                  // _buildPaymentOptionWithImage(
+                  //     'Orange Money',
+                  //     'assets/images/icone_orange_money.jpeg',
+                  //     Colors.orange,
+                  //     'Paiement mobile Orange',
+                  //     () => onPayNow('Orange Money')),
+                  // _buildPaymentOptionWithImage(
+                  //     'CORIS Money',
+                  //     'assets/images/icone_corismoney.jpeg',
+                  //     Color(0xFF1E3A8A),
+                  //     'Paiement par CORIS Money',
+                  //     () => onPayNow('CORIS Money')),
                   const SizedBox(height: 24),
                   Row(children: [
                     Expanded(child: Divider(color: Colors.grey[300])),

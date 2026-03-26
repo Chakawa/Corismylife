@@ -1,6 +1,6 @@
 class AppConfig {
   // IMPORTANT: à laisser à false hors tests contrôlés.
-  static const bool TEST_MODE_FORCE_10_XOF = true;
+  static const bool TEST_MODE_FORCE_10_XOF = false;
 
   // TEST LOCAL (emulateur Android)
   // static const String baseUrl = 'http://10.0.2.2:5000/api';

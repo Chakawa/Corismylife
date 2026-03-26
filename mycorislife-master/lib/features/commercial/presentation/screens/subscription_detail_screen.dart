@@ -32,7 +32,6 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   static const bleuCoris = Color(0xFF002B6B);
   static const vertSucces = Color(0xFF10B981);
   static const orangeWarning = Color(0xFFF59E0B);
-  static const bleuSecondaire = Color(0xFF1E4A8C);
   static const blanc = Colors.white;
   static const grisTexte = Color(0xFF64748B);
 
@@ -1109,6 +1108,33 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ],
           ),
 
+        () {
+          final assistanceCommerciale =
+              souscriptionData['assistance_commerciale'];
+
+          if (assistanceCommerciale is! Map) {
+            return const SizedBox.shrink();
+          }
+
+          final isAideParCommercial =
+              assistanceCommerciale['is_aide_par_commercial'] == true;
+          final nomPrenom =
+              assistanceCommerciale['commercial_nom_prenom']?.toString();
+          final codeApporteur =
+              assistanceCommerciale['commercial_code_apporteur']?.toString();
+
+          if (!isAideParCommercial &&
+              (nomPrenom == null || nomPrenom.trim().isEmpty) &&
+              (codeApporteur == null || codeApporteur.trim().isEmpty)) {
+            return const SizedBox.shrink();
+          }
+
+          return SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+            nomPrenom: nomPrenom,
+            codeApporteur: codeApporteur,
+          );
+        }(),
+
         // 💳 Mode de Paiement - Version améliorée avec icônes
         if (souscriptionData['mode_paiement'] != null &&
             souscriptionData['mode_paiement'].toString().isNotEmpty)
@@ -1198,7 +1224,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             onDocumentTap: pieceIdentite != null &&
                     pieceIdentite.isNotEmpty &&
                     pieceIdentite != 'Non téléchargée'
-                ? () => _viewDocument(pieceIdentite!, pieceIdentiteLabel)
+              ? () => _viewDocument(pieceIdentite, pieceIdentiteLabel)
                 : null,
             onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
           );
@@ -1541,24 +1567,22 @@ class _PaymentBottomSheet extends StatelessWidget {
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                context,
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              const SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                context,
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                const Color(0xFF1E3A8A),
-                'Paiement via CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   context,
+              //   'Orange Money',
+              //   'assets/images/icone_orange_money.jpeg',
+              //   Colors.orange,
+              //   'Paiement mobile Orange',
+              //   () => onPayNow('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   context,
+              //   'CORIS Money',
+              //   'assets/images/icone_corismoney.jpeg',
+              //   const Color(0xFF1E3A8A),
+              //   'Paiement via CORIS Money',
+              //   () => onPayNow('CORIS Money'),
+              // ),
               const SizedBox(height: 24),
               Row(
                 children: [

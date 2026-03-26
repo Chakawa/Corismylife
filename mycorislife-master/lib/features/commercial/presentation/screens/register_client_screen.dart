@@ -7,7 +7,7 @@ import '../../domain/commercial_service.dart';
 class RegisterClientScreen extends StatefulWidget {
   final String? productType; // Type de produit pour rediriger après création
   final Map<String, dynamic>? simulationData; // Données de simulation à passer
-  
+
   const RegisterClientScreen({
     super.key,
     this.productType,
@@ -24,7 +24,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   bool isLoading = false;
   final PageController _controller = PageController();
   int _currentPage = 0;
-  final List<GlobalKey<FormState>> _formKeys = List.generate(3, (_) => GlobalKey<FormState>());
+  final List<GlobalKey<FormState>> _formKeys =
+      List.generate(3, (_) => GlobalKey<FormState>());
   final storage = const FlutterSecureStorage();
 
   // Contrôleurs pour stocker les données
@@ -54,14 +55,13 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   static const rougeCoris = Color(0xFFE30613);
 
   void nextPage() {
-    if (_currentPage < _formKeys.length && 
+    if (_currentPage < _formKeys.length &&
         _formKeys[_currentPage].currentState != null &&
-        _formKeys[_currentPage].currentState!.validate() && 
+        _formKeys[_currentPage].currentState!.validate() &&
         _currentPage < 2) {
       setState(() => _currentPage++);
       _controller.nextPage(
-          duration: const Duration(milliseconds: 300), 
-          curve: Curves.easeInOut);
+          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
   }
 
@@ -85,7 +85,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
 
   Future<void> _register() async {
     if (_currentPage >= _formKeys.length) return;
-    
+
     final form = _formKeys[_currentPage].currentState;
     if (form == null || !form.validate()) return;
 
@@ -102,26 +102,27 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
         "civilite": selectedCivilite ?? "Monsieur",
         "date_naissance": dateNaissance?.toIso8601String().split('T').first,
         "lieu_naissance": lieuNaissanceController.text.trim(),
-        "telephone": "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
+        "telephone":
+            "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
       };
 
       // Créer le client avec le code apporteur du commercial
       final clientResponse = await CommercialService.createClient(payload);
-      
+
       // Extraire les données du client depuis la réponse
       // Le backend retourne { success: true, data: { id, email, nom, prenom, ... } }
       // clientResponse est toujours un Map<String, dynamic> car createClient le retourne
       final clientData = clientResponse;
 
       if (!mounted) return;
-      
+
       // Vérifier que le client a été créé avec succès
       if (clientData['id'] == null) {
         throw Exception('Erreur: Le client n\'a pas été créé correctement');
       }
-      
+
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -132,15 +133,17 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-      
+
       // Si un type de produit et des données de simulation sont fournis, naviguer vers la souscription
-      if (widget.productType != null && widget.productType!.isNotEmpty && widget.simulationData != null) {
+      if (widget.productType != null &&
+          widget.productType!.isNotEmpty &&
+          widget.simulationData != null) {
         await Future.delayed(const Duration(seconds: 1));
         if (!mounted) return;
-        
+
         // Convertir l'ID en String si nécessaire
         final clientId = clientData['id'].toString();
-        
+
         // Naviguer vers la page de souscription avec les données du client
         Navigator.pushReplacementNamed(
           context,
@@ -155,14 +158,14 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
         // Sinon, retourner à la liste des clients
         Navigator.pop(context, clientData);
       }
-
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text("Erreur: ${e.toString().replaceFirst('Exception: ', '')}"),
+            content:
+                Text("Erreur: ${e.toString().replaceFirst('Exception: ', '')}"),
             duration: const Duration(seconds: 3),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -219,7 +222,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hintText ?? label,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
+            hintStyle:
+                TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
             prefixIcon: icon != null
                 ? Icon(icon, color: bleuCoris, size: fontSize * 1.2)
                 : null,
@@ -251,93 +255,94 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   }
 
   Widget _buildDateField(
-  String label, {
-  IconData? icon,
-  required Function(DateTime?) onDateSelected,
-  String? hintText,
-  required DateTime? date,
-  required double fontSize,
-}) {
-  String? value = date != null
-      ? "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}"
-      : null;
+    String label, {
+    IconData? icon,
+    required Function(DateTime?) onDateSelected,
+    String? hintText,
+    required DateTime? date,
+    required double fontSize,
+  }) {
+    String? value = date != null
+        ? "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}"
+        : null;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      SizedBox(height: fontSize * 0.8),
-      Text(label,
-          style: TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: fontSize * 0.9)),
-      SizedBox(height: fontSize * 0.3),
-      GestureDetector(
-        onTap: () async {
-          DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(1900),
-            lastDate: DateTime(2100),
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: bleuCoris,
-                    onPrimary: Colors.white,
-                    onSurface: Colors.black,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: fontSize * 0.8),
+        Text(label,
+            style: TextStyle(
+                fontWeight: FontWeight.w500, fontSize: fontSize * 0.9)),
+        SizedBox(height: fontSize * 0.3),
+        GestureDetector(
+          onTap: () async {
+            DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: bleuCoris,
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                    textButtonTheme: TextButtonThemeData(
+                      style: TextButton.styleFrom(foregroundColor: bleuCoris),
+                    ),
                   ),
-                  textButtonTheme: TextButtonThemeData(
-                    style: TextButton.styleFrom(foregroundColor: bleuCoris),
-                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              setState(() => onDateSelected(picked));
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              readOnly: true,
+              controller: TextEditingController(text: value ?? ''),
+              decoration: InputDecoration(
+                hintText: value == null ? (hintText ?? label) : null,
+                hintStyle: TextStyle(
+                    color: Colors.grey[400], fontSize: fontSize * 0.8),
+                prefixIcon: icon != null
+                    ? Icon(icon, color: bleuCoris, size: fontSize * 1.2)
+                    : null,
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: fontSize * 0.8, vertical: fontSize * 0.7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(fontSize * 0.4),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
-                child: child!,
-              );
-            },
-          );
-          if (picked != null) {
-            setState(() => onDateSelected(picked));
-          }
-        },
-        child: AbsorbPointer(
-          child: TextFormField(
-            readOnly: true,
-            controller: TextEditingController(text: value ?? ''),
-            decoration: InputDecoration(
-              hintText: value == null ? (hintText ?? label) : null,
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
-              prefixIcon: icon != null
-                  ? Icon(icon, color: bleuCoris, size: fontSize * 1.2)
-                  : null,
-              filled: true,
-              fillColor: Colors.grey[50],
-              contentPadding: EdgeInsets.symmetric(
-                  horizontal: fontSize * 0.8, vertical: fontSize * 0.7),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(fontSize * 0.4),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(fontSize * 0.4),
+                  borderSide: const BorderSide(color: bleuCoris, width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(fontSize * 0.4),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(fontSize * 0.4),
+                  borderSide: const BorderSide(color: rougeCoris, width: 2),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(fontSize * 0.4),
-                borderSide: const BorderSide(color: bleuCoris, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(fontSize * 0.4),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(fontSize * 0.4),
-                borderSide: const BorderSide(color: rougeCoris, width: 2),
-              ),
+              validator: (_) =>
+                  date == null ? "Veuillez sélectionner une date." : null,
+              style: TextStyle(fontSize: fontSize * 0.8),
             ),
-            validator: (_) => date == null ? "Veuillez sélectionner une date." : null,
-            style: TextStyle(fontSize: fontSize * 0.8),
           ),
         ),
-      ),
-    ],
-  );
-}
-  
+      ],
+    );
+  }
+
   Widget _buildDropdown(
     String label,
     String? value,
@@ -356,10 +361,12 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
         SizedBox(height: fontSize * 0.3),
         DropdownButtonFormField<String>(
           initialValue: value,
-          icon: Icon(Icons.arrow_drop_down, color: bleuCoris, size: fontSize * 1.2),
+          icon: Icon(Icons.arrow_drop_down,
+              color: bleuCoris, size: fontSize * 1.2),
           decoration: InputDecoration(
             hintText: label,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
+            hintStyle:
+                TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
             prefixIcon: icon != null
                 ? Icon(icon, color: bleuCoris, size: fontSize * 1.2)
                 : null,
@@ -391,7 +398,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
             );
           }).toList(),
           onChanged: onChanged,
-          validator: (value) => value == null ? "Veuillez sélectionner une option." : null,
+          validator: (value) =>
+              value == null ? "Veuillez sélectionner une option." : null,
         ),
       ],
     );
@@ -400,29 +408,29 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final fontSize = size.width * 0.045; 
-    final padding = size.width * 0.05; 
+    final fontSize = size.width * 0.045;
+    final padding = size.width * 0.05;
 
     return Scaffold(
-     appBar: AppBar(
-  backgroundColor: bleuCoris,
-  leading: _currentPage > 0
-      ? IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: previousPage,
-        )
-      : IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+      appBar: AppBar(
+        backgroundColor: bleuCoris,
+        leading: _currentPage > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: previousPage,
+              )
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+        title: const Text(
+          "Inscription Client",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-  title: const Text(
-    "Inscription Client",
-    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-  ),
-  centerTitle: true,
-  elevation: 4,
-  shadowColor: Colors.black45,
-),
+        centerTitle: true,
+        elevation: 4,
+        shadowColor: Colors.black45,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -436,7 +444,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
             children: [
               Container(
                 margin: EdgeInsets.all(padding),
-                padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding * 0.5),
+                padding: EdgeInsets.symmetric(
+                    horizontal: padding, vertical: padding * 0.5),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [rougeCoris, Color(0xFFE60000)],
@@ -474,7 +483,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                         padding: EdgeInsets.all(padding),
                         child: Column(
                           children: [
-                       Text(
+                            Text(
                               "Informations personnelles",
                               style: TextStyle(
                                 fontSize: fontSize * 1.2,
@@ -487,7 +496,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               selectedCivilite,
                               ['Monsieur', 'Madame', 'Mademoiselle'],
                               icon: Icons.person,
-                              onChanged: (val) => setState(() => selectedCivilite = val),
+                              onChanged: (val) =>
+                                  setState(() => selectedCivilite = val),
                               fontSize: fontSize,
                             ),
                             _buildTextField(
@@ -495,8 +505,9 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               nomController,
                               icon: Icons.person,
                               hintText: 'OUATTARA',
-                              validator: (value) =>
-                                  value!.isEmpty ? "Veuillez entrer le nom." : null,
+                              validator: (value) => value!.isEmpty
+                                  ? "Veuillez entrer le nom."
+                                  : null,
                               fontSize: fontSize,
                             ),
                             _buildTextField(
@@ -504,8 +515,9 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               prenomController,
                               icon: Icons.person_outline,
                               hintText: 'Drissa',
-                              validator: (value) =>
-                                  value!.isEmpty ? "Veuillez entrer le prénom." : null,
+                              validator: (value) => value!.isEmpty
+                                  ? "Veuillez entrer le prénom."
+                                  : null,
                               fontSize: fontSize,
                             ),
                             _buildTextField(
@@ -513,15 +525,17 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               professionController,
                               icon: Icons.work_outline,
                               hintText: 'Comptable',
-                              validator: (value) =>
-                                  value!.isEmpty ? "Veuillez entrer la profession." : null,
+                              validator: (value) => value!.isEmpty
+                                  ? "Veuillez entrer la profession."
+                                  : null,
                               fontSize: fontSize,
                             ),
                             _buildDateField(
                               'Date de naissance',
                               icon: Icons.calendar_today,
                               date: dateNaissance,
-                              onDateSelected: (date) => setState(() => dateNaissance = date),
+                              onDateSelected: (date) =>
+                                  setState(() => dateNaissance = date),
                               hintText: '01/01/1986',
                               fontSize: fontSize,
                             ),
@@ -583,45 +597,54 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                             ),
                             SizedBox(height: fontSize * 0.3),
                             Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Container(
-      width: size.width * 0.22, 
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(fontSize * 0.4),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: fontSize * 0.2), 
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedIndicatif,
-          isExpanded: true, 
-          items: indicatifs.map((item) {
-            return DropdownMenuItem<String>(
-              value: item['indicatif'],
-              child: Row(
-                mainAxisSize: MainAxisSize.min, 
-                children: [
-                  Text(item['flag']!, style: TextStyle(fontSize: fontSize * 0.8)),
-                  SizedBox(width: fontSize * 0.1),
-                  Flexible( 
-                    child: Text(
-                      item['indicatif']!,
-                      style: TextStyle(fontSize: fontSize * 0.7),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() => selectedIndicatif = val!);
-          },
-        ),
-      ),
-    ),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: size.width * 0.22,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    border:
+                                        Border.all(color: Colors.grey.shade300),
+                                    borderRadius:
+                                        BorderRadius.circular(fontSize * 0.4),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: fontSize * 0.2),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: selectedIndicatif,
+                                      isExpanded: true,
+                                      items: indicatifs.map((item) {
+                                        return DropdownMenuItem<String>(
+                                          value: item['indicatif'],
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(item['flag']!,
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                          fontSize * 0.8)),
+                                              SizedBox(width: fontSize * 0.1),
+                                              Flexible(
+                                                child: Text(
+                                                  item['indicatif']!,
+                                                  style: TextStyle(
+                                                      fontSize: fontSize * 0.7),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (val) {
+                                        setState(
+                                            () => selectedIndicatif = val!);
+                                      },
+                                    ),
+                                  ),
+                                ),
                                 SizedBox(width: fontSize * 0.3),
                                 Expanded(
                                   child: TextFormField(
@@ -631,34 +654,46 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                                       if (value!.isEmpty) {
                                         return "Veuillez entrer le numéro de téléphone.";
                                       }
-                                      if (!RegExp(r'^\d{10}$').hasMatch(value)) {
-                                        return "Veuillez entrer un numéro valide (10 chiffres).";
+                                      // Accepte 8, 9 ou 10 chiffres exactement
+                                      if (!RegExp(r'^\d{8,10}$')
+                                          .hasMatch(value)) {
+                                        return "Veuillez entrer entre 8 et 10 chiffres.";
                                       }
                                       return null;
                                     },
                                     decoration: InputDecoration(
                                       hintText: '0798167534',
-                                      hintStyle:
-                                          TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
+                                      hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: fontSize * 0.8),
                                       filled: true,
                                       fillColor: Colors.grey[50],
                                       contentPadding: EdgeInsets.symmetric(
-                                          horizontal: fontSize * 0.8, vertical: fontSize * 0.7),
+                                          horizontal: fontSize * 0.8,
+                                          vertical: fontSize * 0.7),
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(
+                                            fontSize * 0.4),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade300),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                        borderSide: const BorderSide(color: bleuCoris, width: 2),
+                                        borderRadius: BorderRadius.circular(
+                                            fontSize * 0.4),
+                                        borderSide: const BorderSide(
+                                            color: bleuCoris, width: 2),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(
+                                            fontSize * 0.4),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade300),
                                       ),
                                       errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                        borderSide: const BorderSide(color: rougeCoris, width: 2),
+                                        borderRadius: BorderRadius.circular(
+                                            fontSize * 0.4),
+                                        borderSide: const BorderSide(
+                                            color: rougeCoris, width: 2),
                                       ),
                                     ),
                                     style: TextStyle(fontSize: fontSize * 0.8),
@@ -671,8 +706,9 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               adresseController,
                               icon: Icons.location_city,
                               hintText: 'Treichville, Bernabe, 512',
-                              validator: (value) =>
-                                  value!.isEmpty ? "Veuillez entrer l'adresse." : null,
+                              validator: (value) => value!.isEmpty
+                                  ? "Veuillez entrer l'adresse."
+                                  : null,
                               fontSize: fontSize,
                             ),
                             _buildDropdown(
@@ -680,7 +716,8 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               selectedPays,
                               ['Côte d\'Ivoire', 'Mali', 'Burkina Faso'],
                               icon: Icons.public,
-                              onChanged: (val) => setState(() => selectedPays = val),
+                              onChanged: (val) =>
+                                  setState(() => selectedPays = val),
                               fontSize: fontSize,
                             ),
                           ],
@@ -717,34 +754,45 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               decoration: InputDecoration(
                                 labelText: 'Mot de passe',
                                 hintText: '********',
-                                hintStyle:
-                                    TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
+                                hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: fontSize * 0.8),
                                 filled: true,
                                 fillColor: Colors.grey[50],
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: const BorderSide(color: bleuCoris, width: 2),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide: const BorderSide(
+                                      color: bleuCoris, width: 2),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: const BorderSide(color: rougeCoris, width: 2),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide: const BorderSide(
+                                      color: rougeCoris, width: 2),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: bleuCoris,
                                     size: fontSize * 1.2,
                                   ),
-                                  onPressed: () =>
-                                      setState(() => _obscurePassword = !_obscurePassword),
+                                  onPressed: () => setState(() =>
+                                      _obscurePassword = !_obscurePassword),
                                 ),
                               ),
                               style: TextStyle(fontSize: fontSize * 0.8),
@@ -762,25 +810,34 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                               decoration: InputDecoration(
                                 labelText: 'Confirmer le mot de passe',
                                 hintText: '********',
-                                hintStyle:
-                                    TextStyle(color: Colors.grey[400], fontSize: fontSize * 0.8),
+                                hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: fontSize * 0.8),
                                 filled: true,
                                 fillColor: Colors.grey[50],
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: const BorderSide(color: bleuCoris, width: 2),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide: const BorderSide(
+                                      color: bleuCoris, width: 2),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(fontSize * 0.4),
-                                  borderSide: const BorderSide(color: rougeCoris, width: 2),
+                                  borderRadius:
+                                      BorderRadius.circular(fontSize * 0.4),
+                                  borderSide: const BorderSide(
+                                      color: rougeCoris, width: 2),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -790,18 +847,23 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                                     color: bleuCoris,
                                     size: fontSize * 1.2,
                                   ),
-                                  onPressed: () => setState(
-                                      () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                  onPressed: () => setState(() =>
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword),
                                 ),
                               ),
                               style: TextStyle(fontSize: fontSize * 0.8),
                             ),
                             SizedBox(height: fontSize),
-                            _buildCondition(hasUppercase, "✓ Une lettre majuscule", fontSize),
-                            _buildCondition(hasLowercase, "✓ Une lettre minuscule", fontSize),
+                            _buildCondition(hasUppercase,
+                                "✓ Une lettre majuscule", fontSize),
+                            _buildCondition(hasLowercase,
+                                "✓ Une lettre minuscule", fontSize),
                             _buildCondition(hasDigit, "✓ Un chiffre", fontSize),
-                            _buildCondition(hasSpecial, "✓ Un caractère spécial", fontSize),
-                            _buildCondition(hasMinLength, "✓ 8 caractères minimum", fontSize),
+                            _buildCondition(
+                                hasSpecial, "✓ Un caractère spécial", fontSize),
+                            _buildCondition(hasMinLength,
+                                "✓ 8 caractères minimum", fontSize),
                           ],
                         ),
                       ),
@@ -810,118 +872,126 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                 ),
               ),
               Padding(
-  padding: EdgeInsets.all(padding),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      if (_currentPage > 0)
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(fontSize * 0.6),
-            border: Border.all(
-              color: bleuCoris,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: bleuCoris.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton.icon(
-            onPressed: previousPage,
-            icon: const Icon(Icons.arrow_back, color: bleuCoris),
-            label: Text(
-              "Précédent",
-              style: TextStyle(
-                color: bleuCoris,
-                fontSize: fontSize * 0.9,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              minimumSize: Size(size.width * 0.35, fontSize * 2.8),
-              padding: EdgeInsets.symmetric(horizontal: fontSize * 0.8),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(fontSize * 0.6),
-              ),
-            ),
-          ),
-        )
-      else
-        const SizedBox(width: 1),
-        
-      Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _currentPage == 2 &&
-                    isPasswordValid &&
-                    passwordController.text == confirmPasswordController.text
-                ? [rougeCoris, const Color(0xFFE60000)]
-                : _currentPage < 2
-                    ? [bleuCoris, const Color(0xFF0041A3)]
-                    : [Colors.grey[400]!, Colors.grey[500]!],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(fontSize * 0.6),
-          boxShadow: [
-            BoxShadow(
-              color: (_currentPage == 2 ? rougeCoris : bleuCoris).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ElevatedButton.icon(
-          onPressed: isLoading
-              ? null
-              : (_currentPage == 2
-                  ? (isPasswordValid &&
-                          passwordController.text == confirmPasswordController.text
-                      ? _register
-                      : null)
-                  : nextPage),
-          icon: isLoading
-              ? SizedBox(
-                  width: fontSize * 0.8,
-                  height: fontSize * 0.8,
-                  child: const CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Icon(
-                  _currentPage == 2 ? Icons.person_add : Icons.arrow_forward,
-                  color: Colors.white,
+                padding: EdgeInsets.all(padding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (_currentPage > 0)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(fontSize * 0.6),
+                          border: Border.all(
+                            color: bleuCoris,
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: bleuCoris.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: previousPage,
+                          icon: const Icon(Icons.arrow_back, color: bleuCoris),
+                          label: Text(
+                            "Précédent",
+                            style: TextStyle(
+                              color: bleuCoris,
+                              fontSize: fontSize * 0.9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            minimumSize:
+                                Size(size.width * 0.35, fontSize * 2.8),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: fontSize * 0.8),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(fontSize * 0.6),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 1),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _currentPage == 2 &&
+                                  isPasswordValid &&
+                                  passwordController.text ==
+                                      confirmPasswordController.text
+                              ? [rougeCoris, const Color(0xFFE60000)]
+                              : _currentPage < 2
+                                  ? [bleuCoris, const Color(0xFF0041A3)]
+                                  : [Colors.grey[400]!, Colors.grey[500]!],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(fontSize * 0.6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_currentPage == 2 ? rougeCoris : bleuCoris)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : (_currentPage == 2
+                                ? (isPasswordValid &&
+                                        passwordController.text ==
+                                            confirmPasswordController.text
+                                    ? _register
+                                    : null)
+                                : nextPage),
+                        icon: isLoading
+                            ? SizedBox(
+                                width: fontSize * 0.8,
+                                height: fontSize * 0.8,
+                                child: const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                _currentPage == 2
+                                    ? Icons.person_add
+                                    : Icons.arrow_forward,
+                                color: Colors.white,
+                              ),
+                        label: Text(
+                          _currentPage == 2 ? "Créer le compte" : "Continuer",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: fontSize * 0.9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          minimumSize: Size(size.width * 0.4, fontSize * 2.8),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: fontSize * 0.8),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(fontSize * 0.6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-          label: Text(
-            _currentPage == 2 ? "Créer le compte" : "Continuer",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: fontSize * 0.9,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            minimumSize: Size(size.width * 0.4, fontSize * 2.8),
-            padding: EdgeInsets.symmetric(horizontal: fontSize * 0.8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(fontSize * 0.6),
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-)
+              )
             ],
           ),
         ),
@@ -944,5 +1014,3 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
     super.dispose();
   }
 }
-
-

@@ -1274,6 +1274,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
           const SizedBox(height: 16),
           _buildBeneficiariesCard(),
           const SizedBox(height: 16),
+          _buildCommercialAssistanceCard(),
+          const SizedBox(height: 16),
           _buildDocumentsCard(),
           const SizedBox(height: 16),
           const SizedBox(height: 100),
@@ -1543,6 +1545,32 @@ class ContratDetailPageState extends State<ContratDetailPage>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCommercialAssistanceCard() {
+    final subscriptionData = _getSubscriptionDetails();
+    final assistanceCommerciale = subscriptionData['assistance_commerciale'];
+
+    if (assistanceCommerciale is! Map) {
+      return const SizedBox.shrink();
+    }
+
+    final isAideParCommercial =
+        assistanceCommerciale['is_aide_par_commercial'] == true;
+    final nomPrenom = assistanceCommerciale['commercial_nom_prenom']?.toString();
+    final codeApporteur =
+        assistanceCommerciale['commercial_code_apporteur']?.toString();
+
+    if (!isAideParCommercial &&
+        (nomPrenom == null || nomPrenom.trim().isEmpty) &&
+        (codeApporteur == null || codeApporteur.trim().isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+      nomPrenom: nomPrenom,
+      codeApporteur: codeApporteur,
     );
   }
 

@@ -104,6 +104,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final _personneContactNomController = TextEditingController();
   final _personneContactTelController = TextEditingController();
   String _selectedLienParenteUrgence = 'Parent';
+  bool _isAideParCommercial = false;
+  final _commercialNomPrenomController = TextEditingController();
+  final _commercialCodeApporteurController = TextEditingController();
 
   // Options de lien de parenté
   final List<String> _lienParenteOptions = [
@@ -141,9 +144,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Orange Money',
+    // 'Orange Money',
     'Prélèvement à la source',
-    'CORIS Money'
+    // 'CORIS Money',
   ];
   final List<String> _banques = [
     'CORIS BANK',
@@ -476,6 +479,16 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
     }
 
+    if (data['assistance_commerciale'] != null &&
+        data['assistance_commerciale'] is Map) {
+      final assistance = data['assistance_commerciale'];
+      _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
+      _commercialNomPrenomController.text =
+          assistance['commercial_nom_prenom']?.toString() ?? '';
+      _commercialCodeApporteurController.text =
+          assistance['commercial_code_apporteur']?.toString() ?? '';
+    }
+
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
@@ -538,6 +551,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     _banqueController.dispose();
     _ribUnifiedController.dispose();
     _numeroMobileMoneyController.dispose();
+    _commercialNomPrenomController.dispose();
+    _commercialCodeApporteurController.dispose();
 
     super.dispose();
   }
@@ -823,6 +838,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           'contact':
               '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
           'lien_parente': _selectedLienParenteUrgence,
+        },
+        'assistance_commerciale': {
+          'is_aide_par_commercial': _isAideParCommercial,
+          'commercial_nom_prenom': _isAideParCommercial
+              ? _commercialNomPrenomController.text.trim()
+              : null,
+          'commercial_code_apporteur': _isAideParCommercial
+              ? _commercialCodeApporteurController.text.trim()
+              : null,
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
@@ -1334,6 +1358,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   bool _validateStep2() {
+    if (_isAideParCommercial) {
+      if (_commercialNomPrenomController.text.trim().isEmpty) {
+        _showErrorSnackBar(
+            'Veuillez renseigner le nom et prénom du commercial.');
+        return false;
+      }
+
+      if (_commercialCodeApporteurController.text.trim().isEmpty) {
+        _showErrorSnackBar(
+            'Veuillez renseigner le code apporteur du commercial.');
+        return false;
+      }
+    }
+
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _beneficiaireDateNaissance == null ||
@@ -2079,6 +2117,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 key: _formKeyStep2,
                 child: ListView(
                   children: [
+                    _buildAssistanceCommercialeSection(),
+                    SizedBox(height: 20),
                     _buildFormSection(
                       'Bénéficiaire en cas de décès',
                       Icons.family_restroom,
@@ -2191,6 +2231,66 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAssistanceCommercialeSection() {
+    return _buildFormSection(
+      'Assistance commerciale',
+      Icons.support_agent,
+      [
+        Text(
+          'Avez-vous été aidé par un commercial pour cette souscription ?',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+          ),
+        ),
+        SizedBox(height: 12),
+        RadioListTile<bool>(
+          value: true,
+          groupValue: _isAideParCommercial,
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+            });
+          },
+          title: const Text('Oui'),
+          contentPadding: EdgeInsets.zero,
+          activeColor: bleuCoris,
+        ),
+        RadioListTile<bool>(
+          value: false,
+          groupValue: _isAideParCommercial,
+          onChanged: (value) {
+            setState(() {
+              _isAideParCommercial = value ?? false;
+              if (!_isAideParCommercial) {
+                _commercialNomPrenomController.clear();
+                _commercialCodeApporteurController.clear();
+              }
+            });
+          },
+          title: const Text('Non'),
+          contentPadding: EdgeInsets.zero,
+          activeColor: bleuCoris,
+        ),
+        if (_isAideParCommercial) ...[
+          SizedBox(height: 12),
+          _buildModernTextField(
+            controller: _commercialNomPrenomController,
+            label: 'Nom et prénom du commercial *',
+            icon: Icons.badge_outlined,
+          ),
+          SizedBox(height: 16),
+          _buildModernTextField(
+            controller: _commercialCodeApporteurController,
+            label: 'Code apporteur *',
+            icon: Icons.qr_code,
+          ),
+        ],
+      ],
     );
   }
 
@@ -3304,6 +3404,17 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
         const SizedBox(height: 20),
 
+        SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
+          nomPrenom: _isAideParCommercial
+              ? _commercialNomPrenomController.text.trim()
+              : null,
+          codeApporteur: _isAideParCommercial
+              ? _commercialCodeApporteurController.text.trim()
+              : null,
+        ),
+
+        const SizedBox(height: 20),
+
         SubscriptionRecapWidgets.buildVerificationWarning(),
 
         const SizedBox(height: 20),
@@ -3953,22 +4064,20 @@ class _PaymentBottomSheet extends StatelessWidget {
                 'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'Orange Money',
-                'assets/images/icone_orange_money.jpeg',
-                Colors.orange,
-                'Paiement mobile Orange',
-                () => onPayNow('Orange Money'),
-              ),
-              SizedBox(height: 12),
-              _buildPaymentOptionWithImage(
-                'CORIS Money',
-                'assets/images/icone_corismoney.jpeg',
-                Color(0xFF1E3A8A),
-                'Paiement par CORIS Money',
-                () => onPayNow('CORIS Money'),
-              ),
+              // _buildPaymentOptionWithImage(
+              //   'Orange Money',
+              //   'assets/images/orange_money.png',
+              //   Colors.orange,
+              //   'Paiement mobile Orange Money',
+              //   () => onPayNow('Orange Money'),
+              // ),
+              // _buildPaymentOptionWithImage(
+              //   'CORIS Money',
+              //   'assets/images/logo.png',
+              //   const Color(0xFF00A651),
+              //   'Paiement via CORIS Money',
+              //   () => onPayNow('CORIS Money'),
+              // ),
               SizedBox(height: 24),
               Row(
                 children: [
