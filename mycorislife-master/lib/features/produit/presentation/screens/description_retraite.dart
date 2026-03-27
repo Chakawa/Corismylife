@@ -73,26 +73,26 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
               // Image d'en-tête
               Container(
                 width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF002B6B).withOpacity(0.1),
-                      Colors.white,
+                padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 12.0),
+                child: Container(
+                  height: 220.0,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18.0),
+                    border: Border.all(color: const Color(0x26002B6B), width: 1.2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A000000),
+                        blurRadius: 14.0,
+                        offset: Offset(0, 6),
+                      ),
                     ],
                   ),
-                ),
-                child: Image.asset(
-                  'assets/images/retraitee.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.elderly,
-                          size: 80, color: Color(0xFF002B6B)),
-                    );
-                  },
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/Produits_assurances-20.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
               // Contenu Markdown

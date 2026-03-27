@@ -124,51 +124,31 @@ Dans un contexte où la préparation de la retraite est essentielle, CORIS RETRA
             // Hero Section
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF002B6B), Color(0xFF1e3c72)],
-                ),
-              ),
+              color: Colors.white,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 48.0),
+                padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 12.0),
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 12.0,
-                      ),
+                      width: double.infinity,
+                      height: 220.0,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE30613),
-                        borderRadius: BorderRadius.circular(25.0),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18.0),
+                        border: Border.all(color: Colors.white24, width: 1.2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 14.0,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Text(
-                        'RETRAITE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.0,
-                          letterSpacing: 1.0,
-                        ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        'assets/images/Produits_assurances-20.png',
+                        fit: BoxFit.contain,
                       ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    const Icon(
-                      Icons.work_outline,
-                      size: 48.0,
-                      color: Colors.white70,
-                    ),
-                    const SizedBox(height: 16.0),
-                    const Text(
-                      'Préparez votre retraite en toute sérénité',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.w300,
-                      ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
