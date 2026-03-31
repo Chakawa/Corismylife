@@ -1,25 +1,33 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.mycorislife"
+    namespace = "ci.coris.mycorislife"
     compileSdk = flutter.compileSdkVersion
-    // NDK version removed - use default
-    
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
-    
+
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
+            keepDebugSymbols += "**/*.so"
         }
     }
 
@@ -28,38 +36,31 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mycorislife"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "ci.coris.mycorislife"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        
-        // Support pour toutes les architectures Android (pas de limitation)
-        // Supporte automatiquement: armeabi-v7a, arm64-v8a, x86, x86_64
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+        }
     }
 
     buildTypes {
         release {
-            // Optimisation désactivée pour le développement
-            // TODO: Activer lors de la version finale de production
-            isMinifyEnabled = false
-            isShrinkResources = false
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             
-            // Désactiver le stripping des symboles natifs pour éviter les erreurs NDK
             ndk {
-                debugSymbolLevel = "NONE"
+                debugSymbolLevel = "FULL"
             }
-            
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

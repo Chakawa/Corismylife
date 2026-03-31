@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const pool = require('./db'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -25,6 +26,7 @@ app.use(bodyParser.json({
   }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Route de base
 app.get('/', (_, res) => res.json({ 
@@ -79,6 +81,11 @@ require('./cron/paymentReminders');
 app.use('/uploads', express.static('uploads'));
 
 app.get('/health', (_,res)=>res.json({ ok:true, ts: Date.now() }));
+
+// Page publique: politique de confidentialite mobile
+app.get('/politique-confidentialite', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacy-policy.html'));
+});
 
 // Route de test de la base de données
 app.get('/test-db', async (req, res) => {
