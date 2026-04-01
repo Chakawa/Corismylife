@@ -24,13 +24,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging = true
-            keepDebugSymbols += "**/*.so"
-        }
-    }
-
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
@@ -57,10 +50,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
-            
-            ndk {
-                debugSymbolLevel = "FULL"
-            }
         }
     }
 }

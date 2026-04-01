@@ -6,7 +6,7 @@ class AppConfig {
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // SERVEUR EN LIGNE (actif pour generation APK)
-  static const String baseUrl = 'https://www.testmobile.online/api';
+  static const String baseUrl = 'https://www.mycorislife.com/api';
 
   // Coordonnées support CORIS Assurance Vie CI (utilisées dans les actions de contact)
   static const String supportEmail = 'corisvie-ci@coris-assurances.ci';
