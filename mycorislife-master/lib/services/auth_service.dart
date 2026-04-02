@@ -45,58 +45,76 @@ class AuthService {
   ///   - Timeout de la requête
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
-    try {
-      // Faire la requête POST vers l'endpoint de connexion
-      // Timeout porté à 15 secondes pour mieux tolérer les réseaux lents
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/login'),
-        body: jsonEncode({'email': email, 'password': password}),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw Exception(
-              'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet ou réessayez plus tard.');
-        },
-      );
+    String? lastNetworkError;
 
-      // Décoder la réponse JSON
-      final data = jsonDecode(response.body);
+    for (final apiBase in AppConfig.allBaseUrls) {
+      try {
+        // Faire la requête POST vers l'endpoint de connexion
+        // Timeout porté à 15 secondes pour mieux tolérer les réseaux lents
+        final response = await http.post(
+          Uri.parse('$apiBase/auth/login'),
+          body: jsonEncode({'email': email, 'password': password}),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw Exception(
+                'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet ou réessayez plus tard.');
+          },
+        );
 
-      // Vérifier si la connexion a réussi (code 200 et success = true)
-      if (response.statusCode == 200 && data['success']) {
-        // Sauvegarder le token JWT de manière sécurisée
-        await _storage.write(key: _tokenKey, value: data['token']);
+        // Décoder la réponse JSON
+        final data = jsonDecode(response.body);
 
-        // Sauvegarder les données utilisateur de manière sécurisée
-        await _storage.write(key: _userKey, value: jsonEncode(data['user']));
+        // Vérifier si la connexion a réussi (code 200 et success = true)
+        if (response.statusCode == 200 && data['success']) {
+          // Sauvegarder le token JWT de manière sécurisée
+          await _storage.write(key: _tokenKey, value: data['token']);
 
-        // Sauvegarder le code_apporteur si présent (pour les commerciaux)
-        if (data['user'] != null && data['user']['code_apporteur'] != null) {
-          await _storage.write(key: 'code_apporteur', value: data['user']['code_apporteur'].toString());
-        }
+          // Sauvegarder les données utilisateur de manière sécurisée
+          await _storage.write(key: _userKey, value: jsonEncode(data['user']));
 
-        return data;
-      } else {
-        // Gérer les différents codes d'erreur du serveur
-        if (response.statusCode == 401) {
-          throw Exception(
-              'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.');
-        } else if (response.statusCode == 404) {
-          throw Exception(
-              'Serveur non trouvé. Veuillez vérifier votre connexion Internet.');
-        } else if (response.statusCode >= 500) {
-          throw Exception('Erreur du serveur. Veuillez réessayer plus tard.');
+          // Sauvegarder le code_apporteur si présent (pour les commerciaux)
+          if (data['user'] != null && data['user']['code_apporteur'] != null) {
+            await _storage.write(
+              key: 'code_apporteur',
+              value: data['user']['code_apporteur'].toString(),
+            );
+          }
+
+          return data;
         } else {
-          // Utiliser le message d'erreur du serveur s'il existe
-          throw Exception(data['message'] ??
-              'Échec de la connexion. Veuillez vérifier vos identifiants.');
+          // Gérer les différents codes d'erreur du serveur
+          if (response.statusCode == 401) {
+            throw Exception(
+                'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.');
+          } else if (response.statusCode == 404) {
+            throw Exception(
+                'Serveur non trouvé. Veuillez vérifier votre connexion Internet.');
+          } else if (response.statusCode >= 500) {
+            throw Exception('Erreur du serveur. Veuillez réessayer plus tard.');
+          } else {
+            // Utiliser le message d'erreur du serveur s'il existe
+            throw Exception(data['message'] ??
+                'Échec de la connexion. Veuillez vérifier vos identifiants.');
+          }
         }
+      } on SocketException catch (e) {
+        lastNetworkError = e.message;
+        continue;
+      } on HandshakeException catch (e) {
+        lastNetworkError = e.message;
+        continue;
       }
-    } on SocketException {
-      // Erreur de connexion réseau (pas de serveur accessible)
+    }
+
+    if (lastNetworkError != null) {
       throw Exception(
-          'Impossible de se connecter au serveur. Vérifiez votre connexion Internet et réessayez.');
+          'Impossible de se connecter au serveur. Détail: $lastNetworkError');
+    }
+
+    try {
+      throw Exception('Échec de la connexion. Veuillez réessayer.');
     } on HttpException {
       // Erreur HTTP
       throw Exception(

@@ -225,6 +225,11 @@ class _LoginScreenState extends State<LoginScreen>
             errorString.contains('trop de temps')) {
           errorMessage =
               'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet et réessayez.';
+        } else if (errorString.contains('HandshakeException') ||
+            errorString.contains('CERTIFICATE') ||
+            errorString.contains('certificate')) {
+          errorMessage =
+              'Connexion sécurisée impossible avec le serveur. Vérifiez la date/heure de l\'appareil et réessayez.';
         } else if (errorString.contains('serveur') ||
             errorString.contains('Serveur')) {
           errorMessage = 'Serveur inaccessible. Veuillez réessayer plus tard.';

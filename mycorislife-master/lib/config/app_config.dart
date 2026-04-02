@@ -7,6 +7,9 @@ class AppConfig {
 
   // SERVEUR EN LIGNE (actif pour generation APK)
   static const String baseUrl = 'https://www.mycorislife.com/api';
+  static const List<String> fallbackBaseUrls = ['https://mycorislife.com/api'];
+
+  static List<String> get allBaseUrls => [baseUrl, ...fallbackBaseUrls];
 
   // Coordonnées support CORIS Assurance Vie CI (utilisées dans les actions de contact)
   static const String supportEmail = 'corisvie-ci@coris-assurances.ci';
