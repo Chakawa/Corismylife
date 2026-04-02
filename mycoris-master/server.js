@@ -14,11 +14,32 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const app = express();
 
 // Middleware critiques
-app.use(cors({
-  origin: ['http://localhost', 'http://localhost:3000', 'http://10.0.2.2', 'http://192.168.1.32'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+const allowedOrigins = [
+  'http://localhost',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://10.0.2.2',
+  'http://192.168.1.32',
+  'https://www.mycorislife.com',
+  'https://mycorislife.com',
+  'https://admin.mycorislife.com'
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Autorise les requêtes serveur-à-serveur ou outils sans Origin.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json({
   verify: (req, _res, buf) => {
