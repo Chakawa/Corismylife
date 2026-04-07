@@ -13,6 +13,9 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
 
+// 🔥 IMPORTANT : Webhook Wave (doit être AVANT bodyParser)
+app.use('/api/payment/wave/webhook', express.raw({ type: 'application/json' }));
+
 // Middleware critiques
 const allowedOrigins = [
   'http://localhost',

@@ -917,8 +917,10 @@ router.post('/wave/reconcile', verifyToken, async (req, res) => {
  */
 router.post('/wave/webhook', async (req, res) => {
   try {
-    const signature = req.headers['x-wave-signature'];
-    const rawBody = req.rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
+    const signature = req.headers['wave-signature'] || req.headers['x-wave-signature'];
+    const rawBody = req.rawBody ||
+      (Buffer.isBuffer(req.body) ? req.body.toString('utf8') :
+        (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {})));
 
     const signatureValid = waveCheckoutService.verifyWebhookSignature({ signature, rawBody });
     if (!signatureValid) {
