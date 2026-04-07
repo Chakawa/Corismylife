@@ -322,32 +322,37 @@ class WaveCheckoutService {
       return false;
     }
 
-    const expectedHex = crypto
-      .createHmac('sha256', this.webhookSecret)
-      .update(rawBody, 'utf8')
-      .digest('hex');
-
-    const expectedBase64 = crypto
-      .createHmac('sha256', this.webhookSecret)
-      .update(rawBody, 'utf8')
-      .digest('base64');
-
-    const normalizedSignature = String(signature).trim().replace(/^sha256=/i, '');
-
     try {
-      const sigHexBuffer = Buffer.from(normalizedSignature, 'utf8');
-      const expectedHexBuffer = Buffer.from(expectedHex, 'utf8');
-      const expectedBase64Buffer = Buffer.from(expectedBase64, 'utf8');
+      // Wave-Signature header format: "t=<timestamp>,v1=<hex_signature>[,v1=<hex_signature2>]"
+      const parts = String(signature).trim().split(',');
 
-      const matchesHex =
-        sigHexBuffer.length === expectedHexBuffer.length &&
-        crypto.timingSafeEqual(sigHexBuffer, expectedHexBuffer);
+      const timestampPart = parts.find(p => p.startsWith('t='));
+      if (!timestampPart) return false;
+      const timestamp = timestampPart.split('=')[1];
 
-      const matchesBase64 =
-        sigHexBuffer.length === expectedBase64Buffer.length &&
-        crypto.timingSafeEqual(sigHexBuffer, expectedBase64Buffer);
+      const v1Signatures = parts
+        .filter(p => p.startsWith('v1='))
+        .map(p => p.slice(3)); // remove "v1=" prefix
 
-      return matchesHex || matchesBase64;
+      if (v1Signatures.length === 0) return false;
+
+      // Per Wave docs: HMAC-SHA256 of (timestamp + rawBody) using the webhook secret
+      const computedHmac = crypto
+        .createHmac('sha256', this.webhookSecret)
+        .update(timestamp + rawBody, 'utf8')
+        .digest('hex');
+
+      // Compare against all provided v1 signatures (supports key rotation)
+      return v1Signatures.some(sig => {
+        try {
+          const sigBuf = Buffer.from(sig, 'utf8');
+          const hmacBuf = Buffer.from(computedHmac, 'utf8');
+          return sigBuf.length === hmacBuf.length &&
+            crypto.timingSafeEqual(sigBuf, hmacBuf);
+        } catch {
+          return false;
+        }
+      });
     } catch (error) {
       return false;
     }
