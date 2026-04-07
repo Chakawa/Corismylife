@@ -1,4 +1,4 @@
-package ci.coris.mycorislife
+package com.coris.mycorislife
 
 import android.content.BroadcastReceiver
 import android.content.Context

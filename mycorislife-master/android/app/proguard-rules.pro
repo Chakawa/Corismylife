@@ -7,7 +7,7 @@
 -dontwarn io.flutter.embedding.**
 
 # Keep application classes
--keep class com.example.mycorislife.** { *; }
+-keep class com.coris.mycorislife.** { *; }
 
 # Remove logging in production
 -assumenosideeffects class android.util.Log {
@@ -27,7 +27,7 @@
 }
 
 # Keep custom model classes (adjust package name as needed)
--keep class com.example.mycorislife.models.** { *; }
+-keep class com.coris.mycorislife.models.** { *; }
 
 # SQLite
 -keep class org.sqlite.** { *; }

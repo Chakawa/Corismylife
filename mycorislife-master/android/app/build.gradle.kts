@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ci.coris.mycorislife"
+        applicationId = "com.coris.mycorislife"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
