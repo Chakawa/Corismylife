@@ -78,7 +78,8 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 
 // Pages de reponse Wave Payment (success/error)
-app.use('/', require('./routes/waveResponseRoutes'));
+app.use(express.json());
+app.use('/api/payment', require('./routes/waveResponseRoutes'));
 
 app.get('/api/config/support', (_, res) => {
   res.json({ success: true, phone: process.env.SUPPORT_PHONE || '+2250700000000' });
