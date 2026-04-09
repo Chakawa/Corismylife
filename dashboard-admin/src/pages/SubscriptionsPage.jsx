@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, FileText, Download } from 'lucide-react'
+import { Search, Eye, FileText, Download, FolderDown, ClipboardList } from 'lucide-react'
 import { subscriptionsService } from '../services/api.service'
 import API_URL from '../config'
 
@@ -139,9 +139,77 @@ export default function SubscriptionsPage() {
     }
   }
 
+  const handleDownloadDocuments = async (subscription) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) {
+        throw new Error('Vous devez être connecté pour télécharger les documents')
+      }
+
+      const response = await fetch(`${API_URL}/admin/subscriptions/${subscription.id}/documents/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Aucun document disponible pour cette souscription'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      const blob = await response.blob()
+      if (blob.size === 0) {
+        throw new Error('Aucun document disponible pour cette souscription')
+      }
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `documents_${subscription.numero_souscription || subscription.id}.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Erreur téléchargement documents:', error)
+      alert(`Erreur: ${error.message}`)
+    }
+  }
+
+  const handlePrintQuestionnaireMedical = (subscription) => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) {
+      alert('Vous devez être connecté')
+      return
+    }
+    // Ouvrir dans un nouvel onglet — la page HTML contient déjà un bouton "Imprimer"
+    const url = `${API_URL}/subscriptions/${subscription.id}/questionnaire-medical/print`
+    const win = window.open('about:blank', '_blank')
+    win.document.write('<html><body><p style="font-family:sans-serif;padding:20px">Chargement...</p></body></html>')
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.message || `Erreur ${r.status}`) })
+        return r.text()
+      })
+      .then(html => { win.document.open(); win.document.write(html); win.document.close() })
+      .catch(err => { win.close(); alert(`Erreur: ${err.message}`) })
+  }
+
   const formatMontant = (montant) => {
     if (!montant && montant !== 0) return 'N/A'
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(montant)
+  }
+
+  // Produits avec questionnaire médical
+  const PRODUCTS_WITH_QUESTIONNAIRE = ['coris_serenite', 'coris_familis', 'coris_etude']
+  const hasQuestionnaire = (sub) => {
+    const nom = (sub?.produit_nom || '').toLowerCase().trim()
+    return PRODUCTS_WITH_QUESTIONNAIRE.some(p => nom.includes(p) || nom === p)
   }
 
   const getStatusBadge = (statut) => {
@@ -280,6 +348,22 @@ export default function SubscriptionsPage() {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => handleDownloadDocuments(sub)}
+                          className="text-purple-600 hover:bg-purple-50 p-2 rounded transition"
+                          title="Télécharger les documents d'identité (ZIP)"
+                        >
+                          <FolderDown className="w-4 h-4" />
+                        </button>
+                        {hasQuestionnaire(sub) && (
+                          <button
+                            onClick={() => handlePrintQuestionnaireMedical(sub)}
+                            className="text-orange-600 hover:bg-orange-50 p-2 rounded transition"
+                            title="Imprimer le questionnaire médical"
+                          >
+                            <ClipboardList className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
                           onClick={() => handleDownloadPDF(sub)}
                           className="text-green-600 hover:bg-green-50 p-2 rounded transition"
                           title="Télécharger PDF"
@@ -368,6 +452,22 @@ export default function SubscriptionsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 p-6 border-t bg-gray-50">
+              <button
+                onClick={() => handleDownloadDocuments(selectedSubscription)}
+                className="flex items-center gap-2 px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+              >
+                <FolderDown className="w-4 h-4" />
+                Documents d'identité (ZIP)
+              </button>
+              {hasQuestionnaire(selectedSubscription) && (
+                <button
+                  onClick={() => handlePrintQuestionnaireMedical(selectedSubscription)}
+                  className="flex items-center gap-2 px-4 py-2 text-white bg-orange-500 rounded-lg hover:bg-orange-600"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Questionnaire médical
+                </button>
+              )}
               <button
                 onClick={() => setShowViewModal(false)}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"

@@ -26,7 +26,18 @@ router.post('/create', verifyToken, createSubscription);
 router.put('/:id/update', verifyToken, updateSubscription);
 router.put('/:id/status', verifyToken, updateSubscriptionStatus);
 router.put('/:id/payment-status', verifyToken, updatePaymentStatus);
-router.post('/:id/upload-document', verifyToken, upload.single('document'), uploadDocument);
+router.post('/:id/upload-document', verifyToken, (req, res, next) => {
+  upload.single('document')(req, res, (err) => {
+    if (err) {
+      // Erreur multer (type de fichier non supporté, taille trop grande, etc.)
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erreur lors de l\'upload du fichier'
+      });
+    }
+    next();
+  });
+}, uploadDocument);
 router.get('/user/propositions', verifyToken, getUserPropositions);
 router.get('/user/contrats', verifyToken, getUserContracts);
 // Routes spécifiques AVANT les routes génériques

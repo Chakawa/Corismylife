@@ -53,7 +53,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Route de base
-app.get('/', (_, res) => res.json({ 
+app.get('/api', (_, res) => res.json({ 
   status: 'running',
   message: 'API MyCorisLife OK',
   timestamp: new Date().toISOString()
@@ -108,7 +108,7 @@ app.use('/uploads', express.static('uploads'));
 app.get('/health', (_,res)=>res.json({ ok:true, ts: Date.now() }));
 
 // Page publique: politique de confidentialite mobile
-app.get('/politique-confidentialite', (_req, res) => {
+app.get('/api/politique-confidentialite', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'privacy-policy.html'));
 });
 

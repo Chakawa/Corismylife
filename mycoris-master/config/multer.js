@@ -67,12 +67,20 @@ const fileFilter = (req, file, cb) => {
   console.log('🔍 FileFilter - MIME type reçu:', file.mimetype);
   console.log('🔍 FileFilter - MIME types autorisés:', allowedMimes);
   
-  if (allowedMimes.includes(file.mimetype)) {
+  // Normaliser les MIME types alternatifs (HEIC/HEIF iPhone, WEBP)
+  const normalizedMime = file.mimetype
+    .replace('image/heif-sequence', 'image/heic')
+    .replace('image/heif', 'image/heic')
+    .replace('image/heic', 'image/jpeg'); // Accepter HEIC comme JPEG
+
+  const extendedAllowedMimes = [...allowedMimes, 'image/heic', 'image/heif', 'image/heif-sequence', 'image/webp'];
+
+  if (extendedAllowedMimes.includes(file.mimetype) || extendedAllowedMimes.includes(normalizedMime)) {
     console.log('✅ FileFilter - Fichier accepté');
     cb(null, true);
   } else {
-    console.log('❌ FileFilter - Fichier rejeté, MIME type non autorisé');
-    cb(new Error('Format non autorisé. Seuls les images (JPEG, PNG, GIF) et PDF sont acceptés.'), false);
+    console.log('❌ FileFilter - Fichier rejeté, MIME type non autorisé:', file.mimetype);
+    cb(new Error('Format non autorisé. Seuls les images (JPEG, PNG, GIF, HEIC, WEBP) et PDF sont acceptés.'), false);
   }
 };
 

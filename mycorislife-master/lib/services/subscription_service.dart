@@ -154,17 +154,21 @@ class SubscriptionService {
     request.headers['Authorization'] = 'Bearer $token';
 
     // Déterminer le type MIME en fonction de l'extension du fichier
-    String contentType = 'application/octet-stream';
     final extension = filePath.toLowerCase().split('.').last;
+    String contentType;
 
     if (extension == 'pdf') {
       contentType = 'application/pdf';
-    } else if (extension == 'jpg' || extension == 'jpeg') {
-      contentType = 'image/jpeg';
     } else if (extension == 'png') {
       contentType = 'image/png';
     } else if (extension == 'gif') {
       contentType = 'image/gif';
+    } else if (extension == 'webp') {
+      contentType = 'image/webp';
+    } else {
+      // jpg, jpeg, heic, heif, et toute autre image (ex. photo camera)
+      // → on force image/jpeg (le serveur accepte les images)
+      contentType = 'image/jpeg';
     }
 
     debugPrint('📄 Extension fichier: $extension');
