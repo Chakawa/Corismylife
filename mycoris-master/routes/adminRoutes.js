@@ -1055,11 +1055,7 @@ router.get('/subscriptions/:id/documents/download', verifyToken, requireAdmin, a
       }
     }
 
-    // --- Source 2 : signature dans souscriptiondata
-    if (subscriptionData.signature_path) {
-      const sigPath = path.join(__dirname, '..', subscriptionData.signature_path);
-      tryAddFile(sigPath, 'signature.png');
-    }
+    // --- Source 2 : signature — exclue du téléchargement (usage interne uniquement)
 
     // --- Source 3 : documents KYC (table kyc_documents) - fallback si la table existe
     if (user_id) {

@@ -188,7 +188,7 @@ export default function SubscriptionsPage() {
       return
     }
     // Ouvrir dans un nouvel onglet — la page HTML contient déjà un bouton "Imprimer"
-    const url = `${API_URL}/subscriptions/${subscription.id}/questionnaire-medical/print`
+    const url = `${API_URL}/admin/subscriptions/${subscription.id}/questionnaire-medical/print`
     const win = window.open('about:blank', '_blank')
     win.document.write('<html><body><p style="font-family:sans-serif;padding:20px">Chargement...</p></body></html>')
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })

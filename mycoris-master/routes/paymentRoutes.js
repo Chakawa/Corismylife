@@ -930,8 +930,16 @@ router.post('/wave/webhook', async (req, res) => {
       });
     }
 
-    const payload = req.body || {};
-    const sessionId = extractWaveSessionId(payload) || extractWaveSessionId(payload.data || {});
+    // req.body est un Buffer (express.raw) → parser le JSON
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (_) {
+      payload = {};
+    }
+    // Wave envoie { id: "EV_...", type: "checkout.session.completed", data: { id: "cos-..." } }
+    // Le sessionId est dans payload.data.id (pas dans payload.id qui est l'event ID)
+    const sessionId = extractWaveSessionId(payload.data || {}) || extractWaveSessionId(payload);
 
     if (!sessionId) {
       return res.status(400).json({
