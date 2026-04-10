@@ -106,7 +106,9 @@ exports.createSubscription = async (req, res) => {
           email: client_info.email,
           adresse: client_info.adresse,
           civilite: client_info.civilite || client_info.genre,
-          numero_piece_identite: client_info.numero_piece_identite || client_info.numero
+          numero_piece_identite: client_info.numero_piece_identite || client_info.numero,
+          profession: client_info.profession || '',
+          secteur_activite: client_info.secteur_activite || ''
         };
       }
       
@@ -349,7 +351,9 @@ exports.updateSubscription = async (req, res) => {
         email: client_info.email,
         adresse: client_info.adresse,
         civilite: client_info.civilite || client_info.genre,
-        numero_piece_identite: client_info.numero_piece_identite || client_info.numero
+        numero_piece_identite: client_info.numero_piece_identite || client_info.numero,
+        profession: client_info.profession || '',
+        secteur_activite: client_info.secteur_activite || ''
       };
     }
     
@@ -1264,6 +1268,7 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
         nom: clientInfo.nom || '',
         prenom: clientInfo.prenom || '',
         profession: clientInfo.profession || '',
+        secteur_activite: clientInfo.secteur_activite || '',
         email: clientInfo.email || '',
         telephone: clientInfo.telephone || '',
         date_naissance: clientInfo.date_naissance || null,
@@ -1621,7 +1626,9 @@ exports.getSubscriptionPDF = async (req, res) => {
         telephone: clientInfo.telephone || '',
         date_naissance: clientInfo.date_naissance || null,
         lieu_naissance: clientInfo.lieu_naissance || '',
-        adresse: clientInfo.adresse || ''
+        adresse: clientInfo.adresse || '',
+        profession: clientInfo.profession || '',
+        secteur_activite: clientInfo.secteur_activite || ''
       };
     } else if (subscription.user_id) {
       // Récupérer depuis la table users
@@ -1635,7 +1642,9 @@ exports.getSubscriptionPDF = async (req, res) => {
           telephone, 
           date_naissance::text as date_naissance,
           COALESCE(lieu_naissance, '')::text as lieu_naissance,
-          adresse 
+          adresse,
+          COALESCE(profession, '') as profession,
+          COALESCE(secteur_activite, '') as secteur_activite
         FROM users 
         WHERE id = $1`,
         [subscription.user_id]
@@ -1959,7 +1968,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     const usr = user || {};
     
     // Informations souscripteur - Optimisées pour tenir sur une page
-    drawRow(startX, curY, fullW, rowH * 4.2);
+    drawRow(startX, curY, fullW, rowH * 5.2);
     
     // Ligne 1: Nom et Prénom / Téléphone
     write('Nom et Prénom', startX + 5, curY + 3, 9, '#666', 120);
@@ -1978,16 +1987,20 @@ exports.getSubscriptionPDF = async (req, res) => {
     write('Lieu de naissance', startX + 320, curY + 3 + 26, 9, '#666', 120);
     write(usr.lieu_naissance || 'Non renseigné', startX + 445, curY + 3 + 26, 9, '#000', 90);
     
-    // Ligne 4: Adresse
-    write('Adresse', startX + 5, curY + 3 + 39, 9, '#666', 120);
-    write(usr.adresse || '', startX + 130, curY + 3 + 39, 9, '#000', 400);
+    // Ligne 4: Adresse / Profession / Secteur d'activité
+    write('Adresse', startX + 5, curY + 3 + 39, 9, '#666', 60);
+    write(usr.adresse || '', startX + 70, curY + 3 + 39, 9, '#000', 155);
+    write('Profession', startX + 230, curY + 3 + 39, 9, '#666', 60);
+    write(usr.profession || '', startX + 295, curY + 3 + 39, 9, '#000', 110);
+    write("Secteur d'act.", startX + 410, curY + 3 + 39, 9, '#666', 65);
+    write(usr.secteur_activite || '', startX + 478, curY + 3 + 39, 9, '#000', 87);
     
     // Ligne 5: Contact d'urgence
     write('En cas d\'urgence', startX + 5, curY + 3 + 52, 9, '#666', 120);
     const contactUrgenceText = contactUrgence.nom ? `${contactUrgence.nom} - ${contactUrgence.contact || ''}` : 'Non renseigné';
     write(contactUrgenceText, startX + 130, curY + 3 + 52, 9, '#000', 400);
     
-    curY += rowH * 4.2 + 5;
+    curY += rowH * 5.2 + 5;
 
     // Période de garantie - Case grise
     drawRow(startX, curY, fullW, boxH, grisNormal);
@@ -2577,16 +2590,58 @@ exports.getSubscriptionPDF = async (req, res) => {
     doc.text(mentionLegale, startX, curY, { width: fullW, lineGap: 2, align: 'left' });
     curY += 12; // Espacement pour séparer de "Fait à Abidjan"
 
-    // Date et lieu (Contrat saisi par supprimé comme demandé) - Séparé de la mention légale
+    // Date et lieu - Séparé de la mention légale
     const dateContrat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     doc.fontSize(8).fillColor('#000000').text(`Fait à Abidjan, le ${dateContrat} en 2 Exemplaires`, startX, curY, { width: fullW, align: 'left' });
     curY += 10;
+
+    // Bloc "Contrat saisi par / Apporteur"
+    {
+      const assistance = subscription.souscriptiondata?.assistance_commerciale || {};
+      const isAideParCommercial = assistance.is_aide_par_commercial === true;
+      const hasCodeApporteur = !!subscription.code_apporteur;
+      const clientNomComplet = `${user.prenom || ''} ${user.nom || ''}`.trim();
+
+      let contratSaisiPar = clientNomComplet;
+      let apporteurLabel = '';
+
+      if (hasCodeApporteur && !isAideParCommercial) {
+        // Commercial a saisi lui-même → chercher son nom dans users
+        try {
+          const commResult = await pool.query(
+            'SELECT nom, prenom FROM users WHERE code_apporteur = $1 LIMIT 1',
+            [subscription.code_apporteur]
+          );
+          if (commResult.rows.length > 0) {
+            const c = commResult.rows[0];
+            contratSaisiPar = `${c.prenom || ''} ${c.nom || ''}`.trim();
+          }
+        } catch (e) { /* ignore */ }
+        apporteurLabel = String(subscription.code_apporteur).trim();
+      } else if (isAideParCommercial) {
+        // Client aidé par un commercial
+        const commNom = assistance.commercial_nom_prenom || '';
+        const commCode = assistance.commercial_code_apporteur || '';
+        apporteurLabel = [commNom, commCode].filter(Boolean).join(' - ');
+      }
+      // Sinon client seul → pas d'apporteur
+
+      const boxH = 22;
+      doc.rect(startX, curY, fullW, boxH).stroke();
+      doc.fontSize(7.5).fillColor('#000000').font('Helvetica-Bold');
+      doc.text(`Contrat saisi par : ${contratSaisiPar}`, startX + 4, curY + 6, { width: fullW / 2 - 8, align: 'left' });
+      if (apporteurLabel) {
+        doc.text(`Apporteur : ${apporteurLabel}`, startX + fullW / 2 + 4, curY + 6, { width: fullW / 2 - 8, align: 'left' });
+      }
+      doc.font('Helvetica');
+      curY += boxH + 4;
+    }
 
     // Espaces pour signatures (2 colonnes: Souscripteur et Compagnie) - Alignés et compacts
     const sigWidth = 260;
     const sigGap = 15;
     const sigStartX = startX;
-    const sigHeight = 65; // Hauteur réduite pour ne pas déborder
+    const sigHeight = 42; // Hauteur réduite pour tenir sur une page
     
     // Labels au-dessus des zones de signature
     doc.fontSize(7).fillColor('#000000').text('Le Souscripteur', sigStartX, curY, { width: sigWidth, align: 'center' });
@@ -2649,27 +2704,17 @@ exports.getSubscriptionPDF = async (req, res) => {
       }
     }
 
-    curY = sigY + sigHeight + 12; // Espacement augmenté pour séparer du trait noir
+    curY = sigY + sigHeight + 12;
 
-    // Trait noir en bas (épaisseur 1 pour visibilité) - Descendu légèrement
-    doc.lineWidth(1).moveTo(startX, curY).lineTo(startX + fullW, curY).stroke('#000000');
-    curY += 8; // Espacement augmenté après le trait noir
-
-    // Informations de l'entreprise en bas de page - Centré, taille réduite pour tenir sur une page
-    doc.fontSize(6).fillColor('#000000').font('Helvetica');
+    // Footer en position absolue en bas de page (ne consomme plus d'espace de contenu)
     const footerText = "CORIS ASSURANCES VIE COTE D'IVOIRE-SA - régie par le code CIMA au capital social de 5.000.000.000 FCFA entièrement libéré. RCM: CI-ABJ-03-2824-B14-00013, NCC: 2400326 R, Compte: Cl166- 01001- 008904724101- 72, Plateau Bd de la République, Rue n°23 Angle Avenue Marchand, IMM CBI, 01BP4690 ABIDJAN - Tél: +225 27 20 15 65 - Email : corisvie-ci@coris-assurances.com";
-    
-    // Afficher le footer centré avec espacement minimal
-    doc.text(footerText, startX, curY, { 
-      width: fullW, 
-      align: 'center', // Centré
-      lineGap: 1 
-    });
-    
-    // Calculer la hauteur utilisée par le texte
-    const textHeight = doc.heightOfString(footerText, { width: fullW, align: 'center', lineGap: 1 });
-    curY += textHeight;
-    console.log('✅ Footer ajouté à curY =', curY, 'Total utilisé:', curY, '/ 782px disponibles');
+    const footerTextHeight = doc.heightOfString(footerText, { width: fullW, align: 'center', lineGap: 1 });
+    const footerTextY = doc.page.height - 28 - footerTextHeight;
+    const footerLineY = footerTextY - 6;
+    doc.lineWidth(1).moveTo(startX, footerLineY).lineTo(startX + fullW, footerLineY).stroke('#000000');
+    doc.fontSize(6).fillColor('#000000').font('Helvetica');
+    doc.text(footerText, startX, footerTextY, { width: fullW, align: 'center', lineGap: 1 });
+    console.log('✅ Footer absolu ajouté à y =', footerTextY, '/ page height:', doc.page.height);
 
     // Pour Coris Solidarité : Ajouter une deuxième page avec les bénéficiaires détaillés
     if (isSolidarite) {

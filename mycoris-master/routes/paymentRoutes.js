@@ -930,57 +930,69 @@ router.post('/wave/webhook', async (req, res) => {
       });
     }
 
-    // req.body est un Buffer (express.raw) → parser le JSON
+    // Parser le JSON depuis le rawBody (req.body est un Buffer via express.raw)
     let payload;
     try {
       payload = JSON.parse(rawBody);
     } catch (_) {
       payload = {};
     }
-    // Wave envoie { id: "EV_...", type: "checkout.session.completed", data: { id: "cos-..." } }
-    // Le sessionId est dans payload.data.id (pas dans payload.id qui est l'event ID)
-    const sessionId = extractWaveSessionId(payload.data || {}) || extractWaveSessionId(payload);
 
-    if (!sessionId) {
+    const eventType = payload.type || '';
+    const waveData = payload.data || {};
+
+    // Ignorer les événements non liés au paiement
+    if (!['checkout.session.completed', 'checkout.session.payment_failed', 'test.test_event'].includes(eventType)) {
+      return res.status(200).json({ success: true, message: 'Événement ignoré' });
+    }
+
+    // Les événements de test sont valides → retourner 200 immédiatement sans traitement DB
+    if (eventType === 'test.test_event') {
+      return res.status(200).json({ success: true, message: 'Événement test reçu' });
+    }
+
+    // Identifiants Wave : data.id = session ID Wave, data.client_reference = notre référence interne
+    const waveSessionId = waveData.id || null;
+    const clientReference = waveData.client_reference || null;
+
+    if (!waveSessionId && !clientReference) {
       return res.status(400).json({
         success: false,
-        message: 'sessionId introuvable dans le webhook Wave',
+        message: 'data.id manquant dans le webhook Wave',
       });
     }
 
-    const statusResult = await waveCheckoutService.getCheckoutSession(sessionId);
-    if (!statusResult.success) {
-      return res.status(400).json({
-        success: false,
-        message: statusResult.message || 'Impossible de vÃ©rifier la session Wave',
-      });
-    }
-
-    const internalStatus = mapWaveStatusToInternal(statusResult.status);
+    // ✅ Utiliser directement payment_status du payload webhook
+    // (pas besoin d'un second appel API Wave — le webhook contient déjà toute l'info)
+    const paymentStatus = waveData.payment_status || waveData.checkout_status || null;
+    const internalStatus = mapWaveStatusToInternal(paymentStatus);
 
     const txResult = await pool.query(
       `UPDATE payment_transactions
          SET statut = $1,
-           provider = 'Wave',
-           session_id = COALESCE(session_id, $2),
-           api_response = $3,
-           updated_at = NOW()
-       WHERE transaction_id = $4
-          OR (api_response->>'sessionId') = $5
-          OR (api_response->>'id') = $5
+             provider = 'Wave',
+             session_id = COALESCE(session_id, $2),
+             api_response = $3,
+             updated_at = NOW()
+       WHERE session_id = $2
+          OR transaction_id = $4
+          OR (api_response->>'sessionId') = $2
+          OR (api_response->>'id') = $2
+          OR ($5::text IS NOT NULL AND (api_response->>'clientReference') = $5)
        RETURNING *`,
       [
         internalStatus,
-        sessionId,
+        waveSessionId,
         JSON.stringify({
           provider: 'WAVE',
-          sessionId,
+          sessionId: waveSessionId,
+          clientReference,
           webhookPayload: payload,
-          status: statusResult.status,
-          data: statusResult.data,
+          status: paymentStatus,
+          eventType,
         }),
-        `WAVE-${sessionId}`,
-        sessionId,
+        `WAVE-${waveSessionId}`,
+        clientReference,
       ]
     );
 

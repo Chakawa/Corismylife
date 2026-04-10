@@ -978,6 +978,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -1342,16 +1344,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final contact = data['contact_urgence'];
       _personneContactNomController.text = contact['nom'] ?? '';
       if (contact['contact'] != null) {
-        final tel = contact['contact'].toString();
-        if (tel.startsWith('+')) {
-          final parts = tel.split(' ');
-          if (parts.length >= 2) {
-            _selectedContactIndicatif = parts[0];
-            _personneContactTelController.text = parts.sublist(1).join(' ');
-          }
-        } else {
-          _personneContactTelController.text = tel;
-        }
+        _personneContactTelController.text = contact['contact'].toString();
       }
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
     }
@@ -1557,6 +1550,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _clientNumeroPieceController.dispose();
     _commercialNomPrenomController.dispose();
     _commercialCodeApporteurController.dispose();
@@ -2238,7 +2233,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       return false;
     }
 
-    if (!RegExp(r'^[0-9]{8,15}$')
+    if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
@@ -2512,7 +2507,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
           'contact':
-              '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
+              _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -2574,6 +2569,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
           'civilite': _selectedClientCivilite,
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
@@ -3407,6 +3404,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                         const SizedBox(height: 16),
                         _buildModernTextField(
+                          controller: _clientProfessionController,
+                          label: 'Profession',
+                          icon: Icons.work,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildModernTextField(
+                          controller: _clientSecteurActiviteController,
+                          label: "Secteur d'activité",
+                          icon: Icons.business,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildModernTextField(
                           controller: _clientNumeroPieceController,
                           label: 'Numéro de pièce d\'identité',
                           icon: Icons.badge,
@@ -3954,16 +3963,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: 16),
-                        // MODIFICATION ICI - Champ avec indicatif
-                        _buildPhoneFieldWithIndicatif(
+                        _buildModernTextField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique',
-                          selectedIndicatif: _selectedContactIndicatif,
-                          onIndicatifChanged: (value) {
-                            setState(() {
-                              _selectedContactIndicatif = value;
-                            });
-                          },
+                          label: 'Contact téléphonique (ex: +2250707070707)',
+                          icon: Icons.phone,
+                          keyboardType: TextInputType.phone,
                         ),
                         SizedBox(height: 16),
                         _buildDropdownField(
@@ -3980,7 +3984,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ],
                     ),
                     SizedBox(height: 20),
-                    _buildAssistanceCommercialeSection(),
+                    if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
@@ -5219,7 +5223,7 @@ SubscriptionRecapWidgets.buildRecapSection(
     SubscriptionRecapWidgets.buildRecapRow(
       'Téléphone',
       _personneContactTelController.text.isNotEmpty
-          ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+          ? _personneContactTelController.text
           : 'Non renseigné',
     ),
   ],

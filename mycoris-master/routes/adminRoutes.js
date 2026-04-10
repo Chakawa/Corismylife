@@ -593,7 +593,14 @@ router.get('/contracts', async (req, res) => {
   try {
     const { status, limit = 50, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM contrats WHERE 1=1';
+    let query = `
+      SELECT c.*,
+             s.id AS subscription_id,
+             s.produit_nom,
+             s.souscriptiondata
+      FROM contrats c
+      LEFT JOIN subscriptions s ON s.numero_police = c.numepoli
+      WHERE 1=1`;
     const params = [];
     let paramCount = 1;
 
@@ -1122,7 +1129,7 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
 
     // Récupérer les infos de la souscription
     const subResult = await pool.query(
-      `SELECT s.id, s.numero_police, s.produit_nom, s.souscriptiondata, s.created_at,
+      `SELECT s.id, s.numero_police, s.produit_nom, s.souscriptiondata, s.date_creation,
               u.nom, u.prenom, u.email, u.telephone, u.date_naissance
        FROM subscriptions s
        LEFT JOIN users u ON u.id = s.user_id
@@ -1198,7 +1205,7 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
         }).join('');
 
     const dateImpression = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-    const dateSouscription = sub.created_at ? new Date(sub.created_at).toLocaleDateString('fr-FR') : 'N/A';
+    const dateSouscription = sub.date_creation ? new Date(sub.date_creation).toLocaleDateString('fr-FR') : 'N/A';
 
     const html = `<!DOCTYPE html>
 <html lang="fr">

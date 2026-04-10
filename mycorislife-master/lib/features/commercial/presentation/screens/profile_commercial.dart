@@ -202,42 +202,14 @@ class _CommercialProfileState extends State<CommercialProfile>
           ),
           child: IconButton(
             onPressed: () async {
-              // Afficher une boîte de dialogue de confirmation
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Déconnexion'),
-                    content: const Text(
-                        'Êtes-vous sûr de vouloir vous déconnecter ?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Annuler'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: rougeCoris,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Déconnexion'),
-                      ),
-                    ],
-                  );
-                },
-              );
-
-              if (shouldLogout == true) {
-                // Déconnexion
-                await AuthService.logout();
-                if (mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                }
+              // Déconnexion directe (sans confirmation)
+              await AuthService.logout();
+              if (mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
               }
             },
             icon: const Icon(

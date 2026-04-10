@@ -70,6 +70,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
   String _selectedClientIndicatif = '+225';
 
@@ -485,6 +487,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _beneficiaireNomController.dispose();
     _beneficiaireContactController.dispose();
     _beneficiaireDateNaissanceController.dispose();
@@ -1089,7 +1093,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
           'contact':
-              '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
+              _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -1142,6 +1146,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
           'civilite': _selectedClientCivilite,
           'date_naissance': _clientDateNaissance?.toIso8601String(),
         };
@@ -1679,6 +1685,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         label: 'Adresse du client',
                         icon: Icons.home,
                       ),
+                      SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientProfessionController,
+                        label: 'Profession',
+                        icon: Icons.work,
+                      ),
+                      SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientSecteurActiviteController,
+                        label: "Secteur d'activité",
+                        icon: Icons.business,
+                      ),
                     ],
                   ),
                 ],
@@ -2115,7 +2133,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                     SizedBox(height: 20),
-                    _buildAssistanceCommercialeSection(),
+                    if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
@@ -3533,7 +3551,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             _buildRecapRow(
               'Téléphone',
               _personneContactTelController.text.isNotEmpty
-                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  ? _personneContactTelController.text
                   : 'Non renseigné',
             ),
           ],

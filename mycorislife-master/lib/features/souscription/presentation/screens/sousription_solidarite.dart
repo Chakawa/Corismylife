@@ -145,6 +145,8 @@ class _SouscriptionSolidaritePageState
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur'; // Civilité par défaut
@@ -914,8 +916,7 @@ class _SouscriptionSolidaritePageState
         },
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
-          'contact':
-              '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
+          'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -930,6 +931,22 @@ class _SouscriptionSolidaritePageState
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
+
+      // Si commercial, ajouter les infos client
+      if (_isCommercial) {
+        subscriptionData['client_info'] = {
+          'nom': _clientNomController.text.trim(),
+          'prenom': _clientPrenomController.text.trim(),
+          'date_naissance': _clientDateNaissance?.toIso8601String(),
+          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+          'telephone': _clientTelephoneController.text.trim(),
+          'email': _clientEmailController.text.trim(),
+          'adresse': _clientAdresseController.text.trim(),
+          'civilite': _selectedClientCivilite,
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
+        };
+      }
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
@@ -1338,6 +1355,18 @@ class _SouscriptionSolidaritePageState
                 controller: _clientAdresseController,
                 label: 'Adresse du client',
                 icon: Icons.home,
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientProfessionController,
+                label: 'Profession',
+                icon: Icons.work,
+              ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _clientSecteurActiviteController,
+                label: "Secteur d'activité",
+                icon: Icons.business,
               ),
               const SizedBox(height: 16),
               _buildModernTextField(
@@ -1836,7 +1865,7 @@ class _SouscriptionSolidaritePageState
         key: _formKey,
         child: Column(
           children: [
-            _buildAssistanceCommercialeSection(),
+            if (!_isCommercial) _buildAssistanceCommercialeSection(),
             const SizedBox(height: 20),
             _buildFormSection(
               'Bénéficiaire et Contact d\'urgence',
@@ -1912,16 +1941,11 @@ class _SouscriptionSolidaritePageState
                   icon: Icons.person_outline,
                 ),
                 const SizedBox(height: 16),
-                // Champ avec indicatif
-                _buildPhoneFieldWithIndicatif(
+                _buildModernTextField(
                   controller: _personneContactTelController,
-                  label: 'Contact téléphonique',
-                  selectedIndicatif: _selectedContactIndicatif,
-                  onIndicatifChanged: (value) {
-                    setState(() {
-                      _selectedContactIndicatif = value!;
-                    });
-                  },
+                  label: 'Contact téléphonique (ex: +2250707070707)',
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
                 _buildDropdownField(
@@ -3355,7 +3379,7 @@ class _SouscriptionSolidaritePageState
               _buildRecapRow(
                 'Contact',
                 _personneContactTelController.text.isNotEmpty
-                    ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                    ? _personneContactTelController.text
                     : 'Non renseigné',
               ),
               _buildRecapRow(
@@ -3859,8 +3883,9 @@ class _SouscriptionSolidaritePageState
       }
     }
 
-    // Valider l'étape bénéficiaire (étape 1)
-    if (_currentStep == 1) {
+    // Valider l'étape bénéficiaire (position dynamique : juste avant mode paiement et recap)
+    final beneficiaireStep = _getTotalSteps() - 3;
+    if (_currentStep == beneficiaireStep) {
       if (!_validateStepBeneficiaire()) {
         return; // Ne pas passer à l'étape suivante si la validation échoue
       }
@@ -3996,6 +4021,8 @@ class _SouscriptionSolidaritePageState
   @override
   void dispose() {
     _beneficiaireDateNaissanceController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _commercialNomPrenomController.dispose();
     _commercialCodeApporteurController.dispose();
     super.dispose();

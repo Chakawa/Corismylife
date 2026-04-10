@@ -180,6 +180,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -651,6 +653,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _clientNumeroPieceController.dispose();
 
     // Dispose des contrôleurs de paiement
@@ -941,7 +945,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
           'contact':
-              '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
+              _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -1000,6 +1004,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
               '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
           'civilite': _selectedClientCivilite,
           'date_naissance': _clientDateNaissance?.toIso8601String(),
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
@@ -1544,7 +1550,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       return false;
     }
 
-    if (!RegExp(r'^[0-9]{8,15}$')
+    if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
@@ -1934,6 +1940,18 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           controller: _clientAdresseController,
                           label: 'Adresse du client',
                           icon: Icons.home,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildModernTextField(
+                          controller: _clientProfessionController,
+                          label: 'Profession',
+                          icon: Icons.work,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildModernTextField(
+                          controller: _clientSecteurActiviteController,
+                          label: "Secteur d'activité",
+                          icon: Icons.business,
                         ),
                         const SizedBox(height: 16),
                         _buildModernTextField(
@@ -2442,7 +2460,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       ],
                     ),
                     SizedBox(height: 20),
-                    _buildAssistanceCommercialeSection(),
+                    if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
@@ -3520,7 +3538,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             SubscriptionRecapWidgets.buildRecapRow(
               'Téléphone',
               _personneContactTelController.text.isNotEmpty
-                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  ? _personneContactTelController.text
                   : 'Non renseigné',
             ),
           ],

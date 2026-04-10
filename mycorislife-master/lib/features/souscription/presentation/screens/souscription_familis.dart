@@ -113,6 +113,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -3746,6 +3748,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
               '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
           'civilite': _selectedClientCivilite,
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
@@ -4560,6 +4564,18 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       ),
                       const SizedBox(height: 16),
                       _buildModernTextField(
+                        controller: _clientProfessionController,
+                        label: 'Profession',
+                        icon: Icons.work,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _clientSecteurActiviteController,
+                        label: "Secteur d'activité",
+                        icon: Icons.business,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
                         controller: _clientNumeroPieceController,
                         label: 'Numéro de pièce d\'identité',
                         icon: Icons.badge,
@@ -5006,16 +5022,11 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                           icon: Icons.person_outline,
                         ),
                         const SizedBox(height: 16),
-                        // Champ avec indicatif
-                        _buildPhoneFieldWithIndicatif(
+                        _buildModernTextField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique',
-                          selectedIndicatif: _selectedContactIndicatif,
-                          onIndicatifChanged: (value) {
-                            setState(() {
-                              _selectedContactIndicatif = value!;
-                            });
-                          },
+                          label: 'Contact téléphonique (ex: +2250707070707)',
+                          icon: Icons.phone,
+                          keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 16),
                         _buildDropdownField(
@@ -5032,7 +5043,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _buildAssistanceCommercialeSection(),
+                    if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     const SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
@@ -5704,7 +5715,7 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
                   : 'Non renseigné',
               'Contact',
               _personneContactTelController.text.isNotEmpty
-                  ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                  ? _personneContactTelController.text
                   : 'Non renseigné',
             ),
             _buildCombinedRecapRow(
@@ -6064,6 +6075,8 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _clientNumeroPieceController.dispose();
     _commercialNomPrenomController.dispose();
     _commercialCodeApporteurController.dispose();

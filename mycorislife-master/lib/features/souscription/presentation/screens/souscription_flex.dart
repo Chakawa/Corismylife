@@ -157,6 +157,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
       TextEditingController(); // Email du client
   final TextEditingController _clientAdresseController =
       TextEditingController(); // Adresse complète
+  final TextEditingController _clientProfessionController = TextEditingController();
+  final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController(); // Numéro de pièce d'identité
   String _selectedClientCivilite =
@@ -2059,12 +2061,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           _personneContactNomController.text = contactUrgence['nom'].toString();
         }
         if (contactUrgence['contact'] != null) {
-          final contact = contactUrgence['contact'].toString();
-          final parts = contact.split(' ');
-          if (parts.length >= 2) {
-            _selectedContactIndicatif = parts[0];
-            _personneContactTelController.text = parts.sublist(1).join(' ');
-          }
+          _personneContactTelController.text =
+              contactUrgence['contact'].toString();
         }
         if (contactUrgence['lien_parente'] != null) {
           _selectedLienParenteUrgence =
@@ -3677,6 +3675,18 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                         ),
                         SizedBox(height: 16),
                         _buildModernTextFieldStep2(
+                          controller: _clientProfessionController,
+                          label: 'Profession',
+                          icon: Icons.work,
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
+                          controller: _clientSecteurActiviteController,
+                          label: "Secteur d'activité",
+                          icon: Icons.business,
+                        ),
+                        SizedBox(height: 16),
+                        _buildModernTextFieldStep2(
                           controller: _clientNumeroPieceController,
                           label: 'Numéro de pièce d\'identité',
                           icon: Icons.badge,
@@ -3786,15 +3796,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: 16),
-                        _buildPhoneFieldWithIndicatif(
+                        _buildModernTextFieldStep2(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique',
-                          selectedIndicatif: _selectedContactIndicatif,
-                          onIndicatifChanged: (value) {
-                            setState(() {
-                              _selectedContactIndicatif = value!;
-                            });
-                          },
+                          label: 'Contact téléphonique (ex: +2250707070707)',
+                          icon: Icons.phone,
+                          keyboardType: TextInputType.phone,
                         ),
                         SizedBox(height: 16),
                         _buildDropdownFieldStep2(
@@ -3822,7 +3828,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
                       ],
                     ),
                     SizedBox(height: 20),
-                    _buildAssistanceCommercialeSection(),
+                    if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     SizedBox(height: 20),
                     _buildDocumentUploadSection(),
                   ],
@@ -4742,7 +4748,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               _buildRecapRow(
                 'Contact',
                 _personneContactTelController.text.isNotEmpty
-                    ? '$_selectedContactIndicatif ${_personneContactTelController.text}'
+                    ? _personneContactTelController.text
                     : 'Non renseigné',
               ),
               _buildRecapRow(
@@ -5157,7 +5163,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
           'contact':
-              '$_selectedContactIndicatif ${_personneContactTelController.text.trim()}',
+              _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -5214,6 +5220,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
           'email': _clientEmailController.text.trim(),
           'adresse': _clientAdresseController.text.trim(),
+          'profession': _clientProfessionController.text.trim(),
+          'secteur_activite': _clientSecteurActiviteController.text.trim(),
           'civilite': _selectedClientCivilite,
           'numero_piece_identite': _clientNumeroPieceController.text.trim(),
         };
@@ -5465,6 +5473,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     _clientTelephoneController.dispose();
     _clientEmailController.dispose();
     _clientAdresseController.dispose();
+    _clientProfessionController.dispose();
+    _clientSecteurActiviteController.dispose();
     _clientNumeroPieceController.dispose();
     _dateEffetController.dispose();
     _banqueController.dispose();

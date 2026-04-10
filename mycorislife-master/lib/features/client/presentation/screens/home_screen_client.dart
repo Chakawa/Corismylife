@@ -98,6 +98,7 @@ class _HomePageState extends State<HomePage> {
         // L'AppBar est maintenant spécifique à chaque page pour plus de flexibilité
         // Nous la retirons d'ici et la plaçons dans chaque page respective.
         body: SafeArea(
+          top: false,
           child: IndexedStack(
             index: _selectedIndex,
             children: _pages,

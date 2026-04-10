@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Eye, Filter, Download, FileText, X } from 'lucide-react'
+import { Search, Eye, Filter, Download, FileText, X, FolderDown, ClipboardList } from 'lucide-react'
 import { contractsService } from '../services/api.service'
+import API_URL from '../config'
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState([])
@@ -98,6 +99,64 @@ export default function ContractsPage() {
 
   const handleExportPDF = () => {
     alert('Export PDF en cours de développement...')
+  }
+
+  const PRODUCTS_WITH_QUESTIONNAIRE = ['coris_serenite', 'coris_familis', 'coris_etude']
+  const hasQuestionnaire = (produit_nom) => {
+    const nom = (produit_nom || '').toLowerCase().trim()
+    return PRODUCTS_WITH_QUESTIONNAIRE.some(p => nom.includes(p) || nom === p)
+  }
+
+  const handleDownloadPDF = async (contract) => {
+    const subId = contract.subscription_id
+    if (!subId) { alert('Aucune souscription liée à ce contrat'); return }
+    try {
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch(`${API_URL}/subscriptions/${subId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!response.ok) throw new Error((await response.json()).message || `Erreur ${response.status}`)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `contrat_${contract.numepoli}.pdf`
+      document.body.appendChild(a); a.click()
+      window.URL.revokeObjectURL(url); document.body.removeChild(a)
+    } catch (error) { alert(`Erreur: ${error.message}`) }
+  }
+
+  const handleDownloadDocuments = async (contract) => {
+    const subId = contract.subscription_id
+    if (!subId) { alert('Aucune souscription liée à ce contrat'); return }
+    try {
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch(`${API_URL}/admin/subscriptions/${subId}/documents/download`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!response.ok) throw new Error((await response.json()).message || `Erreur ${response.status}`)
+      const blob = await response.blob()
+      if (blob.size === 0) throw new Error('Aucun document disponible')
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `documents_${contract.numepoli}.zip`
+      document.body.appendChild(a); a.click()
+      window.URL.revokeObjectURL(url); document.body.removeChild(a)
+    } catch (error) { alert(`Erreur: ${error.message}`) }
+  }
+
+  const handlePrintQuestionnaire = (contract) => {
+    const subId = contract.subscription_id
+    if (!subId) { alert('Aucune souscription liée à ce contrat'); return }
+    const token = localStorage.getItem('adminToken')
+    const url = `${API_URL}/admin/subscriptions/${subId}/questionnaire-medical/print`
+    const win = window.open('about:blank', '_blank')
+    win.document.write('<html><body><p style="font-family:sans-serif;padding:20px">Chargement...</p></body></html>')
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => { if (!r.ok) return r.json().then(d => { throw new Error(d.message || `Erreur ${r.status}`) }); return r.text() })
+      .then(html => { win.document.open(); win.document.write(html); win.document.close() })
+      .catch(err => { win.close(); alert(`Erreur: ${err.message}`) })
   }
 
   return (
@@ -205,6 +264,26 @@ export default function ContractsPage() {
                         className="text-coris-blue hover:bg-blue-50 p-2 rounded transition" title="Voir détails">
                         <Eye className="w-4 h-4" />
                       </button>
+                      <button
+                        onClick={() => handleDownloadPDF(contract)}
+                        className="text-green-600 hover:bg-green-50 p-2 rounded transition"
+                        title="Télécharger PDF contrat">
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocuments(contract)}
+                        className="text-purple-600 hover:bg-purple-50 p-2 rounded transition"
+                        title="Télécharger pièces d'identité (ZIP)">
+                        <FolderDown className="w-4 h-4" />
+                      </button>
+                      {hasQuestionnaire(contract.produit_nom) && (
+                        <button
+                          onClick={() => handlePrintQuestionnaire(contract)}
+                          className="text-orange-600 hover:bg-orange-50 p-2 rounded transition"
+                          title="Questionnaire médical">
+                          <ClipboardList className="w-4 h-4" />
+                        </button>
+                      )}
                   </td>
                 </tr>
               ))}
@@ -302,9 +381,25 @@ export default function ContractsPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
+                  onClick={() => handleDownloadPDF(selectedContract)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                  <Download className="w-4 h-4" /> PDF
+                </button>
+                <button
+                  onClick={() => handleDownloadDocuments(selectedContract)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                  <FolderDown className="w-4 h-4" /> Pièces
+                </button>
+                {selectedContract && hasQuestionnaire(selectedContract.produit_nom) && (
+                  <button
+                    onClick={() => handlePrintQuestionnaire(selectedContract)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+                    <ClipboardList className="w-4 h-4" /> Questionnaire
+                  </button>
+                )}
+                <button
                   onClick={() => setShowViewModal(false)}
-                  className="flex-1 px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-light transition"
-                >
+                  className="flex-1 px-4 py-2 bg-coris-blue text-white rounded-lg hover:bg-coris-blue-light transition">
                   Fermer
                 </button>
               </div>

@@ -59,37 +59,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Déconnecte l'utilisateur
   Future<void> _logout() async {
-    // Afficher une boîte de dialogue de confirmation
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: rougeCoris),
-            child: const Text('Déconnecter'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      // Déconnexion via AuthService
+    try {
       await AuthService.logout();
 
       if (!mounted) return;
 
-      // Rediriger vers la page de connexion
+      // Rediriger vers la page de connexion et supprimer toutes les routes
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur lors de la déconnexion : $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de la déconnexion'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
