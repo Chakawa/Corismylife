@@ -754,7 +754,8 @@ exports.getDocument = async (req, res) => {
         s.user_id, 
         s.code_apporteur,
         s.souscriptiondata->>'piece_identite' as doc_name,
-        s.souscriptiondata->>'piece_identite_url' as doc_url
+        s.souscriptiondata->>'piece_identite_url' as doc_url,
+        s.souscriptiondata->'client_info'->>'telephone' as client_info_telephone
       FROM subscriptions s
       WHERE s.id = $1
     `;
@@ -797,6 +798,25 @@ exports.getDocument = async (req, res) => {
         console.log('✅ Accès autorisé: commercial avec code_apporteur correspondant');
       } else {
         console.log('❌ Code apporteur ne correspond pas:', req.user.code_apporteur, 'vs', subscription.code_apporteur, '(types:', typeof req.user.code_apporteur, 'vs', typeof subscription.code_apporteur, ')');
+      }
+    }
+    
+    // 4. Client dont le téléphone correspond à client_info.telephone (souscription faite par un commercial)
+    else if (req.user.role === 'client' && subscription.code_apporteur && subscription.client_info_telephone) {
+      try {
+        const userResult = await pool.query('SELECT telephone FROM users WHERE id = $1', [req.user.id]);
+        const userTelephone = userResult.rows[0]?.telephone || '';
+        // Comparer les numéros en ignorant les préfixes internationaux
+        const cleanUser = userTelephone.replace(/^\+?\d{1,4}[\s-]?/, '').replace(/\s/g, '');
+        const cleanClientInfo = subscription.client_info_telephone.replace(/^\+?\d{1,4}[\s-]?/, '').replace(/\s/g, '');
+        if (cleanUser && cleanClientInfo && cleanClientInfo.includes(cleanUser)) {
+          hasAccess = true;
+          console.log('✅ Accès autorisé: client via téléphone client_info');
+        } else {
+          console.log('❌ Téléphone client ne correspond pas:', cleanUser, 'vs', cleanClientInfo);
+        }
+      } catch (e) {
+        console.log('❌ Erreur vérification téléphone client:', e.message);
       }
     }
     
@@ -1635,6 +1655,7 @@ exports.getSubscriptionPDF = async (req, res) => {
       const userResult = await pool.query(
         `SELECT 
           id, 
+          role,
           civilite, 
           nom, 
           prenom, 
@@ -1650,6 +1671,11 @@ exports.getSubscriptionPDF = async (req, res) => {
         [subscription.user_id]
       );
       user = userResult.rows[0] || {};
+      // Si l'utilisateur récupéré est un commercial (souscription créée par lui-même sans client_info),
+      // ne pas afficher son email personnel dans le PDF du client
+      if (subscription.code_apporteur && user.role === 'commercial') {
+        user.email = '';
+      }
     }
     
     // Vérifier et convertir date_naissance si c'est un objet Date PostgreSQL
@@ -1978,7 +2004,7 @@ exports.getSubscriptionPDF = async (req, res) => {
     
     // Ligne 2: Email
     write('Email', startX + 5, curY + 3 + 13, 9, '#666', 120);
-    write(usr.email || '', startX + 130, curY + 3 + 13, 9, '#000', 400);
+    write(usr.email || 'Non renseigné', startX + 130, curY + 3 + 13, 9, '#000', 400);
     
     // Ligne 3: Date de naissance / Lieu de naissance
     write('Date de naissance', startX + 5, curY + 3 + 26, 9, '#666', 120);
@@ -2607,6 +2633,7 @@ exports.getSubscriptionPDF = async (req, res) => {
 
       if (hasCodeApporteur && !isAideParCommercial) {
         // Commercial a saisi lui-même → chercher son nom dans users
+        let commercialNom = '';
         try {
           const commResult = await pool.query(
             'SELECT nom, prenom FROM users WHERE code_apporteur = $1 LIMIT 1',
@@ -2614,9 +2641,11 @@ exports.getSubscriptionPDF = async (req, res) => {
           );
           if (commResult.rows.length > 0) {
             const c = commResult.rows[0];
-            contratSaisiPar = `${c.prenom || ''} ${c.nom || ''}`.trim();
+            commercialNom = `${c.prenom || ''} ${c.nom || ''}`.trim();
           }
         } catch (e) { /* ignore */ }
+        // Si le nom du commercial est trouvé, on l'utilise ; sinon on met le code apporteur
+        contratSaisiPar = commercialNom || `Commercial (${String(subscription.code_apporteur).trim()})`;
         apporteurLabel = String(subscription.code_apporteur).trim();
       } else if (isAideParCommercial) {
         // Client aidé par un commercial
@@ -4271,4 +4300,227 @@ const getQuestionnaireMedical = async (req, res) => {
 exports.getQuestionsQuestionnaireMedical = getQuestionsQuestionnaireMedical;
 exports.saveQuestionnaireMedical = saveQuestionnaireMedical;
 exports.getQuestionnaireMedical = getQuestionnaireMedical;
+
+/**
+ * GET /api/subscriptions/:id/questionnaire-medical/print
+ * Génère la page HTML imprimable du questionnaire médical.
+ * Accessible aux admins, au commercial auteur de la souscription, et au client concerné.
+ */
+const getQuestionnaireMedicalPrint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = req.user;
+    const accessQuery = await pool.query(
+      `SELECT s.id, s.user_id, s.code_apporteur,
+              s.souscriptiondata->'client_info'->>'telephone' as client_info_telephone
+       FROM subscriptions s WHERE s.id = $1`,
+      [id]
+    );
+    if (accessQuery.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Souscription introuvable' });
+    }
+    const acc = accessQuery.rows[0];
+    let hasAccess = false;
+    if (currentUser.role === 'admin') hasAccess = true;
+    else if (acc.user_id === currentUser.id) hasAccess = true;
+    else if (currentUser.role === 'commercial' && acc.code_apporteur) {
+      const commRow = await pool.query(
+        'SELECT code_apporteur FROM users WHERE id = $1 LIMIT 1', [currentUser.id]
+      );
+      if (commRow.rows.length > 0 && commRow.rows[0].code_apporteur === acc.code_apporteur) hasAccess = true;
+    } else if (currentUser.role === 'client' && acc.client_info_telephone) {
+      const clientRow = await pool.query('SELECT telephone FROM users WHERE id = $1 LIMIT 1', [currentUser.id]);
+      if (clientRow.rows.length > 0 && clientRow.rows[0].telephone === acc.client_info_telephone) hasAccess = true;
+    }
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: 'Accès refusé' });
+    }
+
+    const subResult = await pool.query(
+      `SELECT s.id, s.numero_police, s.produit_nom, s.souscriptiondata, s.date_creation, s.code_apporteur,
+              u.nom, u.prenom, u.email, u.telephone, u.date_naissance
+       FROM subscriptions s
+       LEFT JOIN users u ON u.id = s.user_id
+       WHERE s.id = $1`,
+      [id]
+    );
+    const sub = subResult.rows[0];
+    const subData = sub.souscriptiondata || {};
+    const clientInfo = subData.client_info || {};
+    const clientNom = clientInfo.nom || sub.nom || 'N/A';
+    const clientPrenom = clientInfo.prenom || sub.prenom || 'N/A';
+    const clientEmail = clientInfo.email || (sub.code_apporteur ? '' : (sub.email || ''));
+    const clientTel = clientInfo.telephone || sub.telephone || 'N/A';
+    const clientDob = clientInfo.date_naissance || sub.date_naissance || null;
+    const clientAddr = clientInfo.adresse || 'N/A';
+    const clientCivil = clientInfo.civilite || clientInfo.genre || '';
+    const numeroRef = sub.numero_police || `SUB-${id}`;
+
+    const produitLabel = (sub.produit_nom || 'N/A')
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    const questResult = await pool.query(
+      `SELECT sq.reponse_oui_non, sq.reponse_text,
+              sq.reponse_detail_1, sq.reponse_detail_2, sq.reponse_detail_3,
+              qm.code, qm.libelle, qm.type_question, qm.ordre,
+              qm.champ_detail_1_label, qm.champ_detail_2_label, qm.champ_detail_3_label
+       FROM souscription_questionnaire sq
+       JOIN questionnaire_medical qm ON sq.question_id = qm.id
+       WHERE sq.subscription_id = $1
+       ORDER BY qm.ordre ASC`,
+      [id]
+    );
+    const reponses = questResult.rows;
+
+    const lignesHtml = reponses.length === 0
+      ? `<tr><td colspan="3" style="text-align:center;color:#888;padding:20px;font-style:italic;">Aucune réponse enregistrée pour cette souscription.</td></tr>`
+      : reponses.map((r, i) => {
+          let reponseHtml;
+          if (r.reponse_oui_non !== null && r.reponse_oui_non !== undefined) {
+            const isOui = r.reponse_oui_non === true || r.reponse_oui_non === 'true';
+            reponseHtml = isOui
+              ? `<span style="background:#fde8e8;color:#c0392b;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:12px;">OUI</span>`
+              : `<span style="background:#e8f8e8;color:#27ae60;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:12px;">NON</span>`;
+          } else {
+            reponseHtml = `<span style="color:#333;">${r.reponse_text || '—'}</span>`;
+          }
+          const details = [
+            r.champ_detail_1_label && r.reponse_detail_1 ? `<div style="margin-top:4px;font-size:11px;color:#555;"><em>${String(r.champ_detail_1_label).replace(/</g,'&lt;')}:</em> ${String(r.reponse_detail_1).replace(/</g,'&lt;')}</div>` : '',
+            r.champ_detail_2_label && r.reponse_detail_2 ? `<div style="margin-top:2px;font-size:11px;color:#555;"><em>${String(r.champ_detail_2_label).replace(/</g,'&lt;')}:</em> ${String(r.reponse_detail_2).replace(/</g,'&lt;')}</div>` : '',
+            r.champ_detail_3_label && r.reponse_detail_3 ? `<div style="margin-top:2px;font-size:11px;color:#555;"><em>${String(r.champ_detail_3_label).replace(/</g,'&lt;')}:</em> ${String(r.reponse_detail_3).replace(/</g,'&lt;')}</div>` : ''
+          ].join('');
+          return `<tr style="background:${i % 2 === 0 ? '#ffffff' : '#f7faff'};">
+            <td style="padding:10px 12px;border:1px solid #d0d8e8;color:#888;font-size:12px;text-align:center;width:50px;">${r.code || i + 1}</td>
+            <td style="padding:10px 12px;border:1px solid #d0d8e8;line-height:1.5;">${String(r.libelle).replace(/</g,'&lt;')}</td>
+            <td style="padding:10px 12px;border:1px solid #d0d8e8;min-width:130px;">${reponseHtml}${details}</td>
+          </tr>`;
+        }).join('');
+
+    const dateImpression = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const dateSouscription = sub.date_creation ? new Date(sub.date_creation).toLocaleDateString('fr-FR') : 'N/A';
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Questionnaire Médical — ${numeroRef}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; color: #222; font-size: 13px; background: #f5f7fb; }
+    .page { max-width: 800px; margin: 0 auto; background: #fff; padding: 32px 36px; }
+    .logo-container { display: flex; align-items: center; gap: 10px; }
+    .logo-text { line-height: 1; }
+    .logo-text .brand { font-size: 22px; font-weight: 900; color: #1a4b8c; letter-spacing: 1px; }
+    .logo-text .sub { font-size: 11px; color: #e67e22; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1a4b8c; padding-bottom: 16px; margin-bottom: 24px; }
+    .header-right { text-align: right; }
+    .header-right h1 { font-size: 17px; color: #1a4b8c; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .header-right h2 { font-size: 12px; color: #666; font-weight: normal; margin-top: 3px; }
+    .header-right .date { font-size: 11px; color: #999; margin-top: 6px; }
+    .section-title { background: linear-gradient(90deg, #1a4b8c 0%, #2563eb 100%); color: white; padding: 8px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; border-radius: 5px; margin-bottom: 12px; margin-top: 20px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #d0d8e8; border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
+    .info-item { padding: 9px 14px; border-bottom: 1px solid #e8edf5; border-right: 1px solid #e8edf5; }
+    .info-item:nth-child(even) { border-right: none; }
+    .info-item label { font-size: 10px; color: #888; display: block; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .info-item span { font-weight: 600; color: #1a2a4a; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: linear-gradient(90deg, #1a4b8c 0%, #2563eb 100%); }
+    thead th { padding: 10px 12px; color: white; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none; }
+    tbody tr:last-child td { border-bottom: 1px solid #d0d8e8; }
+    .signature-block { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 28px; border-top: 1px solid #d0d8e8; padding-top: 16px; }
+    .sig-box .sig-title { font-size: 12px; font-weight: 600; color: #1a4b8c; margin-bottom: 8px; }
+    .sig-box .sig-line { border-top: 1px solid #555; margin-top: 55px; }
+    .sig-box .sig-sub { font-size: 10px; color: #888; margin-top: 4px; }
+    .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; }
+    .no-print { margin-bottom: 20px; }
+    .btn-print { background: #1a4b8c; color: white; border: none; padding: 10px 24px; font-size: 14px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 3px 8px rgba(26,75,140,0.3); }
+    .btn-print:hover { background: #0d3275; }
+    @media print {
+      body { background: white; }
+      .page { padding: 0; max-width: 100%; box-shadow: none; }
+      .no-print { display: none !important; }
+      @page { margin: 1.5cm 1.8cm; size: A4 portrait; }
+      thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">🖨️&nbsp; Imprimer</button>
+    <span style="margin-left:14px;color:#888;font-size:12px;">Ctrl+P pour imprimer directement</span>
+  </div>
+  <div class="header">
+    <div class="logo-container">
+      <img src="/public/logo1.png" alt="CORIS" style="height:48px;width:auto;object-fit:contain;">
+      <div class="logo-text">
+        <div class="brand">CORIS</div>
+        <div class="sub">Assurance Vie</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <h1>Questionnaire Médical</h1>
+      <h2>Déclaration d'état de santé du souscripteur</h2>
+      <div class="date">Imprimé le ${dateImpression}</div>
+    </div>
+  </div>
+  <div class="section-title">📋 Informations de la souscription</div>
+  <div class="info-grid">
+    <div class="info-item"><label>N° Police / Référence</label><span>${numeroRef}</span></div>
+    <div class="info-item"><label>Produit</label><span>${produitLabel}</span></div>
+    <div class="info-item"><label>Date de souscription</label><span>${dateSouscription}</span></div>
+    <div class="info-item"><label>Statut réponses</label><span>${reponses.length > 0 ? `${reponses.length} réponse(s) enregistrée(s)` : 'Aucune réponse'}</span></div>
+  </div>
+  <div class="section-title">👤 Identité du souscripteur</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Nom</label><span>${String(clientNom).replace(/</g,'&lt;')}</span></div>
+    <div class="info-item"><label>Prénom</label><span>${String(clientPrenom).replace(/</g,'&lt;')}</span></div>
+    <div class="info-item"><label>Date de naissance</label><span>${clientDob ? new Date(clientDob).toLocaleDateString('fr-FR') : 'N/A'}</span></div>
+    <div class="info-item"><label>Civilité</label><span>${clientCivil || 'N/A'}</span></div>
+    <div class="info-item"><label>Téléphone</label><span>${String(clientTel).replace(/</g,'&lt;')}</span></div>
+    <div class="info-item"><label>Email</label><span>${clientEmail ? String(clientEmail).replace(/</g,'&lt;') : 'Non renseigné'}</span></div>
+    <div class="info-item" style="grid-column:1/3;"><label>Adresse</label><span>${String(clientAddr).replace(/</g,'&lt;')}</span></div>
+  </div>
+  <div class="section-title">🏥 Formulaire Médical — Questions &amp; Réponses</div>
+  <table>
+    <thead><tr>
+      <th style="width:50px;text-align:center;">N°</th>
+      <th>Question médicale</th>
+      <th style="width:160px;">Réponse</th>
+    </tr></thead>
+    <tbody>${lignesHtml}</tbody>
+  </table>
+  <div class="signature-block">
+    <div class="sig-box">
+      <div class="sig-title">Signature du souscripteur</div>
+      <div class="sig-line"></div>
+      <div class="sig-sub">${String(clientPrenom).replace(/</g,'&lt;')} ${String(clientNom).replace(/</g,'&lt;')}</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-title">Cachet &amp; Signature du médecin traitant</div>
+      <div class="sig-line"></div>
+      <div class="sig-sub">Médecin ayant examiné le souscripteur</div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>CORIS Assurance Vie — Questionnaire médical — Réf. ${numeroRef}</span>
+    <span>Document confidentiel</span>
+  </div>
+</div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error('Erreur impression questionnaire médical:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la génération du questionnaire' });
+  }
+};
+exports.getQuestionnaireMedicalPrint = getQuestionnaireMedicalPrint;
  

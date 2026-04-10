@@ -82,6 +82,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Affiche la boîte de dialogue de confirmation de déconnexion
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: rougeCoris),
+            SizedBox(width: 8),
+            Text('Déconnexion'),
+          ],
+        ),
+        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: rougeCoris,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ===================================
   // INTERFACE UTILISATEUR
   // ===================================
@@ -320,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       child: ListTile(
-        onTap: _logout,
+        onTap: _showLogoutDialog,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 48,

@@ -18,7 +18,8 @@ const {
   getDocument,
   getQuestionsQuestionnaireMedical,
   saveQuestionnaireMedical,
-  getQuestionnaireMedical
+  getQuestionnaireMedical,
+  getQuestionnaireMedicalPrint
 } = require('../controllers/subscriptionController');
 
 // Routes
@@ -47,6 +48,14 @@ router.get('/:id/pdf', verifyToken, getSubscriptionPDF);
 router.get('/:id/document/:filename', verifyToken, getDocument);
 router.post('/:id/questionnaire-medical', verifyToken, saveQuestionnaireMedical);
 router.get('/:id/questionnaire-medical', verifyToken, getQuestionnaireMedical);
+// Route print: accepte aussi le token via query param (?token=...) pour ouverture directe dans le navigateur
+router.get('/:id/questionnaire-medical/print', (req, res, next) => {
+  // Si le token est passé en query param, on le met dans l'Authorization header
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+}, verifyToken, getQuestionnaireMedicalPrint);
 // Route générique /:id EN DERNIER
 router.get('/:id', verifyToken, getSubscriptionWithUserDetails);
 router.post('/attach', verifyToken, attachProposal);

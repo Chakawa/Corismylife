@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
+import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/core/utils/amount_parser.dart';
+import 'package:mycorislife/config/app_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SubscriptionDetailScreen extends StatefulWidget {
@@ -673,13 +675,48 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     if (reponses.isEmpty) return const SizedBox.shrink();
 
     final List<Map<String, dynamic>> questions = _getQuestionnaireMedicalQuestions();
+    final subscriptionId = widget.subscription['id'];
 
-    return SizedBox(
-      width: double.infinity,
-      child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
-        reponses,
-        questions,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
+            reponses,
+            questions,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              try {
+                final token = await AuthService.getToken();
+                if (token == null) return;
+                final baseUrl = AppConfig.baseUrl.replaceAll('/api', '');
+                final url = Uri.parse(
+                  '$baseUrl/api/subscriptions/$subscriptionId/questionnaire-medical/print?token=${Uri.encodeComponent(token)}',
+                );
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Impossible d\'ouvrir le formulaire: $e')),
+                );
+              }
+            },
+            icon: const Icon(Icons.download_outlined, size: 18),
+            label: const Text('Télécharger le formulaire médical'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF002B6B),
+              side: const BorderSide(color: Color(0xFF002B6B)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1218,7 +1255,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           final totalDocuments = docsList.length;
 
           return SubscriptionRecapWidgets.buildDocumentsSection(
-            pieceIdentite: pieceIdentiteLabel ?? pieceIdentite,
+            pieceIdentite: null,
             documents: docsList.isNotEmpty ? docsList : null,
             documentCount: totalDocuments,
             onDocumentTap: pieceIdentite != null &&

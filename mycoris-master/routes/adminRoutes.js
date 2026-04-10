@@ -1129,7 +1129,7 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
 
     // Récupérer les infos de la souscription
     const subResult = await pool.query(
-      `SELECT s.id, s.numero_police, s.produit_nom, s.souscriptiondata, s.date_creation,
+      `SELECT s.id, s.numero_police, s.produit_nom, s.souscriptiondata, s.date_creation, s.code_apporteur,
               u.nom, u.prenom, u.email, u.telephone, u.date_naissance
        FROM subscriptions s
        LEFT JOIN users u ON u.id = s.user_id
@@ -1146,7 +1146,7 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
     const clientInfo = subData.client_info || {};
     const clientNom = clientInfo.nom || sub.nom || 'N/A';
     const clientPrenom = clientInfo.prenom || sub.prenom || 'N/A';
-    const clientEmail = clientInfo.email || sub.email || 'N/A';
+    const clientEmail = clientInfo.email || (sub.code_apporteur ? '' : (sub.email || ''));
     const clientTel = clientInfo.telephone || sub.telephone || 'N/A';
     const clientDob = clientInfo.date_naissance || sub.date_naissance || null;
     const clientAddr = clientInfo.adresse || 'N/A';
@@ -1337,21 +1337,17 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
 <body>
 <div class="page">
 
-  <!-- Bouton impression (masqué à l'impression) -->
+  <!-- Boutons action (masqués à l'impression) -->
   <div class="no-print">
-    <button class="btn-print" onclick="window.print()">🖨️&nbsp; Imprimer le formulaire</button>
+    <button class="btn-print" onclick="window.print()">🖨️&nbsp; Imprimer</button>
+    <a class="btn-print" style="text-decoration:none;margin-left:10px;background:#27ae60;" href="?download=1" download="questionnaire-medical-${String(numeroRef).replace(/[^a-zA-Z0-9-_]/g,'_')}.html">⬇️&nbsp; Télécharger</a>
     <span style="margin-left:14px;color:#888;font-size:12px;">Ctrl+P pour imprimer directement</span>
   </div>
 
   <!-- En-tête -->
   <div class="header">
     <div class="logo-container">
-      <div class="logo-shield">
-        <!-- Shield / Protection icon -->
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L4 5v6c0 5.25 3.5 10.25 8 11.5C17.5 21.25 21 16.25 21 11V5l-9-3z"/>
-        </svg>
-      </div>
+      <img src="/public/logo1.png" alt="CORIS" style="height:48px;width:auto;object-fit:contain;">
       <div class="logo-text">
         <div class="brand">CORIS</div>
         <div class="sub">Assurance Vie</div>
@@ -1381,7 +1377,7 @@ router.get('/subscriptions/:id/questionnaire-medical/print', verifyToken, requir
     <div class="info-item"><label>Date de naissance</label><span>${clientDob ? new Date(clientDob).toLocaleDateString('fr-FR') : 'N/A'}</span></div>
     <div class="info-item"><label>Civilité</label><span>${clientCivil || 'N/A'}</span></div>
     <div class="info-item"><label>Téléphone</label><span>${String(clientTel).replace(/</g,'&lt;')}</span></div>
-    <div class="info-item"><label>Email</label><span>${String(clientEmail).replace(/</g,'&lt;')}</span></div>
+    <div class="info-item"><label>Email</label><span>${clientEmail ? String(clientEmail).replace(/</g,'&lt;') : 'Non renseigné'}</span></div>
     <div class="info-item" style="grid-column:1/3;"><label>Adresse</label><span>${String(clientAddr).replace(/</g,'&lt;')}</span></div>
   </div>
 

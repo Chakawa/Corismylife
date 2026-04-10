@@ -362,26 +362,24 @@ class ProduitsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildModernHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildHeaderCard(),
-                    const SizedBox(height: 10),
-                    _buildProductsSection(context),
-                    const SizedBox(height: 30),
-                    _buildAssistanceSection(),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+      body: Column(
+        children: [
+          _buildModernHeader(context),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeaderCard(),
+                  const SizedBox(height: 10),
+                  _buildProductsSection(context),
+                  const SizedBox(height: 30),
+                  _buildAssistanceSection(),
+                  const SizedBox(height: 30),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -201,16 +201,45 @@ class _CommercialProfileState extends State<CommercialProfile>
             ),
           ),
           child: IconButton(
-            onPressed: () async {
-              // Déconnexion directe (sans confirmation)
-              await AuthService.logout();
-              if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/login',
-                  (route) => false,
-                );
-              }
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.logout_rounded, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Déconnexion'),
+                    ],
+                  ),
+                  content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Annuler'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await AuthService.logout();
+                        if (mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/login',
+                            (route) => false,
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
             },
             icon: const Icon(
               Icons.logout_rounded,
