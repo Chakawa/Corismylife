@@ -14,7 +14,9 @@ class WaveCheckoutService {
     this.defaultErrorUrl = process.env.WAVE_ERROR_URL || 'https://example.com/wave-error';
     this.defaultWebhookUrl = process.env.WAVE_WEBHOOK_URL || 'https://example.com/api/payment/wave/webhook';
 
-    this.devMode = process.env.WAVE_DEV_MODE !== 'false';
+    // Dev mode activé UNIQUEMENT si WAVE_DEV_MODE=true explicitement.
+    // Par défaut (variable absente) → mode production.
+    this.devMode = process.env.WAVE_DEV_MODE === 'true';
 
     if (this.devMode) {
       console.log('🧪 WAVE DEV MODE ACTIVÉ (simulation checkout)');

@@ -730,10 +730,19 @@ router.get('/wave/status/:sessionId', verifyToken, async (req, res) => {
         });
       }
 
-      return res.status(400).json({
-        success: false,
-        message: statusResult.message || 'Impossible de rÃ©cupÃ©rer le statut Wave',
-        error: statusResult.error,
+      return res.status(200).json({
+        success: true,
+        message: 'Session Wave en cours de traitement',
+        data: {
+          provider: 'WAVE',
+          sessionId,
+          status: 'PENDING',
+          providerStatus: null,
+          contractCreated: false,
+          contractNumber: null,
+          source: 'not-found-fallback',
+          providerMessage: statusResult.message || null,
+        },
       });
     }
 
@@ -956,9 +965,10 @@ router.post('/wave/webhook', async (req, res) => {
     const clientReference = waveData.client_reference || null;
 
     if (!waveSessionId && !clientReference) {
-      return res.status(400).json({
-        success: false,
-        message: 'data.id manquant dans le webhook Wave',
+      console.warn('⚠️ Webhook Wave: data.id et client_reference absents du payload');
+      return res.status(200).json({
+        success: true,
+        message: 'Événement Wave sans identifiant de session ignoré',
       });
     }
 
