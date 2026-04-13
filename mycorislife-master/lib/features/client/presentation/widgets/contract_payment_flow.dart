@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/services/contrat_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
@@ -377,7 +376,7 @@ class ContractPaymentFlow {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Police: $numeroPolice • Montant: ${montant.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: _grisTexte,
                         fontWeight: FontWeight.w500,
@@ -499,7 +498,7 @@ class ContractPaymentFlow {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: _bleuCoris,
                       fontSize: 16,
@@ -508,7 +507,7 @@ class ContractPaymentFlow {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: _grisTexte,
                       fontSize: 12,
                     ),

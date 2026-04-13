@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'package:mycorislife/services/subscription_service_attach.dart';
 
@@ -32,7 +33,7 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
     try {
       await SubscriptionAttachService.attachProposal(
         numeroPolice: numero.isNotEmpty ? numero : null,
-        id: idStr.isNotEmpty ? (int.tryParse(idStr) ?? null) : null,
+        id: idStr.isNotEmpty ? (int.tryParse(idStr)) : null,
       );
       if (!mounted) return;
       HapticFeedback.lightImpact();
@@ -69,8 +70,8 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Saisissez le numéro de police ou l\'ID de la proposition', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 24),
+            Text('Saisissez le numéro de police ou l\'ID de la proposition', style: TextStyle(fontSize: context.sp(16))),
+            SizedBox(height: context.r(24)),
             TextField(
               controller: _numeroPoliceController,
               decoration: const InputDecoration(
@@ -79,9 +80,9 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
                 prefixIcon: Icon(Icons.description),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             const Text('OU', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             TextField(
               controller: _idController,
               keyboardType: TextInputType.number,
@@ -91,7 +92,7 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
                 prefixIcon: Icon(Icons.numbers),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: context.r(32)),
             ElevatedButton(
               onPressed: _isLoading ? null : _attach,
               style: ElevatedButton.styleFrom(
@@ -100,7 +101,7 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
               ),
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Rattacher', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  : Text('Rattacher', style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w600)),
             ),
           ],
         ),

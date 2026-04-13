@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 class HomeSouscriptionPage extends StatelessWidget {
   const HomeSouscriptionPage({super.key}); // ✅ super parameter utilisé
@@ -10,16 +11,14 @@ class HomeSouscriptionPage extends StatelessWidget {
   static const Color blanc = Colors.white;
   static const Color ombrage = Colors.black;
 
-  /**
-   * MODIFICATION: Les routes pointent maintenant directement vers les pages de souscription.
-   * 
-   * FLUX:
-   * 1. L'utilisateur clique sur un produit
-   * 2. Pour les commerciaux: redirection vers sélection de client puis souscription
-   * 3. Pour les clients: redirection directe vers la souscription
-   * 
-   * Plus besoin de passer par la page de description.
-   */
+  /// MODIFICATION: Les routes pointent maintenant directement vers les pages de souscription.
+  /// 
+  /// FLUX:
+  /// 1. L'utilisateur clique sur un produit
+  /// 2. Pour les commerciaux: redirection vers sélection de client puis souscription
+  /// 3. Pour les clients: redirection directe vers la souscription
+  /// 
+  /// Plus besoin de passer par la page de description.
   final List<Map<String, dynamic>> produits = const [
     {
       'image': 'assets/images/retraitee.png',
@@ -85,12 +84,12 @@ class HomeSouscriptionPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
+              _buildHeader(context),
+              SizedBox(height: context.r(16)),
               _buildProductsSection(context),
-              const SizedBox(height: 30),
-              _buildAssistanceSection(),
-              const SizedBox(height: 30),
+              SizedBox(height: context.r(24)),
+              _buildAssistanceSection(context),
+              SizedBox(height: context.r(24)),
             ],
           ),
         ),
@@ -105,15 +104,15 @@ class HomeSouscriptionPage extends StatelessWidget {
       elevation: 2,
       centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+        icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: context.r(18)),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         "Souscription Produits",
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,
-          fontSize: 20,
+          fontSize: context.sp(18),
         ),
       ),
       flexibleSpace: Container(
@@ -129,31 +128,31 @@ class HomeSouscriptionPage extends StatelessWidget {
   }
 
   /// ----------- HEADER CARD ---------------
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 15, 20, 20),
+      margin: EdgeInsets.fromLTRB(context.r(20), context.r(12), context.r(20), context.r(16)),
       constraints: const BoxConstraints(maxWidth: 600),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(context.r(16)),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
               bleuCoris,
-              bleuCoris.withValues(alpha: 0.8), // ✅ remplacé
+              bleuCoris.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: bleuCoris.withValues(alpha: 0.25), // ✅ remplacé
+              color: bleuCoris.withValues(alpha: 0.25),
               spreadRadius: 0,
               blurRadius: 15,
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: ombrage.withValues(alpha: 0.05), // ✅ remplacé
+              color: ombrage.withValues(alpha: 0.05),
               spreadRadius: 0,
               blurRadius: 30,
               offset: const Offset(0, 12),
@@ -163,38 +162,38 @@ class HomeSouscriptionPage extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(context.r(10)),
               decoration: BoxDecoration(
-                color: blanc.withValues(alpha: 0.15), // ✅ remplacé
+                color: blanc.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: blanc.withValues(alpha: 0.2), // ✅ remplacé
+                  color: blanc.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.diamond_outlined,
-                size: 32,
+                size: context.r(28),
                 color: blanc,
               ),
             ),
-            const SizedBox(height: 14),
-            const Text(
+            SizedBox(height: context.r(12)),
+            Text(
               'Solutions d\'assurance sur mesure',
               style: TextStyle(
                 color: blanc,
-                fontSize: 16,
+                fontSize: context.sp(15),
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: context.r(6)),
             Text(
               'Découvrez nos produits conçus pour répondre à vos besoins\net protéger votre avenir',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: blanc.withValues(alpha: 0.9), // ✅ remplacé
-                fontSize: 12,
+                color: blanc.withValues(alpha: 0.9),
+                fontSize: context.sp(11),
                 fontWeight: FontWeight.w400,
                 height: 1.3,
               ),
@@ -210,16 +209,16 @@ class HomeSouscriptionPage extends StatelessWidget {
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: context.r(20)),
       constraints: const BoxConstraints(maxWidth: 600),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 2.8,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: context.gridColumns,
+          crossAxisSpacing: context.r(10),
+          mainAxisSpacing: context.r(10),
+          childAspectRatio: context.cardAspectRatio,
         ),
         itemCount: produits.length,
         itemBuilder: (context, index) {
@@ -251,7 +250,7 @@ class HomeSouscriptionPage extends StatelessWidget {
               }
             },
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(context.r(10)),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(12),
@@ -267,15 +266,18 @@ class HomeSouscriptionPage extends StatelessWidget {
                 children: [
                   Image.asset(
                     produit['image'],
-                    width: 32,
-                    height: 32,
+                    width: context.r(32),
+                    height: context.r(32),
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.image_not_supported,
-                          size: 32, color: bleuCoris);
+                      return Icon(
+                        Icons.image_not_supported,
+                        size: context.r(30),
+                        color: bleuCoris,
+                      );
                     },
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: context.r(10)),
                   Expanded(
                     child: Text(
                       produit['title'],
@@ -299,9 +301,9 @@ class HomeSouscriptionPage extends StatelessWidget {
   }
 
   /// ----------- SECTION ASSISTANCE ---------------
-  Widget _buildAssistanceSection() {
+  Widget _buildAssistanceSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: context.r(20)),
       constraints: const BoxConstraints(maxWidth: 600),
       child: GestureDetector(
         onTap: () async {
@@ -311,112 +313,112 @@ class HomeSouscriptionPage extends StatelessWidget {
           }
         },
         child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Colors.grey[50]!,
-              Colors.grey[100]!.withValues(alpha: 0.8), // ✅ remplacé
+          padding: EdgeInsets.all(context.r(12)),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                Colors.grey[50]!,
+                Colors.grey[100]!.withValues(alpha: 0.8),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: rougeCoris.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: rougeCoris.withValues(alpha: 0.08),
+                spreadRadius: 0,
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                spreadRadius: 0,
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
             ],
-            stops: const [0.0, 0.5, 1.0],
           ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: rougeCoris.withValues(alpha: 0.15), // ✅ remplacé
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: rougeCoris.withValues(alpha: 0.08), // ✅ remplacé
-              spreadRadius: 0,
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03), // ✅ remplacé
-              spreadRadius: 0,
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    rougeCoris.withValues(alpha: 0.1), // ✅ remplacé
-                    rougeCoris.withValues(alpha: 0.05), // ✅ remplacé
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(context.r(9)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      rougeCoris.withValues(alpha: 0.1),
+                      rougeCoris.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: rougeCoris.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.support_agent,
+                  color: rougeCoris,
+                  size: context.r(22),
+                ),
+              ),
+              SizedBox(width: context.r(12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Appeler un Conseiller",
+                      style: TextStyle(
+                        fontSize: context.sp(14),
+                        fontWeight: FontWeight.w600,
+                        color: bleuCoris,
+                      ),
+                    ),
+                    SizedBox(height: context.r(3)),
+                    Text(
+                      "Nos conseillers sont à votre écoute",
+                      style: TextStyle(
+                        fontSize: context.sp(11),
+                        color: Colors.grey[600],
+                      ),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: rougeCoris.withValues(alpha: 0.2), // ✅ remplacé
-                  width: 1,
-                ),
               ),
-              child: const Icon(
-                Icons.support_agent,
-                color: rougeCoris,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Appeler un Conseiller",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                    ),
+              Container(
+                padding: EdgeInsets.all(context.r(9)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      rougeCoris,
+                      rougeCoris.withValues(alpha: 0.8),
+                    ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    "Nos conseillers sont à votre écoute",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: rougeCoris.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    rougeCoris,
-                    rougeCoris.withValues(alpha: 0.8), // ✅ remplacé
                   ],
                 ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: rougeCoris.withValues(alpha: 0.2), // ✅ remplacé
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                child: Icon(Icons.phone, color: Colors.white, size: context.r(15)),
               ),
-              child: const Icon(Icons.phone, color: Colors.white, size: 16),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

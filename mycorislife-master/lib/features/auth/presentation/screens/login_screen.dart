@@ -8,6 +8,7 @@ import 'package:mycorislife/features/auth/presentation/screens/two_fa_login_otp_
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// ============================================
 /// PAGE DE CONNEXION
@@ -338,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen>
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14),
               ),
             ),
           ],
@@ -387,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen>
                         fontWeight: loginType == 'phone'
                             ? FontWeight.w700
                             : FontWeight.w500,
-                        fontSize: 15,
+                        fontSize: context.sp(14),
                       ),
                     ),
                   ],
@@ -421,7 +422,7 @@ class _LoginScreenState extends State<LoginScreen>
                         fontWeight: loginType == 'email'
                             ? FontWeight.w700
                             : FontWeight.w500,
-                        fontSize: 15,
+                        fontSize: context.sp(14),
                       ),
                     ),
                   ],
@@ -459,8 +460,8 @@ class _LoginScreenState extends State<LoginScreen>
         obscureText: isPassword && !passwordVisible,
         keyboardType: keyboardType ??
             (isPassword ? TextInputType.text : TextInputType.text),
-        style: const TextStyle(
-          fontSize: 16,
+        style: TextStyle(
+          fontSize: context.sp(15),
           fontWeight: FontWeight.w500,
           color: Colors.black87,
         ),
@@ -469,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen>
           hintText: hintText,
           hintStyle: TextStyle(
             color: Colors.grey.shade400,
-            fontSize: 14,
+            fontSize: context.sp(13),
           ),
           labelStyle: TextStyle(
             color: bleuCoris,
@@ -525,8 +526,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 600;
+    final isTablet = context.isTablet;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -551,12 +551,12 @@ class _LoginScreenState extends State<LoginScreen>
               child: Center(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? size.width * 0.2 : 24,
+                    horizontal: isTablet ? context.w(20) : context.r(20),
                     vertical: 20,
                   ),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: isTablet ? 400 : double.infinity,
+                      maxWidth: context.maxContentWidth,
                     ),
                     child: Form(
                       key: _formKey,
@@ -573,11 +573,12 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 40),
+                          SizedBox(height: context.r(32)),
                           Text(
                             "Bienvenue",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: isTablet ? 36 : 32,
+                              fontSize: context.sp(28),
                               fontWeight: FontWeight.bold,
                               color: bleuCoris,
                               letterSpacing: 1.2,
@@ -588,17 +589,17 @@ class _LoginScreenState extends State<LoginScreen>
                             "Connectez-vous à votre espace Coris",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: isTablet ? 18 : 16,
+                              fontSize: context.sp(15),
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          SizedBox(height: isTablet ? 40 : 32),
+                          SizedBox(height: context.r(28)),
 
                           // Sélecteur du type de connexion
                           _buildLoginTypeSelector(),
 
-                          const SizedBox(height: 24),
+                          SizedBox(height: context.r(20)),
 
                           // Champ téléphone ou email selon le type sélectionné
                           if (loginType == 'phone')
@@ -641,7 +642,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 return null;
                               },
                             ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: context.r(20)),
                           _buildTextField(
                             controller: passwordController,
                             labelText: "Mot de passe",
@@ -657,7 +658,7 @@ class _LoginScreenState extends State<LoginScreen>
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(14)),
                           Center(
                             child: TextButton(
                               onPressed: () {
@@ -674,19 +675,19 @@ class _LoginScreenState extends State<LoginScreen>
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "Mot de passe oublié ?",
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(13),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                           ),
-                          SizedBox(height: isTablet ? 40 : 32),
+                          SizedBox(height: context.r(28)),
                           SizedBox(
                             width: double.infinity,
-                            height: isTablet ? 60 : 56,
+                            height: context.r(54),
                             child: ElevatedButton(
                               onPressed: isLoading ? null : _login,
                               style: ElevatedButton.styleFrom(
@@ -710,7 +711,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   : Text(
                                       "Se connecter",
                                       style: TextStyle(
-                                        fontSize: isTablet ? 20 : 18,
+                                        fontSize: context.sp(16),
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                         letterSpacing: 0.5,
@@ -718,7 +719,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                             ),
                           ),
-                          SizedBox(height: isTablet ? 40 : 32),
+                          SizedBox(height: context.r(28)),
                           Wrap(
                             alignment: WrapAlignment.center,
                             crossAxisAlignment: WrapCrossAlignment.center,
@@ -726,7 +727,7 @@ class _LoginScreenState extends State<LoginScreen>
                               Text(
                                 "Pas encore de compte ? ",
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: context.sp(14),
                                   color: Colors.grey.shade600,
                                 ),
                               ),
@@ -738,7 +739,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   "Créer un compte",
                                   style: TextStyle(
                                     color: rougeCoris,
-                                    fontSize: 16,
+                                    fontSize: context.sp(14),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

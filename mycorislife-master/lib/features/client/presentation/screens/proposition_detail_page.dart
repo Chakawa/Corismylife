@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -21,22 +22,22 @@ import 'package:mycorislife/features/souscription/presentation/screens/souscript
 import 'package:url_launcher/url_launcher.dart';
 
 /// ============================================
-/// PAGE DE DÉTAILS D'UNE PROPOSITION
+/// PAGE DE DÃ‰TAILS D'UNE PROPOSITION
 /// ============================================
-/// Cette page affiche les détails complets d'une proposition d'assurance.
-/// Elle permet à l'utilisateur de visualiser toutes les informations de sa
-/// souscription avant de procéder au paiement.
+/// Cette page affiche les dÃ©tails complets d'une proposition d'assurance.
+/// Elle permet Ã  l'utilisateur de visualiser toutes les informations de sa
+/// souscription avant de procÃ©der au paiement.
 ///
-/// Fonctionnalités:
+/// FonctionnalitÃ©s:
 /// - Affichage des informations personnelles
-/// - Affichage des détails du produit (capital, prime, durée, etc.)
-/// - Affichage des bénéficiaires et contacts d'urgence
+/// - Affichage des dÃ©tails du produit (capital, prime, durÃ©e, etc.)
+/// - Affichage des bÃ©nÃ©ficiaires et contacts d'urgence
 /// - Affichage des documents joints
-/// - Possibilité de modifier la proposition
-/// - Possibilité de payer directement
+/// - PossibilitÃ© de modifier la proposition
+/// - PossibilitÃ© de payer directement
 
 // ===================================
-// COULEURS PARTAGÉES
+// COULEURS PARTAGÃ‰ES
 // ===================================
 const Color bleuCoris = Color(0xFF002B6B);
 const Color rougeCoris = Color(0xFFE30613);
@@ -123,7 +124,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  '✅ Paiement Wave confirmé ($successCount). Votre contrat a été mis à jour.'),
+                  'âœ… Paiement Wave confirmÃ© ($successCount). Votre contrat a Ã©tÃ© mis Ã  jour.'),
               backgroundColor: vertSucces,
               duration: const Duration(seconds: 4),
             ),
@@ -131,18 +132,18 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         }
       }
 
-      print('📥 Chargement détails proposition ${widget.subscriptionId}...');
+      print('ðŸ“¥ Chargement dÃ©tails proposition ${widget.subscriptionId}...');
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
 
-      print('\n=== DONNÉES REÇUES DU SERVEUR ===');
+      print('\n=== DONNÃ‰ES REÃ‡UES DU SERVEUR ===');
       print(
-          '✅ Subscription reçue: ${data['subscription'] != null ? 'OUI' : 'NON'}');
-      print('✅ User reçue: ${data['user'] != null ? 'OUI' : 'NON'}');
+          'âœ… Subscription reÃ§ue: ${data['subscription'] != null ? 'OUI' : 'NON'}');
+      print('âœ… User reÃ§ue: ${data['user'] != null ? 'OUI' : 'NON'}');
       print(
-          '✅ questionnaire_reponses reçue: ${data['subscription']?['questionnaire_reponses'] != null ? 'OUI' : 'NON'}');
+          'âœ… questionnaire_reponses reÃ§ue: ${data['subscription']?['questionnaire_reponses'] != null ? 'OUI' : 'NON'}');
 
       // DEBUG: afficher toute la structure data
-      print('\n🔍 DEBUG: Structure complète data:');
+      print('\nðŸ” DEBUG: Structure complÃ¨te data:');
       print('  Keys au top level: ${data.keys.toList()}');
       if (data['subscription'] != null) {
         print(
@@ -159,23 +160,23 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       // Afficher les questionnaire_reponses
       final questReponses = data['subscription']?['questionnaire_reponses'];
       if (questReponses != null) {
-        print('📋 Détail questionnaire_reponses:');
+        print('ðŸ“‹ DÃ©tail questionnaire_reponses:');
         if (questReponses is List) {
-          print('  - Type: List avec ${questReponses.length} éléments');
-          questReponses.forEach((r) {
+          print('  - Type: List avec ${questReponses.length} Ã©lÃ©ments');
+          for (var r in questReponses) {
             if (r is Map && r['libelle'] != null) {
               print(
-                  '    Q: "${r['libelle']}" → ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
+                  '    Q: "${r['libelle']}" â†’ ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
             }
-          });
+          }
         } else {
           print('  - Type: ${questReponses.runtimeType} (non liste)');
         }
       } else {
-        print('⚠️ questionnaire_reponses est null');
+        print('âš ï¸ questionnaire_reponses est null');
       }
 
-      developer.log('=== DONNÉES REÇUES ===');
+      developer.log('=== DONNÃ‰ES REÃ‡UES ===');
       developer.log('Subscription: ${data['subscription']}');
       developer.log('Subscription type: ${data['subscription'].runtimeType}');
       developer.log(
@@ -207,7 +208,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                '✅ Paiement confirmé. Votre proposition est devenue un contrat.'),
+                'âœ… Paiement confirmÃ©. Votre proposition est devenue un contrat.'),
             backgroundColor: vertSucces,
             duration: Duration(seconds: 4),
           ),
@@ -226,7 +227,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       }
     } catch (e) {
       developer.log('Erreur: $e', error: e);
-      print('❌ Erreur chargement: $e');
+      print('âŒ Erreur chargement: $e');
 
       if (!mounted) return;
 
@@ -251,15 +252,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
-      return 'CORIS SOLIDARITÉ';
+      return 'CORIS SOLIDARITÃ‰';
     } else if (produit.toLowerCase().contains('emprunteur')) {
       return 'FLEX EMPRUNTEUR';
     } else if (produit.toLowerCase().contains('etude')) {
-      return 'CORIS ÉTUDE';
+      return 'CORIS Ã‰TUDE';
     } else if (produit.toLowerCase().contains('retraite')) {
       return 'CORIS RETRAITE';
     } else if (produit.toLowerCase().contains('serenite')) {
-      return 'CORIS SÉRÉNITÉ';
+      return 'CORIS SÃ‰RÃ‰NITÃ‰';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
     } else if (produit.toLowerCase().contains('assure') ||
@@ -270,7 +271,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       return 'MON BON PLAN CORIS';
     } else if (produit.toLowerCase().contains('epargne') ||
         produit.toLowerCase().contains('bonus')) {
-      return 'CORIS ÉPARGNE BONUS';
+      return 'CORIS Ã‰PARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
     }
@@ -284,8 +285,8 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
   Map<String, dynamic> _getSubscriptionDetails() {
     final details = _subscriptionData?['souscriptiondata'] ?? {};
-    // Debug: Afficher les données pour vérifier prime_calculee
-    developer.log('=== DÉTAILS SOUSCRIPTION ===');
+    // Debug: Afficher les donnÃ©es pour vÃ©rifier prime_calculee
+    developer.log('=== DÃ‰TAILS SOUSCRIPTION ===');
     developer.log('prime_calculee: ${details['prime_calculee']}');
     developer.log('prime: ${details['prime']}');
     developer.log('montant: ${details['montant']}');
@@ -331,11 +332,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             CircularProgressIndicator(
               valueColor: const AlwaysStoppedAnimation<Color>(bleuCoris),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              "Chargement des détails...",
+            SizedBox(height: context.r(16)),
+            Text(
+              "Chargement des dÃ©tails...",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(16),
                 color: grisTexte,
               ),
             ),
@@ -357,35 +358,35 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: context.r(16)),
+            Text(
               "Erreur de chargement",
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF334155),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 _errorMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: context.sp(16),
                   color: grisTexte,
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             ElevatedButton(
               onPressed: _loadSubscriptionData,
               style: ElevatedButton.styleFrom(
                 backgroundColor: bleuCoris,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Réessayer'),
+              child: const Text('RÃ©essayer'),
             ),
           ],
         ),
@@ -420,26 +421,26 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   Row(
                     children: [
                       Icon(Icons.description, color: blanc, size: 28),
-                      const SizedBox(width: 12),
+                      SizedBox(width: context.r(12)),
                       Text(
                         widget.propositionNumber,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: blanc,
-                          fontSize: 22,
+                          fontSize: context.sp(22),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.r(8)),
                   Text(
                     _getBadgeText(_getProductType()),
                     style: TextStyle(
                       color: blanc.withValues(alpha: 0.9),
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
                 ],
               ),
             ),
@@ -459,7 +460,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             final excludeQ = productType.contains('etude') ||
                 productType.contains('familis') ||
                 productType.contains('serenite') ||
-                productType.contains('sérénité');
+                productType.contains('sÃ©rÃ©nitÃ©');
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -487,44 +488,44 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: ListView(
                 children: [
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Informations Personnelles
                   SubscriptionRecapWidgets.buildPersonalInfoSection(
                       _userData ?? {}),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Produit Souscrit (selon le type)
                   _buildProductSection(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
-                  // Sections spécifiques pour CORIS SOLIDARITÉ
+                  // Sections spÃ©cifiques pour CORIS SOLIDARITÃ‰
                   ..._buildSolidariteMembersSection(),
 
-                  // Bénéficiaires et Contact d'urgence
+                  // BÃ©nÃ©ficiaires et Contact d'urgence
                   _buildBeneficiariesSection(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   _buildCommercialAssistanceSection(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
-                  // 💳 Mode de Paiement
+                  // ðŸ’³ Mode de Paiement
                   _buildPaymentMethodSection(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
-                  // 📋 RÉCAP: Questionnaire médical (questions + réponses) —
-                  // n'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
+                  // ðŸ“‹ RÃ‰CAP: Questionnaire mÃ©dical (questions + rÃ©ponses) â€”
+                  // n'afficher que pour Ã‰TUDE, FAMILIS et SÃ‰RÃ‰NITÃ‰
                   Builder(builder: (context) {
                     final productType = _getProductType().toLowerCase();
                     if (productType.contains('etude') ||
                         productType.contains('familis') ||
                         productType.contains('serenite') ||
-                        productType.contains('sérénité')) {
+                        productType.contains('sÃ©rÃ©nitÃ©')) {
                       return Column(
                         children: [
                           // Passe les questions si disponibles (_getQuestionnaireMedicalQuestions)
@@ -532,7 +533,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                               .buildQuestionnaireMedicalSection(
                                   _getQuestionnaireMedicalReponses(),
                                   _getQuestionnaireMedicalQuestions()),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
                         ],
                       );
                     }
@@ -542,12 +543,12 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   // Documents
                   _buildDocumentsSection(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Avertissement
                   SubscriptionRecapWidgets.buildVerificationWarning(),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                 ],
               ),
             ),
@@ -561,9 +562,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     final details = _getSubscriptionDetails();
     final productType = _getProductType().toLowerCase();
 
-    // Pour CORIS SÉRÉNITÉ
+    // Pour CORIS SÃ‰RÃ‰NITÃ‰
     if (productType.contains('serenite')) {
-      final duree = details['duree'] ?? 'Non définie';
+      final duree = details['duree'] ?? 'Non dÃ©finie';
       final dureeType = details['duree_type'] ?? 'mois';
       final prime = details['prime'] ?? 0;
       final capital = details['capital'] ?? 0;
@@ -572,7 +573,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       final dateEcheance = details['date_echeance'];
 
       return SubscriptionRecapWidgets.buildSereniteProductSection(
-        productName: 'CORIS SÉRÉNITÉ',
+        productName: 'CORIS SÃ‰RÃ‰NITÃ‰',
         prime: prime,
         periodicite: periodicite,
         capital: capital,
@@ -585,7 +586,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     // Pour CORIS RETRAITE
     if (productType.contains('retraite')) {
-      final duree = details['duree'] ?? 'Non définie';
+      final duree = details['duree'] ?? 'Non dÃ©finie';
       final dureeType = details['duree_type'] ?? 'mois';
       final prime = details['prime'] ?? 0;
       final capital = details['capital'] ?? 0;
@@ -605,7 +606,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
-    // Pour CORIS ÉTUDE
+    // Pour CORIS Ã‰TUDE
     if (productType.contains('etude')) {
       final prime = details['prime_calculee'] ??
           details['prime'] ??
@@ -615,14 +616,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       final rente = details['rente_calculee'] ?? details['rente'] ?? 0;
       final duree = details['duree'] ?? details['duree_mois'] != null
           ? '${(details['duree_mois'] as int) ~/ 12}'
-          : 'Non définie';
+          : 'Non dÃ©finie';
       final mode = details['mode_souscription'] ?? 'Mode Capital';
       final dateEffet = details['date_effet'];
       final dateEcheance = details['date_echeance'];
-      final ageParent = details['age_parent'] ?? 'Non renseigné';
+      final ageParent = details['age_parent'] ?? 'Non renseignÃ©';
       final dateNaissanceParent = details['date_naissance_parent'];
 
-      // Formater la périodicité avec majuscule
+      // Formater la pÃ©riodicitÃ© avec majuscule
       String periodiciteFormatee = periodicite;
       if (periodicite != null && periodicite.isNotEmpty) {
         periodiciteFormatee = periodicite[0].toUpperCase() +
@@ -635,14 +636,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         vertSucces,
         [
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Produit', 'CORIS ÉTUDE', 'Mode', mode),
+              'Produit', 'CORIS Ã‰TUDE', 'Mode', mode),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-            'Âge du parent',
-            ageParent.toString() + ' ans',
+            'Ã‚ge du parent',
+            '$ageParent ans',
             'Date de naissance',
             dateNaissanceParent != null
                 ? SubscriptionRecapWidgets.formatDate(dateNaissanceParent)
-                : 'Non renseignée',
+                : 'Non renseignÃ©e',
           ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Cotisation $periodiciteFormatee',
@@ -651,21 +652,21 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             SubscriptionRecapWidgets.formatMontant(rente),
           ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Durée du contrat',
-              duree != 'Non définie'
-                  ? '$duree ans (jusqu\'à 17 ans)'
-                  : 'Non définie',
-              'Périodicité',
+              'DurÃ©e du contrat',
+              duree != 'Non dÃ©finie'
+                  ? '$duree ans (jusqu\'Ã  17 ans)'
+                  : 'Non dÃ©finie',
+              'PÃ©riodicitÃ©',
               periodiciteFormatee),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             dateEffet != null
                 ? SubscriptionRecapWidgets.formatDate(dateEffet)
-                : 'Non définie',
-            'Date d\'échéance',
+                : 'Non dÃ©finie',
+            'Date d\'Ã©chÃ©ance',
             dateEcheance != null
                 ? SubscriptionRecapWidgets.formatDate(dateEcheance)
-                : 'Non définie',
+                : 'Non dÃ©finie',
           ),
         ],
       );
@@ -675,7 +676,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (productType.contains('familis')) {
       final capital = details['capital'] ?? 0;
       final prime = details['prime'] ?? details['prime_mensuelle'] ?? 0;
-      final duree = details['duree'] ?? details['duree_mois'] ?? 'Non définie';
+      final duree = details['duree'] ?? details['duree_mois'] ?? 'Non dÃ©finie';
       final dateEffet = details['date_effet'];
       final dateEcheance = details['date_echeance'];
 
@@ -692,29 +693,29 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Prime mensuelle',
               SubscriptionRecapWidgets.formatMontant(prime),
-              'Durée',
+              'DurÃ©e',
               '$duree mois'),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             dateEffet != null
                 ? SubscriptionRecapWidgets.formatDate(dateEffet)
-                : 'Non définie',
-            'Date d\'échéance',
+                : 'Non dÃ©finie',
+            'Date d\'Ã©chÃ©ance',
             dateEcheance != null
                 ? SubscriptionRecapWidgets.formatDate(dateEcheance)
-                : 'Non définie',
+                : 'Non dÃ©finie',
           ),
         ],
       );
     }
 
-    // Pour CORIS SOLIDARITÉ
+    // Pour CORIS SOLIDARITÃ‰
     if (productType.contains('solidarite')) {
       final capital = details['capital'] ?? 0;
       final periodicite = details['periodicite'] ?? 'mensuel';
       final primeTotale = details['prime_totale'] ?? 0;
 
-      // Récupérer le nombre de membres
+      // RÃ©cupÃ©rer le nombre de membres
       final conjoints = details['conjoints'] as List? ?? [];
       final enfants = details['enfants'] as List? ?? [];
       final ascendants = details['ascendants'] as List? ?? [];
@@ -726,9 +727,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         vertSucces,
         [
           SubscriptionRecapWidgets.buildCombinedRecapRow('Produit',
-              'CORIS SOLIDARITÉ', 'Périodicité', periodicite.toUpperCase()),
+              'CORIS SOLIDARITÃ‰', 'PÃ©riodicitÃ©', periodicite.toUpperCase()),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Capital assuré',
+              'Capital assurÃ©',
               SubscriptionRecapWidgets.formatMontant(capital),
               'Prime $periodicite',
               SubscriptionRecapWidgets.formatMontant(primeTotale)),
@@ -743,13 +744,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
-    // Pour CORIS ÉPARGNE BONUS
+    // Pour CORIS Ã‰PARGNE BONUS
     if (productType.contains('epargne') || productType.contains('bonus')) {
       final capital = details['capital_au_terme'] ?? details['capital'] ?? 0;
       final prime = details['prime_mensuelle'] ?? details['prime'] ?? 0;
       final dateEffet = details['date_effet'];
       final dateFin = details['date_fin'] ?? details['date_echeance'];
-      final bonus = details['bonus'] ?? 'Non défini';
+      final bonus = details['bonus'] ?? 'Non dÃ©fini';
 
       return SubscriptionRecapWidgets.buildRecapSection(
         'Produit Souscrit',
@@ -757,12 +758,12 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         vertSucces,
         [
           SubscriptionRecapWidgets.buildRecapRow(
-              'Produit', 'CORIS ÉPARGNE BONUS'),
+              'Produit', 'CORIS Ã‰PARGNE BONUS'),
           SubscriptionRecapWidgets.buildRecapRow('Capital au terme',
               SubscriptionRecapWidgets.formatMontant(capital)),
           SubscriptionRecapWidgets.buildRecapRow(
               'Prime mensuelle', SubscriptionRecapWidgets.formatMontant(prime)),
-          SubscriptionRecapWidgets.buildRecapRow('Durée', '15 ans (180 mois)'),
+          SubscriptionRecapWidgets.buildRecapRow('DurÃ©e', '15 ans (180 mois)'),
           if (dateEffet != null)
             SubscriptionRecapWidgets.buildRecapRow('Date d\'effet',
                 SubscriptionRecapWidgets.formatDate(dateEffet)),
@@ -781,14 +782,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       final capitalDeces = details['capital_deces'] ?? 0;
       final primeDecesAnnuelle = details['prime_deces_annuelle'] ?? 0;
       final duree =
-          details['duree'] ?? details['duree_contrat'] ?? 'Non définie';
+          details['duree'] ?? details['duree_contrat'] ?? 'Non dÃ©finie';
       final uniteDuree =
           details['duree_type'] ?? details['unite_duree'] ?? 'ans';
       final dateEffet = details['date_effet'];
       final dateEcheance = details['date_echeance'];
 
       return SubscriptionRecapWidgets.buildRecapSection(
-        'Détails du Contrat - CORIS ASSURE PRESTIGE',
+        'DÃ©tails du Contrat - CORIS ASSURE PRESTIGE',
         Icons.verified_user,
         vertSucces,
         [
@@ -797,24 +798,24 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Montant du versement initial',
               SubscriptionRecapWidgets.formatMontant(versementInitial),
-              'Durée du contrat',
+              'DurÃ©e du contrat',
               '$duree $uniteDuree'),
-          SubscriptionRecapWidgets.buildRecapRow('Capital décès',
+          SubscriptionRecapWidgets.buildRecapRow('Capital dÃ©cÃ¨s',
               SubscriptionRecapWidgets.formatMontant(capitalDeces)),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Prime décès annuelle',
+              'Prime dÃ©cÃ¨s annuelle',
               SubscriptionRecapWidgets.formatMontant(primeDecesAnnuelle),
-              'Périodicité',
+              'PÃ©riodicitÃ©',
               details['periodicite'] ?? 'Annuel'),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Date d\'effet',
               dateEffet != null
                   ? SubscriptionRecapWidgets.formatDate(dateEffet)
-                  : 'Non définie',
-              'Date d\'échéance',
+                  : 'Non dÃ©finie',
+              'Date d\'Ã©chÃ©ance',
               dateEcheance != null
                   ? SubscriptionRecapWidgets.formatDate(dateEcheance)
-                  : 'Non définie'),
+                  : 'Non dÃ©finie'),
         ],
       );
     }
@@ -822,23 +823,23 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     // Pour MON BON PLAN CORIS
     if (productType.contains('bon') && productType.contains('plan')) {
       final montantCotisation = details['montant_cotisation'] ?? 0;
-      final periodicite = details['periodicite'] ?? 'Non définie';
+      final periodicite = details['periodicite'] ?? 'Non dÃ©finie';
       final dateEffet = details['date_effet'];
 
       return SubscriptionRecapWidgets.buildRecapSection(
-        'Détails du Contrat - MON BON PLAN CORIS',
+        'DÃ©tails du Contrat - MON BON PLAN CORIS',
         Icons.savings,
         vertSucces,
         [
           SubscriptionRecapWidgets.buildRecapRow(
               'Produit', 'MON BON PLAN CORIS'),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Périodicité',
+              'PÃ©riodicitÃ©',
               periodicite,
               'Date d\'effet',
               dateEffet != null
                   ? SubscriptionRecapWidgets.formatDate(dateEffet)
-                  : 'Non définie'),
+                  : 'Non dÃ©finie'),
           SubscriptionRecapWidgets.buildRecapRow(
               'Montant de la cotisation ${periodicite.toLowerCase()}',
               SubscriptionRecapWidgets.formatMontant(montantCotisation)),
@@ -848,9 +849,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     // Pour FLEX EMPRUNTEUR
     if (productType.contains('flex') || productType.contains('emprunteur')) {
-      final typePret = details['type_pret'] ?? 'Non défini';
+      final typePret = details['type_pret'] ?? 'Non dÃ©fini';
       final capital = details['capital_garanti'] ?? details['capital'] ?? 0;
-      final duree = details['duree'] ?? 'Non définie';
+      final duree = details['duree'] ?? 'Non dÃ©finie';
       final dureeType = details['duree_type'] ?? 'mois';
       final prime = details['prime_annuelle'] ?? details['prime'] ?? 0;
       final dateEffet = details['date_effet'];
@@ -866,18 +867,18 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         vertSucces,
         [
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Produit', 'FLEX EMPRUNTEUR', 'Type de prêt', typePret),
+              'Produit', 'FLEX EMPRUNTEUR', 'Type de prÃªt', typePret),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-            'Capital à garantir',
+            'Capital Ã  garantir',
             SubscriptionRecapWidgets.formatMontant(capital),
-            'Durée',
+            'DurÃ©e',
             '$duree $dureeType',
           ),
           if (dateEffet != null && dateEcheance != null)
             SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Date d\'effet',
               SubscriptionRecapWidgets.formatDate(dateEffet),
-              'Date d\'échéance',
+              'Date d\'Ã©chÃ©ance',
               SubscriptionRecapWidgets.formatDate(dateEcheance),
             ),
           if (dateEffet != null && dateEcheance == null)
@@ -889,26 +890,26 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             ),
           if (dateEffet == null && dateEcheance != null)
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Date d\'échéance',
+              'Date d\'Ã©chÃ©ance',
               SubscriptionRecapWidgets.formatDate(dateEcheance),
               '',
               '',
             ),
           SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Prime annuelle estimée',
+              'Prime annuelle estimÃ©e',
               SubscriptionRecapWidgets.formatMontant(prime),
               '',
               ''),
           if (garantiePrevoyance && garantiePerteEmploi)
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Garantie Prévoyance',
+              'Garantie PrÃ©voyance',
               SubscriptionRecapWidgets.formatMontant(capitalPrevoyance),
               'Garantie Perte d\'emploi',
               SubscriptionRecapWidgets.formatMontant(capitalPerteEmploi),
             ),
           if (garantiePrevoyance && !garantiePerteEmploi)
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-              'Garantie Prévoyance',
+              'Garantie PrÃ©voyance',
               SubscriptionRecapWidgets.formatMontant(capitalPrevoyance),
               '',
               '',
@@ -924,7 +925,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
-    // Section par défaut pour les autres produits
+    // Section par dÃ©faut pour les autres produits
     return SubscriptionRecapWidgets.buildRecapSection(
       'Produit Souscrit',
       Icons.security,
@@ -939,7 +940,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           SubscriptionRecapWidgets.buildRecapRow('Prime',
               SubscriptionRecapWidgets.formatMontant(details['prime'])),
         if (details['duree'] != null)
-          SubscriptionRecapWidgets.buildRecapRow('Durée',
+          SubscriptionRecapWidgets.buildRecapRow('DurÃ©e',
               '${details['duree']} ${details['duree_type'] ?? 'mois'}'),
         if (details['date_effet'] != null)
           SubscriptionRecapWidgets.buildRecapRow('Date d\'effet',
@@ -948,13 +949,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
-  /// Construit les sections des membres pour CORIS SOLIDARITÉ
+  /// Construit les sections des membres pour CORIS SOLIDARITÃ‰
   /// Retourne une liste de widgets pour Conjoints, Enfants, Ascendants
   List<Widget> _buildSolidariteMembersSection() {
     final details = _getSubscriptionDetails();
     final productType = _getProductType().toLowerCase();
 
-    // Ne rien afficher si ce n'est pas CORIS SOLIDARITÉ
+    // Ne rien afficher si ce n'est pas CORIS SOLIDARITÃ‰
     if (!productType.contains('solidarite')) {
       return [];
     }
@@ -974,7 +975,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           conjoints.map((conjoint) => _buildMembreRecap(conjoint)).toList(),
         ),
       );
-      sections.add(const SizedBox(height: 20));
+      sections.add(SizedBox(height: context.r(20)));
     }
 
     // Section Enfants
@@ -987,7 +988,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           enfants.map((enfant) => _buildMembreRecap(enfant)).toList(),
         ),
       );
-      sections.add(const SizedBox(height: 20));
+      sections.add(SizedBox(height: context.r(20)));
     }
 
     // Section Ascendants
@@ -1000,7 +1001,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           ascendants.map((ascendant) => _buildMembreRecap(ascendant)).toList(),
         ),
       );
-      sections.add(const SizedBox(height: 20));
+      sections.add(SizedBox(height: context.r(20)));
     }
 
     return sections;
@@ -1013,7 +1014,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         membre['nomPrenom'] ??
         membre['nom_prenom'] ??
         membre['prenom'] ??
-        'Non renseigné';
+        'Non renseignÃ©';
     final dateNaissance = membre['date_naissance'] ??
         membre['dateNaissance'] ??
         membre['date_de_naissance'];
@@ -1028,31 +1029,31 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         children: [
           Text(
             nom,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               color: bleuCoris,
-              fontSize: 14,
+              fontSize: context.sp(14),
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: context.r(2)),
           Text(
             dateNaissance != null
                 ? 'Date de naissance: ${SubscriptionRecapWidgets.formatDate(dateNaissance)}'
-                : 'Date de naissance: Non renseignée',
+                : 'Date de naissance: Non renseignÃ©e',
             style: TextStyle(
               fontWeight: FontWeight.w400,
               color: grisTexte,
-              fontSize: 12,
+              fontSize: context.sp(12),
             ),
           ),
           if (lieuNaissance != null) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: context.r(2)),
             Text(
               'Lieu de naissance: $lieuNaissance',
               style: TextStyle(
                 fontWeight: FontWeight.w400,
                 color: grisTexte,
-                fontSize: 12,
+                fontSize: context.sp(12),
               ),
             ),
           ],
@@ -1105,11 +1106,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
-  /// 💳 Construit la section Mode de Paiement
+  /// ðŸ’³ Construit la section Mode de Paiement
   Widget _buildPaymentMethodSection() {
     final details = _getSubscriptionDetails();
 
-    // Utiliser la nouvelle méthode avec icônes et couleurs
+    // Utiliser la nouvelle mÃ©thode avec icÃ´nes et couleurs
     return SubscriptionRecapWidgets.buildPaymentModeSection(details);
   }
 
@@ -1119,8 +1120,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     void addDoc(dynamic path, {dynamic label}) {
       if (path == null) return;
       final normalizedPath = path.toString().trim();
-      if (normalizedPath.isEmpty || normalizedPath.toLowerCase() == 'null')
+      if (normalizedPath.isEmpty || normalizedPath.toLowerCase() == 'null') {
         return;
+      }
       final normalizedLabel = label?.toString().trim();
       docs.add({
         'path': normalizedPath,
@@ -1230,7 +1232,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     }
 
     developer.log('=== DOCUMENT DEBUG COMPLET ===');
-    developer.log('_subscriptionData: ${_subscriptionData}');
+    developer.log('_subscriptionData: $_subscriptionData');
     developer
         .log('_subscriptionData keys: ${_subscriptionData?.keys.toList()}');
     developer.log('souscriptiondata: $souscriptiondata');
@@ -1238,11 +1240,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     if (souscriptiondata is Map) {
       developer.log('souscriptiondata keys: ${souscriptiondata.keys.toList()}');
     }
-    developer.log('Final pieceIdentite trouvé: $pieceIdentite');
+    developer.log('Final pieceIdentite trouvÃ©: $pieceIdentite');
 
     final hasDocument = pieceIdentite != null &&
         pieceIdentite.toString().isNotEmpty &&
-        pieceIdentite != 'Non téléchargée' &&
+        pieceIdentite != 'Non tÃ©lÃ©chargÃ©e' &&
         pieceIdentite != 'null' &&
         pieceIdentite.toString().toLowerCase() != 'null';
 
@@ -1271,9 +1273,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
     ];
 
-    // Ne plus ajouter manuellement pieceIdentite - elle devrait déjà être incluse dans piece_identite_documents
-    // Si elle n'y est pas, c'est un problème de données côté serveur
-// Ajouter pieceIdentite seulement si elle n'existe pas déjà
+    // Ne plus ajouter manuellement pieceIdentite - elle devrait dÃ©jÃ  Ãªtre incluse dans piece_identite_documents
+    // Si elle n'y est pas, c'est un problÃ¨me de donnÃ©es cÃ´tÃ© serveur
+// Ajouter pieceIdentite seulement si elle n'existe pas dÃ©jÃ 
     if (actualFilename != null && actualFilename.isNotEmpty) {
       final alreadyExists = docsList.any((doc) {
         final path = doc['path']?.toString().trim() ?? '';
@@ -1288,7 +1290,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             {'path': actualFilename, 'label': displayLabel ?? actualFilename});
       }
     }
-    // Déduplication stricte par nom de fichier
+    // DÃ©duplication stricte par nom de fichier
     final seenFiles = <String>{};
     final deduplicatedDocsList = docsList.where((doc) {
       final path = doc['path']?.toString().trim() ?? '';
@@ -1322,13 +1324,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     if (documentName == null ||
         documentName.isEmpty ||
-        documentName == 'Non téléchargée') {
+        documentName == 'Non tÃ©lÃ©chargÃ©e') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(Icons.info_outline, color: blanc, size: 20),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               const Expanded(
                 child: Text('Aucun document disponible'),
               ),
@@ -1412,7 +1414,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                           final excludeQ = productType.contains('etude') ||
                               productType.contains('familis') ||
                               productType.contains('serenite') ||
-                              productType.contains('sérénité');
+                              productType.contains('sÃ©rÃ©nitÃ©');
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -1428,13 +1430,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                           children: [
                             Icon(Icons.print_outlined,
                                 color: bleuCoris, size: 20),
-                            const SizedBox(width: 8),
+                            SizedBox(width: context.r(8)),
                             Text(
                               'Imprimer',
                               style: TextStyle(
                                 color: bleuCoris,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: context.sp(14),
                               ),
                             ),
                           ],
@@ -1443,7 +1445,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 // Bouton Modifier
                 Expanded(
                   child: Container(
@@ -1465,13 +1467,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                           children: [
                             Icon(Icons.edit_outlined,
                                 color: orangeWarning, size: 20),
-                            const SizedBox(width: 8),
+                            SizedBox(width: context.r(8)),
                             Text(
                               'Modifier',
                               style: TextStyle(
                                 color: orangeWarning,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: context.sp(14),
                               ),
                             ),
                           ],
@@ -1482,7 +1484,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
             // Bouton Accepter et Payer (pleine largeur)
             Container(
               width: double.infinity,
@@ -1514,17 +1516,17 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.check_circle_outline, color: blanc, size: 22),
-                      const SizedBox(width: 10),
+                      SizedBox(width: context.r(10)),
                       Text(
                         'Accepter et Payer',
                         style: TextStyle(
                           color: blanc,
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           letterSpacing: 0.3,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Icon(Icons.arrow_forward, color: blanc, size: 20),
                     ],
                   ),
@@ -1552,7 +1554,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     final Map<String, dynamic>? clientData =
         clientInfo != null ? Map<String, dynamic>.from(clientInfo) : null;
 
-    // Rediriger vers la page de souscription appropriée avec les données
+    // Rediriger vers la page de souscription appropriÃ©e avec les donnÃ©es
     if (productType.contains('etude')) {
       Navigator.push(
         context,
@@ -1568,7 +1570,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('serenite') ||
-        productType.contains('sérénité')) {
+        productType.contains('sÃ©rÃ©nitÃ©')) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -1597,11 +1599,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('solidarite') ||
-        productType.contains('solidarité')) {
+        productType.contains('solidaritÃ©')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'La modification de CORIS SOLIDARITÉ sera bientôt disponible'),
+              'La modification de CORIS SOLIDARITÃ‰ sera bientÃ´t disponible'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1635,7 +1637,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         if (mounted) _loadSubscriptionData();
       });
     } else if (productType.contains('epargne') ||
-        productType.contains('épargne')) {
+        productType.contains('Ã©pargne')) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -1661,7 +1663,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ).then((_) {
         if (mounted) _loadSubscriptionData();
       });
-    } else if (productType.contains('assuré prestige') ||
+    } else if (productType.contains('assurÃ© prestige') ||
         productType.contains('assure prestige') ||
         productType.contains('prestige')) {
       Navigator.push(
@@ -1728,27 +1730,27 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Icon(Icons.payment, color: bleuCoris, size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
+                  SizedBox(width: context.r(12)),
+                  Text(
                     'Options de Paiement',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.w700,
                       color: bleuCoris,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               _buildPaymentOptionWithImage(
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sécurisé',
+                'Paiement mobile sÃ©curisÃ©',
                 () => _processPayment('Wave'),
               ),
               // _buildPaymentOptionWithImage(
@@ -1806,13 +1808,13 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('❌ Erreur chargement image: $imagePath - $error');
+                  print('âŒ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1822,15 +1824,15 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: bleuCoris,
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: grisTexte,
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
@@ -1863,7 +1865,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
     // Mode test: forcer 10 XOF pour les tests de paiement Wave
     if (AppConfig.TEST_MODE_FORCE_10_XOF) {
-      debugPrint('[TEST MODE] Montant forcé à 10 XOF au lieu de $amount');
+      debugPrint('[TEST MODE] Montant forcÃ© Ã  10 XOF au lieu de $amount');
       return 10.0;
     }
     return amount;
@@ -1902,7 +1904,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(createResult['message']?.toString() ??
-                'Impossible de démarrer le paiement Wave.'),
+                'Impossible de dÃ©marrer le paiement Wave.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1921,7 +1923,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}'),
+                'RÃ©ponse Wave incomplÃ¨te (URL/session). DÃ©tail: ${createResult['message'] ?? 'n/a'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1965,14 +1967,14 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              '🔄 Paiement Wave lancé. Retournez à l\'application après paiement pour confirmation automatique.'),
+              'ðŸ”„ Paiement Wave lancÃ©. Retournez Ã  l\'application aprÃ¨s paiement pour confirmation automatique.'),
           backgroundColor: bleuCoris,
           duration: Duration(seconds: 5),
         ),
       );
 
-      // 🔄 POLLING AMÉLIORÉ: Essayer pendant 2 minutes (40 tentatives × 3s)
-      // Cela permet à l'utilisateur de compléter le paiement même s'il prend du temps
+      // ðŸ”„ POLLING AMÃ‰LIORÃ‰: Essayer pendant 2 minutes (40 tentatives Ã— 3s)
+      // Cela permet Ã  l'utilisateur de complÃ©ter le paiement mÃªme s'il prend du temps
       for (int attempt = 0; attempt < 40; attempt++) {
         await Future.delayed(const Duration(seconds: 3));
 
@@ -1986,19 +1988,19 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
         if (!(statusResult['success'] == true)) {
           debugPrint(
-              '⏳ Tentative ${attempt + 1}/40: Statut non récupéré, réessai...');
+              'â³ Tentative ${attempt + 1}/40: Statut non rÃ©cupÃ©rÃ©, rÃ©essai...');
           continue;
         }
 
         final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
         final status = (statusData['status'] ?? '').toString().toUpperCase();
 
-        debugPrint('📊 Tentative ${attempt + 1}/40: Statut Wave = $status');
+        debugPrint('ðŸ“Š Tentative ${attempt + 1}/40: Statut Wave = $status');
 
         if (status == 'SUCCESS') {
           if (!mounted) return;
 
-          // 🎉 PAIEMENT RÉUSSI - Convertir la proposition en contrat + envoyer SMS
+          // ðŸŽ‰ PAIEMENT RÃ‰USSI - Convertir la proposition en contrat + envoyer SMS
           try {
             final confirmResult =
                 await waveService.confirmWavePayment(widget.subscriptionId);
@@ -2006,7 +2008,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             if (confirmResult['success'] == true) {
               if (!mounted) return;
 
-              // ✅ Afficher le message de succès avec les détails
+              // âœ… Afficher le message de succÃ¨s avec les dÃ©tails
               final confirmData =
                   confirmResult['data'] as Map<String, dynamic>? ?? {};
               ScaffoldMessenger.of(context).showSnackBar(
@@ -2015,26 +2017,26 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        '✅ Paiement Wave confirmé avec succès !',
+                      Text(
+                        'âœ… Paiement Wave confirmÃ© avec succÃ¨s !',
                         style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 16),
+                            fontWeight: FontWeight.w700, fontSize: context.sp(16)),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: context.r(6)),
                       Text(
                         'Montant: ${confirmData['montant']} FCFA',
-                        style: const TextStyle(fontSize: 13),
+                        style: TextStyle(fontSize: context.sp(13)),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        '🎉 Votre proposition est maintenant un CONTRAT valide.',
+                      SizedBox(height: context.r(4)),
+                      Text(
+                        'ðŸŽ‰ Votre proposition est maintenant un CONTRAT valide.',
                         style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
+                            fontSize: context.sp(13), fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        '📱 Un SMS de confirmation a été envoyé.',
-                        style: TextStyle(fontSize: 12),
+                      SizedBox(height: context.r(4)),
+                      Text(
+                        'ðŸ“± Un SMS de confirmation a Ã©tÃ© envoyÃ©.',
+                        style: TextStyle(fontSize: context.sp(12)),
                       ),
                     ],
                   ),
@@ -2043,11 +2045,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
                 ),
               );
 
-              // Recharger les données pour afficher le nouveau statut
+              // Recharger les donnÃ©es pour afficher le nouveau statut
               await _loadSubscriptionData();
               return;
             } else {
-              // La confirmation backend peut être asynchrone si l'utilisateur revient vite depuis Wave.
+              // La confirmation backend peut Ãªtre asynchrone si l'utilisateur revient vite depuis Wave.
               // Ne pas afficher de message d'erreur/info transitoire.
               await _loadSubscriptionData();
               return;
@@ -2063,7 +2065,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('❌ Paiement Wave échoué ou annulé.'),
+              content: Text('âŒ Paiement Wave Ã©chouÃ© ou annulÃ©.'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 5),
             ),
@@ -2071,9 +2073,9 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
           return;
         }
 
-        // Si PENDING, continuer à attendre
+        // Si PENDING, continuer Ã  attendre
         if (status == 'PENDING') {
-          debugPrint('⏳ Paiement en attente (PENDING), continue le polling...');
+          debugPrint('â³ Paiement en attente (PENDING), continue le polling...');
         }
       }
     } catch (e) {
@@ -2086,7 +2088,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       );
     }
 
-    // Ne pas afficher de message transitoire ici pour éviter les faux positifs perçus comme erreur.
+    // Ne pas afficher de message transitoire ici pour Ã©viter les faux positifs perÃ§us comme erreur.
   }
 
   void _processPayment(String paymentMethod) {
@@ -2106,7 +2108,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
             _loadSubscriptionData();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('✅ Paiement CORIS Money effectué avec succès.'),
+                content: Text('âœ… Paiement CORIS Money effectuÃ© avec succÃ¨s.'),
                 backgroundColor: vertSucces,
               ),
             );
@@ -2125,7 +2127,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Orange Money sera branché juste après Wave. Utilisez Wave ou CORIS Money.'),
+              'Orange Money sera branchÃ© juste aprÃ¨s Wave. Utilisez Wave ou CORIS Money.'),
           backgroundColor: orangeWarning,
         ),
       );
@@ -2137,10 +2139,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         content: Row(
           children: [
             const Icon(Icons.construction, color: blanc, size: 20),
-            const SizedBox(width: 12),
+            SizedBox(width: context.r(12)),
             Expanded(
               child: Text(
-                  'Paiement via $paymentMethod - Fonctionnalité en cours de développement'),
+                  'Paiement via $paymentMethod - FonctionnalitÃ© en cours de dÃ©veloppement'),
             ),
           ],
         ),
@@ -2150,55 +2152,55 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     );
   }
 
-  /// Récupère les réponses au questionnaire médical depuis questionnaire_reponses
+  /// RÃ©cupÃ¨re les rÃ©ponses au questionnaire mÃ©dical depuis questionnaire_reponses
   List<Map<String, dynamic>> _getQuestionnaireMedicalReponses() {
-    // Essayer d'abord le champ questionnaire_reponses (retourné par le serveur)
+    // Essayer d'abord le champ questionnaire_reponses (retournÃ© par le serveur)
     final reponses = _subscriptionData?['questionnaire_reponses'];
 
-    print('🔍 _getQuestionnaireMedicalReponses() appelé');
+    print('ðŸ” _getQuestionnaireMedicalReponses() appelÃ©');
     print('  - _subscriptionData type: ${_subscriptionData.runtimeType}');
     print('  - reponses (questionnaire_reponses): $reponses');
 
     if (reponses == null) {
       print(
-          '  ⚠️ questionnaire_reponses est null, cherche dans souscriptiondata...');
+          '  âš ï¸ questionnaire_reponses est null, cherche dans souscriptiondata...');
       // Fallback: chercher dans souscriptiondata
       final souscriptiondata = _subscriptionData?['souscriptiondata'];
       if (souscriptiondata != null &&
           souscriptiondata['questionnaire_medical_reponses'] != null) {
         final fallback = souscriptiondata['questionnaire_medical_reponses'];
         print(
-            '  ✅ Trouvé questionnaire_medical_reponses dans souscriptiondata: $fallback');
+            '  âœ… TrouvÃ© questionnaire_medical_reponses dans souscriptiondata: $fallback');
         if (fallback is List) {
           return List<Map<String, dynamic>>.from(
             fallback.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
           );
         }
       }
-      print('  ❌ Aucun questionnaire trouvé');
+      print('  âŒ Aucun questionnaire trouvÃ©');
       return [];
     }
 
-    print('  ✅ questionnaire_reponses trouvé: ${reponses.runtimeType}');
+    print('  âœ… questionnaire_reponses trouvÃ©: ${reponses.runtimeType}');
 
-    // Si c'est déjà une liste, la retourner
+    // Si c'est dÃ©jÃ  une liste, la retourner
     if (reponses is List) {
-      print('  ✅ Format liste détecté: ${reponses.length} réponses');
-      reponses.forEach((r) {
+      print('  âœ… Format liste dÃ©tectÃ©: ${reponses.length} rÃ©ponses');
+      for (var r in reponses) {
         if (r is Map && r['libelle'] != null) {
           print(
-              '    - Q: "${r['libelle']}" → R: ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
+              '    - Q: "${r['libelle']}" â†’ R: ${r['reponse_oui_non'] ?? r['reponse_text'] ?? "N/A"}');
         }
-      });
+      }
       return List<Map<String, dynamic>>.from(
         reponses.map((r) => r is Map ? Map<String, dynamic>.from(r) : {}),
       );
     }
 
     // Si le backend renvoie un Map (index => objet), le convertir en liste
-    print('  ⚠️ Format inattendu: ${reponses.runtimeType}');
+    print('  âš ï¸ Format inattendu: ${reponses.runtimeType}');
     if (reponses is Map) {
-      print('  🔄 Conversion Map → List...');
+      print('  ðŸ”„ Conversion Map â†’ List...');
       return reponses.values
           .where((v) => v != null)
           .map((v) =>
@@ -2210,7 +2212,7 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     return [];
   }
 
-  /// Tentative de récupération des questions depuis les données chargées
+  /// Tentative de rÃ©cupÃ©ration des questions depuis les donnÃ©es chargÃ©es
   List<Map<String, dynamic>> _getQuestionnaireMedicalQuestions() {
     try {
       final questions = _subscriptionData?['questionnaire_questions'] ??
@@ -2221,10 +2223,11 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
         );
       }
     } catch (e) {
-      print('⚠️ _getQuestionnaireMedicalQuestions erreur: $e');
+      print('âš ï¸ _getQuestionnaireMedicalQuestions erreur: $e');
     }
     return [];
   }
 
   // Fin de la classe PropositionDetailPageState
 }
+

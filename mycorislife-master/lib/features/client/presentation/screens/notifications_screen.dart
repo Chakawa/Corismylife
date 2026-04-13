@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/services/notification_service.dart';
 
@@ -143,7 +144,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: Text(
           'Notifications${_unreadCount > 0 ? " ($_unreadCount)" : ""}',
-          style: const TextStyle(color: blanc, fontWeight: FontWeight.w600),
+          style: TextStyle(color: blanc, fontWeight: FontWeight.w600),
         ),
         backgroundColor: bleuCoris,
         elevation: 0,
@@ -155,9 +156,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (_unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: const Text(
+              child: Text(
                 'Tout marquer lu',
-                style: TextStyle(color: blanc, fontSize: 14),
+                style: TextStyle(color: blanc, fontSize: context.sp(14)),
               ),
             ),
         ],
@@ -189,20 +190,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             size: 100,
             color: grisTexte.withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           Text(
             'Aucune notification',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: context.sp(18),
               fontWeight: FontWeight.w600,
               color: grisTexte.withValues(alpha: 0.7),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             'Vous n\'avez pas encore de notifications',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: context.sp(14),
               color: grisTexte.withValues(alpha: 0.5),
             ),
           ),
@@ -272,7 +273,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
 
               // Contenu de la notification
               Expanded(
@@ -283,31 +284,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       notification.title,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                         fontWeight: notification.isRead
                             ? FontWeight.w500
                             : FontWeight.w700,
                         color: bleuCoris,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
 
                     // Message
                     Text(
                       notification.message,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
                         color: grisTexte,
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: context.r(8)),
 
                     // Date
                     Text(
                       _formatDate(notification.date),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: context.sp(12),
                         color: grisTexte.withValues(alpha: 0.6),
                       ),
                     ),

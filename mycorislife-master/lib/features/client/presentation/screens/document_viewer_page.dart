@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
@@ -93,8 +94,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text('Erreur de partage: $e'),
               ),
@@ -160,21 +161,21 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Document téléchargé avec succès',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
                     Text(
                       Platform.isAndroid ? 'Dossier: Téléchargements' : 'Dossier: Documents',
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: context.sp(12)),
                     ),
                   ],
                 ),
@@ -192,8 +193,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text('Erreur de téléchargement: $e'),
               ),
@@ -294,9 +295,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       appBar: AppBar(
         title: Text(
           widget.displayLabel ?? 'Pièce d\'identité',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 18,
+            fontSize: context.sp(18),
           ),
         ),
         backgroundColor: bleuCoris,
@@ -305,13 +306,13 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         actions: [
           if (_documentFile != null)
             IconButton(
-              icon: const Icon(Icons.share),
+              icon: Icon(Icons.share),
               onPressed: _shareDocument,
               tooltip: 'Partager',
             ),
           if (_documentFile != null)
             IconButton(
-              icon: const Icon(Icons.download),
+              icon: Icon(Icons.download),
               onPressed: _downloadToDevice,
               tooltip: 'Télécharger',
             ),
@@ -323,18 +324,18 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(bleuCoris),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             Text(
               'Chargement du document...',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: context.sp(14),
                 color: grisTexte,
               ),
             ),
@@ -360,22 +361,22 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                     width: 2,
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.error_outline,
                   size: 56,
                   color: Colors.red,
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: context.r(24)),
+              Text(
                 'Erreur de chargement',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: context.sp(20),
                   fontWeight: FontWeight.w700,
                   color: bleuCoris,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -388,14 +389,14 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                 child: Text(
                   _errorMessage!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: context.sp(15),
                     color: grisTexte,
                     height: 1.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Container(
                 width: double.infinity,
                 height: 50,
@@ -417,11 +418,11 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   child: InkWell(
                     onTap: () => Navigator.pop(context),
                     borderRadius: BorderRadius.circular(12),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Fermer',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -430,7 +431,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               TextButton.icon(
                 onPressed: () {
                   setState(() {
@@ -439,8 +440,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   });
                   _loadDocument();
                 },
-                icon: const Icon(Icons.refresh, size: 20),
-                label: const Text('Réessayer'),
+                icon: Icon(Icons.refresh, size: 20),
+                label: Text('Réessayer'),
                 style: TextButton.styleFrom(
                   foregroundColor: bleuCoris,
                   padding:
@@ -471,34 +472,34 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.description,
                 size: 64,
                 color: bleuCoris,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               Text(
                 widget.displayLabel ?? widget.documentName ?? _documentFile!.path.split('/').last,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               Text(
                 'Type de fichier: ${_fileExtension?.toUpperCase() ?? 'Inconnu'}',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: context.sp(14),
                   color: grisTexte,
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: context.r(24)),
+              Text(
                 'Prévisualisation non disponible pour ce type de fichier',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                   color: grisTexte,
                 ),
               ),
@@ -548,16 +549,16 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.broken_image,
                   size: 64,
                   color: Colors.red,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 Text(
                   'Impossible d\'afficher l\'image',
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     color: grisTexte,
                   ),
                 ),

@@ -1,36 +1,35 @@
-/**
- * ===============================================
- * PAGE - DÉTAILS CONTRAT UNIFIÉ
- * ===============================================
- * 
- * Page unifiée permettant d'afficher les détails d'un contrat
- * accessible à la fois par les commerciaux ET les clients.
- * 
- * FONCTIONNALITÉS :
- * - Affichage complet des informations du contrat
- * - Affichage du badge de statut (Actif/Inactif)
- * - Navigation vers le PDF du contrat
- * - Compatible commercial et client (vérification backend)
- * 
- * ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
- * ==========================================
- * Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
- * - Accès via: contratDetails['etat']
- * - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
- * - Ne PAS utiliser contratDetails['statut'] (ancienne convention, maintenant dépréciée)
- * 
- * SÉCURITÉ :
- * - Les commerciaux voient les contrats via leur code_apporteur
- * - Les clients voient les contrats via leur numéro de téléphone
- * - Le backend vérifie automatiquement les droits d'accès
- * 
- * DESIGN :
- * - Header bleu CORIS uniforme avec badge de statut
- * - Cards modernes avec informations groupées
- * - Bouton d'action flottant pour accéder au PDF
- */
+/// ===============================================
+/// PAGE - DÉTAILS CONTRAT UNIFIÉ
+/// ===============================================
+/// 
+/// Page unifiée permettant d'afficher les détails d'un contrat
+/// accessible à la fois par les commerciaux ET les clients.
+/// 
+/// FONCTIONNALITÉS :
+/// - Affichage complet des informations du contrat
+/// - Affichage du badge de statut (Actif/Inactif)
+/// - Navigation vers le PDF du contrat
+/// - Compatible commercial et client (vérification backend)
+/// 
+/// ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+/// ==========================================
+/// Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
+/// - Accès via: contratDetails['etat']
+/// - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
+/// - Ne PAS utiliser contratDetails['statut'] (ancienne convention, maintenant dépréciée)
+/// 
+/// SÉCURITÉ :
+/// - Les commerciaux voient les contrats via leur code_apporteur
+/// - Les clients voient les contrats via leur numéro de téléphone
+/// - Le backend vérifie automatiquement les droits d'accès
+/// 
+/// DESIGN :
+/// - Header bleu CORIS uniforme avec badge de statut
+/// - Cards modernes avec informations groupées
+/// - Bouton d'action flottant pour accéder au PDF
 
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -40,8 +39,7 @@ import 'package:mycorislife/config/app_config.dart';
 class ContratDetailsUnifiedPage extends StatefulWidget {
   final Map<String, dynamic> contrat;
 
-  const ContratDetailsUnifiedPage({Key? key, required this.contrat})
-      : super(key: key);
+  const ContratDetailsUnifiedPage({super.key, required this.contrat});
 
   @override
   State<ContratDetailsUnifiedPage> createState() =>
@@ -244,7 +242,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         content: Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
+            SizedBox(width: context.r(12)),
             Expanded(child: Text(message)),
           ],
         ),
@@ -262,7 +260,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
+            SizedBox(width: context.r(12)),
             const Text('Copié !'),
           ],
         ),
@@ -312,11 +310,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: context.r(24)),
+              Text(
                 'Chargement des détails...',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF64748B),
                 ),
@@ -344,10 +342,10 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.error_outline, size: 80, color: Colors.grey[400]),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               Text(
                 'Aucune donnée disponible',
-                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                style: TextStyle(fontSize: context.sp(18), color: Colors.grey[600]),
               ),
             ],
           ),
@@ -404,12 +402,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         size: 20,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: context.r(12)),
                     // Numéro de police
                     Text(
                       numpolice ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: context.sp(22),
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         fontFamily: 'Roboto',
@@ -418,8 +416,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                     // Nom du produit
                     Text(
                       config['name'],
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: TextStyle(
+                        fontSize: context.sp(15),
                         fontWeight: FontWeight.w500,
                         color: Colors.white70,
                         fontFamily: 'Roboto',
@@ -508,7 +506,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Informations client
                       _buildModernCard(
@@ -549,7 +547,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Informations financières
                       _buildModernCard(
@@ -593,11 +591,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Bénéficiaires
                       if (beneficiaires.isNotEmpty) ...[
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernCard(
                           title: 'Bénéficiaires',
                           icon: Icons.people_outline,
@@ -619,20 +617,20 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                                       color: Color(0xFF002B6B),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: context.r(12)),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           benef['nom_benef'] ?? benef['nom'] ?? 'N/A',
-                                          style: const TextStyle(
-                                            fontSize: 15,
+                                          style: TextStyle(
+                                            fontSize: context.sp(15),
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF0F172A),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        SizedBox(height: context.r(4)),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 8,
@@ -644,8 +642,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                                           ),
                                           child: Text(
                                             _getBeneficiaireType(benef['type_beneficiaires']),
-                                            style: const TextStyle(
-                                              fontSize: 12,
+                                            style: TextStyle(
+                                              fontSize: context.sp(12),
                                               fontWeight: FontWeight.w600,
                                               color: Color(0xFF002B6B),
                                             ),
@@ -663,7 +661,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
                       // Informations professionnelles (commercial uniquement)
                       if (userRole == 'commercial') ...[
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernCard(
                           title: 'Informations Professionnelles',
                           icon: Icons.admin_panel_settings,
@@ -693,7 +691,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                         ),
                       ],
 
-                      const SizedBox(height: 100),
+                      SizedBox(height: context.r(100)),
                     ],
                   ),
                 ),
@@ -750,11 +748,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                   ),
                   child: Icon(icon, color: Colors.white, size: 20),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF002B6B),
                   ),
@@ -789,26 +787,26 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
             ),
             child: Icon(icon, size: 20, color: const Color(0xFF64748B)),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     color: Color(0xFF94A3B8),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
                     fontFamily: 'Roboto',
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: context.r(4)),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: context.sp(15),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                     letterSpacing: 0.2,
@@ -907,22 +905,22 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
               color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     color: Color(0xFF94A3B8),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
                     fontFamily: 'Roboto',
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: context.r(6)),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -943,7 +941,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                   child: Text(
                     etat.toUpperCase(),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: context.sp(13),
                       fontWeight: FontWeight.bold,
                       color: isActif
                           ? const Color(0xFF10B981)
@@ -966,6 +964,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     return null;
   }
 
+  // ignore: unused_element
   Widget _buildActionButton(
       String label, IconData icon, Color color, bool isPrimary) {
     return ElevatedButton(
@@ -996,11 +995,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 20),
-          const SizedBox(width: 8),
+          SizedBox(width: context.r(8)),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: context.sp(15),
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
             ),

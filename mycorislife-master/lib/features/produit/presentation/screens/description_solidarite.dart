@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:mycorislife/services/auth_service.dart';
 
@@ -71,7 +72,7 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'CORIS SOLIDARITÉ',
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -135,30 +136,30 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
                   child: MarkdownBody(
                     data: markdownContent,
                     styleSheet: MarkdownStyleSheet(
-                      h3: const TextStyle(
-                        fontSize: 28.0,
+                      h3: TextStyle(
+                        fontSize: context.sp(28.0),
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF002B6B),
                         height: 1.3,
                       ),
-                      h4: const TextStyle(
-                        fontSize: 22.0,
+                      h4: TextStyle(
+                        fontSize: context.sp(22.0),
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                         height: 1.4,
                       ),
-                      p: const TextStyle(
-                        fontSize: 16.0,
+                      p: TextStyle(
+                        fontSize: context.sp(16.0),
                         height: 1.6,
                         color: Color(0xFF333333),
                         fontWeight: FontWeight.w400,
                       ),
-                      strong: const TextStyle(
+                      strong: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                       ),
-                      listBullet: const TextStyle(
-                        fontSize: 16.0,
+                      listBullet: TextStyle(
+                        fontSize: context.sp(16.0),
                         color: Color(0xFF10B981),
                         fontWeight: FontWeight.bold,
                       ),
@@ -170,10 +171,10 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
                           ),
                         ),
                       ),
-                      code: const TextStyle(
+                      code: TextStyle(
                         backgroundColor: Colors.transparent,
                         color: Color(0xFF10B981),
-                        fontSize: 16.0,
+                        fontSize: context.sp(16.0),
                       ),
                     ),
                   ),
@@ -196,16 +197,16 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
                 ),
                 child: Column(
                   children: [
-                    const Text(
+                    Text(
                       'Protégez votre famille dès maintenant',
                       style: TextStyle(
-                        fontSize: 20.0,
+                        fontSize: context.sp(20.0),
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16.0),
+                    SizedBox(height: context.r(16.0)),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -243,15 +244,15 @@ CORIS SOLIDARITÉ, c'est la tranquillité d'esprit de savoir que votre famille s
                           ),
                           elevation: 3.0,
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.shield_outlined, size: 24),
-                            SizedBox(width: 12),
+                            SizedBox(width: context.r(12)),
                             Text(
                               'SOUSCRIRE MAINTENANT',
                               style: TextStyle(
-                                fontSize: 17.0,
+                                fontSize: context.sp(17.0),
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.8,
                               ),

@@ -50,7 +50,7 @@ class ContractService {
       ).timeout(const Duration(seconds: 30));
 
       if (kDebugMode) {
-        developer.log('ContractService.getContracts url=\"$url\"', name: 'ContractService');
+        developer.log('ContractService.getContracts url="$url"', name: 'ContractService');
         developer.log('ContractService.getContracts status=${response.statusCode} body=${response.body}', name: 'ContractService');
       }
 
@@ -99,7 +99,7 @@ class ContractService {
       ).timeout(const Duration(seconds: 30));
 
       if (kDebugMode) {
-        developer.log('ContractService.getContractDetails url=\"$url\"', name: 'ContractService');
+        developer.log('ContractService.getContractDetails url="$url"', name: 'ContractService');
         developer.log('ContractService.getContractDetails status=${response.statusCode} body=${response.body}', name: 'ContractService');
       }
 

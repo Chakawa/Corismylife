@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -12,11 +13,12 @@ class HelpSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Aide et Support',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: context.sp(20),
           ),
         ),
         backgroundColor: const Color(0xFF002B6B),
@@ -29,21 +31,23 @@ class HelpSupportScreen extends StatelessWidget {
           final email = snapshot.data?['email'] ?? 'corisvie-ci@coris-assurances.ci';
           
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.r(16)),
             children: [
               _buildSection(
+                context,
                 'Contactez-nous',
                 [
-                  _buildContactTile(Icons.phone, 'Téléphone', phone, () => launchUrl(Uri.parse('tel:$phone'))),
-                  _buildContactTile(Icons.email, 'Email', email, () => launchUrl(Uri.parse('mailto:$email'))),
+                  _buildContactTile(context, Icons.phone, 'Téléphone', phone, () => launchUrl(Uri.parse('tel:$phone'))),
+                  _buildContactTile(context, Icons.email, 'Email', email, () => launchUrl(Uri.parse('mailto:$email'))),
                 ],
               ),
               _buildSection(
+                context,
                 'FAQ',
                 [
-                  _buildFAQItem('Comment créer une souscription ?', 'Allez dans la section Souscription et choisissez votre produit.'),
-                  _buildFAQItem('Comment modifier ma proposition ?', 'Allez dans Mes Propositions et cliquez sur Modifier.'),
-                  _buildFAQItem('Comment payer ma proposition ?', 'Dans Mes Propositions, cliquez sur Payer maintenant.'),
+                  _buildFAQItem(context, 'Comment créer une souscription ?', 'Allez dans la section Souscription et choisissez votre produit.'),
+                  _buildFAQItem(context, 'Comment modifier ma proposition ?', 'Allez dans Mes Propositions et cliquez sur Modifier.'),
+                  _buildFAQItem(context, 'Comment payer ma proposition ?', 'Dans Mes Propositions, cliquez sur Payer maintenant.'),
                 ],
               ),
             ],
@@ -64,39 +68,39 @@ class HelpSupportScreen extends StatelessWidget {
     return {};
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
+  Widget _buildSection(BuildContext context, String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 12, left: 4),
-          child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF002B6B))),
+          padding: EdgeInsets.only(bottom: context.r(12), left: context.r(4)),
+          child: Text(title, style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700, color: Color(0xFF002B6B))),
         ),
         ...children,
-        const SizedBox(height: 24),
+        SizedBox(height: context.r(24)),
       ],
     );
   }
 
-  Widget _buildContactTile(IconData icon, String label, String value, VoidCallback onTap) {
+  Widget _buildContactTile(BuildContext context, IconData icon, String label, String value, VoidCallback onTap) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: context.r(12)),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFF002B6B)),
         title: Text(label),
         subtitle: Text(value),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: Icon(Icons.arrow_forward_ios, size: context.r(16)),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildFAQItem(String question, String answer) {
+  Widget _buildFAQItem(BuildContext context, String question, String answer) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: context.r(12)),
       child: ExpansionTile(
-        title: Text(question, style: const TextStyle(fontWeight: FontWeight.w600)),
-        children: [Padding(padding: const EdgeInsets.all(16), child: Text(answer))],
+        title: Text(question, style: TextStyle(fontWeight: FontWeight.w600)),
+        children: [Padding(padding: EdgeInsets.all(context.r(16)), child: Text(answer))],
       ),
     );
   }

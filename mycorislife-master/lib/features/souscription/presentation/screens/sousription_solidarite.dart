@@ -1,4 +1,6 @@
+// ignore_for_file: unused_field, unused_element
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
@@ -33,18 +35,18 @@ class Membre {
   Membre({required this.nomPrenom, required this.dateNaissance});
 }
 
-/// Page de souscription pour le produit CORIS SOLIDARITÉ
-/// Permet de souscrire à une assurance famille avec conjoints, enfants et ascendants
+/// Page de souscription pour le produit CORIS SOLIDARITÃ‰
+/// Permet de souscrire Ã  une assurance famille avec conjoints, enfants et ascendants
 ///
 /// [capital] : Capital garanti
-/// [periodicite] : Périodicité de paiement (Mensuel, Trimestriel, etc.)
+/// [periodicite] : PÃ©riodicitÃ© de paiement (Mensuel, Trimestriel, etc.)
 /// [nbConjoints] : Nombre de conjoints
 /// [nbEnfants] : Nombre d'enfants
 /// [nbAscendants] : Nombre d'ascendants
 /// [clientId] : ID du client si souscription par commercial (optionnel)
-/// [clientData] : Données du client si souscription par commercial (optionnel)
+/// [clientData] : DonnÃ©es du client si souscription par commercial (optionnel)
 /// [subscriptionId] : ID de la souscription si modification (optionnel)
-/// [existingData] : Données existantes si modification (optionnel)
+/// [existingData] : DonnÃ©es existantes si modification (optionnel)
 class SouscriptionSolidaritePage extends StatefulWidget {
   final int? capital;
   final String? periodicite;
@@ -53,10 +55,10 @@ class SouscriptionSolidaritePage extends StatefulWidget {
   final int? nbAscendants;
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
-      clientData; // Données du client si souscription par commercial
+      clientData; // DonnÃ©es du client si souscription par commercial
   final int? subscriptionId; // ID de la souscription si modification
   final Map<String, dynamic>?
-      existingData; // Données existantes si modification
+      existingData; // DonnÃ©es existantes si modification
 
   const SouscriptionSolidaritePage({
     super.key,
@@ -82,7 +84,7 @@ class _SouscriptionSolidaritePageState
   final PageController _pageController = PageController();
   final _formKey = GlobalKey<FormState>();
 
-  // Données de simulation
+  // DonnÃ©es de simulation
   int? selectedCapital;
   String selectedPeriodicite = 'Mensuel';
   int nbConjoints = 1;
@@ -97,12 +99,12 @@ class _SouscriptionSolidaritePageState
   // Signature du client
   Uint8List? _clientSignature;
 
-  // Données des membres
+  // DonnÃ©es des membres
   List<Membre> conjoints = [];
   List<Membre> enfants = [];
   List<Membre> ascendants = [];
 
-  // Données utilisateur
+  // DonnÃ©es utilisateur
   Map<String, dynamic> _userData = {};
   final storage = FlutterSecureStorage();
   bool _isLoading = true;
@@ -110,30 +112,28 @@ class _SouscriptionSolidaritePageState
   // Variables pour le mode modification
   bool _isModification = false; // Indique si on est en mode modification
 
-  /**
-   * ============================================
-   * NOUVELLES VARIABLES POUR LE MODE COMMERCIAL
-   * ============================================
-   * 
-   * Ces variables permettent à un commercial de créer une souscription pour un client
-   * sans que le client ait besoin d'avoir un compte dans le système.
-   * 
-   * FONCTIONNEMENT:
-   * 1. _isCommercial : Indique si la souscription est créée par un commercial
-   * 2. _clientDateNaissance, _clientAge : Stockent les informations de date de naissance et âge du client
-   * 3. Les TextEditingController : Contrôlent les champs de saisie pour les informations du client
-   * 4. _selectedClientCivilite : Civilité sélectionnée (Monsieur, Madame, Mademoiselle)
-   * 5. _selectedClientIndicatif : Indicatif téléphonique sélectionné (+225, +226, etc.)
-   */
+  /// ============================================
+  /// NOUVELLES VARIABLES POUR LE MODE COMMERCIAL
+  /// ============================================
+  /// 
+  /// Ces variables permettent Ã  un commercial de crÃ©er une souscription pour un client
+  /// sans que le client ait besoin d'avoir un compte dans le systÃ¨me.
+  /// 
+  /// FONCTIONNEMENT:
+  /// 1. _isCommercial : Indique si la souscription est crÃ©Ã©e par un commercial
+  /// 2. _clientDateNaissance, _clientAge : Stockent les informations de date de naissance et Ã¢ge du client
+  /// 3. Les TextEditingController : ContrÃ´lent les champs de saisie pour les informations du client
+  /// 4. _selectedClientCivilite : CivilitÃ© sÃ©lectionnÃ©e (Monsieur, Madame, Mademoiselle)
+  /// 5. _selectedClientIndicatif : Indicatif tÃ©lÃ©phonique sÃ©lectionnÃ© (+225, +226, etc.)
   bool _isCommercial =
       false; // Indique si c'est un commercial qui fait la souscription
   DateTime?
-      _clientDateNaissance; // Date de naissance du client (pour validation d'âge)
+      _clientDateNaissance; // Date de naissance du client (pour validation d'Ã¢ge)
   int _clientAge =
-      0; // Âge calculé du client (utilisé pour les validations et calculs)
+      0; // Ã‚ge calculÃ© du client (utilisÃ© pour les validations et calculs)
 
-  // Contrôleurs pour les informations client (si commercial)
-  // Ces contrôleurs gèrent la saisie des informations du client dans le formulaire
+  // ContrÃ´leurs pour les informations client (si commercial)
+  // Ces contrÃ´leurs gÃ¨rent la saisie des informations du client dans le formulaire
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
   final TextEditingController _clientDateNaissanceController =
@@ -149,11 +149,11 @@ class _SouscriptionSolidaritePageState
   final TextEditingController _clientSecteurActiviteController = TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
-  String _selectedClientCivilite = 'Monsieur'; // Civilité par défaut
+  String _selectedClientCivilite = 'Monsieur'; // CivilitÃ© par dÃ©faut
   String _selectedClientIndicatif =
-      '+225'; // Indicatif par défaut (Côte d'Ivoire)
+      '+225'; // Indicatif par dÃ©faut (CÃ´te d'Ivoire)
 
-  // Contrôleurs pour l'étape 2 (bénéficiaire et contact d'urgence)
+  // ContrÃ´leurs pour l'Ã©tape 2 (bÃ©nÃ©ficiaire et contact d'urgence)
   final TextEditingController _beneficiaireNomController =
       TextEditingController();
   final TextEditingController _beneficiaireContactController =
@@ -167,13 +167,13 @@ class _SouscriptionSolidaritePageState
   String _selectedLienParente = 'Conjoint(e)';
   String _selectedLienParenteUrgence = 'Conjoint(e)';
   String _selectedBeneficiaireIndicatif = '+221';
-  String _selectedContactIndicatif = '+221';
+  final String _selectedContactIndicatif = '+221';
   DateTime? _beneficiaireDateNaissance;
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
 
-  // 💳 Variables Mode de Paiement
+  // ðŸ’³ Variables Mode de Paiement
   String? _selectedModePaiement;
   String? _selectedBanque;
   final TextEditingController _banqueController = TextEditingController();
@@ -184,7 +184,7 @@ class _SouscriptionSolidaritePageState
     'Ecobank',
     'BOA',
     'UBA',
-    'Société Générale',
+    'SociÃ©tÃ© GÃ©nÃ©rale',
     'BNI',
     'Banque Atlantique',
     'Autre',
@@ -207,7 +207,7 @@ class _SouscriptionSolidaritePageState
     'Virement',
     'Wave',
     // 'Orange Money',
-    'Prélèvement à la source',
+    'PrÃ©lÃ¨vement Ã  la source',
     // 'CORIS Money',
   ];
 
@@ -215,7 +215,7 @@ class _SouscriptionSolidaritePageState
     'Conjoint(e)',
     'Enfant',
     'Parent',
-    'Frère/Soeur',
+    'FrÃ¨re/Soeur',
     'Autre'
   ];
 
@@ -424,7 +424,7 @@ class _SouscriptionSolidaritePageState
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('Erreur chargement données utilisateur: $e');
+      debugPrint('Erreur chargement donnÃ©es utilisateur: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -464,18 +464,18 @@ class _SouscriptionSolidaritePageState
   void initState() {
     super.initState();
 
-    // Toujours initialiser selectedCapital avec une valeur valide pour éviter l'erreur dropdown
+    // Toujours initialiser selectedCapital avec une valeur valide pour Ã©viter l'erreur dropdown
     selectedCapital = 500000;
 
-    // Vérifier si on est en mode modification
+    // VÃ©rifier si on est en mode modification
     _isModification =
         widget.subscriptionId != null && widget.existingData != null;
 
     if (_isModification) {
-      // Mode modification : préremplir avec les données existantes
+      // Mode modification : prÃ©remplir avec les donnÃ©es existantes
       _prefillExistingData();
     } else {
-      // Mode création : initialiser avec les valeurs par défaut
+      // Mode crÃ©ation : initialiser avec les valeurs par dÃ©faut
       selectedCapital = widget.capital ?? 500000;
       selectedPeriodicite = widget.periodicite ?? 'Mensuel';
       nbConjoints = widget.nbConjoints ?? 1;
@@ -490,7 +490,7 @@ class _SouscriptionSolidaritePageState
       ascendants = List.generate(nbAscendants,
           (index) => Membre(nomPrenom: '', dateNaissance: DateTime.now()));
 
-      // Initialiser la date d'effet (aujourd'hui par défaut)
+      // Initialiser la date d'effet (aujourd'hui par dÃ©faut)
       _dateEffetContrat = DateTime.now();
       _dateEffetController.text = _formatDate(_dateEffetContrat);
 
@@ -498,42 +498,40 @@ class _SouscriptionSolidaritePageState
       _calculerPrime();
     }
 
-    // Charger les données utilisateur seulement si ce n'est pas un commercial
-    // Pour les commerciaux, on chargera les données dans didChangeDependencies
+    // Charger les donnÃ©es utilisateur seulement si ce n'est pas un commercial
+    // Pour les commerciaux, on chargera les donnÃ©es dans didChangeDependencies
   }
 
-  /**
-   * ============================================
-   * MÉTHODE didChangeDependencies
-   * ============================================
-   * 
-   * Cette méthode est appelée automatiquement par Flutter lorsque les dépendances du widget changent.
-   * Elle est utilisée ici pour:
-   * 1. Détecter si c'est un commercial qui accède à la page
-   * 2. Pré-remplir les champs avec les informations d'un client existant (si sélectionné)
-   * 3. Initialiser le mode commercial si nécessaire
-   * 
-   * ARGUMENTS ATTENDUS (via ModalRoute):
-   * - isCommercial: true si c'est un commercial qui fait la souscription
-   * - clientInfo: Map contenant les informations du client (si un client existant est sélectionné)
-   * 
-   * FLUX:
-   * - Si isCommercial = true : Active le mode commercial et affiche les champs client
-   * - Si clientInfo existe : Pré-remplit tous les champs avec les données du client
-   * - Si isCommercial = false : Charge les données de l'utilisateur connecté (mode client normal)
-   */
+  /// ============================================
+  /// MÃ‰THODE didChangeDependencies
+  /// ============================================
+  /// 
+  /// Cette mÃ©thode est appelÃ©e automatiquement par Flutter lorsque les dÃ©pendances du widget changent.
+  /// Elle est utilisÃ©e ici pour:
+  /// 1. DÃ©tecter si c'est un commercial qui accÃ¨de Ã  la page
+  /// 2. PrÃ©-remplir les champs avec les informations d'un client existant (si sÃ©lectionnÃ©)
+  /// 3. Initialiser le mode commercial si nÃ©cessaire
+  /// 
+  /// ARGUMENTS ATTENDUS (via ModalRoute):
+  /// - isCommercial: true si c'est un commercial qui fait la souscription
+  /// - clientInfo: Map contenant les informations du client (si un client existant est sÃ©lectionnÃ©)
+  /// 
+  /// FLUX:
+  /// - Si isCommercial = true : Active le mode commercial et affiche les champs client
+  /// - Si clientInfo existe : PrÃ©-remplit tous les champs avec les donnÃ©es du client
+  /// - Si isCommercial = false : Charge les donnÃ©es de l'utilisateur connectÃ© (mode client normal)
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Récupérer les arguments passés lors de la navigation vers cette page
+    // RÃ©cupÃ©rer les arguments passÃ©s lors de la navigation vers cette page
     // Ces arguments peuvent contenir isCommercial et clientInfo
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
-    // Vérifier si c'est un commercial qui fait la souscription
+    // VÃ©rifier si c'est un commercial qui fait la souscription
     if (args != null && args['isCommercial'] == true) {
-      // Activer le mode commercial si ce n'est pas déjà fait
+      // Activer le mode commercial si ce n'est pas dÃ©jÃ  fait
       if (!_isCommercial) {
         setState(() {
           _isCommercial = true;
@@ -541,19 +539,19 @@ class _SouscriptionSolidaritePageState
       }
 
       /**
-       * PRÉ-REMPLISSAGE AUTOMATIQUE DES CHAMPS CLIENT
+       * PRÃ‰-REMPLISSAGE AUTOMATIQUE DES CHAMPS CLIENT
        * 
-       * Si un client existant a été sélectionné (depuis select_client_screen),
-       * on pré-remplit automatiquement tous les champs avec ses informations.
-       * Cela permet au commercial de gagner du temps lors de la création d'une nouvelle souscription
-       * pour un client pour lequel il a déjà créé des souscriptions.
+       * Si un client existant a Ã©tÃ© sÃ©lectionnÃ© (depuis select_client_screen),
+       * on prÃ©-remplit automatiquement tous les champs avec ses informations.
+       * Cela permet au commercial de gagner du temps lors de la crÃ©ation d'une nouvelle souscription
+       * pour un client pour lequel il a dÃ©jÃ  crÃ©Ã© des souscriptions.
        */
       if (args['clientInfo'] != null) {
         // Extraire les informations du client depuis les arguments
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
 
-        // Pré-remplir tous les champs texte avec les informations du client
-        // L'opérateur ?? permet d'utiliser une chaîne vide si la valeur est null
+        // PrÃ©-remplir tous les champs texte avec les informations du client
+        // L'opÃ©rateur ?? permet d'utiliser une chaÃ®ne vide si la valeur est null
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
         _clientEmailController.text = clientInfo['email'] ?? '';
@@ -564,7 +562,7 @@ class _SouscriptionSolidaritePageState
         _clientNumeroPieceController.text =
             clientInfo['numero_piece_identite'] ?? '';
 
-        // Pré-remplir la civilité si disponible
+        // PrÃ©-remplir la civilitÃ© si disponible
         if (clientInfo['civilite'] != null) {
           _selectedClientCivilite = clientInfo['civilite'];
         }
@@ -572,23 +570,23 @@ class _SouscriptionSolidaritePageState
         /**
          * GESTION DE LA DATE DE NAISSANCE
          * 
-         * La date peut être reçue sous deux formats:
+         * La date peut Ãªtre reÃ§ue sous deux formats:
          * 1. String (format ISO 8601, ex: "1995-11-19")
          * 2. DateTime (objet DateTime directement)
          * 
-         * On convertit toujours en DateTime pour faciliter les calculs d'âge.
-         * On formate ensuite la date au format français (JJ/MM/AAAA) pour l'affichage.
-         * On calcule aussi l'âge du client pour les validations ultérieures.
+         * On convertit toujours en DateTime pour faciliter les calculs d'Ã¢ge.
+         * On formate ensuite la date au format franÃ§ais (JJ/MM/AAAA) pour l'affichage.
+         * On calcule aussi l'Ã¢ge du client pour les validations ultÃ©rieures.
          */
         if (clientInfo['date_naissance'] != null) {
           try {
             DateTime? dateNaissance;
-            // Vérifier le type de la date et la convertir en DateTime si nécessaire
+            // VÃ©rifier le type de la date et la convertir en DateTime si nÃ©cessaire
             if (clientInfo['date_naissance'] is String) {
               // Si c'est une String, utiliser DateTime.parse pour la convertir
               dateNaissance = DateTime.parse(clientInfo['date_naissance']);
             } else if (clientInfo['date_naissance'] is DateTime) {
-              // Si c'est déjà un DateTime, l'utiliser directement
+              // Si c'est dÃ©jÃ  un DateTime, l'utiliser directement
               dateNaissance = clientInfo['date_naissance'];
             }
 
@@ -598,15 +596,15 @@ class _SouscriptionSolidaritePageState
                 // Stocker la date de naissance
                 _clientDateNaissance = finalDate;
 
-                // Formater la date au format français (JJ/MM/AAAA)
+                // Formater la date au format franÃ§ais (JJ/MM/AAAA)
                 // padLeft(2, '0') assure que les jours et mois ont toujours 2 chiffres
                 _clientDateNaissanceController.text =
                     '${finalDate.day.toString().padLeft(2, '0')}/${finalDate.month.toString().padLeft(2, '0')}/${finalDate.year}';
 
-                // Calculer l'âge du client
+                // Calculer l'Ã¢ge du client
                 final now = DateTime.now();
                 _clientAge = now.year - finalDate.year;
-                // Ajuster l'âge si l'anniversaire n'a pas encore eu lieu cette année
+                // Ajuster l'Ã¢ge si l'anniversaire n'a pas encore eu lieu cette annÃ©e
                 if (now.month < finalDate.month ||
                     (now.month == finalDate.month && now.day < finalDate.day)) {
                   _clientAge--;
@@ -620,20 +618,20 @@ class _SouscriptionSolidaritePageState
         }
 
         /**
-         * EXTRACTION DE L'INDICATIF TÉLÉPHONIQUE
+         * EXTRACTION DE L'INDICATIF TÃ‰LÃ‰PHONIQUE
          * 
-         * Si le numéro de téléphone commence par un indicatif (ex: +225),
-         * on sépare l'indicatif du reste du numéro pour un affichage correct
-         * dans les champs séparés (indicatif + numéro).
+         * Si le numÃ©ro de tÃ©lÃ©phone commence par un indicatif (ex: +225),
+         * on sÃ©pare l'indicatif du reste du numÃ©ro pour un affichage correct
+         * dans les champs sÃ©parÃ©s (indicatif + numÃ©ro).
          */
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
-          // Séparer l'indicatif du numéro (ex: "+225 0707889919" -> ["+225", "0707889919"])
+          // SÃ©parer l'indicatif du numÃ©ro (ex: "+225 0707889919" -> ["+225", "0707889919"])
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-            // Le premier élément est l'indicatif
+            // Le premier Ã©lÃ©ment est l'indicatif
             _selectedClientIndicatif = parts[0];
-            // Le reste est le numéro de téléphone
+            // Le reste est le numÃ©ro de tÃ©lÃ©phone
             if (parts.length > 1) {
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
@@ -643,23 +641,23 @@ class _SouscriptionSolidaritePageState
     }
 
     /**
-     * CHARGEMENT DES DONNÉES UTILISATEUR
+     * CHARGEMENT DES DONNÃ‰ES UTILISATEUR
      * 
-     * - Si c'est un client normal : Charger ses données depuis le serveur
-     * - Si c'est un commercial : Ne pas charger les données utilisateur car on utilise les infos client saisies
-     *   et mettre _isLoading à false pour permettre l'affichage de la page
+     * - Si c'est un client normal : Charger ses donnÃ©es depuis le serveur
+     * - Si c'est un commercial : Ne pas charger les donnÃ©es utilisateur car on utilise les infos client saisies
+     *   et mettre _isLoading Ã  false pour permettre l'affichage de la page
      */
     if (!_isCommercial) {
-      // Mode client : Charger les données de l'utilisateur connecté
+      // Mode client : Charger les donnÃ©es de l'utilisateur connectÃ©
       _loadUserData();
     } else {
       /**
-       * MODE COMMERCIAL : Pas besoin de charger les données utilisateur
+       * MODE COMMERCIAL : Pas besoin de charger les donnÃ©es utilisateur
        * 
        * CORRECTION DU BUG DE CHARGEMENT:
-       * - Avant: _isLoading restait à true pour les commerciaux, ce qui bloquait l'affichage
-       * - Maintenant: On met _isLoading à false immédiatement pour permettre l'affichage
-       * - Les données client seront saisies manuellement ou pré-remplies depuis clientInfo
+       * - Avant: _isLoading restait Ã  true pour les commerciaux, ce qui bloquait l'affichage
+       * - Maintenant: On met _isLoading Ã  false immÃ©diatement pour permettre l'affichage
+       * - Les donnÃ©es client seront saisies manuellement ou prÃ©-remplies depuis clientInfo
        */
       if (mounted) {
         setState(() {
@@ -669,13 +667,13 @@ class _SouscriptionSolidaritePageState
     }
   }
 
-  /// Préremplir les champs avec les données existantes pour la modification
+  /// PrÃ©remplir les champs avec les donnÃ©es existantes pour la modification
   void _prefillExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
 
-    // Détecter si c'est une souscription par commercial (présence de client_info)
+    // DÃ©tecter si c'est une souscription par commercial (prÃ©sence de client_info)
     if (data['client_info'] != null) {
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
@@ -685,8 +683,9 @@ class _SouscriptionSolidaritePageState
       _clientTelephoneController.text = clientInfo['telephone'] ?? '';
       _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
       _clientAdresseController.text = clientInfo['adresse'] ?? '';
-      if (clientInfo['civilite'] != null)
+      if (clientInfo['civilite'] != null) {
         _selectedClientCivilite = clientInfo['civilite'];
+      }
       if (clientInfo['date_naissance'] != null) {
         try {
           DateTime? dateNaissance;
@@ -716,17 +715,18 @@ class _SouscriptionSolidaritePageState
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
           _selectedClientIndicatif = parts[0];
-          if (parts.length > 1)
+          if (parts.length > 1) {
             _clientTelephoneController.text = parts.sublist(1).join(' ');
+          }
         }
       }
     }
 
-    // Préremplir les données de base
+    // PrÃ©remplir les donnÃ©es de base
     selectedCapital = data['capital'] ?? 500000;
     selectedPeriodicite = data['periodicite'] ?? 'Mensuel';
 
-    // Préremplir la date d'effet
+    // PrÃ©remplir la date d'effet
     if (data['date_effet'] != null) {
       try {
         _dateEffetContrat = DateTime.parse(data['date_effet']);
@@ -737,7 +737,7 @@ class _SouscriptionSolidaritePageState
       }
     }
 
-    // Préremplir les membres - Conjoints
+    // PrÃ©remplir les membres - Conjoints
     if (data['conjoints'] != null && data['conjoints'] is List) {
       final conjointsData = List<Map<String, dynamic>>.from(data['conjoints']);
       nbConjoints = conjointsData.length;
@@ -746,7 +746,7 @@ class _SouscriptionSolidaritePageState
         try {
           dateNaissance = DateTime.parse(c['date_naissance'] ?? '');
         } catch (e) {
-          // Garder la date par défaut
+          // Garder la date par dÃ©faut
         }
         return Membre(
           nomPrenom: c['nom_prenom'] ?? '',
@@ -758,7 +758,7 @@ class _SouscriptionSolidaritePageState
       conjoints = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
     }
 
-    // Préremplir les membres - Enfants
+    // PrÃ©remplir les membres - Enfants
     if (data['enfants'] != null && data['enfants'] is List) {
       final enfantsData = List<Map<String, dynamic>>.from(data['enfants']);
       nbEnfants = enfantsData.length;
@@ -767,7 +767,7 @@ class _SouscriptionSolidaritePageState
         try {
           dateNaissance = DateTime.parse(e['date_naissance'] ?? '');
         } catch (e) {
-          // Garder la date par défaut
+          // Garder la date par dÃ©faut
         }
         return Membre(
           nomPrenom: e['nom_prenom'] ?? '',
@@ -779,7 +779,7 @@ class _SouscriptionSolidaritePageState
       enfants = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
     }
 
-    // Préremplir les membres - Ascendants
+    // PrÃ©remplir les membres - Ascendants
     if (data['ascendants'] != null && data['ascendants'] is List) {
       final ascendantsData =
           List<Map<String, dynamic>>.from(data['ascendants']);
@@ -789,7 +789,7 @@ class _SouscriptionSolidaritePageState
         try {
           dateNaissance = DateTime.parse(a['date_naissance'] ?? '');
         } catch (e) {
-          // Garder la date par défaut
+          // Garder la date par dÃ©faut
         }
         return Membre(
           nomPrenom: a['nom_prenom'] ?? '',
@@ -801,7 +801,7 @@ class _SouscriptionSolidaritePageState
       ascendants = [];
     }
 
-    // Préremplir bénéficiaire et contact d'urgence
+    // PrÃ©remplir bÃ©nÃ©ficiaire et contact d'urgence
     _beneficiaireNomController.text = data['beneficiaire_nom'] ?? '';
     _beneficiaireContactController.text = data['beneficiaire_contact'] ?? '';
     if (data['beneficiaire_date_naissance'] != null) {
@@ -811,7 +811,7 @@ class _SouscriptionSolidaritePageState
         _beneficiaireDateNaissanceController.text =
             "${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}";
       } catch (e) {
-        // Garder la date par défaut
+        // Garder la date par dÃ©faut
       }
     }
     _personneContactNomController.text = data['contact_urgence_nom'] ?? '';
@@ -827,14 +827,14 @@ class _SouscriptionSolidaritePageState
         assistance['commercial_code_apporteur']?.toString() ?? '';
     }
 
-    // Calculer la prime avec les données préremplies
+    // Calculer la prime avec les donnÃ©es prÃ©remplies
     _calculerPrime();
   }
 
   void _calculerPrime() {
     if (selectedCapital == null) return;
 
-    // Détermine la clé de la périodicité pour les maps de tarifs
+    // DÃ©termine la clÃ© de la pÃ©riodicitÃ© pour les maps de tarifs
     String key = selectedPeriodicite.toLowerCase() == 'annuel'
         ? 'annuelle'
         : selectedPeriodicite.toLowerCase();
@@ -856,7 +856,7 @@ class _SouscriptionSolidaritePageState
   }
 
   String _formatDate(DateTime? dateTime) {
-    if (dateTime == null) return 'Sélectionner une date';
+    if (dateTime == null) return 'SÃ©lectionner une date';
     return "${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}";
   }
 
@@ -867,7 +867,7 @@ class _SouscriptionSolidaritePageState
         );
   }
 
-  // MÉTHODES CRITIQUES POUR LE STATUT DE PAIEMENT
+  // MÃ‰THODES CRITIQUES POUR LE STATUT DE PAIEMENT
   Future<int> _saveSubscriptionData() async {
     try {
       final subscriptionService = SubscriptionService();
@@ -929,7 +929,7 @@ class _SouscriptionSolidaritePageState
               : null,
         },
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
-        // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
+        // NE PAS inclure 'status' ici - il sera 'proposition' par dÃ©faut dans la base
       };
 
       // Si commercial, ajouter les infos client
@@ -958,7 +958,7 @@ class _SouscriptionSolidaritePageState
 
       if (_isModification && widget.subscriptionId != null) {
         // Mode modification : UPDATE
-        debugPrint('🔄 Mode MODIFICATION - ID: ${widget.subscriptionId}');
+        debugPrint('ðŸ”„ Mode MODIFICATION - ID: ${widget.subscriptionId}');
         response = await subscriptionService.updateSubscription(
           widget.subscriptionId!,
           subscriptionData,
@@ -973,8 +973,8 @@ class _SouscriptionSolidaritePageState
         // Retourner l'ID existant
         return widget.subscriptionId!;
       } else {
-        // Mode création : INSERT
-        debugPrint('➕ Mode CRÉATION');
+        // Mode crÃ©ation : INSERT
+        debugPrint('âž• Mode CRÃ‰ATION');
         response =
             await subscriptionService.createSubscription(subscriptionData);
         responseData = jsonDecode(response.body);
@@ -984,7 +984,7 @@ class _SouscriptionSolidaritePageState
               responseData['message'] ?? 'Erreur lors de la sauvegarde');
         }
 
-        // RETOURNER l'ID de la souscription créée
+        // RETOURNER l'ID de la souscription crÃ©Ã©e
         return responseData['data']['id'];
       }
     } catch (e) {
@@ -1007,23 +1007,23 @@ class _SouscriptionSolidaritePageState
 
       if (response.statusCode != 200 || !responseData['success']) {
         throw Exception(responseData['message'] ??
-            'Erreur lors de la mise à jour du statut');
+            'Erreur lors de la mise Ã  jour du statut');
       }
 
       debugPrint(
-          'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
+          'Statut mis Ã  jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-      debugPrint('Erreur mise à jour statut: $e');
+      debugPrint('Erreur mise Ã  jour statut: $e');
       rethrow;
     }
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-    // Simulation d'un délai de paiement
+    // Simulation d'un dÃ©lai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
-    // Pour la démo, retournez true pour succès, false pour échec
-    return true; // Changez en false pour tester l'échec
+    // Pour la dÃ©mo, retournez true pour succÃ¨s, false pour Ã©chec
+    return true; // Changez en false pour tester l'Ã©chec
   }
 
   void _processPayment(String paymentMethod) async {
@@ -1035,10 +1035,10 @@ class _SouscriptionSolidaritePageState
         builder: (context) => _LoadingDialog(paymentMethod: paymentMethod));
 
     try {
-      // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
+      // Ã‰TAPE 1: Sauvegarder la souscription (statut: 'proposition' par dÃ©faut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      // Ã‰TAPE 1.5: Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
@@ -1052,16 +1052,16 @@ class _SouscriptionSolidaritePageState
           context,
           subscriptionId: subscriptionId,
           amount: primeTotaleResult,
-          description: 'Paiement prime CORIS SOLIDARITÉ',
+          description: 'Paiement prime CORIS SOLIDARITÃ‰',
           onSuccess: () => _showSuccessDialog(true),
         );
         return;
       }
 
-      // ÉTAPE 2: Simuler le paiement
+      // Ã‰TAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
-      // ÉTAPE 3: Mettre à jour le statut selon le résultat du paiement
+      // Ã‰TAPE 3: Mettre Ã  jour le statut selon le rÃ©sultat du paiement
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
 
@@ -1069,10 +1069,10 @@ class _SouscriptionSolidaritePageState
         Navigator.pop(context); // Fermer le loading
 
         if (paymentSuccess) {
-          _showSuccessDialog(true); // Contrat activé
+          _showSuccessDialog(true); // Contrat activÃ©
         } else {
           _showErrorSnackBar(
-              'Paiement échoué. Votre proposition a été sauvegardée.');
+              'Paiement Ã©chouÃ©. Votre proposition a Ã©tÃ© sauvegardÃ©e.');
         }
       }
     } catch (e) {
@@ -1085,10 +1085,10 @@ class _SouscriptionSolidaritePageState
 
   void _saveAsProposition() async {
     try {
-      // Sauvegarde avec statut 'proposition' par défaut
+      // Sauvegarde avec statut 'proposition' par dÃ©faut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Upload du document pièce d'identité si présent
+      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
@@ -1103,10 +1103,10 @@ class _SouscriptionSolidaritePageState
     }
   }
 
-  /// Upload du document pièce d'identité vers le serveur
+  /// Upload du document piÃ¨ce d'identitÃ© vers le serveur
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
-      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      debugPrint('ðŸ“¤ Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
@@ -1126,13 +1126,13 @@ class _SouscriptionSolidaritePageState
         responseData = localData;
 
         if (response.statusCode != 200 || !localData['success']) {
-          debugPrint('❌ Erreur upload: ${localData['message']}');
+          debugPrint('âŒ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
       }
 
-      // Récupérer le label original si présent dans la réponse
+      // RÃ©cupÃ©rer le label original si prÃ©sent dans la rÃ©ponse
       try {
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
@@ -1150,18 +1150,18 @@ class _SouscriptionSolidaritePageState
         }
       } catch (e) {
         debugPrint(
-            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+            'âš ï¸ Impossible de lire piece_identite_label depuis la rÃ©ponse: $e');
       }
 
-      debugPrint('✅ Document uploadé avec succès');
+      debugPrint('âœ… Document uploadÃ© avec succÃ¨s');
     } catch (e) {
-      debugPrint('❌ Exception upload document: $e');
-      // Ne pas bloquer la souscription si l'upload échoue
+      debugPrint('âŒ Exception upload document: $e');
+      // Ne pas bloquer la souscription si l'upload Ã©choue
       // On log juste l'erreur
     }
   }
 
-  // FIN DES MÉTHODES CRITIQUES
+  // FIN DES MÃ‰THODES CRITIQUES
 
   Widget _buildModernHeader() {
     return Container(
@@ -1189,17 +1189,17 @@ class _SouscriptionSolidaritePageState
                     const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               const Icon(Icons.group, color: Colors.white, size: 32),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
                   _isModification
-                      ? "MODIFICATION CORIS SOLIDARITÉ"
-                      : "SOUSCRIPTION CORIS SOLIDARITÉ",
-                  style: const TextStyle(
+                      ? "MODIFICATION CORIS SOLIDARITÃ‰"
+                      : "SOUSCRIPTION CORIS SOLIDARITÃ‰",
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1212,8 +1212,8 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildProgressIndicator() {
-    // Déterminer le nombre d'étapes en fonction des membres
-    int totalSteps = 6; // Paramètres + Récapitulatif
+    // DÃ©terminer le nombre d'Ã©tapes en fonction des membres
+    int totalSteps = 6; // ParamÃ¨tres + RÃ©capitulatif
     if (nbConjoints == 0) totalSteps--;
     if (nbEnfants == 0) totalSteps--;
     if (nbAscendants == 0) totalSteps--;
@@ -1272,7 +1272,7 @@ class _SouscriptionSolidaritePageState
     );
   }
 
-  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  /// Page sÃ©parÃ©e pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1285,7 +1285,7 @@ class _SouscriptionSolidaritePageState
             [
               _buildDropdownField(
                 value: _selectedClientCivilite,
-                label: 'Civilité',
+                label: 'CivilitÃ©',
                 icon: Icons.person_outline,
                 items: ['Monsieur', 'Madame', 'Mademoiselle'],
                 onChanged: (value) {
@@ -1294,19 +1294,19 @@ class _SouscriptionSolidaritePageState
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientNomController,
                 label: 'Nom du client',
                 icon: Icons.person_outline,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientPrenomController,
-                label: 'Prénom du client',
+                label: 'PrÃ©nom du client',
                 icon: Icons.person_outline,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildDateField(
                 controller: _clientDateNaissanceController,
                 label: 'Date de naissance',
@@ -1326,16 +1326,16 @@ class _SouscriptionSolidaritePageState
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientLieuNaissanceController,
                 label: 'Lieu de naissance',
                 icon: Icons.location_on,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildPhoneFieldWithIndicatif(
                 controller: _clientTelephoneController,
-                label: 'Téléphone du client',
+                label: 'TÃ©lÃ©phone du client',
                 selectedIndicatif: _selectedClientIndicatif,
                 onIndicatifChanged: (value) {
                   setState(() {
@@ -1343,35 +1343,35 @@ class _SouscriptionSolidaritePageState
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientEmailController,
                 label: 'Email du client',
                 icon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientAdresseController,
                 label: 'Adresse du client',
                 icon: Icons.home,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientProfessionController,
                 label: 'Profession',
                 icon: Icons.work,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientSecteurActiviteController,
-                label: "Secteur d'activité",
+                label: "Secteur d'activitÃ©",
                 icon: Icons.business,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               _buildModernTextField(
                 controller: _clientNumeroPieceController,
-                label: 'Numéro de pièce d\'identité',
+                label: 'NumÃ©ro de piÃ¨ce d\'identitÃ©',
                 icon: Icons.badge,
               ),
             ],
@@ -1387,21 +1387,21 @@ class _SouscriptionSolidaritePageState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sélecteur de capital
+          // SÃ©lecteur de capital
           _buildCapitalDropdown(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
 
-          // Sélecteur de périodicité
+          // SÃ©lecteur de pÃ©riodicitÃ©
           _buildPeriodiciteDropdown(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
 
           // Date d'effet du contrat
           _buildDateEffetField(),
-          const SizedBox(height: 25),
+          SizedBox(height: context.r(25)),
 
-          // Séparateur
+          // SÃ©parateur
           const Divider(color: grisClair, height: 1, thickness: 1),
-          const SizedBox(height: 25),
+          SizedBox(height: context.r(25)),
 
           // Steppers pour les membres de la famille
           _buildStepper("Nombre de conjoints", nbConjoints, 0, 10, (val) {
@@ -1415,7 +1415,7 @@ class _SouscriptionSolidaritePageState
             });
             _calculerPrime();
           }),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
 
           _buildStepper("Nombre d'enfants", nbEnfants, 0, 20, (val) {
             setState(() {
@@ -1428,7 +1428,7 @@ class _SouscriptionSolidaritePageState
             });
             _calculerPrime();
           }),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
 
           _buildStepper("Nombre d'ascendants", nbAscendants, 0, 4, (val) {
             setState(() {
@@ -1462,18 +1462,18 @@ class _SouscriptionSolidaritePageState
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<int>(
-          value: selectedCapital,
+          initialValue: selectedCapital,
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.attach_money, color: Color(0xFF002B6B)),
-            labelText: 'Capital à garantir',
+            labelText: 'Capital Ã  garantir',
           ),
           items: capitalOptions
               .map((val) => DropdownMenuItem(
                     value: val,
                     child: Text(
                       '${_formatNumber(val)} FCFA',
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: Color(0xFF002B6B),
                           fontWeight: FontWeight.w500),
                     ),
@@ -1504,18 +1504,18 @@ class _SouscriptionSolidaritePageState
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: selectedPeriodicite,
+          initialValue: selectedPeriodicite,
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'Périodicité',
+            labelText: 'PÃ©riodicitÃ©',
           ),
           items: periodicites
               .map((p) => DropdownMenuItem(
                     value: p,
                     child: Text(
                       p,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: Color(0xFF002B6B),
                           fontWeight: FontWeight.w500),
                     ),
@@ -1603,8 +1603,8 @@ class _SouscriptionSolidaritePageState
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style: const TextStyle(
-                  fontSize: 16,
+              style: TextStyle(
+                  fontSize: context.sp(16),
                   color: Color(0xFF002B6B),
                   fontWeight: FontWeight.w500)),
           Row(
@@ -1616,8 +1616,8 @@ class _SouscriptionSolidaritePageState
                 child: Text(
                   "$value",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 16,
+                  style: TextStyle(
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B)),
                 ),
@@ -1728,17 +1728,17 @@ class _SouscriptionSolidaritePageState
         children: [
           Text(
             titre,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: context.sp(18),
               fontWeight: FontWeight.bold,
               color: Color(0xFF002B6B),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           TextFormField(
             initialValue: membre.nomPrenom,
             decoration: InputDecoration(
-              labelText: 'Nom et prénom',
+              labelText: 'Nom et prÃ©nom',
               labelStyle: TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -1753,13 +1753,13 @@ class _SouscriptionSolidaritePageState
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-            style: TextStyle(color: bleuCoris, fontSize: 16),
+            style: TextStyle(color: bleuCoris, fontSize: context.sp(16)),
             onChanged: (value) {
               onChanged(Membre(
                   nomPrenom: value, dateNaissance: membre.dateNaissance));
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           TextFormField(
             readOnly: true,
             decoration: InputDecoration(
@@ -1783,7 +1783,7 @@ class _SouscriptionSolidaritePageState
                 text: membre.dateNaissance != DateTime.now()
                     ? "${membre.dateNaissance.day.toString().padLeft(2, '0')}/${membre.dateNaissance.month.toString().padLeft(2, '0')}/${membre.dateNaissance.year}"
                     : ""),
-            style: TextStyle(color: bleuCoris, fontSize: 16),
+            style: TextStyle(color: bleuCoris, fontSize: context.sp(16)),
             onTap: () async {
               final DateTime? picked = await showDatePicker(
                 context: context,
@@ -1807,11 +1807,11 @@ class _SouscriptionSolidaritePageState
                 },
               );
               if (picked != null && picked != membre.dateNaissance) {
-                // Validation en temps réel de l'âge selon le type de membre
+                // Validation en temps rÃ©el de l'Ã¢ge selon le type de membre
                 final now = DateTime.now();
                 final age = now.year - picked.year;
 
-                // Déterminer le type de membre basé sur le titre de la section
+                // DÃ©terminer le type de membre basÃ© sur le titre de la section
                 bool isValid = true;
                 String errorMessage = '';
 
@@ -1819,7 +1819,7 @@ class _SouscriptionSolidaritePageState
                   if (age < 12 || age > 21) {
                     isValid = false;
                     errorMessage =
-                        "L'âge des enfants doit être compris entre 12 et 21 ans. Âge sélectionné: $age ans.";
+                        "L'Ã¢ge des enfants doit Ãªtre compris entre 12 et 21 ans. Ã‚ge sÃ©lectionnÃ©: $age ans.";
                   }
                 } else if (titre.contains('conjoint') ||
                     titre.contains('Conjoint') ||
@@ -1830,7 +1830,7 @@ class _SouscriptionSolidaritePageState
                   if (age < 18) {
                     isValid = false;
                     errorMessage =
-                        "L'âge doit être d'au moins 18 ans. Âge sélectionné: $age ans.";
+                        "L'Ã¢ge doit Ãªtre d'au moins 18 ans. Ã‚ge sÃ©lectionnÃ©: $age ans.";
                   }
                 }
 
@@ -1866,23 +1866,23 @@ class _SouscriptionSolidaritePageState
         child: Column(
           children: [
             if (!_isCommercial) _buildAssistanceCommercialeSection(),
-            const SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             _buildFormSection(
-              'Bénéficiaire et Contact d\'urgence',
+              'BÃ©nÃ©ficiaire et Contact d\'urgence',
               Icons.contacts,
               [
-                _buildSubSectionTitle('Bénéficiaire en cas de décès'),
+                _buildSubSectionTitle('BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s'),
                 _buildModernTextField(
                   controller: _beneficiaireNomController,
-                  label: 'Nom complet du bénéficiaire',
+                  label: 'Nom complet du bÃ©nÃ©ficiaire',
                   icon: Icons.person_outline,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 TextFormField(
                   controller: _beneficiaireDateNaissanceController,
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: 'Date de naissance du bénéficiaire',
+                    labelText: 'Date de naissance du bÃ©nÃ©ficiaire',
                     labelStyle:
                         TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
                     prefixIcon: Container(
@@ -1909,11 +1909,11 @@ class _SouscriptionSolidaritePageState
                   ),
                   onTap: () => _selectBeneficiaireDateNaissance(context),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 // Champ avec indicatif
                 _buildPhoneFieldWithIndicatif(
                   controller: _beneficiaireContactController,
-                  label: 'Contact du bénéficiaire',
+                  label: 'Contact du bÃ©nÃ©ficiaire',
                   selectedIndicatif: _selectedBeneficiaireIndicatif,
                   onIndicatifChanged: (value) {
                     setState(() {
@@ -1921,10 +1921,10 @@ class _SouscriptionSolidaritePageState
                     });
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 _buildDropdownField(
                   value: _selectedLienParente,
-                  label: 'Lien de parenté',
+                  label: 'Lien de parentÃ©',
                   icon: Icons.link,
                   items: _lienParenteOptions,
                   onChanged: (value) {
@@ -1933,24 +1933,24 @@ class _SouscriptionSolidaritePageState
                     });
                   },
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.r(20)),
                 _buildSubSectionTitle('Contact d\'urgence'),
                 _buildModernTextField(
                   controller: _personneContactNomController,
                   label: 'Nom complet',
                   icon: Icons.person_outline,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 _buildModernTextField(
                   controller: _personneContactTelController,
-                  label: 'Contact téléphonique (ex: +2250707070707)',
+                  label: 'Contact tÃ©lÃ©phonique (ex: +2250707070707)',
                   icon: Icons.phone,
                   keyboardType: TextInputType.phone,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 _buildDropdownField(
                   value: _selectedLienParenteUrgence,
-                  label: 'Lien de parenté',
+                  label: 'Lien de parentÃ©',
                   icon: Icons.link,
                   items: _lienParenteOptions,
                   onChanged: (value) {
@@ -1961,7 +1961,7 @@ class _SouscriptionSolidaritePageState
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             _buildDocumentUploadSection(),
           ],
         ),
@@ -1975,14 +1975,14 @@ class _SouscriptionSolidaritePageState
       Icons.support_agent,
       [
         Text(
-          'Avez-vous été aidé par un commercial pour cette souscription ?',
+          'Avez-vous Ã©tÃ© aidÃ© par un commercial pour cette souscription ?',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: context.sp(15),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: context.r(12)),
         RadioListTile<bool>(
           value: true,
           groupValue: _isAideParCommercial,
@@ -2012,13 +2012,13 @@ class _SouscriptionSolidaritePageState
           activeColor: bleuCoris,
         ),
         if (_isAideParCommercial) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildModernTextField(
             controller: _commercialNomPrenomController,
-            label: 'Nom et prénom du commercial *',
+            label: 'Nom et prÃ©nom du commercial *',
             icon: Icons.badge_outlined,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildModernTextField(
             controller: _commercialCodeApporteurController,
             label: 'Code apporteur *',
@@ -2035,7 +2035,7 @@ class _SouscriptionSolidaritePageState
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: context.sp(16),
           fontWeight: FontWeight.w600,
           color: bleuCoris,
         ),
@@ -2058,12 +2058,12 @@ class _SouscriptionSolidaritePageState
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(icon, color: bleuCoris, size: 20),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Text(title,
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
         ]),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(16)),
         ...children,
       ]),
     );
@@ -2108,29 +2108,27 @@ class _SouscriptionSolidaritePageState
     );
   }
 
-  /**
-   * ============================================
-   * WIDGET _buildDateField
-   * ============================================
-   * 
-   * Crée un champ de saisie de date avec un sélecteur de date intégré.
-   * 
-   * PARAMÈTRES:
-   * - controller: TextEditingController pour gérer le texte affiché dans le champ
-   * - label: Label affiché au-dessus du champ
-   * - icon: Icône affichée dans le champ (généralement Icons.calendar_today)
-   * - onDateSelected: Callback appelé quand une date est sélectionnée
-   * 
-   * FONCTIONNEMENT:
-   * 1. Affiche un TextFormField en lecture seule (AbsorbPointer)
-   * 2. Quand l'utilisateur tape sur le champ, ouvre un DatePicker
-   * 3. Le DatePicker utilise un Theme personnalisé pour éviter les erreurs MaterialLocalizations
-   * 4. Une fois la date sélectionnée, appelle onDateSelected avec la date choisie
-   * 
-   * CORRECTION DU BUG:
-   * - Avant: Utilisation de ThemeData.light() causait des erreurs MaterialLocalizations
-   * - Maintenant: Utilisation de Theme.of(context).copyWith() pour hériter du contexte parent
-   */
+  /// ============================================
+  /// WIDGET _buildDateField
+  /// ============================================
+  /// 
+  /// CrÃ©e un champ de saisie de date avec un sÃ©lecteur de date intÃ©grÃ©.
+  /// 
+  /// PARAMÃˆTRES:
+  /// - controller: TextEditingController pour gÃ©rer le texte affichÃ© dans le champ
+  /// - label: Label affichÃ© au-dessus du champ
+  /// - icon: IcÃ´ne affichÃ©e dans le champ (gÃ©nÃ©ralement Icons.calendar_today)
+  /// - onDateSelected: Callback appelÃ© quand une date est sÃ©lectionnÃ©e
+  /// 
+  /// FONCTIONNEMENT:
+  /// 1. Affiche un TextFormField en lecture seule (AbsorbPointer)
+  /// 2. Quand l'utilisateur tape sur le champ, ouvre un DatePicker
+  /// 3. Le DatePicker utilise un Theme personnalisÃ© pour Ã©viter les erreurs MaterialLocalizations
+  /// 4. Une fois la date sÃ©lectionnÃ©e, appelle onDateSelected avec la date choisie
+  /// 
+  /// CORRECTION DU BUG:
+  /// - Avant: Utilisation de ThemeData.light() causait des erreurs MaterialLocalizations
+  /// - Maintenant: Utilisation de Theme.of(context).copyWith() pour hÃ©riter du contexte parent
   Widget _buildDateField({
     required TextEditingController controller,
     required String label,
@@ -2142,8 +2140,8 @@ class _SouscriptionSolidaritePageState
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: () async {
             final DateTime? picked = await showDatePicker(
@@ -2160,8 +2158,7 @@ class _SouscriptionSolidaritePageState
                       onPrimary: blanc,
                       surface: blanc,
                       onSurface: bleuCoris,
-                    ),
-                    dialogBackgroundColor: blanc,
+                    ), dialogTheme: DialogThemeData(backgroundColor: blanc),
                   ),
                   child: child!,
                 );
@@ -2179,7 +2176,7 @@ class _SouscriptionSolidaritePageState
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 hintText: 'JJ/MM/AAAA',
-                hintStyle: const TextStyle(fontSize: 14),
+                hintStyle: TextStyle(fontSize: context.sp(14)),
                 prefixIcon: Container(
                     margin: const EdgeInsets.all(8),
                     padding: const EdgeInsets.all(8),
@@ -2218,8 +2215,8 @@ class _SouscriptionSolidaritePageState
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         Row(
           children: [
             // Dropdown pour l'indicatif
@@ -2240,7 +2237,7 @@ class _SouscriptionSolidaritePageState
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child:
-                            Text(value, style: const TextStyle(fontSize: 14)),
+                            Text(value, style: TextStyle(fontSize: context.sp(14))),
                       ),
                     );
                   }).toList(),
@@ -2248,8 +2245,8 @@ class _SouscriptionSolidaritePageState
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            // Champ de téléphone
+            SizedBox(width: context.r(10)),
+            // Champ de tÃ©lÃ©phone
             Expanded(
               child: TextFormField(
                 controller: controller,
@@ -2259,7 +2256,7 @@ class _SouscriptionSolidaritePageState
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   hintText: '00 00 00 00',
-                  hintStyle: const TextStyle(fontSize: 14),
+                  hintStyle: TextStyle(fontSize: context.sp(14)),
                   prefixIcon: Icon(Icons.phone_outlined,
                       size: 20, color: bleuCoris.withValues(alpha: 0.7)),
                   filled: true,
@@ -2279,7 +2276,7 @@ class _SouscriptionSolidaritePageState
                   }
                   if (!RegExp(r'^[0-9]{8,15}$')
                       .hasMatch(value.replaceAll(' ', ''))) {
-                    return 'Numéro de téléphone invalide';
+                    return 'NumÃ©ro de tÃ©lÃ©phone invalide';
                   }
                   return null;
                 },
@@ -2299,7 +2296,7 @@ class _SouscriptionSolidaritePageState
     required Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: bleuCoris.withValues(alpha: 0.7)),
@@ -2350,12 +2347,12 @@ class _SouscriptionSolidaritePageState
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.document_scanner, color: bleuCoris, size: 20),
-          const SizedBox(width: 12),
-          Text('Pièce d\'identité',
+          SizedBox(width: context.r(12)),
+          Text('PiÃ¨ce d\'identitÃ©',
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
         ]),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(16)),
         GestureDetector(
           onTap: _pickDocument,
           child: AnimatedContainer(
@@ -2383,23 +2380,23 @@ class _SouscriptionSolidaritePageState
                       size: 40,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris,
                       key: ValueKey(_pieceIdentite != null))),
-              const SizedBox(height: 10),
+              SizedBox(height: context.r(10)),
               Text(
                   _pieceIdentite != null
-                      ? 'Document ajouté avec succès'
-                      : 'Télécharger votre pièce d\'identité',
+                      ? 'Document ajoutÃ© avec succÃ¨s'
+                      : 'TÃ©lÃ©charger votre piÃ¨ce d\'identitÃ©',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       fontWeight: FontWeight.w600,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris)),
-              const SizedBox(height: 6),
+              SizedBox(height: context.r(6)),
               Text(
                   _pieceIdentite != null
                       ? _pieceIdentite!.path.split('/').last
-                      : 'Formats acceptés: PDF, JPG, PNG (Max: 5MB)',
+                      : 'Formats acceptÃ©s: PDF, JPG, PNG (Max: 5MB)',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: grisTexte, fontSize: 11)),
+                  style: TextStyle(color: grisTexte, fontSize: context.sp(11))),
             ]),
           ),
         ),
@@ -2423,12 +2420,12 @@ class _SouscriptionSolidaritePageState
               : _pieceIdentite!.path.split(RegExp(r'[\\/]+')).last;
         });
         _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
-            ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
-            : 'Document ajouté avec succès');
+            ? '${_pieceIdentiteFiles.length} documents ajoutÃ©s avec succÃ¨s'
+            : 'Document ajoutÃ© avec succÃ¨s');
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sélection du fichier');
+        _showErrorSnackBar('Erreur lors de la sÃ©lection du fichier');
       }
     }
   }
@@ -2439,7 +2436,7 @@ class _SouscriptionSolidaritePageState
       SnackBar(
         content: Row(children: [
           const Icon(Icons.error_outline, color: blanc),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(child: Text(message))
         ]),
         backgroundColor: rougeCoris,
@@ -2453,7 +2450,7 @@ class _SouscriptionSolidaritePageState
       SnackBar(
         content: Row(children: [
           const Icon(Icons.check_circle, color: blanc),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(child: Text(message))
         ]),
         backgroundColor: vertSucces,
@@ -2461,7 +2458,7 @@ class _SouscriptionSolidaritePageState
     );
   }
 
-  // Méthode pour déterminer les étapes actives en fonction des membres
+  // MÃ©thode pour dÃ©terminer les Ã©tapes actives en fonction des membres
   List<Widget> _getActiveSteps() {
     List<Widget> steps = [];
 
@@ -2485,43 +2482,43 @@ class _SouscriptionSolidaritePageState
     }
 
     steps.add(_buildStep2());
-    steps.add(_buildStepModePaiement()); // 💳 Étape mode de paiement
+    steps.add(_buildStepModePaiement()); // ðŸ’³ Ã‰tape mode de paiement
     steps.add(_buildStepRecap());
 
     return steps;
   }
 
-  // Méthode pour obtenir le nombre total d'étapes
+  // MÃ©thode pour obtenir le nombre total d'Ã©tapes
   int _getTotalSteps() {
-    int total = 2; // Étape 1 et étape finale (bénéficiaire/contact)
+    int total = 2; // Ã‰tape 1 et Ã©tape finale (bÃ©nÃ©ficiaire/contact)
     if (_isCommercial) total++; // Page client pour commercial
     if (nbConjoints > 0) total++;
     if (nbEnfants > 0) total++;
     if (nbAscendants > 0) total++;
-    total++; // 💳 Mode de paiement
-    total++; // Récapitulatif
+    total++; // ðŸ’³ Mode de paiement
+    total++; // RÃ©capitulatif
     return total;
   }
 
-  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
-  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
-  /// si elles ne sont pas déjà disponibles dans _userData
+  /// Charge les donnÃ©es utilisateur pour le rÃ©capitulatif (uniquement pour les clients)
+  /// Cette mÃ©thode est appelÃ©e dans le FutureBuilder pour charger les donnÃ©es Ã  la volÃ©e
+  /// si elles ne sont pas dÃ©jÃ  disponibles dans _userData
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
     try {
-      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      // Si _userData est dÃ©jÃ  chargÃ© et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        debugPrint('âœ… Utilisation des donnÃ©es utilisateur dÃ©jÃ  chargÃ©es');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('❌ Token non trouvé');
+        debugPrint('âŒ Token non trouvÃ©');
         // Retourner un map vide au lieu de lever une exception
         return <String, dynamic>{};
       }
 
-      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      debugPrint('ðŸ”„ Chargement des donnÃ©es utilisateur depuis l\'API...');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -2529,7 +2526,7 @@ class _SouscriptionSolidaritePageState
           'Authorization': 'Bearer $token',
         },
       ).timeout(Duration(seconds: 10), onTimeout: () {
-        throw Exception('Timeout lors de la requête API');
+        throw Exception('Timeout lors de la requÃªte API');
       });
 
       if (response.statusCode == 200) {
@@ -2541,7 +2538,7 @@ class _SouscriptionSolidaritePageState
               data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
-                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2558,7 +2555,7 @@ class _SouscriptionSolidaritePageState
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
-                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+                  'âœ… DonnÃ©es utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -2575,7 +2572,7 @@ class _SouscriptionSolidaritePageState
               data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
-                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2588,7 +2585,7 @@ class _SouscriptionSolidaritePageState
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
-                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -2598,27 +2595,27 @@ class _SouscriptionSolidaritePageState
           }
 
           debugPrint(
-              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+              'âš ï¸ RÃ©ponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+          debugPrint('âš ï¸ Format invalide (non-Map): ${response.body}');
         }
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+        debugPrint('âŒ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
-      // Fallback vers _userData si la requête échoue - GARANTIR non-null
+      // Fallback vers _userData si la requÃªte Ã©choue - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     } catch (e) {
       debugPrint(
-          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+          'âŒ Erreur chargement donnÃ©es utilisateur pour rÃ©capitulatif: $e');
       // Fallback vers _userData en cas d'erreur - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
   }
 
-  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
+  /// Parse le RIB unifiÃ© au format: XXXX / XXXXXXXXXXX / XX
   /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
   Map<String, String> _parseRibUnified(String rib) {
     final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
@@ -2629,13 +2626,13 @@ class _SouscriptionSolidaritePageState
     };
   }
 
-  /// Valide le format du RIB unifié
+  /// Valide le format du RIB unifiÃ©
   bool _validateRibUnified(String rib) {
     final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
     return cleaned.length == 18; // 5 + 11 + 2
   }
 
-  /// Formate l'entrée RIB en temps réel
+  /// Formate l'entrÃ©e RIB en temps rÃ©el
   void _formatRibInput() {
     String text = _ribUnifiedController.text;
     String cleaned = text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -2652,20 +2649,20 @@ class _SouscriptionSolidaritePageState
     int cursorPosition = 0;
 
     // Code guichet (5 chiffres)
-    if (cleaned.length > 0) {
+    if (cleaned.isNotEmpty) {
       formatted +=
           cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
       if (cleaned.length > 5) formatted += ' / ';
     }
 
-    // Numéro de compte (11 chiffres)
+    // NumÃ©ro de compte (11 chiffres)
     if (cleaned.length > 5) {
       formatted +=
           cleaned.substring(5, cleaned.length > 16 ? 16 : cleaned.length);
       if (cleaned.length > 16) formatted += ' / ';
     }
 
-    // Clé RIB (2 chiffres)
+    // ClÃ© RIB (2 chiffres)
     if (cleaned.length > 16) {
       formatted +=
           cleaned.substring(16, cleaned.length > 18 ? 18 : cleaned.length);
@@ -2679,14 +2676,14 @@ class _SouscriptionSolidaritePageState
     );
   }
 
-  /// 💳 ÉTAPE MODE DE PAIEMENT
+  /// ðŸ’³ Ã‰TAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
     return SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En-tête avec gradient
+          // En-tÃªte avec gradient
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -2707,25 +2704,25 @@ class _SouscriptionSolidaritePageState
                   ),
                   child: const Icon(Icons.payment, color: blanc, size: 32),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: context.r(16)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Mode de Paiement',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: blanc,
-                          fontSize: 22,
+                          fontSize: context.sp(22),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: context.r(4)),
                       Text(
                         'Comment souhaitez-vous payer vos primes ?',
                         style: TextStyle(
                           color: blanc.withAlpha(229),
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                         ),
                       ),
                     ],
@@ -2734,18 +2731,18 @@ class _SouscriptionSolidaritePageState
               ],
             ),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: context.r(30)),
 
-          // Sélection du mode de paiement
+          // SÃ©lection du mode de paiement
           Text(
             'Mode de paiement *',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: context.sp(16),
               fontWeight: FontWeight.w600,
               color: grisTexte,
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -2792,7 +2789,7 @@ class _SouscriptionSolidaritePageState
                       },
                     );
                     break;
-                  case 'Prélèvement à la source':
+                  case 'PrÃ©lÃ¨vement Ã  la source':
                     icon = Icons.business;
                     iconColor = Colors.green;
                     break;
@@ -2819,7 +2816,7 @@ class _SouscriptionSolidaritePageState
                   onTap: () {
                     setState(() {
                       _selectedModePaiement = mode;
-                      // Réinitialiser les champs
+                      // RÃ©initialiser les champs
                       _banqueController.clear();
                       _numeroCompteController.clear();
                       _numeroMobileMoneyController.clear();
@@ -2852,12 +2849,12 @@ class _SouscriptionSolidaritePageState
                               child: customIconWidget ??
                                   Icon(icon, color: iconColor, size: 28)),
                         ),
-                        SizedBox(width: 16),
+                        SizedBox(width: context.r(16)),
                         Expanded(
                           child: Text(
                             mode,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: context.sp(16),
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.w500,
@@ -2875,25 +2872,25 @@ class _SouscriptionSolidaritePageState
             ),
           ),
 
-          // Champs conditionnels selon le mode sélectionné
+          // Champs conditionnels selon le mode sÃ©lectionnÃ©
           if (_selectedModePaiement != null) ...[
-            SizedBox(height: 30),
+            SizedBox(height: context.r(30)),
 
             // VIREMENT
             if (_selectedModePaiement == 'Virement') ...[
               Text(
                 'Informations Bancaires',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: grisTexte,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Nom de la banque
               DropdownButtonFormField<String>(
-                value: _selectedBanque,
+                initialValue: _selectedBanque,
                 decoration: InputDecoration(
                   labelText: 'Nom de la banque *',
                   prefixIcon: Icon(Icons.account_balance, color: bleuCoris),
@@ -2920,9 +2917,9 @@ class _SouscriptionSolidaritePageState
                   });
                 },
               ),
-              SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
-              // Champ texte personnalisé si "Autre" est sélectionné
+              // Champ texte personnalisÃ© si "Autre" est sÃ©lectionnÃ©
               if (_selectedBanque == 'Autre') ...[
                 TextField(
                   controller: _banqueController,
@@ -2937,18 +2934,18 @@ class _SouscriptionSolidaritePageState
                     fillColor: Colors.grey[50],
                   ),
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
               ],
 
-              // Numéro RIB unifié
+              // NumÃ©ro RIB unifiÃ©
               TextField(
                 controller: _ribUnifiedController,
                 onChanged: (_) => _formatRibInput(),
                 decoration: InputDecoration(
-                  labelText: 'Numéro RIB complet *',
+                  labelText: 'NumÃ©ro RIB complet *',
                   hintText: '55555 / 11111111111 / 22',
                   helperText:
-                      'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
+                      'Code guichet (5) / NumÃ©ro compte (11) / ClÃ© RIB (2)',
                   helperMaxLines: 2,
                   prefixIcon: Icon(Icons.credit_card, color: bleuCoris),
                   border: OutlineInputBorder(
@@ -2959,24 +2956,24 @@ class _SouscriptionSolidaritePageState
                 ),
                 keyboardType: TextInputType.number,
                 maxLength:
-                    24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec séparateurs
+                    24, // 5 + 3 + 11 + 3 + 2 = 24 caractÃ¨res avec sÃ©parateurs
               ),
             ],
             if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
               Text(
-                'Numéro ${_selectedModePaiement}',
+                'NumÃ©ro $_selectedModePaiement',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: grisTexte,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               TextField(
                 controller: _numeroMobileMoneyController,
                 decoration: InputDecoration(
-                  labelText: 'Numéro de téléphone *',
+                  labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                   hintText: 'Ex: 0707070707',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -3007,17 +3004,17 @@ class _SouscriptionSolidaritePageState
               ),
             ],
 
-            // Prélèvement à la source
-            if (_selectedModePaiement == 'Prélèvement à la source') ...[
+            // PrÃ©lÃ¨vement Ã  la source
+            if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') ...[
               Text(
-                'Informations Prélèvement',
+                'Informations PrÃ©lÃ¨vement',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: grisTexte,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               TextField(
                 controller: _nomStructureController,
                 decoration: InputDecoration(
@@ -3031,11 +3028,11 @@ class _SouscriptionSolidaritePageState
                   fillColor: Colors.grey[50],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               TextField(
                 controller: _numeroMatriculeController,
                 decoration: InputDecoration(
-                  labelText: 'Numéro de matricule *',
+                  labelText: 'NumÃ©ro de matricule *',
                   hintText: 'Ex: 123456789',
                   prefixIcon: Icon(Icons.badge, color: Colors.green),
                   border: OutlineInputBorder(
@@ -3051,18 +3048,18 @@ class _SouscriptionSolidaritePageState
             // CORIS MONEY
             if (_selectedModePaiement == 'CORIS Money') ...[
               Text(
-                'Numéro CORIS Money',
+                'NumÃ©ro CORIS Money',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: grisTexte,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               TextField(
                 controller: _corisMoneyPhoneController,
                 decoration: InputDecoration(
-                  labelText: 'Numéro de téléphone *',
+                  labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                   hintText: 'Ex: 0707070707',
                   prefixIcon: Icon(
                     Icons.account_balance_wallet,
@@ -3079,7 +3076,7 @@ class _SouscriptionSolidaritePageState
             ],
           ],
 
-          SizedBox(height: 30),
+          SizedBox(height: context.r(30)),
 
           // Note informative
           Container(
@@ -3092,12 +3089,12 @@ class _SouscriptionSolidaritePageState
             child: Row(
               children: [
                 Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
-                SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 Expanded(
                   child: Text(
-                    'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                    'Ces informations seront utilisÃ©es pour le prÃ©lÃ¨vement automatique de vos primes.',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       color: Colors.blue[900],
                     ),
                   ),
@@ -3115,19 +3112,19 @@ class _SouscriptionSolidaritePageState
      * MODIFICATION IMPORTANTE:
      * 
      * Pour les CLIENTS (plateforme client):
-     * - Les informations sont déjà pré-enregistrées dans la base de données lors de l'inscription
-     * - On doit TOUJOURS charger les données depuis _loadUserDataForRecap() qui récupère le profil de l'utilisateur connecté
+     * - Les informations sont dÃ©jÃ  prÃ©-enregistrÃ©es dans la base de donnÃ©es lors de l'inscription
+     * - On doit TOUJOURS charger les donnÃ©es depuis _loadUserDataForRecap() qui rÃ©cupÃ¨re le profil de l'utilisateur connectÃ©
      * 
      * Pour les COMMERCIAUX (plateforme commercial):
      * - Le commercial saisit les informations du client dans les champs du formulaire
-     * - On utilise les valeurs des contrôleurs (_clientNomController, etc.)
+     * - On utilise les valeurs des contrÃ´leurs (_clientNomController, etc.)
      */
     return _isCommercial
         ? _buildRecapContent()
         : FutureBuilder<Map<String, dynamic>>(
             future: _loadUserDataForRecap(),
             builder: (context, snapshot) {
-              // Pour les clients, attendre le chargement des données
+              // Pour les clients, attendre le chargement des donnÃ©es
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
                   child: CircularProgressIndicator(color: bleuCoris),
@@ -3136,7 +3133,7 @@ class _SouscriptionSolidaritePageState
 
               if (snapshot.hasError) {
                 debugPrint(
-                    'Erreur chargement données récapitulatif: ${snapshot.error}');
+                    'Erreur chargement donnÃ©es rÃ©capitulatif: ${snapshot.error}');
                 // En cas d'erreur, essayer d'utiliser _userData si disponible
                 if (_userData.isNotEmpty) {
                   return _buildRecapContent(userData: _userData);
@@ -3146,23 +3143,23 @@ class _SouscriptionSolidaritePageState
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.error, size: 48, color: rougeCoris),
-                      SizedBox(height: 16),
-                      Text('Erreur lors du chargement des données'),
+                      SizedBox(height: context.r(16)),
+                      Text('Erreur lors du chargement des donnÃ©es'),
                       TextButton(
                         onPressed: () => setState(() {}),
-                        child: Text('Réessayer'),
+                        child: Text('RÃ©essayer'),
                       ),
                     ],
                   ),
                 );
               }
 
-              // Utiliser les données chargées ou _userData en fallback
+              // Utiliser les donnÃ©es chargÃ©es ou _userData en fallback
               final userData = snapshot.data ?? _userData;
 
-              // Si userData est vide, recharger les données
+              // Si userData est vide, recharger les donnÃ©es
               if (userData.isEmpty && !_isCommercial) {
-                // Recharger les données utilisateur
+                // Recharger les donnÃ©es utilisateur
                 _loadUserDataForRecap().then((data) {
                   if (mounted && data.isNotEmpty) {
                     setState(() {
@@ -3181,10 +3178,10 @@ class _SouscriptionSolidaritePageState
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
     /**
-     * CONSTRUCTION DU RÉCAPITULATIF:
+     * CONSTRUCTION DU RÃ‰CAPITULATIF:
      * 
-     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
-     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     * - Si _isCommercial = true: Utiliser les donnÃ©es des contrÃ´leurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connectÃ© depuis la base de donnÃ©es)
      */
     Map<String, dynamic>? raw = _isCommercial ? null : (userData ?? _userData);
 
@@ -3240,7 +3237,7 @@ class _SouscriptionSolidaritePageState
             'adresse': pick(['adresse', 'address', 'adresse_postale']),
           };
 
-    // S'assurer que la prime est bien calculée avant affichage
+    // S'assurer que la prime est bien calculÃ©e avant affichage
     if (primeTotaleResult == 0) {
       _calculerPrime();
     }
@@ -3254,32 +3251,32 @@ class _SouscriptionSolidaritePageState
           _buildRecapSection(
               'Informations Personnelles', Icons.person, bleuCoris, [
             _buildCombinedRecapRow(
-                'Civilité',
-                displayData['civilite'] ?? 'Non renseigné',
+                'CivilitÃ©',
+                displayData['civilite'] ?? 'Non renseignÃ©',
                 'Nom',
-                displayData['nom'] ?? 'Non renseigné'),
+                displayData['nom'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Prénom',
-                displayData['prenom'] ?? 'Non renseigné',
+                'PrÃ©nom',
+                displayData['prenom'] ?? 'Non renseignÃ©',
                 'Email',
-                displayData['email'] ?? 'Non renseigné'),
+                displayData['email'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Téléphone',
-                displayData['telephone'] ?? 'Non renseigné',
+                'TÃ©lÃ©phone',
+                displayData['telephone'] ?? 'Non renseignÃ©',
                 'Date de naissance',
-                displayData['date_naissance'] ?? 'Non renseigné'),
+                displayData['date_naissance'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                displayData['lieu_naissance'] ?? 'Non renseigné',
+                displayData['lieu_naissance'] ?? 'Non renseignÃ©',
                 'Adresse',
-                displayData['adresse'] ?? 'Non renseigné'),
+                displayData['adresse'] ?? 'Non renseignÃ©'),
           ]),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
           // Produit souscrit
           _buildRecapSection(
               'Produit Souscrit', Icons.emoji_people_outlined, vertSucces, [
-            _buildCombinedRecapRow('Produit', 'CORIS SOLIDARITÉ', 'Périodicité',
+            _buildCombinedRecapRow('Produit', 'CORIS SOLIDARITÃ‰', 'PÃ©riodicitÃ©',
                 selectedPeriodicite),
             _buildCombinedRecapRow(
                 'Capital garanti',
@@ -3299,7 +3296,7 @@ class _SouscriptionSolidaritePageState
             _buildRecapRow(
                 'Nombre d\'ascendants', ascendants.length.toString()),
           ]),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
           // Conjoints
           if (conjoints.isNotEmpty) ...[
@@ -3310,14 +3307,14 @@ class _SouscriptionSolidaritePageState
                 conjoints
                     .map((conjoint) => _buildMembreRecap(conjoint))
                     .toList()),
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
           ],
 
           // Enfants
           if (enfants.isNotEmpty) ...[
             _buildRecapSection('Enfant(s)', Icons.child_care, bleuCoris,
                 enfants.map((enfant) => _buildMembreRecap(enfant)).toList()),
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
           ],
 
           // Ascendants
@@ -3329,21 +3326,21 @@ class _SouscriptionSolidaritePageState
                 ascendants
                     .map((ascendant) => _buildMembreRecap(ascendant))
                     .toList()),
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
           ],
 
           _buildRecapSection(
-            'Bénéficiaire et Contact d\'urgence',
+            'BÃ©nÃ©ficiaire et Contact d\'urgence',
             Icons.contacts,
             bleuSecondaire,
             [
-              // 🔹 Bénéficiaire
-              _buildSubsectionTitle('Bénéficiaire'),
+              // ðŸ”¹ BÃ©nÃ©ficiaire
+              _buildSubsectionTitle('BÃ©nÃ©ficiaire'),
               _buildRecapRow(
                 'Nom complet',
                 _beneficiaireNomController.text.isNotEmpty
                     ? _beneficiaireNomController.text
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
                 'Date de naissance',
@@ -3351,48 +3348,48 @@ class _SouscriptionSolidaritePageState
                     ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
                         '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
                         '${_beneficiaireDateNaissance!.year}'
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
                 'Contact',
                 _beneficiaireContactController.text.isNotEmpty
                     ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
-                'Lien de parenté',
+                'Lien de parentÃ©',
                 _selectedLienParente.isNotEmpty
                     ? _selectedLienParente
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
 
-              // 🔹 Contact d'urgence
+              // ðŸ”¹ Contact d'urgence
               _buildSubsectionTitle('Contact d\'urgence'),
               _buildRecapRow(
                 'Nom complet',
                 _personneContactNomController.text.isNotEmpty
                     ? _personneContactNomController.text
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
                 'Contact',
                 _personneContactTelController.text.isNotEmpty
                     ? _personneContactTelController.text
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
-                'Lien de parenté',
+                'Lien de parentÃ©',
                 _selectedLienParenteUrgence.isNotEmpty
                     ? _selectedLienParenteUrgence
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
-          // 💳 Mode de Paiement
+          // ðŸ’³ Mode de Paiement
           if (_selectedModePaiement != null)
             _buildRecapSection(
               'Mode de Paiement',
@@ -3403,52 +3400,52 @@ class _SouscriptionSolidaritePageState
                       ? Color(0xFF00BFFF)
                       : _selectedModePaiement == 'Orange Money'
                           ? Colors.orange
-                          : _selectedModePaiement == 'Prélèvement à la source'
+                          : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
                               ? Colors.green
                               : Color(0xFF1E3A8A),
               [
                 _buildRecapRow('Mode choisi', _selectedModePaiement!),
-                const SizedBox(height: 8),
+                SizedBox(height: context.r(8)),
                 if (_selectedModePaiement == 'Virement') ...[
                   _buildRecapRow(
                       'Banque',
                       _banqueController.text.isNotEmpty
                           ? _banqueController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                   _buildRecapRow(
-                      'Numéro RIB',
+                      'NumÃ©ro RIB',
                       _ribUnifiedController.text.isNotEmpty
                           ? _ribUnifiedController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                 ] else if (_selectedModePaiement ==
-                    'Prélèvement à la source') ...[
+                    'PrÃ©lÃ¨vement Ã  la source') ...[
                   _buildRecapRow(
                       'Nom de la structure',
                       _nomStructureController.text.isNotEmpty
                           ? _nomStructureController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                   _buildRecapRow(
-                      'Numéro de matricule',
+                      'NumÃ©ro de matricule',
                       _numeroMatriculeController.text.isNotEmpty
                           ? _numeroMatriculeController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                 ] else if (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money') ...[
                   _buildRecapRow(
-                      'Numéro ${_selectedModePaiement}',
+                      'NumÃ©ro $_selectedModePaiement',
                       _numeroMobileMoneyController.text.isNotEmpty
                           ? _numeroMobileMoneyController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                 ] else if (_selectedModePaiement == 'CORIS Money') ...[
                   _buildRecapRow(
-                      'Numéro CORIS Money',
+                      'NumÃ©ro CORIS Money',
                       _corisMoneyPhoneController.text.isNotEmpty
                           ? _corisMoneyPhoneController.text
-                          : 'Non renseigné'),
+                          : 'Non renseignÃ©'),
                 ],
               ],
             ),
-          if (_selectedModePaiement != null) const SizedBox(height: 12),
+          if (_selectedModePaiement != null) SizedBox(height: context.r(12)),
 
           // Documents
           SubscriptionRecapWidgets.buildDocumentsSection(
@@ -3472,7 +3469,7 @@ class _SouscriptionSolidaritePageState
               label ?? path.split(RegExp(r'[\\/]+')).last,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
           SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
             nomPrenom: _isAideParCommercial
@@ -3483,7 +3480,7 @@ class _SouscriptionSolidaritePageState
                 : null,
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
           Container(
             padding: const EdgeInsets.all(12),
@@ -3494,22 +3491,22 @@ class _SouscriptionSolidaritePageState
                     Border.all(color: orangeWarning.withValues(alpha: 0.3))),
             child: Column(children: [
               Icon(Icons.info_outline, color: orangeWarning, size: 24),
-              const SizedBox(height: 8),
-              Text('Vérification Importante',
+              SizedBox(height: context.r(8)),
+              Text('VÃ©rification Importante',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: orangeWarning,
-                      fontSize: 12),
+                      fontSize: context.sp(12)),
                   textAlign: TextAlign.center),
-              const SizedBox(height: 6),
+              SizedBox(height: context.r(6)),
               Text(
-                  'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
+                  'VÃ©rifiez attentivement toutes les informations ci-dessus. Une fois la souscription validÃ©e, certaines modifications ne seront plus possibles.',
                   textAlign: TextAlign.center,
                   style:
-                      TextStyle(color: grisTexte, fontSize: 10, height: 1.4)),
+                      TextStyle(color: grisTexte, fontSize: context.sp(10), height: 1.4)),
             ]),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
         ],
       ),
     );
@@ -3541,7 +3538,7 @@ class _SouscriptionSolidaritePageState
                 style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
-                    fontSize: 12))),
+                    fontSize: context.sp(12)))),
         Expanded(
             child: Text(value,
                 style: TextStyle(
@@ -3573,12 +3570,12 @@ class _SouscriptionSolidaritePageState
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6)),
               child: Icon(icon, color: color, size: 18)),
-          const SizedBox(width: 10),
+          SizedBox(width: context.r(10)),
           Text(title,
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+                  fontSize: context.sp(16), fontWeight: FontWeight.w700, color: color)),
         ]),
-        const SizedBox(height: 12),
+        SizedBox(height: context.r(12)),
         ...children,
       ]),
     );
@@ -3587,7 +3584,7 @@ class _SouscriptionSolidaritePageState
   Widget _buildSubsectionTitle(String title) {
     return Text(title,
         style: TextStyle(
-            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 14));
+            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(14)));
   }
 
   Widget _buildCombinedRecapRow(
@@ -3600,21 +3597,21 @@ class _SouscriptionSolidaritePageState
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$label1 :',
               style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: 12)),
+                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: context.sp(12))),
           Text(value1,
               style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
+                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
         ])),
-        const SizedBox(width: 12),
+        SizedBox(width: context.r(12)),
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$label2 :',
               style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: 12)),
+                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: context.sp(12))),
           Text(value2,
               style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
+                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
         ])),
       ]),
     );
@@ -3626,10 +3623,10 @@ class _SouscriptionSolidaritePageState
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(membre.nomPrenom,
             style: TextStyle(
-                fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 12)),
+                fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
         Text(
             'Date de naissance: ${membre.dateNaissance.day.toString().padLeft(2, '0')}/${membre.dateNaissance.month.toString().padLeft(2, '0')}/${membre.dateNaissance.year}',
-            style: TextStyle(color: grisTexte, fontSize: 11)),
+            style: TextStyle(color: grisTexte, fontSize: context.sp(11))),
       ]),
     );
   }
@@ -3642,7 +3639,7 @@ class _SouscriptionSolidaritePageState
       builder: (context) => const SignatureDialogFile.SignatureDialog(),
     );
 
-    // Si l'utilisateur annule la signature, on arrête
+    // Si l'utilisateur annule la signature, on arrÃªte
     if (signature == null) return;
 
     // Sauvegarder la signature
@@ -3690,7 +3687,7 @@ class _SouscriptionSolidaritePageState
       return false;
     }
     if (_clientPrenomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      _showErrorSnackBar('Veuillez saisir le prÃ©nom du client');
       return false;
     }
     if (_clientDateNaissance == null) {
@@ -3706,25 +3703,25 @@ class _SouscriptionSolidaritePageState
     }
     if (_clientAge < 18 || _clientAge > 65) {
       _showErrorSnackBar(
-          'Âge du client non valide (18-65 ans requis). Âge calculé: $_clientAge ans');
+          'Ã‚ge du client non valide (18-65 ans requis). Ã‚ge calculÃ©: $_clientAge ans');
       return false;
     }
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      _showErrorSnackBar('Veuillez saisir le tÃ©lÃ©phone du client');
       return false;
     }
     return true;
   }
 
-  /// Valide les âges de tous les membres de la famille
+  /// Valide les Ã¢ges de tous les membres de la famille
   /// Enfants: 12-21 ans
   /// Conjoints: 18+ ans
   /// Ascendants: 18+ ans
   bool _validateMembresAges() {
     final maintenant = DateTime.now();
 
-    // Vérifier les enfants (12-21 ans)
+    // VÃ©rifier les enfants (12-21 ans)
     for (var i = 0; i < enfants.length; i++) {
       final enfant = enfants[i];
       int age = maintenant.year - enfant.dateNaissance.year;
@@ -3736,12 +3733,12 @@ class _SouscriptionSolidaritePageState
 
       if (age < 12 || age > 21) {
         _showErrorSnackBar(
-            'Enfant ${i + 1}: Âge non valide (12-21 ans requis). Âge calculé: $age ans');
+            'Enfant ${i + 1}: Ã‚ge non valide (12-21 ans requis). Ã‚ge calculÃ©: $age ans');
         return false;
       }
     }
 
-    // Vérifier les conjoints (18+ ans)
+    // VÃ©rifier les conjoints (18+ ans)
     for (var i = 0; i < conjoints.length; i++) {
       final conjoint = conjoints[i];
       int age = maintenant.year - conjoint.dateNaissance.year;
@@ -3753,12 +3750,12 @@ class _SouscriptionSolidaritePageState
 
       if (age < 18) {
         _showErrorSnackBar(
-            'Conjoint ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
+            'Conjoint ${i + 1}: Ã‚ge non valide (18 ans minimum requis). Ã‚ge calculÃ©: $age ans');
         return false;
       }
     }
 
-    // Vérifier les ascendants (18+ ans)
+    // VÃ©rifier les ascendants (18+ ans)
     for (var i = 0; i < ascendants.length; i++) {
       final ascendant = ascendants[i];
       int age = maintenant.year - ascendant.dateNaissance.year;
@@ -3770,7 +3767,7 @@ class _SouscriptionSolidaritePageState
 
       if (age < 18) {
         _showErrorSnackBar(
-            'Ascendant ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
+            'Ascendant ${i + 1}: Ã‚ge non valide (18 ans minimum requis). Ã‚ge calculÃ©: $age ans');
         return false;
       }
     }
@@ -3778,10 +3775,10 @@ class _SouscriptionSolidaritePageState
     return true;
   }
 
-  /// 💳 VALIDATION MODE DE PAIEMENT
+  /// ðŸ’³ VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
     if (_selectedModePaiement == null) {
-      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
+      _showErrorSnackBar('Veuillez sÃ©lectionner un mode de paiement.');
       return false;
     }
 
@@ -3791,53 +3788,53 @@ class _SouscriptionSolidaritePageState
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer votre numéro RIB complet.');
+        _showErrorSnackBar('Veuillez entrer votre numÃ©ro RIB complet.');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text)) {
         _showErrorSnackBar(
-            'Le numéro RIB est invalide (18 chiffres attendus au format : 55555 / 11111111111 / 22).');
+            'Le numÃ©ro RIB est invalide (18 chiffres attendus au format : 55555 / 11111111111 / 22).');
         return false;
       }
-    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+    } else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') {
       if (_nomStructureController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez entrer le nom de la structure.');
         return false;
       }
       if (_numeroMatriculeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez entrer le numéro de matricule.');
+        _showErrorSnackBar('Veuillez entrer le numÃ©ro de matricule.');
         return false;
       }
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+            'Veuillez entrer votre numÃ©ro de tÃ©lÃ©phone $_selectedModePaiement.');
         return false;
       }
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
         _showErrorSnackBar(
-            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+            'Le numÃ©ro de tÃ©lÃ©phone semble invalide (8 Ã  10 chiffres attendus).');
         return false;
       }
-      // Validation spécifique pour Orange Money : doit commencer par 07
+      // Validation spÃ©cifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          _showErrorSnackBar('Le numÃ©ro Orange Money doit commencer par 07.');
           return false;
         }
       }
     } else if (_selectedModePaiement == 'CORIS Money') {
       if (_corisMoneyPhoneController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numéro de téléphone CORIS Money.');
+            'Veuillez entrer votre numÃ©ro de tÃ©lÃ©phone CORIS Money.');
         return false;
       }
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_corisMoneyPhoneController.text.trim())) {
         _showErrorSnackBar(
-            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+            'Le numÃ©ro de tÃ©lÃ©phone semble invalide (8 Ã  10 chiffres attendus).');
         return false;
       }
     }
@@ -3849,7 +3846,7 @@ class _SouscriptionSolidaritePageState
     if (_isAideParCommercial) {
       if (_commercialNomPrenomController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez renseigner le nom et prénom du commercial');
+            'Veuillez renseigner le nom et prÃ©nom du commercial');
         return false;
       }
       if (_commercialCodeApporteurController.text.trim().isEmpty) {
@@ -3860,42 +3857,42 @@ class _SouscriptionSolidaritePageState
     }
 
     if (_beneficiaireNomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le nom du bénéficiaire');
+      _showErrorSnackBar('Veuillez saisir le nom du bÃ©nÃ©ficiaire');
       return false;
     }
     if (_beneficiaireDateNaissance == null) {
       _showErrorSnackBar(
-          'Veuillez saisir la date de naissance du bénéficiaire');
+          'Veuillez saisir la date de naissance du bÃ©nÃ©ficiaire');
       return false;
     }
     if (_beneficiaireContactController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le contact du bénéficiaire');
+      _showErrorSnackBar('Veuillez saisir le contact du bÃ©nÃ©ficiaire');
       return false;
     }
     return true;
   }
 
   void _nextStep() {
-    // Valider la page client si c'est un commercial et qu'on est à l'étape 0
+    // Valider la page client si c'est un commercial et qu'on est Ã  l'Ã©tape 0
     if (_isCommercial && _currentStep == 0) {
       if (!_validateStepClientInfo()) {
-        return; // Ne pas passer à l'étape suivante si la validation échoue
+        return; // Ne pas passer Ã  l'Ã©tape suivante si la validation Ã©choue
       }
     }
 
-    // Valider l'étape bénéficiaire (position dynamique : juste avant mode paiement et recap)
+    // Valider l'Ã©tape bÃ©nÃ©ficiaire (position dynamique : juste avant mode paiement et recap)
     final beneficiaireStep = _getTotalSteps() - 3;
     if (_currentStep == beneficiaireStep) {
       if (!_validateStepBeneficiaire()) {
-        return; // Ne pas passer à l'étape suivante si la validation échoue
+        return; // Ne pas passer Ã  l'Ã©tape suivante si la validation Ã©choue
       }
     }
 
-    // Valider le mode de paiement si on est sur cette étape (avant-dernière étape avant récap)
+    // Valider le mode de paiement si on est sur cette Ã©tape (avant-derniÃ¨re Ã©tape avant rÃ©cap)
     final modePaiementStep = _getTotalSteps() - 2;
     if (_currentStep == modePaiementStep) {
       if (!_validateStepModePaiement()) {
-        return; // Ne pas passer au récap si le mode de paiement n'est pas validé
+        return; // Ne pas passer au rÃ©cap si le mode de paiement n'est pas validÃ©
       }
     }
 
@@ -3904,9 +3901,9 @@ class _SouscriptionSolidaritePageState
       _pageController.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
-      // Dernière étape (récap), aller à la signature puis paiement
+      // DerniÃ¨re Ã©tape (rÃ©cap), aller Ã  la signature puis paiement
       if (!_validateMembresAges()) {
-        return; // Valider les âges avant le paiement
+        return; // Valider les Ã¢ges avant le paiement
       }
       _showSignatureAndPayment();
     }
@@ -3963,16 +3960,16 @@ class _SouscriptionSolidaritePageState
                                 children: [
                                   Icon(Icons.arrow_back,
                                       color: bleuCoris, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('Précédent',
+                                  SizedBox(width: context.r(8)),
+                                  Text('PrÃ©cÃ©dent',
                                       style: TextStyle(
                                           color: bleuCoris,
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 16)),
+                                          fontSize: context.sp(16))),
                                 ]),
                           ),
                         ),
-                      if (_currentStep > 0) const SizedBox(width: 16),
+                      if (_currentStep > 0) SizedBox(width: context.r(16)),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _nextStep,
@@ -3998,7 +3995,7 @@ class _SouscriptionSolidaritePageState
                                         : Icons.arrow_forward,
                                     color: blanc,
                                     size: 20),
-                                const SizedBox(width: 8),
+                                SizedBox(width: context.r(8)),
                                 Text(
                                     _currentStep == _getTotalSteps() - 1
                                         ? 'Signer et Finaliser'
@@ -4006,7 +4003,7 @@ class _SouscriptionSolidaritePageState
                                     style: TextStyle(
                                         color: blanc,
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 16)),
+                                        fontSize: context.sp(16))),
                               ]),
                         ),
                       ),
@@ -4054,16 +4051,16 @@ class _LoadingDialog extends StatelessWidget {
               height: 60,
               child: CircularProgressIndicator(
                   color: Color(0xFF002B6B), strokeWidth: 3)),
-          const SizedBox(height: 20),
-          const Text('Traitement en cours',
+          SizedBox(height: context.r(20)),
+          Text('Traitement en cours',
               style: TextStyle(
-                  fontSize: 18,
+                  fontSize: context.sp(18),
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF002B6B))),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text('Paiement via $paymentMethod...',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: context.sp(14))),
         ]),
       ),
     );
@@ -4099,29 +4096,29 @@ class _SuccessDialog extends StatelessWidget {
                   shape: BoxShape.circle),
               child: Icon(isPaid ? Icons.check_circle : Icons.schedule,
                   color: isPaid ? vertSucces : orangeWarning, size: 40)),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           Text(
-            isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+            isPaid ? 'Souscription RÃ©ussie!' : 'Proposition EnregistrÃ©e!',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: context.sp(20),
               fontWeight: FontWeight.w700,
               color: Color(0xFF002B6B),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS SOLIDARITÉ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
-                  : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+                  ? 'FÃ©licitations! Votre contrat CORIS SOLIDARITÃ‰ est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  : 'Votre proposition a Ã©tÃ© enregistrÃ©e avec succÃ¨s. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: Color(0xFF64748B), fontSize: 14, height: 1.4)),
-          const SizedBox(height: 24),
+              style: TextStyle(
+                  color: Color(0xFF64748B), fontSize: context.sp(14), height: 1.4)),
+          SizedBox(height: context.r(24)),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
                 onPressed: () {
-                  // Retour à la page d'accueil client
+                  // Retour Ã  la page d'accueil client
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
                 },
@@ -4130,7 +4127,7 @@ class _SuccessDialog extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12))),
-                child: const Text('Retour à l\'accueil',
+                child: const Text('Retour Ã  l\'accueil',
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.w600))),
           ),
@@ -4168,22 +4165,23 @@ class PaymentBottomSheet extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   Row(children: [
                     Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                    const SizedBox(width: 12),
+                    SizedBox(width: context.r(12)),
                     Text('Options de Paiement',
                         style: TextStyle(
-                            fontSize: 22,
+                            fontSize: context.sp(22),
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF002B6B)))
                   ]),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   _buildPaymentOptionWithImage(
+                      context,
                       'Wave',
                       'assets/images/icone_wave.jpeg',
                       Colors.blue,
-                      'Paiement mobile sécurisé',
+                      'Paiement mobile sÃ©curisÃ©',
                       () => onPayNow('Wave')),
                   // _buildPaymentOptionWithImage(
                   //     'Orange Money',
@@ -4191,14 +4189,14 @@ class PaymentBottomSheet extends StatelessWidget {
                   //     Colors.orange,
                   //     'Paiement mobile Orange',
                   //     () => onPayNow('Orange Money')),
-                  // const SizedBox(height: 12),
+                  // SizedBox(height: context.r(12)),
                   // _buildPaymentOptionWithImage(
                   //     'CORIS Money',
                   //     'assets/images/icone_corismoney.jpeg',
                   //     const Color(0xFF1E3A8A),
                   //     'Paiement via CORIS Money',
                   //     () => onPayNow('CORIS Money')),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   Row(children: [
                     Expanded(child: Divider(color: Colors.grey[300])),
                     const Padding(
@@ -4209,7 +4207,7 @@ class PaymentBottomSheet extends StatelessWidget {
                                 fontWeight: FontWeight.w500))),
                     Expanded(child: Divider(color: Colors.grey[300]))
                   ]),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                   SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
@@ -4225,19 +4223,18 @@ class PaymentBottomSheet extends StatelessWidget {
                               children: [
                                 Icon(Icons.schedule,
                                     color: Color(0xFF002B6B), size: 20),
-                                const SizedBox(width: 8),
+                                SizedBox(width: context.r(8)),
                                 Text('Payer plus tard',
                                     style: TextStyle(
                                         color: Color(0xFF002B6B),
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16))
+                                        fontSize: context.sp(16)))
                               ]))),
                   SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                 ]))));
   }
 
-  Widget _buildPaymentOption(String title, IconData icon, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -4255,7 +4252,7 @@ class PaymentBottomSheet extends StatelessWidget {
                       color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: color, size: 24)),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4264,18 +4261,17 @@ class PaymentBottomSheet extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF002B6B),
-                            fontSize: 16)),
-                    const SizedBox(height: 4),
+                            fontSize: context.sp(16))),
+                    SizedBox(height: context.r(4)),
                     Text(subtitle,
                         style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
+                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath,
-      Color color, String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -4300,12 +4296,12 @@ class PaymentBottomSheet extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      print('❌ Erreur chargement image: $imagePath - $error');
+                      print('âŒ Erreur chargement image: $imagePath - $error');
                       return Icon(Icons.image_not_supported,
                           size: 32, color: Colors.grey);
                     },
                   )),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4314,13 +4310,15 @@ class PaymentBottomSheet extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF002B6B),
-                            fontSize: 16)),
-                    const SizedBox(height: 4),
+                            fontSize: context.sp(16))),
+                    SizedBox(height: context.r(4)),
                     Text(subtitle,
                         style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
+                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 }
+
+

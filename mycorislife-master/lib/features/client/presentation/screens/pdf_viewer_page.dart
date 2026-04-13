@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:mycorislife/services/pdf_service.dart';
@@ -50,7 +51,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           content: Row(
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text('Erreur de partage: $e'),
               ),
@@ -74,7 +75,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           content: Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,10 +85,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       'Document téléchargé avec succès',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
                     Text(
                       Platform.isAndroid ? 'Dossier: Téléchargements' : 'Dossier: Documents',
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: context.sp(12)),
                     ),
                   ],
                 ),
@@ -106,7 +107,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           content: Row(
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text('Erreur de téléchargement: $e'),
               ),

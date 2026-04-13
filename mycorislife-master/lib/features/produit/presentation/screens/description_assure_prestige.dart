@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class DescriptionAssurePrestigePage extends StatelessWidget {
@@ -55,7 +56,7 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'CORIS ASSURE PRESTIGE',
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -120,23 +121,23 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                 child: MarkdownBody(
                   data: markdownContent,
                   styleSheet: MarkdownStyleSheet(
-                    h3: const TextStyle(
-                      fontSize: 26.0,
+                    h3: TextStyle(
+                      fontSize: context.sp(26.0),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B),
                     ),
-                    h4: const TextStyle(
-                      fontSize: 20.0,
+                    h4: TextStyle(
+                      fontSize: context.sp(20.0),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
                     p: TextStyle(
-                      fontSize: 16.0,
+                      fontSize: context.sp(16.0),
                       height: 1.6,
                       color: Colors.grey[800],
                     ),
-                    listBullet: const TextStyle(
-                      fontSize: 16.0,
+                    listBullet: TextStyle(
+                      fontSize: context.sp(16.0),
                       color: Color(0xFFE30613),
                     ),
                   ),
@@ -158,16 +159,16 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                 ),
                 child: Column(
                   children: [
-                    const Text(
+                    Text(
                       'Intéressé par ce produit prestige ?',
                       style: TextStyle(
-                        fontSize: 20.0,
+                        fontSize: context.sp(20.0),
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16.0),
+                    SizedBox(height: context.r(16.0)),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -202,15 +203,15 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
                           ),
                           elevation: 2.0,
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.workspace_premium, size: 24),
-                            SizedBox(width: 12),
+                            SizedBox(width: context.r(12)),
                             Text(
                               'SOUSCRIRE MAINTENANT',
                               style: TextStyle(
-                                fontSize: 17.0,
+                                fontSize: context.sp(17.0),
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.8,
                               ),

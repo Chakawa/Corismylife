@@ -1,13 +1,12 @@
-/**
- * ================================================
- * PAGE - COMMISSIONS DU COMMERCIAL
- * ================================================
- * 
- * Page permettant au commercial de visualiser toutes ses commissions.
- * Les commissions sont simples: id, code_apporteur, montant_commission, date_calcul
- */
+/// ================================================
+/// PAGE - COMMISSIONS DU COMMERCIAL
+/// ================================================
+/// 
+/// Page permettant au commercial de visualiser toutes ses commissions.
+/// Les commissions sont simples: id, code_apporteur, montant_commission, date_calcul
 
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,9 +17,9 @@ class CommissionsPage extends StatefulWidget {
   final String? codeApporteur;
 
   const CommissionsPage({
-    Key? key,
+    super.key,
     this.codeApporteur,
-  }) : super(key: key);
+  });
 
   @override
   State<CommissionsPage> createState() => _CommissionsPageState();
@@ -34,7 +33,6 @@ class _CommissionsPageState extends State<CommissionsPage>
   static const Color orangeCoris = Color(0xFFFF9500);
   static const Color rougeErreur = Color(0xFFEF4444);
   static const Color blanc = Colors.white;
-  static const Color grisLeger = Color(0xFFF0F4F8);
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -46,7 +44,7 @@ class _CommissionsPageState extends State<CommissionsPage>
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Données simples
+  // DonnÃ©es simples
   List<Map<String, dynamic>> _commissions = [];
   double _totalCommission = 0.0;
 
@@ -68,17 +66,17 @@ class _CommissionsPageState extends State<CommissionsPage>
 
   Future<void> _initializeData() async {
     try {
-      // Récupérer le token
+      // RÃ©cupÃ©rer le token
       _token = await storage.read(key: 'token');
       if (_token == null) {
-        throw Exception('Token non trouvé');
+        throw Exception('Token non trouvÃ©');
       }
 
-      // Récupérer le code apporteur
+      // RÃ©cupÃ©rer le code apporteur
       _codeApporteur = widget.codeApporteur ??
           await storage.read(key: 'code_apporteur');
       if (_codeApporteur == null) {
-        throw Exception('Code apporteur non trouvé');
+        throw Exception('Code apporteur non trouvÃ©');
       }
 
       // Charger les commissions
@@ -86,7 +84,7 @@ class _CommissionsPageState extends State<CommissionsPage>
 
       _animationController.forward();
     } catch (e) {
-      print('❌ Erreur initialisation: $e');
+      print('âŒ Erreur initialisation: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -100,7 +98,7 @@ class _CommissionsPageState extends State<CommissionsPage>
     try {
       if (_codeApporteur == null || _token == null) return;
 
-      print('🔄 Chargement commissions pour: $_codeApporteur');
+      print('ðŸ”„ Chargement commissions pour: $_codeApporteur');
 
       final url =
           '${AppConfig.baseUrl}/commissions/commercial/$_codeApporteur';
@@ -124,12 +122,12 @@ class _CommissionsPageState extends State<CommissionsPage>
           });
         }
 
-        print('✅ ${_commissions.length} commission(s) chargée(s)');
+        print('âœ… ${_commissions.length} commission(s) chargÃ©e(s)');
       } else {
         throw Exception('Erreur serveur: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Erreur chargement: $e');
+      print('âŒ Erreur chargement: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -161,12 +159,12 @@ class _CommissionsPageState extends State<CommissionsPage>
         appBar: AppBar(
           backgroundColor: bleuCoris,
           iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text(
+          title: Text(
             'Mes Commissions en Instance',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w600,
-              fontSize: 18,
+              fontSize: context.sp(18),
             ),
           ),
           centerTitle: true,
@@ -184,12 +182,12 @@ class _CommissionsPageState extends State<CommissionsPage>
         appBar: AppBar(
           backgroundColor: bleuCoris,
           iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text(
+          title: Text(
             'Mes Commissions en Instance',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w600,
-              fontSize: 18,
+              fontSize: context.sp(18),
             ),
           ),
           centerTitle: true,
@@ -199,19 +197,19 @@ class _CommissionsPageState extends State<CommissionsPage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 64, color: rougeErreur),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               Text(
                 'Erreur: $_errorMessage',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: rougeErreur),
+                style: TextStyle(color: rougeErreur),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               ElevatedButton(
                 onPressed: () {
                   setState(() => _isLoading = true);
                   _initializeData();
                 },
-                child: const Text('Réessayer'),
+                child: const Text('RÃ©essayer'),
               ),
             ],
           ),
@@ -234,12 +232,12 @@ class _CommissionsPageState extends State<CommissionsPage>
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Mes Commissions en Instance',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: 18,
+            fontSize: context.sp(18),
           ),
         ),
         centerTitle: true,
@@ -301,33 +299,33 @@ class _CommissionsPageState extends State<CommissionsPage>
                   size: 32,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Text(
+              SizedBox(width: context.r(16)),
+              Text(
                 'Total des Commissions',
                 style: TextStyle(
                   color: blanc,
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           Text(
             _formatCurrency(_totalCommission),
-            style: const TextStyle(
+            style: TextStyle(
               color: blanc,
-              fontSize: 36,
+              fontSize: context.sp(36),
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             '${_commissions.length} commission${_commissions.length > 1 ? 's' : ''}',
             style: TextStyle(
               color: blanc.withValues(alpha: 0.9),
-              fontSize: 14,
+              fontSize: context.sp(14),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -336,6 +334,7 @@ class _CommissionsPageState extends State<CommissionsPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildCommissionCard(Map<String, dynamic> commission) {
     final id = commission['id'];
     final montant = (commission['montant_commission'] as num?)?.toDouble() ?? 0.0;
@@ -361,7 +360,7 @@ class _CommissionsPageState extends State<CommissionsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tête avec ID et montant
+            // En-tÃªte avec ID et montant
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -370,17 +369,17 @@ class _CommissionsPageState extends State<CommissionsPage>
                   children: [
                     Text(
                       'Commission #$id',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
                         fontWeight: FontWeight.w500,
                         color: Colors.grey,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
                     Text(
                       _formatCurrency(montant),
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: context.sp(24),
                         fontWeight: FontWeight.bold,
                         color: bleuCoris,
                       ),
@@ -401,22 +400,22 @@ class _CommissionsPageState extends State<CommissionsPage>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Séparateur
+            SizedBox(height: context.r(16)),
+            // SÃ©parateur
             Container(
               height: 1,
               color: Colors.grey[200],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             // Date de calcul
             Row(
               children: [
                 const Icon(Icons.calendar_today, size: 18, color: orangeCoris),
-                const SizedBox(width: 8),
+                SizedBox(width: context.r(8)),
                 Text(
                   _formatDate(dateCalcul),
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     color: Colors.grey,
                   ),
                 ),
@@ -428,3 +427,4 @@ class _CommissionsPageState extends State<CommissionsPage>
     );
   }
 }
+

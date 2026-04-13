@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -6,7 +7,7 @@ import 'package:mycorislife/config/app_config.dart';
 import 'package:intl/intl.dart';
 
 class DetailsClientPage extends StatefulWidget {
-  const DetailsClientPage({Key? key}) : super(key: key);
+  const DetailsClientPage({super.key});
 
   @override
   State<DetailsClientPage> createState() => _DetailsClientPageState();
@@ -114,7 +115,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Détails Client',
           style: TextStyle(color: blanc, fontWeight: FontWeight.w600),
         ),
@@ -125,10 +126,10 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: bleuCoris))
           : clientInfo == null
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Aucune information disponible',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(fontSize: context.sp(16), color: Colors.grey),
                   ),
                 )
               : RefreshIndicator(
@@ -162,18 +163,18 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                                   backgroundColor: blanc,
                                   child: Text(
                                     '${clientInfo!['prenom']?.toString().substring(0, 1).toUpperCase() ?? 'C'}${clientInfo!['nom']?.toString().substring(0, 1).toUpperCase() ?? ''}',
-                                    style: const TextStyle(
-                                      fontSize: 32,
+                                    style: TextStyle(
+                                      fontSize: context.sp(32),
                                       fontWeight: FontWeight.bold,
                                       color: bleuCoris,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: context.r(12)),
                                 Text(
                                   '${clientInfo!['prenom'] ?? ''} ${clientInfo!['nom'] ?? ''}'.trim(),
-                                  style: const TextStyle(
-                                    fontSize: 22,
+                                  style: TextStyle(
+                                    fontSize: context.sp(22),
                                     fontWeight: FontWeight.bold,
                                     color: blanc,
                                   ),
@@ -183,7 +184,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
 
                         // Informations personnelles
                         Card(
@@ -196,10 +197,10 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Informations personnelles',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: bleuCoris,
                                   ),
@@ -216,16 +217,16 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
 
                         // Liste des souscriptions
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Souscriptions',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: context.sp(18),
                                 fontWeight: FontWeight.bold,
                                 color: bleuCoris,
                               ),
@@ -238,7 +239,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                               ),
                               child: Text(
                                 '${clientSubscriptions.length}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: blanc,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -246,7 +247,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: context.r(12)),
 
                         if (clientSubscriptions.isEmpty)
                           Card(
@@ -256,10 +257,10 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                                 child: Column(
                                   children: [
                                     Icon(Icons.description_outlined, size: 64, color: Colors.grey[400]),
-                                    const SizedBox(height: 16),
-                                    const Text(
+                                    SizedBox(height: context.r(16)),
+                                    Text(
                                       'Aucune souscription trouvée',
-                                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                                      style: TextStyle(fontSize: context.sp(16), color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -294,8 +295,8 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                                           Expanded(
                                             child: Text(
                                               sub['produit_nom'] ?? 'Produit inconnu',
-                                              style: const TextStyle(
-                                                fontSize: 16,
+                                              style: TextStyle(
+                                                fontSize: context.sp(16),
                                                 fontWeight: FontWeight.bold,
                                                 color: bleuCoris,
                                               ),
@@ -315,36 +316,36 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                                             ),
                                             child: Text(
                                               sub['statut'] ?? 'En attente',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 color: blanc,
-                                                fontSize: 12,
+                                                fontSize: context.sp(12),
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: context.r(12)),
                                       Row(
                                         children: [
-                                          const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                                          const SizedBox(width: 8),
+                                          Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                                          SizedBox(width: context.r(8)),
                                           Text(
                                             'Créée le ${_formatDate(sub['date_creation'])}',
-                                            style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                                            style: TextStyle(color: Colors.grey[700], fontSize: context.sp(14)),
                                           ),
                                         ],
                                       ),
                                       if (sub['montant_total'] != null) ...[
-                                        const SizedBox(height: 8),
+                                        SizedBox(height: context.r(8)),
                                         Row(
                                           children: [
-                                            const Icon(Icons.account_balance_wallet, size: 16, color: Colors.grey),
-                                            const SizedBox(width: 8),
+                                            Icon(Icons.account_balance_wallet, size: 16, color: Colors.grey),
+                                            SizedBox(width: context.r(8)),
                                             Text(
                                               'Montant: ${sub['montant_total']} FCFA',
-                                              style: const TextStyle(
-                                                fontSize: 14,
+                                              style: TextStyle(
+                                                fontSize: context.sp(14),
                                                 fontWeight: FontWeight.w600,
                                                 color: bleuCoris,
                                               ),
@@ -357,7 +358,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                       ],
                     ),
                   ),
@@ -372,7 +373,7 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: bleuCoris),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,16 +381,16 @@ class _DetailsClientPageState extends State<DetailsClientPage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: context.r(4)),
                 Text(
                   value?.toString() ?? 'N/A',
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: context.sp(15),
                     fontWeight: FontWeight.w500,
                   ),
                 ),

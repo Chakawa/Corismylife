@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -74,7 +75,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ),
                             child: Text(
                               devCode!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 8,
@@ -271,7 +272,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.r(20)),
             child: Form(
               key: _formKey,
               child: Column(
@@ -279,7 +280,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 children: [
                   // Indicateur d'étapes
                   _buildStepIndicator(),
-                  const SizedBox(height: 40),
+                  SizedBox(height: context.r(30)),
 
                   // Contenu selon l'étape
                   if (currentStep == 0) _buildEmailStep(),
@@ -319,8 +320,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Column(
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: context.r(46),
+          height: context.r(46),
           decoration: BoxDecoration(
             color: isActive
                 ? (isCurrent ? bleuCoris : vertSucces)
@@ -341,7 +342,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ? const Icon(Icons.check, color: Colors.white)
                 : Text(
                     '${step + 1}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -349,11 +350,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.r(8)),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: context.sp(11),
             color: isActive ? bleuCoris : Colors.grey[600],
             fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
           ),
@@ -366,8 +367,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.email_outlined, size: 60, color: bleuCoris),
-        const SizedBox(height: 16),
+        Icon(Icons.email_outlined, size: context.r(54), color: bleuCoris),
+        SizedBox(height: context.r(14)),
         const Text(
           "Entrez votre email",
           style: TextStyle(
@@ -376,15 +377,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.r(8)),
         Text(
           "Nous vous enverrons un code de vérification à 6 chiffres",
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(15),
             color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         TextFormField(
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
@@ -417,10 +418,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: context.r(52),
           child: ElevatedButton(
             onPressed: isLoading ? null : _requestCode,
             style: ElevatedButton.styleFrom(
@@ -431,10 +432,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             child: isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
+                : Text(
                     'Envoyer le code',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -449,8 +450,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.lock_outline, size: 60, color: bleuCoris),
-        const SizedBox(height: 16),
+        Icon(Icons.lock_outline, size: context.r(54), color: bleuCoris),
+        SizedBox(height: context.r(14)),
         const Text(
           "Entrez le code",
           style: TextStyle(
@@ -459,24 +460,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.r(8)),
         Text(
           "Un code à 6 chiffres a été envoyé à\n${emailController.text}",
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(15),
             color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         TextFormField(
           controller: codeController,
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           maxLength: 6,
-          style: const TextStyle(
-            fontSize: 32,
+          style: TextStyle(
+            fontSize: context.sp(30),
             fontWeight: FontWeight.bold,
-            letterSpacing: 16,
+            letterSpacing: context.r(12),
           ),
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
@@ -498,17 +499,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(14)),
         Center(
           child: TextButton(
             onPressed: isLoading ? null : _requestCode,
             child: const Text('Renvoyer le code'),
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: context.r(52),
           child: ElevatedButton(
             onPressed: isLoading ? null : _verifyCode,
             style: ElevatedButton.styleFrom(
@@ -519,10 +520,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             child: isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
+                : Text(
                     'Vérifier le code',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -537,8 +538,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.verified_user_outlined, size: 60, color: vertSucces),
-        const SizedBox(height: 16),
+        Icon(Icons.verified_user_outlined, size: context.r(54), color: vertSucces),
+        SizedBox(height: context.r(14)),
         const Text(
           "Nouveau mot de passe",
           style: TextStyle(
@@ -547,15 +548,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.r(8)),
         Text(
           "Créez un mot de passe sécurisé",
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(15),
             color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         TextFormField(
           controller: newPasswordController,
           obscureText: _obscurePassword,
@@ -594,7 +595,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(14)),
         TextFormField(
           controller: confirmPasswordController,
           obscureText: _obscureConfirmPassword,
@@ -635,10 +636,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.r(24)),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: context.r(52),
           child: ElevatedButton(
             onPressed: isLoading ? null : _resetPassword,
             style: ElevatedButton.styleFrom(
@@ -649,10 +650,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             child: isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
+                : Text(
                     'Réinitialiser le mot de passe',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),

@@ -33,12 +33,12 @@ class CorisMoneyPaymentModal extends StatefulWidget {
   final VoidCallback onPaymentSuccess;
 
   const CorisMoneyPaymentModal({
-    Key? key,
+    super.key,
     required this.subscriptionId,
     required this.montant,
     this.description,
     required this.onPaymentSuccess,
-  }) : super(key: key);
+  });
 
   @override
   State<CorisMoneyPaymentModal> createState() => _CorisMoneyPaymentModalState();
@@ -368,7 +368,7 @@ class _CorisMoneyPaymentModalState extends State<CorisMoneyPaymentModal> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: DropdownButtonFormField<String>(
-                        value: _codePays,
+                        initialValue: _codePays,
                         decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.flag, color: bleuCoris),
                           border: InputBorder.none,

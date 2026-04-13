@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class DescriptionIfcPage extends StatelessWidget {
@@ -94,11 +95,11 @@ La souscription se fait auprès de CORIS VIE CI avec :
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'INDEMNITÉS DE FIN DE CARRIÈRE',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: context.sp(18),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -165,23 +166,23 @@ La souscription se fait auprès de CORIS VIE CI avec :
                 child: MarkdownBody(
                   data: markdownContent,
                   styleSheet: MarkdownStyleSheet(
-                    h3: const TextStyle(
-                      fontSize: 22,
+                    h3: TextStyle(
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B),
                     ),
-                    h4: const TextStyle(
-                      fontSize: 18,
+                    h4: TextStyle(
+                      fontSize: context.sp(18),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1e3c72),
                     ),
-                    p: const TextStyle(
-                      fontSize: 15,
+                    p: TextStyle(
+                      fontSize: context.sp(15),
                       height: 1.6,
                       color: Colors.black87,
                     ),
-                    listBullet: const TextStyle(
-                      fontSize: 15,
+                    listBullet: TextStyle(
+                      fontSize: context.sp(15),
                       color: Color(0xFF002B6B),
                     ),
                   ),
@@ -200,13 +201,13 @@ La souscription se fait auprès de CORIS VIE CI avec :
                 child: Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.orange[700]),
-                    const SizedBox(width: 12),
+                    SizedBox(width: context.r(12)),
                     Expanded(
                       child: Text(
                         'Ce produit sera bientôt disponible. Restez connecté !',
                         style: TextStyle(
                           color: Colors.orange[700],
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -214,7 +215,7 @@ La souscription se fait auprès de CORIS VIE CI avec :
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Bouton de souscription désactivé
               Padding(
@@ -231,10 +232,10 @@ La souscription se fait auprès de CORIS VIE CI avec :
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Souscrire maintenant',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                         fontWeight: FontWeight.bold,
                         color: Colors.white70,
                       ),
@@ -242,7 +243,7 @@ La souscription se fait auprès de CORIS VIE CI avec :
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: context.r(20)),
             ],
           ),
         ),

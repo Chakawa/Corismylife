@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/contract_service.dart';
 
-/// Écran d'affichage de tous les contrats de l'utilisateur
+/// Ã‰cran d'affichage de tous les contrats de l'utilisateur
 class ContractsPage extends StatefulWidget {
-  const ContractsPage({Key? key}) : super(key: key);
+  const ContractsPage({super.key});
 
   @override
   State<ContractsPage> createState() => _ContractsPageState();
@@ -46,7 +47,7 @@ class _ContractsPageState extends State<ContractsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes Contrats'),
+        title: Text('Mes Contrats'),
         backgroundColor: const Color(0xFF1976D2),
       ),
       body: _isLoading
@@ -67,16 +68,16 @@ class _ContractsPageState extends State<ContractsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: context.sp(16)),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             ElevatedButton(
               onPressed: _loadContracts,
-              child: const Text('Réessayer'),
+              child: Text('RÃ©essayer'),
             ),
           ],
         ),
@@ -92,14 +93,14 @@ class _ContractsPageState extends State<ContractsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.description_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: context.r(16)),
+            Text(
               'Aucun contrat actif',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Vos contrats d\'assurance apparaîtront ici après validation de paiement.',
+            SizedBox(height: context.r(8)),
+            Text(
+              'Vos contrats d\'assurance apparaÃ®tront ici aprÃ¨s validation de paiement.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
             ),
@@ -140,14 +141,14 @@ class _ContractsPageState extends State<ContractsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête avec numéro de contrat
+              // En-tÃªte avec numÃ©ro de contrat
               Row(
                 children: [
                   Expanded(
                     child: Text(
                       contract['contract_number'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1976D2),
                       ),
@@ -156,39 +157,39 @@ class _ContractsPageState extends State<ContractsPage> {
                   _buildStatusChip(contract['status']),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               
               // Nom du produit
               Text(
                 contract['product_name'] ?? 'Produit',
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: context.sp(18),
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               
-              // Montant et périodicité
+              // Montant et pÃ©riodicitÃ©
               Row(
                 children: [
                   const Icon(Icons.payments, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
+                  SizedBox(width: context.r(8)),
                   Text(
                     _contractService.formatAmount(contract['amount']),
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF2E7D32),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: context.r(8)),
                   Text(
                     '/ ${_contractService.formatPeriodicite(contract['periodicite'])}',
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               
               // Date de prochain paiement
               if (contract['next_payment_date'] != null) ...[
@@ -205,7 +206,7 @@ class _ContractsPageState extends State<ContractsPage> {
                         size: 16,
                         color: Color(paymentStatusInfo['color']),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,14 +214,14 @@ class _ContractsPageState extends State<ContractsPage> {
                             Text(
                               'Prochain paiement',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: context.sp(12),
                                 color: Colors.grey[700],
                               ),
                             ),
                             Text(
                               _contractService.formatDate(contract['next_payment_date']),
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: context.sp(14),
                                 fontWeight: FontWeight.w600,
                                 color: Color(paymentStatusInfo['color']),
                               ),
@@ -231,7 +232,7 @@ class _ContractsPageState extends State<ContractsPage> {
                       Text(
                         paymentStatusInfo['text'],
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: context.sp(12),
                           fontWeight: FontWeight.w600,
                           color: Color(paymentStatusInfo['color']),
                         ),
@@ -247,13 +248,13 @@ class _ContractsPageState extends State<ContractsPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
-                    children: const [
+                    children: [
                       Icon(Icons.check_circle, size: 16, color: Color(0xFF4CAF50)),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text(
-                        'Paiement unique effectué',
+                        'Paiement unique effectuÃ©',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF4CAF50),
                         ),
@@ -263,22 +264,22 @@ class _ContractsPageState extends State<ContractsPage> {
                 ),
               ],
               
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               const Divider(),
-              const SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               
-              // Informations supplémentaires
+              // Informations supplÃ©mentaires
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildInfoItem(
                     icon: Icons.calendar_today,
-                    label: 'Début',
+                    label: 'DÃ©but',
                     value: _contractService.formatDate(contract['start_date']),
                   ),
                   _buildInfoItem(
                     icon: Icons.access_time,
-                    label: 'Durée',
+                    label: 'DurÃ©e',
                     value: '${contract['duration_years'] ?? 0} ans',
                   ),
                   if (contract['payments_remaining'] != null)
@@ -326,7 +327,7 @@ class _ContractsPageState extends State<ContractsPage> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: context.sp(12),
           fontWeight: FontWeight.w600,
           color: color,
         ),
@@ -345,21 +346,21 @@ class _ContractsPageState extends State<ContractsPage> {
         Row(
           children: [
             Icon(icon, size: 14, color: Colors.grey),
-            const SizedBox(width: 4),
+            SizedBox(width: context.r(4)),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: context.sp(11),
                 color: Colors.grey,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: context.r(2)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 13,
+          style: TextStyle(
+            fontSize: context.sp(13),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -377,11 +378,11 @@ class _ContractsPageState extends State<ContractsPage> {
   }
 }
 
-/// Page de détails d'un contrat spécifique
+/// Page de dÃ©tails d'un contrat spÃ©cifique
 class ContractDetailPage extends StatefulWidget {
   final int contractId;
   
-  const ContractDetailPage({Key? key, required this.contractId}) : super(key: key);
+  const ContractDetailPage({super.key, required this.contractId});
 
   @override
   State<ContractDetailPage> createState() => _ContractDetailPageState();
@@ -424,7 +425,7 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détails du Contrat'),
+        title: Text('DÃ©tails du Contrat'),
         backgroundColor: const Color(0xFF1976D2),
       ),
       body: _isLoading
@@ -437,48 +438,48 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                   ),
                 )
               : _contract == null
-                  ? const Center(child: Text('Contrat non trouvé'))
+                  ? const Center(child: Text('Contrat non trouvÃ©'))
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSection(
-                            title: 'Informations Générales',
+                            title: 'Informations GÃ©nÃ©rales',
                             children: [
-                              _buildDetailRow('Numéro de contrat', _contract!['contract_number']),
+                              _buildDetailRow('NumÃ©ro de contrat', _contract!['contract_number']),
                               _buildDetailRow('Produit', _contract!['product_name']),
                               _buildDetailRow('Statut', _contractService.formatStatus(_contract!['status'])),
                               _buildDetailRow('Mode de paiement', _contract!['payment_method']),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: context.r(24)),
                           
                           _buildSection(
                             title: 'Paiements',
                             children: [
                               _buildDetailRow('Montant', _contractService.formatAmount(_contract!['amount'])),
-                              _buildDetailRow('Périodicité', _contractService.formatPeriodicite(_contract!['periodicite'])),
+                              _buildDetailRow('PÃ©riodicitÃ©', _contractService.formatPeriodicite(_contract!['periodicite'])),
                               if (_contract!['next_payment_date'] != null)
                                 _buildDetailRow('Prochain paiement', _contractService.formatDate(_contract!['next_payment_date'])),
-                              _buildDetailRow('Total payé', _contractService.formatAmount(_contract!['total_paid'])),
+                              _buildDetailRow('Total payÃ©', _contractService.formatAmount(_contract!['total_paid'])),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: context.r(24)),
                           
                           _buildSection(
-                            title: 'Durée du Contrat',
+                            title: 'DurÃ©e du Contrat',
                             children: [
-                              _buildDetailRow('Date de début', _contractService.formatDate(_contract!['start_date'])),
+                              _buildDetailRow('Date de dÃ©but', _contractService.formatDate(_contract!['start_date'])),
                               if (_contract!['end_date'] != null)
                                 _buildDetailRow('Date de fin', _contractService.formatDate(_contract!['end_date'])),
-                              _buildDetailRow('Durée', '${_contract!['duration_years'] ?? 0} ans'),
+                              _buildDetailRow('DurÃ©e', '${_contract!['duration_years'] ?? 0} ans'),
                             ],
                           ),
                           
                           // Historique des paiements
                           if (_contract!['payment_history'] != null) ...[
-                            const SizedBox(height: 24),
+                            SizedBox(height: context.r(24)),
                             _buildPaymentHistory(_contract!['payment_history']),
                           ],
                         ],
@@ -506,12 +507,12 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: context.sp(18),
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           ...children,
         ],
       ),
@@ -528,9 +529,9 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.grey,
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
             ),
           ),
@@ -538,9 +539,9 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
             flex: 3,
             child: Text(
               value ?? 'N/A',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
               textAlign: TextAlign.right,
             ),
@@ -567,14 +568,14 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Historique des Paiements',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: context.sp(18),
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           ...history.map((payment) {
             final statusColor = payment['statut'] == 'SUCCESS'
                 ? const Color(0xFF4CAF50)
@@ -604,9 +605,10 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
   }
 }
+

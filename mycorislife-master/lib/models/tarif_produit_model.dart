@@ -41,7 +41,7 @@ class TarifProduit {
 
   factory TarifProduit.fromMap(Map<String, dynamic> map) {
     // Helper function to safely convert to int
-    int? _toInt(dynamic value) {
+    int? toInt(dynamic value) {
       if (value == null) return null;
       if (value is int) return value;
       if (value is double) return value.toInt();
@@ -53,7 +53,7 @@ class TarifProduit {
     }
 
     // Helper function to safely convert to double
-    double? _toDouble(dynamic value) {
+    double? toDouble(dynamic value) {
       if (value == null) return null;
       if (value is double) return value;
       if (value is int) return value.toDouble();
@@ -68,13 +68,13 @@ class TarifProduit {
     }
 
     return TarifProduit(
-      id: _toInt(map['id']),
-      produitId: _toInt(map['produit_id']) ?? 0,
-      dureeContrat: _toInt(map['duree_contrat']),
+      id: toInt(map['id']),
+      produitId: toInt(map['produit_id']) ?? 0,
+      dureeContrat: toInt(map['duree_contrat']),
       periodicite: map['periodicite']?.toString() ?? '',
-      prime: _toDouble(map['prime']),
-      capital: _toDouble(map['capital']),
-      age: _toInt(map['age']),
+      prime: toDouble(map['prime']),
+      capital: toDouble(map['capital']),
+      age: toInt(map['age']),
       categorie: map['categorie']?.toString(),
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString())

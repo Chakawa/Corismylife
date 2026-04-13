@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'home_content.dart';
 import 'mes_propositions_page.dart';
 import 'mes_contrats_client_page.dart';
@@ -112,27 +113,27 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: Colors.white,
           type: BottomNavigationBarType.fixed,
           selectedLabelStyle:
-              const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          items: const [
+              TextStyle(fontSize: context.sp(11), fontWeight: FontWeight.w600),
+          unselectedLabelStyle: TextStyle(fontSize: context.sp(10)),
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled, size: 24),
+              icon: Icon(Icons.home_filled, size: context.r(22)),
               label: "Accueil",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt_rounded, size: 24),
+              icon: Icon(Icons.list_alt_rounded, size: context.r(22)),
               label: "Propositions",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.calculate, size: 24),
+              icon: Icon(Icons.calculate, size: context.r(22)),
               label: "Simuler",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_turned_in_rounded, size: 24),
+              icon: Icon(Icons.assignment_turned_in_rounded, size: context.r(22)),
               label: "Contrats",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded, size: 24),
+              icon: Icon(Icons.person_rounded, size: context.r(22)),
               label: "Profil",
             ),
           ],

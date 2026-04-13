@@ -31,7 +31,7 @@ class _QuestionnaireMedicalDynamicWidgetState
   final _formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> _questions = [];
-  Map<String, Map<String, dynamic>> _reponses = {};
+  final Map<String, Map<String, dynamic>> _reponses = {};
 
   Map<String, dynamic>? _getResp(dynamic questionId) {
     if (questionId == null) return null;
@@ -102,8 +102,9 @@ class _QuestionnaireMedicalDynamicWidgetState
       final normalized = questions.map((q) {
         final oblig = q['obligatoire'];
         bool obligBool = false;
-        if (oblig is bool) obligBool = oblig;
-        else if (oblig != null) {
+        if (oblig is bool) {
+          obligBool = oblig;
+        } else if (oblig != null) {
           final s = oblig.toString().toLowerCase();
           obligBool = s == 't' || s == '1' || s == 'true';
         }
@@ -213,7 +214,7 @@ class _QuestionnaireMedicalDynamicWidgetState
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.red),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -273,7 +274,7 @@ class _QuestionnaireMedicalDynamicWidgetState
               final index = entry.key;
               final question = entry.value;
               return _buildQuestionWidget(index + 1, question);
-            }).toList(),
+            }),
 
             const SizedBox(height: 12),
 
@@ -355,7 +356,7 @@ class _QuestionnaireMedicalDynamicWidgetState
                 child: Center(
                   child: Text(
                     '$numero',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: blanc,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -370,7 +371,7 @@ class _QuestionnaireMedicalDynamicWidgetState
                   children: [
                     Text(
                       libelle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: bleuCoris,
@@ -547,17 +548,17 @@ class _QuestionnaireMedicalDynamicWidgetState
           if (question['champ_detail_1_label'] != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildDetailField(questionId, 'reponse_detail_1', question['champ_detail_1_label'], reponse?['reponse_detail_1'], obligatoire),
+              child: _buildDetailField(questionId, 'reponse_detail_1', question['champ_detail_1_label'], reponse['reponse_detail_1'], obligatoire),
             ),
           if (question['champ_detail_2_label'] != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildDetailField(questionId, 'reponse_detail_2', question['champ_detail_2_label'], reponse?['reponse_detail_2'], false),
+              child: _buildDetailField(questionId, 'reponse_detail_2', question['champ_detail_2_label'], reponse['reponse_detail_2'], false),
             ),
           if (question['champ_detail_3_label'] != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildDetailField(questionId, 'reponse_detail_3', question['champ_detail_3_label'], reponse?['reponse_detail_3'], false),
+              child: _buildDetailField(questionId, 'reponse_detail_3', question['champ_detail_3_label'], reponse['reponse_detail_3'], false),
             ),
         ],
 
@@ -593,7 +594,7 @@ class _QuestionnaireMedicalDynamicWidgetState
               _setResp(questionId, {
                 ...(_getResp(questionId) ?? {}),
                 fieldKey: iso,
-                'reponse_text': (label ?? '') + ': ' + '${picked.day.toString().padLeft(2,'0')}/${picked.month.toString().padLeft(2,'0')}/${picked.year}'
+                'reponse_text': '${label ?? ''}: ${picked.day.toString().padLeft(2,'0')}/${picked.month.toString().padLeft(2,'0')}/${picked.year}'
               });
             });
           }

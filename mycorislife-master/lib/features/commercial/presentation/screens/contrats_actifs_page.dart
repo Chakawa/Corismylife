@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 
 class ContratsActifsPage extends StatefulWidget {
-  const ContratsActifsPage({Key? key}) : super(key: key);
+  const ContratsActifsPage({super.key});
 
   @override
   State<ContratsActifsPage> createState() => _ContratsActifsPageState();
@@ -20,16 +21,16 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
 
   // Mapping des codes produits vers les noms de produits
   final Map<String, String> productNames = {
-    '242': 'ÉPARGNE BONUS',
-    '202': 'CORIS SÉRÉNITÉ',
+    '242': 'Ã‰PARGNE BONUS',
+    '202': 'CORIS SÃ‰RÃ‰NITÃ‰',
     '200': 'CORIS FAMILIS',
     '240': 'CORIS RETRAITE',
-    '225': 'CORIS SOLIDARITÉ',
-    '246': 'CORIS ÉTUDE',
+    '225': 'CORIS SOLIDARITÃ‰',
+    '246': 'CORIS Ã‰TUDE',
     '205': 'CORIS FLEX EMPRUNTEUR',
   };
 
-  // Mapping des icônes par produit
+  // Mapping des icÃ´nes par produit
   final Map<String, IconData> productIcons = {
     '242': Icons.savings,
     '202': Icons.health_and_safety,
@@ -66,15 +67,15 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
   }
 
   Future<void> _loadContratsActifs() async {
-    print('📋 [CONTRATS ACTIFS] Début chargement...');
+    print('ðŸ“‹ [CONTRATS ACTIFS] DÃ©but chargement...');
     setState(() => isLoading = true);
     try {
       final token = await storage.read(key: 'token');
       if (token == null) {
-        throw Exception('Token non trouvé');
+        throw Exception('Token non trouvÃ©');
       }
 
-      print('🔑 [CONTRATS ACTIFS] Token récupéré');
+      print('ðŸ”‘ [CONTRATS ACTIFS] Token rÃ©cupÃ©rÃ©');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/commercial/mes_contrats_commercial'),
         headers: {
@@ -83,21 +84,21 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
         },
       );
 
-      print('📡 [CONTRATS ACTIFS] Status code: ${response.statusCode}');
+      print('ðŸ“¡ [CONTRATS ACTIFS] Status code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('✅ [CONTRATS ACTIFS] ${(data['contrats'] ?? []).length} contrats reçus');
+        print('âœ… [CONTRATS ACTIFS] ${(data['contrats'] ?? []).length} contrats reÃ§us');
         setState(() {
           allContrats = data['contrats'] ?? [];
           isLoading = false;
         });
-        print('✅ [CONTRATS ACTIFS] ${contratsActifs.length} contrats actifs filtrés');
+        print('âœ… [CONTRATS ACTIFS] ${contratsActifs.length} contrats actifs filtrÃ©s');
       } else {
         throw Exception('Erreur HTTP ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [CONTRATS ACTIFS] Erreur: $e');
+      print('âŒ [CONTRATS ACTIFS] Erreur: $e');
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +123,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
   }
 
   String _formatClientName(dynamic contrat) {
-    // Essayer d'abord avec prénom et nom séparés
+    // Essayer d'abord avec prÃ©nom et nom sÃ©parÃ©s
     if (contrat['prenom'] != null && contrat['nom'] != null) {
       final prenom = contrat['prenom'].toString().trim();
       final nom = contrat['nom'].toString().trim();
@@ -164,10 +165,10 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Rechercher...',
-                  hintStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
@@ -248,13 +249,13 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                 size: 64,
                                 color: Colors.grey,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: context.r(16)),
                               Text(
                                 _searchController.text.isEmpty
                                     ? 'Aucun contrat actif'
-                                    : 'Aucun résultat',
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                    : 'Aucun rÃ©sultat',
+                                style: TextStyle(
+                                  fontSize: context.sp(16),
                                   color: Colors.grey,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -281,7 +282,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () {
-                                    print('🔍 [CONTRATS ACTIFS] Navigation vers détails: ${contrat['numepoli']}');
+                                    print('ðŸ” [CONTRATS ACTIFS] Navigation vers dÃ©tails: ${contrat['numepoli']}');
                                     Navigator.pushNamed(
                                       context,
                                       '/contrat_details',
@@ -307,20 +308,20 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                                 size: 24,
                                               ),
                                             ),
-                                            const SizedBox(width: 12),
+                                            SizedBox(width: context.r(12)),
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     contrat['numepoli'] ?? 'N/A',
-                                                    style: const TextStyle(
-                                                      fontSize: 16,
+                                                    style: TextStyle(
+                                                      fontSize: context.sp(16),
                                                       fontWeight: FontWeight.bold,
                                                       color: Color(0xFF002B6B),
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 4),
+                                                  SizedBox(height: context.r(4)),
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(
                                                       horizontal: 8,
@@ -332,9 +333,9 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                                     ),
                                                     child: Text(
                                                       displayStatus,
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                         color: Colors.white,
-                                                        fontSize: 11,
+                                                        fontSize: context.sp(11),
                                                         fontWeight: FontWeight.w600,
                                                       ),
                                                     ),
@@ -357,12 +358,12 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                               size: 16,
                                               color: Color(0xFF64748B),
                                             ),
-                                            const SizedBox(width: 8),
+                                            SizedBox(width: context.r(8)),
                                             Expanded(
                                               child: Text(
                                                 _getProductName(contrat['codeprod']),
-                                                style: const TextStyle(
-                                                  fontSize: 14,
+                                                style: TextStyle(
+                                                  fontSize: context.sp(14),
                                                   fontWeight: FontWeight.w500,
                                                   color: Color(0xFF0F172A),
                                                 ),
@@ -370,7 +371,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 8),
+                                        SizedBox(height: context.r(8)),
                                         Row(
                                           children: [
                                             const Icon(
@@ -378,12 +379,12 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                               size: 16,
                                               color: Color(0xFF64748B),
                                             ),
-                                            const SizedBox(width: 8),
+                                            SizedBox(width: context.r(8)),
                                             Expanded(
                                               child: Text(
                                                 _formatClientName(contrat),
-                                                style: const TextStyle(
-                                                  fontSize: 14,
+                                                style: TextStyle(
+                                                  fontSize: context.sp(14),
                                                   color: Color(0xFF64748B),
                                                 ),
                                               ),
@@ -391,7 +392,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                           ],
                                         ),
                                         if (contrat['dateeffet'] != null) ...[
-                                          const SizedBox(height: 8),
+                                          SizedBox(height: context.r(8)),
                                           Row(
                                             children: [
                                               const Icon(
@@ -399,11 +400,11 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                                 size: 16,
                                                 color: Color(0xFF64748B),
                                               ),
-                                              const SizedBox(width: 8),
+                                              SizedBox(width: context.r(8)),
                                               Text(
                                                 'Effet: ${_formatDate(contrat['dateeffet'])}',
-                                                style: const TextStyle(
-                                                  fontSize: 13,
+                                                style: TextStyle(
+                                                  fontSize: context.sp(13),
                                                   color: Color(0xFF64748B),
                                                 ),
                                               ),
@@ -441,23 +442,23 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
           Row(
             children: [
               Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              SizedBox(width: context.r(8)),
               Text(
                 label,
                 style: TextStyle(
                   color: color,
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             value,
             style: TextStyle(
               color: color,
-              fontSize: 24,
+              fontSize: context.sp(24),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -466,3 +467,4 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
     );
   }
 }
+

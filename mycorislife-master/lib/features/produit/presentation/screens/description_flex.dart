@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// ============================================
@@ -115,7 +116,7 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'FLEX EMPRUNTEUR',
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -160,28 +161,28 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
                         color: const Color(0xFFF59E0B),
                         borderRadius: BorderRadius.circular(25.0),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ASSURANCE CRÉDIT',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12.0,
+                          fontSize: context.sp(12.0),
                           letterSpacing: 1.0,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16.0),
-                    const Icon(
+                    SizedBox(height: context.r(16.0)),
+                    Icon(
                       Icons.account_balance,
                       size: 48.0,
                       color: Colors.white70,
                     ),
-                    const SizedBox(height: 16.0),
-                    const Text(
+                    SizedBox(height: context.r(16.0)),
+                    Text(
                       'Protégez votre crédit et votre famille',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 18.0,
+                        fontSize: context.sp(18.0),
                         fontWeight: FontWeight.w300,
                       ),
                       textAlign: TextAlign.center,
@@ -199,30 +200,30 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
                 child: MarkdownBody(
                   data: markdownContent,
                   styleSheet: MarkdownStyleSheet(
-                    h3: const TextStyle(
-                      fontSize: 28.0,
+                    h3: TextStyle(
+                      fontSize: context.sp(28.0),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B),
                       height: 1.3,
                     ),
-                    h4: const TextStyle(
-                      fontSize: 22.0,
+                    h4: TextStyle(
+                      fontSize: context.sp(22.0),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                       height: 1.4,
                     ),
-                    p: const TextStyle(
-                      fontSize: 16.0,
+                    p: TextStyle(
+                      fontSize: context.sp(16.0),
                       height: 1.6,
                       color: Color(0xFF333333),
                       fontWeight: FontWeight.w400,
                     ),
-                    strong: const TextStyle(
+                    strong: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
-                    listBullet: const TextStyle(
-                      fontSize: 16.0,
+                    listBullet: TextStyle(
+                      fontSize: context.sp(16.0),
                       color: Color(0xFFF59E0B),
                       fontWeight: FontWeight.bold,
                     ),
@@ -234,10 +235,10 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
                         ),
                       ),
                     ),
-                    code: const TextStyle(
+                    code: TextStyle(
                       backgroundColor: Colors.transparent,
                       color: Color(0xFFF59E0B),
-                      fontSize: 16.0,
+                      fontSize: context.sp(16.0),
                     ),
                   ),
                 ),
@@ -260,16 +261,16 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
               ),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Protégez votre crédit dès maintenant',
                     style: TextStyle(
-                      fontSize: 20.0,
+                      fontSize: context.sp(20.0),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16.0),
+                  SizedBox(height: context.r(16.0)),
                   // Badge "Bientôt disponible"
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -282,12 +283,12 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
                     child: Row(
                       children: [
                         Icon(Icons.info_outline, color: Colors.orange[700], size: 28),
-                        const SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
                             'Ce produit sera bientôt disponible. Restez connecté !',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: context.sp(15),
                               color: Colors.orange[900],
                               fontWeight: FontWeight.w500,
                             ),
@@ -310,15 +311,15 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
                         ),
                         elevation: 3.0,
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.shield, size: 24),
-                          SizedBox(width: 12),
+                          SizedBox(width: context.r(12)),
                           Text(
                             'SOUSCRIRE MAINTENANT',
                             style: TextStyle(
-                              fontSize: 17.0,
+                              fontSize: context.sp(17.0),
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.8,
                             ),

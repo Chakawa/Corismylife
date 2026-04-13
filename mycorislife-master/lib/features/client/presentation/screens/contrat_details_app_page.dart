@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/features/client/presentation/screens/contrat_detail_page.dart';
 
 class ContratDetailsAppPage extends StatelessWidget {
@@ -16,7 +17,7 @@ class ContratDetailsAppPage extends StatelessWidget {
     if (subscriptionId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Détails du contrat'),
+          title: Text('DÃ©tails du contrat'),
           backgroundColor: const Color(0xFF002B6B),
           foregroundColor: Colors.white,
         ),
@@ -25,13 +26,13 @@ class ContratDetailsAppPage extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Icon(Icons.error_outline, size: 56, color: Color(0xFFEF4444)),
-                SizedBox(height: 12),
+                SizedBox(height: context.r(12)),
                 Text(
-                  'Impossible de charger les détails de ce contrat.',
+                  'Impossible de charger les dÃ©tails de ce contrat.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -46,3 +47,4 @@ class ContratDetailsAppPage extends StatelessWidget {
     );
   }
 }
+

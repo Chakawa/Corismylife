@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mycorislife/services/kyc_service.dart';
 
@@ -73,8 +74,8 @@ class _KYCDocumentsScreenState extends State<KYCDocumentsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Text('Documents requis', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 16),
+                Text('Documents requis', style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700)),
+                SizedBox(height: context.r(16)),
                 ..._requirements.map((req) {
                   final key = req['key'] as String;
                   final label = req['label'] as String;
@@ -92,7 +93,7 @@ class _KYCDocumentsScreenState extends State<KYCDocumentsScreen> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
     );

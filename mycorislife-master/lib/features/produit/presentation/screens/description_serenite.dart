@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:mycorislife/services/auth_service.dart';
 
@@ -59,7 +60,7 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'CORIS SÉRÉNITÉ PLUS',
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -124,34 +125,34 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
                   data: markdownContent,
                   styleSheet: MarkdownStyleSheet(
                     // Titres principaux
-                    h3: const TextStyle(
-                      fontSize: 28.0,
+                    h3: TextStyle(
+                      fontSize: context.sp(28.0),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B),
                       height: 1.3,
                     ),
                     // Sous-titres
-                    h4: const TextStyle(
-                      fontSize: 22.0,
+                    h4: TextStyle(
+                      fontSize: context.sp(22.0),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                       height: 1.4,
                     ),
                     // Paragraphes
-                    p: const TextStyle(
-                      fontSize: 16.0,
+                    p: TextStyle(
+                      fontSize: context.sp(16.0),
                       height: 1.6,
                       color: Color(0xFF333333),
                       fontWeight: FontWeight.w400,
                     ),
                     // Texte en gras
-                    strong: const TextStyle(
+                    strong: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
                     // Puces de liste
-                    listBullet: const TextStyle(
-                      fontSize: 16.0,
+                    listBullet: TextStyle(
+                      fontSize: context.sp(16.0),
                       color: Color(0xFFE30613),
                       fontWeight: FontWeight.bold,
                     ),
@@ -167,10 +168,10 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
                       ),
                     ),
                     // Code inline (pour les emojis)
-                    code: const TextStyle(
+                    code: TextStyle(
                       backgroundColor: Colors.transparent,
                       color: Color(0xFFE30613),
-                      fontSize: 16.0,
+                      fontSize: context.sp(16.0),
                     ),
                   ),
                 ),
@@ -193,16 +194,16 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
               ),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Prêt à commencer votre épargne ?',
                     style: TextStyle(
-                      fontSize: 20.0,
+                      fontSize: context.sp(20.0),
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16.0),
+                  SizedBox(height: context.r(16.0)),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -235,15 +236,15 @@ La prime est fonction de l'âge de l'assuré à la date de souscription, du capi
                         ),
                         elevation: 3.0,
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.security, size: 24),
-                          SizedBox(width: 12),
+                          SizedBox(width: context.r(12)),
                           Text(
                             'SOUSCRIRE MAINTENANT',
                             style: TextStyle(
-                              fontSize: 17.0,
+                              fontSize: context.sp(17.0),
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.8,
                             ),

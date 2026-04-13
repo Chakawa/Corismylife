@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:mycorislife/services/contrat_pdf_service.dart';
 
 /// Page pour visualiser le PDF d'un contrat
-/// Permet de voir, télécharger et partager le PDF
+/// Permet de voir, tÃ©lÃ©charger et partager le PDF
 class ContratPdfViewerPage extends StatefulWidget {
   final String numepoli;
   final String? clientName;
@@ -80,12 +81,12 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: blanc, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.check_circle, color: blanc, size: 20),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
-                  'PDF téléchargé avec succès!\n${savedFile.path}',
-                  style: const TextStyle(fontSize: 13),
+                  'PDF tÃ©lÃ©chargÃ© avec succÃ¨s!\n${savedFile.path}',
+                  style: TextStyle(fontSize: context.sp(13)),
                 ),
               ),
             ],
@@ -104,8 +105,8 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: blanc, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.error_outline, color: blanc, size: 20),
+              SizedBox(width: context.r(12)),
               Expanded(child: Text('Erreur: $e')),
             ],
           ),
@@ -140,19 +141,19 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Contrat CORIS',
               style: TextStyle(
                 color: blanc,
-                fontSize: 18,
+                fontSize: context.sp(18),
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
               'Police: ${widget.numepoli}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: blanc,
-                fontSize: 12,
+                fontSize: context.sp(12),
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -165,27 +166,27 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
           if (_file != null) ...[
             IconButton(
               onPressed: _sharePdf,
-              icon: const Icon(Icons.share, color: blanc),
+              icon: Icon(Icons.share, color: blanc),
               tooltip: 'Partager',
             ),
             IconButton(
               onPressed: _downloadPdf,
-              icon: const Icon(Icons.download, color: blanc),
-              tooltip: 'Télécharger',
+              icon: Icon(Icons.download, color: blanc),
+              tooltip: 'TÃ©lÃ©charger',
             ),
           ],
         ],
       ),
       body: _loading
-          ? const Center(
+            ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(color: bleuCoris),
-                  SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
                   Text(
                     'Chargement du PDF...',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(fontSize: context.sp(16), color: Colors.grey),
                   ),
                 ],
               ),
@@ -197,33 +198,33 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 64,
                           color: Colors.red,
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
+                        SizedBox(height: context.r(16)),
+                        Text(
                           'Erreur de chargement',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: context.sp(20),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: TextStyle(
+                            fontSize: context.sp(14),
                             color: Colors.grey,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: context.r(24)),
                         ElevatedButton.icon(
                           onPressed: _loadPdf,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Réessayer'),
+                          icon: Icon(Icons.refresh),
+                          label: Text('RÃ©essayer'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: bleuCoris,
                             foregroundColor: blanc,
@@ -250,14 +251,14 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.picture_as_pdf,
+                            Icon(Icons.picture_as_pdf,
                                 color: blanc, size: 16),
-                            const SizedBox(width: 8),
+                            SizedBox(width: context.r(8)),
                             Text(
                               'Page ${_currentPage + 1} / $_totalPages',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: blanc,
-                                fontSize: 14,
+                                fontSize: context.sp(14),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -295,3 +296,4 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
     );
   }
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import '../../domain/commercial_service.dart';
 import 'subscription_detail_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/pdf_viewer_page.dart';
@@ -90,8 +91,9 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
   }
 
   String _formatProductName(String productName) {
-    if (productName.isEmpty || productName == 'Non renseigné')
+    if (productName.isEmpty || productName == 'Non renseigné') {
       return productName;
+    }
     // Convertir coris_retraite -> Coris Retraite
     return productName
         .split('_')
@@ -153,7 +155,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
             size: 18,
             color: color,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: context.r(8)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,16 +163,16 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: context.sp(11),
                     color: grisTexte,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: context.r(2)),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: context.sp(13),
                     color: color,
                     fontWeight: FontWeight.w600,
                   ),
@@ -306,23 +308,23 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                               size: 64,
                               color: Colors.grey[400],
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: context.r(16)),
                             Text(
                               _searchQuery.isEmpty
                                   ? 'Aucune proposition/contrat trouvé'
                                   : 'Aucun résultat ne correspond à votre recherche',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: context.sp(18),
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: context.r(8)),
                             if (_searchQuery.isEmpty)
                               Text(
                                 'Vos propositions et contrats apparaîtront ici',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                   color: Colors.grey[500],
                                 ),
                               ),
@@ -407,15 +409,15 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                       ? clientNameDisplay[0]
                                                           .toUpperCase()
                                                       : '?',
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     color: blanc,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 24,
+                                                    fontSize: context.sp(24),
                                                   ),
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 16),
+                                            SizedBox(width: context.r(16)),
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
@@ -423,14 +425,14 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                 children: [
                                                   Text(
                                                     clientNameDisplay,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      fontSize: 18,
+                                                      fontSize: context.sp(18),
                                                       color: bleuCoris,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 4),
+                                                  SizedBox(height: context.r(4)),
                                                   // Badge de statut
                                                   Container(
                                                     padding: const EdgeInsets
@@ -472,7 +474,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                                   'statut']),
                                                           style: TextStyle(
                                                             color: statusColor,
-                                                            fontSize: 12,
+                                                            fontSize: context.sp(12),
                                                             fontWeight:
                                                                 FontWeight.w600,
                                                           ),
@@ -516,7 +518,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 16),
+                                        SizedBox(height: context.r(16)),
                                         // Informations du produit
                                         Container(
                                           padding: const EdgeInsets.all(12),
@@ -542,7 +544,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                   size: 20,
                                                 ),
                                               ),
-                                              const SizedBox(width: 12),
+                                              SizedBox(width: context.r(12)),
                                               Expanded(
                                                 child: Column(
                                                   crossAxisAlignment:
@@ -551,20 +553,20 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                     Text(
                                                       'Produit',
                                                       style: TextStyle(
-                                                        fontSize: 12,
+                                                        fontSize: context.sp(12),
                                                         color: grisTexte,
                                                         fontWeight:
                                                             FontWeight.w500,
                                                       ),
                                                     ),
-                                                    const SizedBox(height: 4),
+                                                    SizedBox(height: context.r(4)),
                                                     Text(
                                                       _formatProductName(
                                                           subscription[
                                                                   'produit_nom'] ??
                                                               'Non renseigné'),
-                                                      style: const TextStyle(
-                                                        fontSize: 15,
+                                                      style: TextStyle(
+                                                        fontSize: context.sp(15),
                                                         fontWeight:
                                                             FontWeight.w600,
                                                         color: bleuCoris,
@@ -576,7 +578,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                             ],
                                           ),
                                         ),
-                                        const SizedBox(height: 12),
+                                        SizedBox(height: context.r(12)),
                                         // Informations complémentaires
                                         Row(
                                           children: [
@@ -589,7 +591,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                                 bleuCoris,
                                               ),
                                             ),
-                                            const SizedBox(width: 12),
+                                            SizedBox(width: context.r(12)),
                                             Expanded(
                                               child: _buildInfoChip(
                                                 Icons.calendar_today,
@@ -602,7 +604,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 12),
+                                        SizedBox(height: context.r(12)),
                                         // Flèche de navigation
                                         Row(
                                           mainAxisAlignment:
@@ -611,12 +613,12 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                                             Text(
                                               'Voir les détails',
                                               style: TextStyle(
-                                                fontSize: 13,
+                                                fontSize: context.sp(13),
                                                 color: bleuCoris,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
+                                            SizedBox(width: context.r(8)),
                                             Icon(
                                               Icons.arrow_forward_ios,
                                               size: 16,

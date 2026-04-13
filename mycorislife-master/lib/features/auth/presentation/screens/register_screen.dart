@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/theme.dart';
@@ -192,7 +193,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Envoyer l'OTP
-      final otpCode = await AuthService.sendOtp(
+      await AuthService.sendOtp(
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );
@@ -291,6 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _register() async {
     if (_currentPage >= _formKeys.length) return;
 
@@ -364,7 +366,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             color: condition ? Colors.green : Colors.grey,
             size: fontSize * 0.9,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: context.r(8)),
           Text(
             text,
             style: TextStyle(
@@ -543,7 +545,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 fontWeight: FontWeight.w500, fontSize: fontSize * 0.9)),
         SizedBox(height: fontSize * 0.3),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           icon: Icon(Icons.arrow_drop_down,
               color: bleuCoris, size: fontSize * 1.2),
           decoration: InputDecoration(
@@ -1383,7 +1385,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       )
                     else
-                      const SizedBox(width: 1),
+                      SizedBox(width: context.r(1)),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -1535,7 +1537,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Envoyer un NOUVEAU code OTP (l'ancien est remplacé côté serveur)
-      final otpCode = await AuthService.sendOtp(
+      await AuthService.sendOtp(
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../domain/commercial_service.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'mes_clients_screen.dart';
 import 'mes_commissions_screen.dart';
 
@@ -183,27 +184,27 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
           title: Row(
             children: [
               Container(
-                width: 35,
-                height: 35,
+                width: context.r(33),
+                height: context.r(33),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
                   child: Image.asset(
                     'assets/images/logo.png',
-                    width: 35,
-                    height: 35,
+                    width: context.r(33),
+                    height: context.r(33),
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: context.r(10)),
+              Text(
                 'MyCorisLife',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
-                  fontSize: 20,
+                  fontSize: context.sp(18),
                 ),
               ),
             ],
@@ -224,8 +225,8 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
           unselectedItemColor: Colors.grey[600],
           backgroundColor: Colors.white,
           type: BottomNavigationBarType.fixed,
-          selectedFontSize: 10,
-          unselectedFontSize: 11,
+          selectedFontSize: context.sp(10),
+          unselectedFontSize: context.sp(10),
           onTap: (int index) {
             if (index == 2) {
               Navigator.pushNamed(context, '/souscription');

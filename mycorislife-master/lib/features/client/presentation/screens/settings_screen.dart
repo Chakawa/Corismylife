@@ -6,6 +6,7 @@ import 'package:mycorislife/features/auth/presentation/screens/login_screen.dart
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/privacy_policy_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/terms_conditions_screen.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// Page de paramètres de l'application
 /// Permet à l'utilisateur de configurer l'application et gérer son compte
@@ -183,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
 
-          const SizedBox(height: 24),
+            SizedBox(height: context.r(20)),
 
           // Section Sécurité
           _buildSectionHeader('Sécurité'),
@@ -210,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          const SizedBox(height: 24),
+            SizedBox(height: context.r(20)),
 
           // Section Compte
           _buildSectionHeader('Compte'),
@@ -261,12 +262,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          const SizedBox(height: 24),
+            SizedBox(height: context.r(20)),
 
           // Bouton de déconnexion
           _buildLogoutButton(),
 
-          const SizedBox(height: 40),
+            SizedBox(height: context.r(28)),
         ],
       ),
     );
@@ -278,8 +279,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
+        style: TextStyle(
+          fontSize: context.sp(17),
           fontWeight: FontWeight.w700,
           color: bleuCoris,
         ),
@@ -312,18 +313,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          width: 48,
-          height: 48,
+          width: context.r(44),
+          height: context.r(44),
           decoration: BoxDecoration(
             color: bleuCoris.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: bleuCoris, size: 24),
+          child: Icon(icon, color: bleuCoris, size: context.r(21)),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: context.sp(15),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
@@ -331,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(13),
             color: grisTexte,
           ),
         ),
@@ -358,18 +359,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onTap: _showLogoutDialog,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          width: 48,
-          height: 48,
+          width: context.r(44),
+          height: context.r(44),
           decoration: BoxDecoration(
             color: rougeCoris.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.logout, color: rougeCoris, size: 24),
+          child: Icon(Icons.logout, color: rougeCoris, size: context.r(21)),
         ),
-        title: const Text(
+        title: Text(
           'Déconnexion',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(15),
             fontWeight: FontWeight.w600,
             color: rougeCoris,
           ),
@@ -377,12 +378,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle: Text(
           'Se déconnecter de l\'application',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(13),
             color: grisTexte,
           ),
         ),
-        trailing:
-            const Icon(Icons.arrow_forward_ios, size: 16, color: rougeCoris),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: rougeCoris),
       ),
     );
   }
@@ -407,14 +407,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: bleuCoris.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.lock_rounded, color: bleuCoris, size: 24),
+              child: Icon(Icons.lock_rounded, color: bleuCoris, size: context.r(22)),
             ),
-            const SizedBox(width: 12),
-            const Flexible(
+            SizedBox(width: context.r(10)),
+            Flexible(
               child: Text(
                 'Changer le mot de passe',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: context.sp(17),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -433,15 +433,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  prefixIcon:
-                      const Icon(Icons.lock_outline_rounded, color: bleuCoris),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, color: bleuCoris),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: bleuCoris, width: 2),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(14)),
               TextField(
                 controller: newPasswordController,
                 obscureText: true,
@@ -457,7 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(14)),
               TextField(
                 controller: confirmPasswordController,
                 obscureText: true,
@@ -466,8 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  prefixIcon:
-                      const Icon(Icons.lock_clock_rounded, color: bleuCoris),
+                  prefixIcon: const Icon(Icons.lock_clock_rounded, color: bleuCoris),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: bleuCoris, width: 2),
@@ -493,16 +491,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : () async {
                         final oldPwd = oldPasswordController.text.trim();
                         final newPwd = newPasswordController.text.trim();
-                        final confirmPwd =
-                            confirmPasswordController.text.trim();
+                        final confirmPwd = confirmPasswordController.text.trim();
 
-                        if (oldPwd.isEmpty ||
-                            newPwd.isEmpty ||
-                            confirmPwd.isEmpty) {
+                        if (oldPwd.isEmpty || newPwd.isEmpty || confirmPwd.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('Tous les champs sont requis'),
-                                backgroundColor: Colors.red),
+                              content: Text('Tous les champs sont requis'),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                           return;
                         }
@@ -510,9 +506,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (newPwd.length < 8) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text(
-                                    'Le nouveau mot de passe doit contenir au moins 8 caractères'),
-                                backgroundColor: Colors.red),
+                              content: Text('Le nouveau mot de passe doit contenir au moins 8 caractères'),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                           return;
                         }
@@ -520,9 +516,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (newPwd != confirmPwd) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text(
-                                    'Les mots de passe ne correspondent pas'),
-                                backgroundColor: Colors.red),
+                              content: Text('Les mots de passe ne correspondent pas'),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                           return;
                         }
@@ -530,16 +526,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         setState(() => _isChangingPassword = true);
                         setDialogState(() {});
                         try {
-                          await UserService.changePassword(
-                              oldPassword: oldPwd, newPassword: newPwd);
+                          await UserService.changePassword(oldPassword: oldPwd, newPassword: newPwd);
                           if (!context.mounted) return;
                           setState(() => _isChangingPassword = false);
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content:
-                                    Text('Mot de passe changé avec succès'),
-                                backgroundColor: vertSucces),
+                              content: Text('Mot de passe changé avec succès'),
+                              backgroundColor: vertSucces,
+                            ),
                           );
                         } catch (e) {
                           setState(() => _isChangingPassword = false);
@@ -547,9 +542,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                                content: Text(
-                                    e.toString().replaceAll('Exception: ', '')),
-                                backgroundColor: Colors.red),
+                              content: Text(e.toString().replaceAll('Exception: ', '')),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       },
@@ -558,8 +553,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
                     : const Text('Confirmer'),
               );
             },
@@ -579,17 +574,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'MyCorisLife',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(18),
                 fontWeight: FontWeight.w700,
                 color: bleuCoris,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             const Text('Version 1.0.0'),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(14)),
             Text(
               'Application mobile de gestion des contrats d\'assurance CORIS.',
               style: TextStyle(
@@ -597,10 +592,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: context.r(14)),
+            Text(
               '© 2025 CORIS. Tous droits réservés.',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: context.sp(11)),
             ),
           ],
         ),

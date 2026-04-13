@@ -10,6 +10,7 @@ import 'package:mycorislife/features/client/presentation/screens/edit_profile_sc
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
 import 'package:mycorislife/services/user_service.dart';
 import 'package:mycorislife/services/auth_service.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 // Couleurs partagées
 const Color bleuCoris = Color(0xFF002B6B);
@@ -63,7 +64,7 @@ class _ProfilPageState extends State<ProfilPage> {
   /// Obtient l'URL de la photo de profil
   String? get _photoUrl {
     final url = _userData?['photo_url'];
-    return url != null ? url.toString().trim() : null;
+    return url?.toString().trim();
   }
 
   /// Obtient le numéro de téléphone
@@ -79,7 +80,7 @@ class _ProfilPageState extends State<ProfilPage> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: context.r(180),
             floating: false,
             pinned: true,
             backgroundColor: bleuCoris,
@@ -87,11 +88,11 @@ class _ProfilPageState extends State<ProfilPage> {
             automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
-              title: const Text(
+              title: Text(
                 'Mon Profil',
                 style: TextStyle(
                   color: blanc,
-                  fontSize: 18,
+                  fontSize: context.sp(17),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -106,10 +107,10 @@ class _ProfilPageState extends State<ProfilPage> {
                     ],
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.account_circle,
-                    size: 80,
+                    size: context.r(72),
                     color: blanc,
                   ),
                 ),
@@ -267,14 +268,14 @@ class _ProfilPageState extends State<ProfilPage> {
                     ),
                   ),
                   child: CircleAvatar(
-                    radius: 36,
+                    radius: context.r(34),
                     backgroundImage: _photoUrl != null
                         ? NetworkImage(
                             '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl')
                         : null,
                     backgroundColor: const Color(0xFFF0F4F8),
                     child: _photoUrl == null
-                        ? const Icon(Icons.person, size: 40, color: bleuCoris)
+                        ? Icon(Icons.person, size: context.r(36), color: bleuCoris)
                         : null,
                   ),
                 ),
@@ -305,8 +306,8 @@ class _ProfilPageState extends State<ProfilPage> {
               children: [
                 Text(
                   _fullName,
-                  style: const TextStyle(
-                    fontSize: 20,
+                  style: TextStyle(
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.bold,
                     color: bleuCoris,
                   ),
@@ -320,7 +321,7 @@ class _ProfilPageState extends State<ProfilPage> {
                     Expanded(
                       child: Text(
                         _email,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey,
                         ),
@@ -337,7 +338,7 @@ class _ProfilPageState extends State<ProfilPage> {
                     const SizedBox(width: 4),
                     Text(
                       _telephone,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey,
                       ),
@@ -354,7 +355,7 @@ class _ProfilPageState extends State<ProfilPage> {
                       Expanded(
                         child: Text(
                           _adresse,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey,
                           ),
@@ -424,7 +425,7 @@ class _ProfilPageState extends State<ProfilPage> {
                   ],
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF002B6B),
@@ -713,6 +714,7 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
+  // ignore: unused_element
   void _showContractDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -777,6 +779,7 @@ class _ProfilPageState extends State<ProfilPage> {
     );
   }
 
+  // ignore: unused_element
   void _showPropositionDialog(BuildContext context) {
     Navigator.push(
       context,
@@ -887,7 +890,7 @@ class ProfileMenuItem extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey,
               ),

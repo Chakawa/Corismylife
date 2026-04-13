@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 
 class ListeClientsPage extends StatefulWidget {
-  const ListeClientsPage({Key? key}) : super(key: key);
+  const ListeClientsPage({super.key});
 
   @override
   State<ListeClientsPage> createState() => _ListeClientsPageState();
@@ -84,16 +85,16 @@ class _ListeClientsPageState extends State<ListeClientsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes Clients'),
+        title: Text('Mes Clients'),
         backgroundColor: const Color(0xFF002B6B),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : clients.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Aucun client trouvé',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(fontSize: context.sp(16), color: Colors.grey),
                   ),
                 )
               : RefreshIndicator(
@@ -114,14 +115,14 @@ class _ListeClientsPageState extends State<ListeClientsPage> {
                                   : client['nom']?.toString().isNotEmpty == true
                                       ? client['nom'].toString().substring(0, 1).toUpperCase()
                                       : 'C'),
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                           title: Text(
                             '${client['prenom']?.toString().trim() ?? ''} ${client['nom']?.toString().trim() ?? ''}'.trim().isEmpty
                                 ? 'Client sans nom'
                                 : '${client['prenom']?.toString().trim() ?? ''} ${client['nom']?.toString().trim() ?? ''}'.trim(),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +131,7 @@ class _ListeClientsPageState extends State<ListeClientsPage> {
                               Text('Tél: ${client['telephone'] ?? 'N/A'}'),
                             ],
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16),
                           onTap: () {
                             Navigator.pushNamed(
                               context,

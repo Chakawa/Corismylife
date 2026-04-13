@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import '../../domain/commercial_service.dart';
 
 class CreateClientScreen extends StatefulWidget {
@@ -148,16 +149,16 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               Text(
                 'Informations du Client',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: context.sp(20),
                   fontWeight: FontWeight.bold,
                   color: bleuCoris,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
 
               // Civilité
               DropdownButtonFormField<String>(
@@ -181,7 +182,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Nom
               TextFormField(
@@ -200,7 +201,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Prénom
               TextFormField(
@@ -219,7 +220,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Email
               TextFormField(
@@ -242,7 +243,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Mot de passe
               TextFormField(
@@ -265,7 +266,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Téléphone
               TextFormField(
@@ -285,7 +286,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Date de naissance
               InkWell(
@@ -309,7 +310,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Lieu de naissance
               TextFormField(
@@ -322,7 +323,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   prefixIcon: const Icon(Icons.location_on),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Adresse
               TextFormField(
@@ -335,7 +336,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   prefixIcon: const Icon(Icons.home),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
 
               // Pays
               DropdownButtonFormField<String>(
@@ -359,7 +360,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: context.r(32)),
 
               // Bouton de création
               ElevatedButton(
@@ -381,16 +382,16 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                               AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Créer le Client',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
             ],
           ),
         ),

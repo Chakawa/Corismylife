@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// Écran d'authentification à deux facteurs (2FA) avec OTP
 class TwoFactorAuthScreen extends StatefulWidget {
@@ -112,21 +113,21 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           title: const Text('Authentification 2FA'),
           backgroundColor: bleuCoris),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.r(20)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.security, size: 64, color: bleuCoris),
-            const SizedBox(height: 24),
-            const Text('Entrez le code à 6 chiffres',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 32),
+            Icon(Icons.security, size: context.r(56), color: bleuCoris),
+            SizedBox(height: context.r(20)),
+            Text('Entrez le code à 6 chiffres',
+                style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w600)),
+            SizedBox(height: context.r(24)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(
                   6,
                   (i) => SizedBox(
-                        width: 45,
+                        width: context.r(42),
                         child: TextField(
                           controller: _digitControllers[i],
                           focusNode: _focusNodes[i],
@@ -151,18 +152,18 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                         ),
                       )),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: context.r(24)),
             ElevatedButton(
               onPressed: _isVerifying ? null : _verifyOTP,
               style: ElevatedButton.styleFrom(
                   backgroundColor: bleuCoris,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16)),
+                  EdgeInsets.symmetric(horizontal: context.r(40), vertical: context.r(14))),
               child: _isVerifying
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text('Vérifier'),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(14)),
             TextButton(
               onPressed: _isRequesting ? null : _requestOTP,
               child: _isRequesting
@@ -177,8 +178,12 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
 
   @override
   void dispose() {
-    for (var c in _digitControllers) c.dispose();
-    for (var f in _focusNodes) f.dispose();
+    for (var c in _digitControllers) {
+      c.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 }

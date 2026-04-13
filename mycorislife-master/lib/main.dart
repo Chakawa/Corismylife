@@ -148,6 +148,16 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
       initialRoute: '/login', // Toujours commencer par la page de connexion
       routes: appRoutes,
       debugShowCheckedModeBanner: false,
+      // Limiter la mise à l'échelle du texte système entre 0.85× et 1.1×
+      // et appliquer une adaptation globale de largeur pour tous les écrans.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        final clampedScale = mq.textScaler.scale(1.0).clamp(0.85, 1.10);
+        return MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(clampedScale)),
+          child: _AppResponsiveShell(child: child!),
+        );
+      },
       // Configuration de la localisation en français
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -158,6 +168,46 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
         Locale('fr', 'FR'), // Français
       ],
       locale: const Locale('fr', 'FR'),
+    );
+  }
+}
+
+class _AppResponsiveShell extends StatelessWidget {
+  const _AppResponsiveShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final width = mq.size.width;
+
+    // Sur tablette/desktop, on centre le contenu avec une largeur max cohérente.
+    if (width >= 600) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: child,
+        ),
+      );
+    }
+
+    // Sur petits téléphones, on applique une légère réduction globale.
+    final scale = (width / 390).clamp(0.90, 1.0);
+    if (scale == 1.0) {
+      return child;
+    }
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Transform.scale(
+        alignment: Alignment.topCenter,
+        scale: scale,
+        child: SizedBox(
+          width: width / scale,
+          child: child,
+        ),
+      ),
     );
   }
 }

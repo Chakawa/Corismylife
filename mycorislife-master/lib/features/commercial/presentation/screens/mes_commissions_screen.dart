@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import '../../domain/commercial_service.dart';
 import 'commission_detail_screen.dart';
-import 'commissions_page.dart'; // Import pour les commissions en instance
+// Import pour les commissions en instance
 
 /// ===============================================
 /// PAGE DES COMMISSIONS COMMERCIAL
 /// ===============================================
 ///
 /// Affiche la liste des bordereaux de commissions du commercial
-/// avec un design moderne et coloré.
+/// avec un design moderne et colorÃ©.
 ///
-/// FONCTIONNALITÉS :
+/// FONCTIONNALITÃ‰S :
 /// - Affichage de la liste des bordereaux de commissions
 /// - Calcul et affichage du total des commissions
-/// - Design moderne avec icônes et couleurs
-/// - Navigation vers les détails d'un bordereau
-/// - Pull-to-refresh pour actualiser les données
-/// - Accès aux commissions en instance
+/// - Design moderne avec icÃ´nes et couleurs
+/// - Navigation vers les dÃ©tails d'un bordereau
+/// - Pull-to-refresh pour actualiser les donnÃ©es
+/// - AccÃ¨s aux commissions en instance
 class MesCommissionsScreen extends StatefulWidget {
   const MesCommissionsScreen({super.key});
 
@@ -38,14 +39,14 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
   static const Color grisLeger = Color(0xFFF1F5F9);
 
   // ============================================
-  // ÉTAT DE LA PAGE
+  // Ã‰TAT DE LA PAGE
   // ============================================
   List<Map<String, dynamic>> _bordereaux = [];
   String _totalFormate = '0 FCFA';
   bool _isLoading = true;
   String? _errorMessage;
-  String _searchQuery = ''; // Requête de recherche pour filtrer les bordereaux
-  bool _showSearchBar = false; // Contrôle l'affichage de la barre de recherche
+  String _searchQuery = ''; // RequÃªte de recherche pour filtrer les bordereaux
+  bool _showSearchBar = false; // ContrÃ´le l'affichage de la barre de recherche
 
   @override
   void initState() {
@@ -78,7 +79,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${_errorMessage}'),
+            content: Text('Erreur: $_errorMessage'),
             backgroundColor: rougeCoris,
             duration: const Duration(seconds: 4),
           ),
@@ -87,7 +88,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
     }
   }
 
-  /// Formate un montant en FCFA avec séparateurs de milliers
+  /// Formate un montant en FCFA avec sÃ©parateurs de milliers
   String _formatMoney(dynamic value) {
     if (value == null) return '0 FCFA';
     final numValue =
@@ -100,16 +101,16 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
 
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return 'Non renseigné';
+    if (date == null || date.isEmpty) return 'Non renseignÃ©';
     
-    // Si la date contient déjà le bon format DD/MM/YYYY, la retourner telle quelle
+    // Si la date contient dÃ©jÃ  le bon format DD/MM/YYYY, la retourner telle quelle
     if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) {
       return date;
     }
     
     // Sinon, parser et formater proprement (enlever les timestamps)
     try {
-      // Supprimer les timestamps et heures si présents
+      // Supprimer les timestamps et heures si prÃ©sents
       String cleanDate = date.split('T')[0].split(' ')[0];
       
       // Parser la date
@@ -118,13 +119,13 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
         // Format ISO 8601 : YYYY-MM-DD
         parsedDate = DateTime.parse(cleanDate);
       } else if (cleanDate.contains('/')) {
-        // Format déjà DD/MM/YYYY ou MM/DD/YYYY
+        // Format dÃ©jÃ  DD/MM/YYYY ou MM/DD/YYYY
         final parts = cleanDate.split('/');
         if (parts.length == 3) {
           // Assumer DD/MM/YYYY si le premier nombre est <= 31
           if (int.parse(parts[0]) <= 31) {
             parsedDate = DateTime(
-              int.parse(parts[2]), // année
+              int.parse(parts[2]), // annÃ©e
               int.parse(parts[1]), // mois
               int.parse(parts[0]), // jour
             );
@@ -151,8 +152,8 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
     }
   }
 
-  /// Filtre les bordereaux selon la requête de recherche
-  /// Recherche par numéro de bordereau
+  /// Filtre les bordereaux selon la requÃªte de recherche
+  /// Recherche par numÃ©ro de bordereau
   List<Map<String, dynamic>> get _filteredBordereaux {
     if (_searchQuery.isEmpty) {
       return _bordereaux;
@@ -162,16 +163,16 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
       final numeroBordereau =
           (bordereau['numeroBordereau'] ?? '').toString().toLowerCase();
       final exercice = (bordereau['exercice'] ?? '').toString().toLowerCase();
-      // Rechercher dans le numéro de bordereau ou l'exercice
+      // Rechercher dans le numÃ©ro de bordereau ou l'exercice
       return numeroBordereau.contains(query) || exercice.contains(query);
     }).toList();
   }
 
-  /// Obtient la couleur selon l'état du bordereau
+  /// Obtient la couleur selon l'Ã©tat du bordereau
   Color _getEtatColor(String? etat) {
     if (etat == null) return grisTexte;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payé') || etatLower.contains('payee')) {
+    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
       return vertSucces;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -181,11 +182,11 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
     }
   }
 
-  /// Obtient l'icône selon l'état du bordereau
+  /// Obtient l'icÃ´ne selon l'Ã©tat du bordereau
   IconData _getEtatIcon(String? etat) {
     if (etat == null) return Icons.help_outline;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payé') || etatLower.contains('payee')) {
+    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
       return Icons.check_circle;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -202,17 +203,17 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
       appBar: AppBar(
         backgroundColor: bleuCoris,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Mes Commissions',
           style: TextStyle(
             color: blanc,
             fontWeight: FontWeight.w600,
-            fontSize: 20,
+            fontSize: context.sp(20),
           ),
         ),
         iconTheme: const IconThemeData(color: blanc),
         actions: [
-          // Icône de recherche pour afficher/masquer la barre de recherche
+          // IcÃ´ne de recherche pour afficher/masquer la barre de recherche
           IconButton(
             icon:
                 Icon(_showSearchBar ? Icons.close : Icons.search, color: blanc),
@@ -220,7 +221,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
               setState(() {
                 _showSearchBar = !_showSearchBar;
                 if (!_showSearchBar) {
-                  // Si on ferme la barre de recherche, réinitialiser la requête
+                  // Si on ferme la barre de recherche, rÃ©initialiser la requÃªte
                   _searchQuery = '';
                 }
               });
@@ -258,7 +259,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                           },
                           decoration: InputDecoration(
                             hintText:
-                                'Rechercher par numéro de bordereau ou exercice...',
+                                'Rechercher par numÃ©ro de bordereau ou exercice...',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
@@ -291,16 +292,16 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                                 itemCount: _filteredBordereaux.length +
                                     1, // +1 pour la carte du total
                                 itemBuilder: (context, index) {
-                                  // Premier élément : carte du total
+                                  // Premier Ã©lÃ©ment : carte du total
                                   if (index == 0) {
                                     return Column(
                                       children: [
                                         _buildTotalCard(),
-                                        const SizedBox(height: 16),
+                                        SizedBox(height: context.r(16)),
                                       ],
                                     );
                                   }
-                                  // Autres éléments : bordereaux
+                                  // Autres Ã©lÃ©ments : bordereaux
                                   final bordereau =
                                       _filteredBordereaux[index - 1];
                                   return _buildBordereauCard(bordereau);
@@ -324,12 +325,12 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             icon: const Icon(Icons.calculate_outlined, color: blanc, size: 28),
-            label: const Text(
+            label: Text(
               'Mes Commissions en Instance',
               style: TextStyle(
                 color: blanc,
                 fontWeight: FontWeight.w600,
-                fontSize: 17,
+                fontSize: context.sp(17),
                 letterSpacing: 0.5,
               ),
             ),
@@ -376,33 +377,33 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                   size: 32,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Text(
+              SizedBox(width: context.r(16)),
+              Text(
                 'Total des Commissions',
                 style: TextStyle(
                   color: blanc,
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           Text(
             _totalFormate,
-            style: const TextStyle(
+            style: TextStyle(
               color: blanc,
-              fontSize: 36,
+              fontSize: context.sp(36),
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             '${_searchQuery.isEmpty ? _bordereaux.length : _filteredBordereaux.length} bordereau${(_searchQuery.isEmpty ? _bordereaux.length : _filteredBordereaux.length) > 1 ? 'x' : ''}',
             style: TextStyle(
               color: blanc.withValues(alpha: 0.9),
-              fontSize: 14,
+              fontSize: context.sp(14),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -448,7 +449,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // En-tête avec numéro et exercice
+                // En-tÃªte avec numÃ©ro et exercice
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -467,15 +468,15 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                               size: 24,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: context.r(12)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Bordereau N° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
+                                  'Bordereau NÂ° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: bleuCoris,
                                   ),
@@ -486,7 +487,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                         ],
                       ),
                     ),
-                    // Badge d'état
+                    // Badge d'Ã©tat
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -506,11 +507,11 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                             size: 16,
                             color: etatColor,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: context.r(6)),
                           Text(
                             etat,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: context.sp(12),
                               fontWeight: FontWeight.w600,
                               color: etatColor,
                             ),
@@ -520,8 +521,8 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Période
+                SizedBox(height: context.r(20)),
+                // PÃ©riode
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -535,24 +536,24 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                         size: 20,
                         color: bleuCoris,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: context.r(12)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Période',
+                              'PÃ©riode',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: context.sp(12),
                                 color: grisTexte,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: context.r(4)),
                             Text(
                               '${_formatDate(bordereau['dateDebut'])} - ${_formatDate(bordereau['dateFin'])}',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: TextStyle(
+                                fontSize: context.sp(14),
                                 fontWeight: FontWeight.w600,
                                 color: bleuCoris,
                               ),
@@ -563,7 +564,7 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 // Montant
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -582,24 +583,24 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
                             size: 20,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Montant',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: context.sp(12),
                                 color: grisTexte,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: context.r(4)),
                             Text(
                               bordereau['montantFormate'] ??
                                   _formatMoney(bordereau['montant']),
-                              style: const TextStyle(
-                                fontSize: 20,
+                              style: TextStyle(
+                                fontSize: context.sp(20),
                                 fontWeight: FontWeight.bold,
                                 color: vertSucces,
                               ),
@@ -641,21 +642,21 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
               color: bleuCoris.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: context.r(24)),
           Text(
             'Aucun bordereau de commission',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: context.sp(20),
               fontWeight: FontWeight.w600,
               color: grisTexte,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
-            'Vos bordereaux de commissions\napparaîtront ici',
+            'Vos bordereaux de commissions\napparaÃ®tront ici',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: context.sp(14),
               color: grisTexte.withValues(alpha: 0.7),
             ),
           ),
@@ -677,29 +678,29 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
               size: 64,
               color: rougeCoris,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             Text(
               'Erreur',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w600,
                 color: grisTexte,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text(
               _errorMessage ?? 'Une erreur est survenue',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: context.sp(14),
                 color: grisTexte.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             ElevatedButton.icon(
               onPressed: _loadCommissions,
               icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
+              label: const Text('RÃ©essayer'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: bleuCoris,
                 foregroundColor: blanc,
@@ -716,3 +717,4 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
     );
   }
 }
+

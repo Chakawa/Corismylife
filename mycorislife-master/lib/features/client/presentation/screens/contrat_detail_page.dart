@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -72,9 +73,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
     try {
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
 
-      developer.log('=== TOUTES LES CLÉS DISPONIBLES CONTRAT ===');
+      developer.log('=== TOUTES LES CLÃ‰S DISPONIBLES CONTRAT ===');
       if (data['subscription'] != null) {
-        developer.log('Clés dans subscription: ${data['subscription'].keys}');
+        developer.log('ClÃ©s dans subscription: ${data['subscription'].keys}');
         data['subscription'].forEach((key, value) {
           if (key != 'souscriptiondata') {
             developer.log('$key: $value (type: ${value.runtimeType})');
@@ -119,7 +120,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   String _formatDate(dynamic dateValue) {
     try {
-      if (dateValue == null) return 'Non définie';
+      if (dateValue == null) return 'Non dÃ©finie';
 
       DateTime date;
       if (dateValue is DateTime) {
@@ -241,10 +242,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
       'validated',
       'confirmed',
       'ok',
-      'validé',
-      'validée',
-      'confirmé',
-      'confirmée',
+      'validÃ©',
+      'validÃ©e',
+      'confirmÃ©',
+      'confirmÃ©e',
       'authorised',
       'authorized',
       'contrat',
@@ -280,25 +281,25 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
-      return 'CORIS SOLIDARITÉ';
+      return 'CORIS SOLIDARITÃ‰';
     } else if (produit.toLowerCase().contains('emprunteur')) {
       return 'FLEX EMPRUNTEUR';
     } else if (produit.toLowerCase().contains('etude')) {
-      return 'CORIS ÉTUDE';
+      return 'CORIS Ã‰TUDE';
     } else if (produit.toLowerCase().contains('retraite')) {
       return 'CORIS RETRAITE';
     } else if (produit.toLowerCase().contains('serenite')) {
-      return 'CORIS SÉRÉNITÉ';
+      return 'CORIS SÃ‰RÃ‰NITÃ‰';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
     } else if (produit.toLowerCase().contains('epargne')) {
-      return 'CORIS ÉPARGNE BONUS';
+      return 'CORIS Ã‰PARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
     }
   }
 
-  // MÉTHODE SUPPRIMÉE : _getProductIcon n'est pas utilisée
+  // MÃ‰THODE SUPPRIMÃ‰E : _getProductIcon n'est pas utilisÃ©e
   // IconData _getProductIcon(String produit) {
   //   ...
   // }
@@ -320,7 +321,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   /// Normalise une valeur document en nom de fichier serveur.
-  /// Accepte: URL complète, chemin local, ou nom brut.
+  /// Accepte: URL complÃ¨te, chemin local, ou nom brut.
   String? _extractServerFileName(dynamic rawValue) {
     if (rawValue == null) return null;
     final asString = rawValue.toString().trim();
@@ -339,9 +340,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
         final echeance = DateTime.parse(dateEcheance.toString());
         final now = DateTime.now();
         if (echeance.isBefore(now)) {
-          return 'Échu';
+          return 'Ã‰chu';
         } else if (echeance.difference(now).inDays <= 30) {
-          return 'Bientôt échu';
+          return 'BientÃ´t Ã©chu';
         }
       } catch (e) {
         developer.log('Erreur calcul statut: $e', error: e);
@@ -354,9 +355,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
     switch (status) {
       case 'Actif':
         return const Color(0xFF10B981);
-      case 'Bientôt échu':
+      case 'BientÃ´t Ã©chu':
         return const Color(0xFFF59E0B);
-      case 'Échu':
+      case 'Ã‰chu':
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF64748B);
@@ -383,7 +384,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           dateEffetDt.second,
         );
       } catch (e) {
-        developer.log('Erreur calcul date échéance: $e', error: e);
+        developer.log('Erreur calcul date Ã©chÃ©ance: $e', error: e);
       }
     }
 
@@ -662,13 +663,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
         _subscriptionData?['payment_transaction_id'];
 
     final providerStatusRaw = (paymentInfo['provider_status'] ??
-            paymentInfo['status'] ??
-            paymentInfo['statut'] ??
-            '')
-        .toString();
+        paymentInfo['status'] ??
+        paymentInfo['statut'] ??
+        '')
+      .toString();
     final providerStatus = providerStatusRaw.trim().isEmpty
-        ? 'INCONNU'
-        : providerStatusRaw.toUpperCase();
+      ? 'INCONNU'
+      : providerStatusRaw.toUpperCase();
 
     final validationStatus = _getPaymentStatus(paymentInfo);
 
@@ -682,6 +683,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             'Date de paiement', _formatDateTime(paymentDate)),
         _buildCombinedRecapRow(
             'ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
+        _buildCombinedRecapRow('Statut provider', providerStatus, '', ''),
         _buildCombinedRecapRow('Validation', validationStatus, '', ''),
       ],
     );
@@ -690,36 +692,36 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildSolidariteSection(Map<String, dynamic> data) {
     final capital = data['capital'] ?? 0;
     final primeTotale = data['prime_totale'] ?? 0;
-    final periodicite = data['periodicite'] ?? 'Non définie';
+    final periodicite = data['periodicite'] ?? 'Non dÃ©finie';
     final conjoints = data['conjoints'] ?? [];
     final enfants = data['enfants'] ?? [];
     final ascendants = data['ascendants'] ?? [];
 
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.people_outline,
       const Color(0xFF10B981),
       [
         _buildCombinedRecapRow(
-            'Produit', 'CORIS SOLIDARITÉ', 'Périodicité', periodicite),
+            'Produit', 'CORIS SOLIDARITÃ‰', 'PÃ©riodicitÃ©', periodicite),
         _buildCombinedRecapRow('Capital garanti', _formatMontant(capital),
             'Prime totale', _formatMontant(primeTotale)),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         if (conjoints.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildMembresSection('Conjoint(s)', Icons.people_outline, conjoints),
         ],
         if (enfants.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildMembresSection('Enfant(s)', Icons.child_care_outlined, enfants),
         ],
         if (ascendants.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildMembresSection(
               'Ascendant(s)', Icons.elderly_outlined, ascendants),
         ],
         if (conjoints.isEmpty && enfants.isEmpty && ascendants.isEmpty) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -727,20 +729,20 @@ class ContratDetailPageState extends State<ContratDetailPage>
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFFECDCA)),
             ),
-            child: const Text(
-              'Aucun membre assuré',
+            child: Text(
+              'Aucun membre assurÃ©',
               style: TextStyle(
                 color: Color(0xFFD92D20),
-                fontSize: 12,
+                fontSize: context.sp(12),
               ),
             ),
           ),
         ],
-        const SizedBox(height: 12),
+        SizedBox(height: context.r(12)),
         _buildCombinedRecapRow(
           'Date d\'effet',
           _formatDate(data['date_effet']),
-          'Date d\'échéance',
+          'Date d\'Ã©chÃ©ance',
           _formatDate(data[
               'date_echeance']), // CORRECTION : suppression interpolation inutile
         ),
@@ -756,18 +758,18 @@ class ContratDetailPageState extends State<ContratDetailPage>
         Row(
           children: [
             Icon(icone, size: 16, color: const Color(0xFF002B6B)),
-            const SizedBox(width: 8),
+            SizedBox(width: context.r(8)),
             Text(
               titre,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: context.sp(14),
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF002B6B),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.r(8)),
         ...membres.map((membre) => _buildMembreRecap(
             membre)), // CORRECTION : suppression .toList() inutile
       ],
@@ -776,7 +778,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildMembreRecap(dynamic membre) {
     final nomPrenom = membre['nom_prenom'] ??
-        'Non renseigné'; // CORRECTION : suppression duplication
+        'Non renseignÃ©'; // CORRECTION : suppression duplication
     final dateNaissance = membre['date_naissance'] ??
         membre['birthDate'] ??
         membre['dateNaissance'];
@@ -785,7 +787,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     if (membre.containsKey('lien_parente')) {
       lienParente = membre['lien_parente'] ?? '';
     } else {
-      lienParente = 'Membre assuré';
+      lienParente = 'Membre assurÃ©';
     }
 
     return Container(
@@ -802,27 +804,27 @@ class ContratDetailPageState extends State<ContratDetailPage>
         children: [
           Text(
             nomPrenom,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               color: Color(0xFF0F172A),
             ),
           ),
           if (lienParente.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: context.r(4)),
             Text(
               'Relation: $lienParente',
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: context.sp(12),
                 color: Color(0xFF64748B),
               ),
             ),
           ],
           if (dateNaissance != null) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: context.r(4)),
             Text(
-              'Né(e) le: ${_formatDate(dateNaissance)}',
-              style: const TextStyle(
-                fontSize: 12,
+              'NÃ©(e) le: ${_formatDate(dateNaissance)}',
+              style: TextStyle(
+                fontSize: context.sp(12),
                 color: Color(0xFF64748B),
               ),
             ),
@@ -834,16 +836,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildEpargneSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.savings_outlined,
       const Color(0xFF10B981),
       [
-        _buildRecapRow('Produit', 'CORIS ÉPARGNE BONUS'),
+        _buildRecapRow('Produit', 'CORIS Ã‰PARGNE BONUS'),
         _buildRecapRow('Statut', _getContractStatus()),
         _buildRecapRow('Capital au terme', _formatMontant(data['capital'])),
         _buildRecapRow(
             'Prime mensuelle', _formatMontant(data['prime_mensuelle'])),
-        _buildRecapRow('Durée', '15 ans (180 mois)'),
+        _buildRecapRow('DurÃ©e', '15 ans (180 mois)'),
         _buildRecapRow('Date d\'effet', _formatDate(data['date_effet'])),
         _buildRecapRow('Date de fin', _formatDate(data['date_fin'])),
         _buildRecapRow('Bonus', _getBonusText(data)),
@@ -863,23 +865,23 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final mode = data['mode_souscription'] ?? 'Mode Prime';
     final prime = data['prime_calculee'] ?? data['prime'];
     final rente = data['rente_calculee'] ?? data['rente'];
-    final ageParent = data['age_parent'] ?? 'Non renseigné';
+    final ageParent = data['age_parent'] ?? 'Non renseignÃ©';
     final dateNaissanceParent = data['date_naissance_parent'];
 
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.school_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'CORIS ÉTUDE', 'Mode', mode),
+        _buildCombinedRecapRow('Produit', 'CORIS Ã‰TUDE', 'Mode', mode),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
-          'Âge du parent',
+          'Ã‚ge du parent',
           '$ageParent ans',
           'Date de naissance',
           dateNaissanceParent != null
               ? _formatDate(dateNaissanceParent)
-              : 'Non renseignée',
+              : 'Non renseignÃ©e',
         ),
         _buildCombinedRecapRow(
           'Prime ${data['periodicite']}',
@@ -888,78 +890,78 @@ class ContratDetailPageState extends State<ContratDetailPage>
           _formatMontant(rente),
         ),
         _buildCombinedRecapRow(
-            'Durée du contrat',
-            '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : (17 - (data['age_enfant'] ?? 0))} ans (jusqu\'à 17 ans)',
-            'Périodicité',
-            data['periodicite'] ?? 'Non définie'),
+            'DurÃ©e du contrat',
+            '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : (17 - (data['age_enfant'] ?? 0))} ans (jusqu\'Ã  17 ans)',
+            'PÃ©riodicitÃ©',
+            data['periodicite'] ?? 'Non dÃ©finie'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'échéance', _formatDate(data['date_echeance'])),
+            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildFamilisSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non définie';
+    final duree = data['duree'] ?? 'Non dÃ©finie';
     final capital = data['capital'] ?? 0;
     final prime = data['prime'] ?? data['prime_calculee'] ?? 0;
 
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.family_restroom_outlined,
       const Color(0xFF10B981),
       [
         _buildCombinedRecapRow(
-            'Produit', 'CORIS FAMILIS', 'Durée', '$duree années'),
+            'Produit', 'CORIS FAMILIS', 'DurÃ©e', '$duree annÃ©es'),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
             'Prime ${data['periodicite'] == 'unique' ? 'unique' : 'annuelle'}',
             _formatMontant(prime),
-            'Capital à garantir',
+            'Capital Ã  garantir',
             _formatMontant(capital)),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'échéance', _formatDate(data['date_echeance'])),
+            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildFlexEmprunteurSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.home_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR', 'Type de prêt',
-            data['type_pret'] ?? 'Non défini'),
+        _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR', 'Type de prÃªt',
+            data['type_pret'] ?? 'Non dÃ©fini'),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
-            'Capital à garantir',
+            'Capital Ã  garantir',
             _formatMontant(data['capital']),
-            'Durée',
+            'DurÃ©e',
             '${data['duree']} ${data['duree_type']}'),
         if (data['date_effet'] != null && data['date_echeance'] != null)
           _buildCombinedRecapRow(
               'Date d\'effet',
               _formatDate(data['date_effet']),
-              'Date d\'échéance',
+              'Date d\'Ã©chÃ©ance',
               _formatDate(data['date_echeance'])),
         if (data['date_effet'] != null && data['date_echeance'] == null)
           _buildCombinedRecapRow(
               'Date d\'effet', _formatDate(data['date_effet']), '', ''),
         if (data['date_effet'] == null && data['date_echeance'] != null)
           _buildCombinedRecapRow(
-              'Date d\'échéance', _formatDate(data['date_echeance']), '', ''),
-        _buildCombinedRecapRow('Prime annuelle estimée',
+              'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance']), '', ''),
+        _buildCombinedRecapRow('Prime annuelle estimÃ©e',
             _formatMontant(data['prime_annuelle']), '', ''),
         if (data['garantie_prevoyance'] == true &&
             data['garantie_perte_emploi'] == true)
           _buildCombinedRecapRow(
-              'Garantie Prévoyance',
+              'Garantie PrÃ©voyance',
               _formatMontant(data['capital_prevoyance']),
               'Garantie Perte d\'emploi',
               _formatMontant(data['capital_perte_emploi'])),
         if (data['garantie_prevoyance'] == true &&
             data['garantie_perte_emploi'] != true)
-          _buildCombinedRecapRow('Garantie Prévoyance',
+          _buildCombinedRecapRow('Garantie PrÃ©voyance',
               _formatMontant(data['capital_prevoyance']), '', ''),
         if (data['garantie_prevoyance'] != true &&
             data['garantie_perte_emploi'] == true)
@@ -970,10 +972,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   Widget _buildRetraiteSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non définie';
+    final duree = data['duree'] ?? 'Non dÃ©finie';
 
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.savings_outlined,
       const Color(0xFF10B981),
       [
@@ -983,46 +985,46 @@ class ContratDetailPageState extends State<ContratDetailPage>
         _buildCombinedRecapRow(
             'Capital au terme',
             _formatMontant(data['capital']),
-            'Durée du contrat',
-            '$duree ${data['duree_type'] == 'années' ? 'ans' : 'mois'}'),
+            'DurÃ©e du contrat',
+            '$duree ${data['duree_type'] == 'annÃ©es' ? 'ans' : 'mois'}'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'échéance', _formatDate(data['date_echeance'])),
+            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildSereniteSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non définie';
+    final duree = data['duree'] ?? 'Non dÃ©finie';
 
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.health_and_safety_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'CORIS SÉRÉNITÉ',
+        _buildCombinedRecapRow('Produit', 'CORIS SÃ‰RÃ‰NITÃ‰',
             'Prime ${data['periodicite']}', _formatMontant(data['prime'])),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
             'Capital au terme',
             _formatMontant(data['capital']),
-            'Durée du contrat',
-            '$duree ${data['duree_type'] == 'années' ? 'ans' : 'mois'}'),
+            'DurÃ©e du contrat',
+            '$duree ${data['duree_type'] == 'annÃ©es' ? 'ans' : 'mois'}'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'échéance', _formatDate(data['date_echeance'])),
+            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildDefaultProductSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'Détails du Contrat',
+      'DÃ©tails du Contrat',
       Icons.security_outlined,
       const Color(0xFF10B981),
       [
         _buildRecapRow('Produit', _getBadgeText(_getProductType())),
         _buildRecapRow('Statut', _getContractStatus()),
         _buildRecapRow(
-            'Date de création',
+            'Date de crÃ©ation',
             _formatDate(_subscriptionData?['date_creation'] ??
                 _subscriptionData?['created_at'])),
 
@@ -1034,7 +1036,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
         if (data['duree'] != null)
           _buildRecapRow(
-              'Durée',
+              'DurÃ©e',
               data['duree']
                   .toString()), // CORRECTION : suppression interpolation inutile
       ],
@@ -1082,11 +1084,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
               valueColor:
                   const AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: context.r(16)),
+            Text(
               "Chargement du contrat...",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(16),
                 color: Color(0xFF64748B),
               ),
             ),
@@ -1100,43 +1102,43 @@ class ContratDetailPageState extends State<ContratDetailPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Erreur'),
+        title: Text('Erreur'),
         backgroundColor: const Color(0xFF002B6B),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            SizedBox(height: context.r(16)),
+            Text(
               "Erreur de chargement",
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF334155),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 _errorMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: context.sp(16),
                   color: Color(0xFF64748B),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             ElevatedButton(
               onPressed: _loadContractData,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF002B6B),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Réessayer'),
+              child: Text('RÃ©essayer'),
             ),
           ],
         ),
@@ -1178,21 +1180,21 @@ class ContratDetailPageState extends State<ContratDetailPage>
           children: [
             Text(
               widget.contractNumber,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
             Text(
               _getBadgeText(_getProductType()),
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: context.sp(12),
                 fontWeight: FontWeight.w500,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: context.r(4)),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -1202,8 +1204,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
               ),
               child: Text(
                 status,
-                style: const TextStyle(
-                  fontSize: 11,
+                style: TextStyle(
+                  fontSize: context.sp(11),
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -1226,7 +1228,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           ),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
+          icon: Icon(Icons.arrow_back_ios_new,
               color: Colors.white, size: 18),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
@@ -1251,7 +1253,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             ),
           ),
           child: IconButton(
-            icon: const Icon(Icons.share, color: Colors.white, size: 20),
+            icon: Icon(Icons.share, color: Colors.white, size: 20),
             onPressed: _shareContract,
           ),
         ),
@@ -1265,20 +1267,20 @@ class ContratDetailPageState extends State<ContratDetailPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildUserInfoCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildProductSection(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildPaymentInfoCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildBeneficiariesCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildCommercialAssistanceCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildDocumentsCard(),
-          const SizedBox(height: 16),
-          const SizedBox(height: 100),
+          SizedBox(height: context.r(16)),
+          SizedBox(height: context.r(100)),
         ],
       ),
     );
@@ -1303,35 +1305,35 @@ class ContratDetailPageState extends State<ContratDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Informations Personnelles",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             _buildCombinedRecapRow(
-                'Civilité',
-                _userData?['civilite'] ?? 'Non renseigné',
+                'CivilitÃ©',
+                _userData?['civilite'] ?? 'Non renseignÃ©',
                 'Nom',
-                _userData?['nom'] ?? 'Non renseigné'),
+                _userData?['nom'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Prénom',
-                _userData?['prenom'] ?? 'Non renseigné',
+                'PrÃ©nom',
+                _userData?['prenom'] ?? 'Non renseignÃ©',
                 'Email',
-                _userData?['email'] ?? 'Non renseigné'),
+                _userData?['email'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Téléphone',
-                _userData?['telephone'] ?? 'Non renseigné',
+                'TÃ©lÃ©phone',
+                _userData?['telephone'] ?? 'Non renseignÃ©',
                 'Date de naissance',
                 _formatDate(_userData?['date_naissance'])),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                _userData?['lieu_naissance'] ?? 'Non renseigné',
+                _userData?['lieu_naissance'] ?? 'Non renseignÃ©',
                 'Adresse',
-                _userData?['adresse'] ?? 'Non renseigné'),
+                _userData?['adresse'] ?? 'Non renseignÃ©'),
           ],
         ),
       ),
@@ -1368,18 +1370,18 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 ),
                 child: Icon(icon, color: color, size: 18),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: context.r(10)),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w700,
                   color: color,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           ...children,
         ],
       ),
@@ -1396,20 +1398,20 @@ class ContratDetailPageState extends State<ContratDetailPage>
             width: 120,
             child: Text(
               '$label :',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF64748B),
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF0F172A),
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
             ),
           ),
@@ -1430,42 +1432,42 @@ class ContratDetailPageState extends State<ContratDetailPage>
               children: [
                 Text(
                   '$label1 :',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF64748B),
-                    fontSize: 14,
+                    fontSize: context.sp(14),
                   ),
                 ),
                 Text(
                   value1,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
-                    fontSize: 14,
+                    fontSize: context.sp(14),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '$label2 :',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF64748B),
-                    fontSize: 14,
+                    fontSize: context.sp(14),
                   ),
                 ),
                 Text(
                   value2,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
-                    fontSize: 14,
+                    fontSize: context.sp(14),
                   ),
                 ),
               ],
@@ -1499,32 +1501,32 @@ class ContratDetailPageState extends State<ContratDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Bénéficiaires et Contacts",
+            Text(
+              "BÃ©nÃ©ficiaires et Contacts",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             if (beneficiaire != null) ...[
               _buildContactItem(
-                "Bénéficiaire",
-                beneficiaire['nom'] ?? 'Non spécifié',
-                beneficiaire['lien_parente'] ?? 'Bénéficiaire',
+                "BÃ©nÃ©ficiaire",
+                beneficiaire['nom'] ?? 'Non spÃ©cifiÃ©',
+                beneficiaire['lien_parente'] ?? 'BÃ©nÃ©ficiaire',
                 beneficiaire['contact'],
                 beneficiaire['date_naissance'] ??
                     beneficiaire['dateNaissance'] ??
                     beneficiaire['date_de_naissance'],
                 Icons.person_outline,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
             ],
             if (contactUrgence != null) ...[
               _buildContactItem(
                 "Contact d'urgence",
-                contactUrgence['nom'] ?? 'Non spécifié',
+                contactUrgence['nom'] ?? 'Non spÃ©cifiÃ©',
                 contactUrgence['lien_parente'] ?? 'Contact',
                 contactUrgence['contact'],
                 contactUrgence['date_naissance'] ??
@@ -1534,10 +1536,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
               ),
             ],
             if (beneficiaire == null && contactUrgence == null) ...[
-              const Text(
-                "Aucun bénéficiaire ou contact spécifié",
+              Text(
+                "Aucun bÃ©nÃ©ficiaire ou contact spÃ©cifiÃ©",
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                   color: Color(0xFF64748B),
                 ),
               ),
@@ -1603,54 +1605,54 @@ class ContratDetailPageState extends State<ContratDetailPage>
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   type,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     color: Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: context.r(4)),
                 Text(
                   nom,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                   ),
                 ),
                 if (relation.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: context.r(2)),
                   Text(
                     relation,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: context.sp(12),
                       color: Color(0xFF64748B),
                     ),
                   ),
                 ],
                 if (dateNaissance != null && dateNaissance.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: context.r(2)),
                   Text(
                     'Date de naissance: ${SubscriptionRecapWidgets.formatDate(dateNaissance)}',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: context.sp(12),
                       color: Color(0xFF64748B),
                     ),
                   ),
                 ],
                 if (contact != null && contact.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: context.r(2)),
                   Text(
                     contact,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: context.sp(12),
                       color: Color(0xFF64748B),
                     ),
                   ),
@@ -1742,7 +1744,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
 
-    // Récupération robuste des documents d'identité multiples
+    // RÃ©cupÃ©ration robuste des documents d'identitÃ© multiples
     final identityDocs = <Map<String, dynamic>>[];
     final rawIdentityDocs = [
       subscriptionData['piece_identite_documents'],
@@ -1756,7 +1758,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       }
     }
 
-    // Ajouter pièce d'identité unique si elle existe
+    // Ajouter piÃ¨ce d'identitÃ© unique si elle existe
     final pieceIdentite = _extractServerFileName(
       subscriptionData['piece_identite'] ??
           subscriptionData['pieceIdentite'] ??
@@ -1786,12 +1788,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
       if (!alreadyExists) {
         docsList.insert(0, {
           'path': identityPath,
-          'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+          'label': pieceIdentiteLabel ?? 'PiÃ¨ce d\'identitÃ©',
         });
       }
     }
 
-    // Déduplication globale
+    // DÃ©duplication globale
     final seenPaths = <String>{};
     final deduplicatedDocsList = docsList.where((doc) {
       final path = doc['path']?.toString().trim() ?? '';
@@ -1824,13 +1826,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
           children: [
             Text(
               totalDocuments > 0 ? "Documents ($totalDocuments)" : "Documents",
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             SubscriptionRecapWidgets.buildDocumentsSection(
               pieceIdentite: pieceIdentiteLabel,
               documents: normalizedDocsList,
@@ -1847,11 +1849,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildDocumentRow(
       String label, String? documentName, String? displayLabel) {
     final hasDocument = documentName != null &&
         documentName.isNotEmpty &&
-        documentName != 'Non téléchargée';
+        documentName != 'Non tÃ©lÃ©chargÃ©e';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1878,24 +1881,24 @@ class ContratDetailPageState extends State<ContratDetailPage>
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     color: Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: context.r(4)),
                 Text(
-                  displayLabel ?? 'Non téléchargée',
-                  style: const TextStyle(
-                    fontSize: 14,
+                  displayLabel ?? 'Non tÃ©lÃ©chargÃ©e',
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                   ),
@@ -1904,7 +1907,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             ),
           ),
           if (hasDocument) ...[
-            const SizedBox(width: 12),
+            SizedBox(width: context.r(12)),
             InkWell(
               onTap: () => _viewDocument(documentName, displayLabel),
               child: Container(
@@ -1913,7 +1916,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   color: const Color(0xFF002B6B).withAlpha(25),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.visibility,
                   color: Color(0xFF002B6B),
                   size: 20,
@@ -1929,13 +1932,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
   void _viewDocument(String? documentName, String? displayLabel) {
     if (documentName == null ||
         documentName.isEmpty ||
-        documentName == 'Non téléchargée') {
+        documentName == 'Non tÃ©lÃ©chargÃ©e') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
               Icon(Icons.info_outline, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text('Aucun document disponible'),
               ),
@@ -2012,11 +2015,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
                       onPaymentSuccess: _loadContractData,
                     );
                   },
-                  icon: const Icon(Icons.payment_outlined),
-                  label: const Text(
+                  icon: Icon(Icons.payment_outlined),
+                  label: Text(
                     'Payer mes cotisations',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2031,12 +2034,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _viewContractPdf,
-                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  icon: Icon(Icons.picture_as_pdf_outlined),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF002B6B)),
                     foregroundColor: const Color(0xFF002B6B),
@@ -2045,16 +2048,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  label: const Text(
+                  label: Text(
                     'Voir le PDF du contrat',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               Row(
                 children: [
                   Expanded(
@@ -2068,20 +2071,20 @@ class ContratDetailPageState extends State<ContratDetailPage>
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Télécharger',
+                      child: Text(
+                        'TÃ©lÃ©charger',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.r(12)),
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: status == 'Échu' || status == 'Bientôt échu'
+                      onPressed: status == 'Ã‰chu' || status == 'BientÃ´t Ã©chu'
                           ? _renewContract
                           : _contactSupport,
                       style: ElevatedButton.styleFrom(
@@ -2094,11 +2097,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
                         ),
                       ),
                       child: Text(
-                        status == 'Échu' || status == 'Bientôt échu'
+                        status == 'Ã‰chu' || status == 'BientÃ´t Ã©chu'
                             ? 'Renouveler'
                             : 'Contacter le support',
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2120,7 +2123,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final excludeQuestionnaire = productType.contains('etude') ||
         productType.contains('familis') ||
         productType.contains('serenite') ||
-        productType.contains('sérénité');
+        productType.contains('sÃ©rÃ©nitÃ©');
 
     Navigator.push(
       context,
@@ -2138,19 +2141,19 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Préparation du PDF à partager...'),
+        content: Text('PrÃ©paration du PDF Ã  partager...'),
         backgroundColor: _getBadgeColor(_getProductType()),
         behavior: SnackBarBehavior.floating,
       ),
     );
 
     try {
-      // Réutilise le même endpoint PDF que le bouton Télécharger pour garantir la cohérence.
+      // RÃ©utilise le mÃªme endpoint PDF que le bouton TÃ©lÃ©charger pour garantir la cohÃ©rence.
       final productType = _getProductType().toLowerCase();
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
-          productType.contains('sérénité');
+          productType.contains('sÃ©rÃ©nitÃ©');
 
       final tempFile = await PdfService.fetchToTemp(
         widget.subscriptionId,
@@ -2185,7 +2188,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Téléchargement du contrat en cours...'),
+        content: Text('TÃ©lÃ©chargement du contrat en cours...'),
         backgroundColor: _getBadgeColor(_getProductType()),
         behavior: SnackBarBehavior.floating,
       ),
@@ -2202,7 +2205,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
-          productType.contains('sérénité');
+          productType.contains('sÃ©rÃ©nitÃ©');
 
       final downloadedFile = await PdfService.downloadToDownloadsWithProgress(
         widget.subscriptionId,
@@ -2224,11 +2227,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
                     'Contrat telecharge. Ouvrez la notification pour afficher le fichier.'),
@@ -2252,10 +2255,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.error_outline, color: Colors.white, size: 20),
+              SizedBox(width: context.r(12)),
               Expanded(
-                child: Text('Erreur téléchargement contrat: $e'),
+                child: Text('Erreur tÃ©lÃ©chargement contrat: $e'),
               ),
             ],
           ),
@@ -2271,7 +2274,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Redirection vers le renouvellement...'),
+        content: Text('Redirection vers le renouvellement...'),
         backgroundColor: _getBadgeColor(_getProductType()),
       ),
     );
@@ -2303,15 +2306,15 @@ class ContratDetailPageState extends State<ContratDetailPage>
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const Text(
+                Text(
                   'Contacter le support',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: context.r(14)),
                 ListTile(
-                  leading: const Icon(Icons.email_outlined,
+                  leading: Icon(Icons.email_outlined,
                       color: Color(0xFF002B6B)),
-                  title: const Text('Par e-mail'),
+                  title: Text('Par e-mail'),
                   subtitle: Text(AppConfig.supportEmail),
                   onTap: () async {
                     final emailUri =
@@ -2324,9 +2327,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.phone_outlined,
+                  leading: Icon(Icons.phone_outlined,
                       color: Color(0xFF002B6B)),
-                  title: const Text('Par appel'),
+                  title: Text('Par appel'),
                   subtitle: Text(AppConfig.supportPhone),
                   onTap: () async {
                     final phoneUri = Uri.parse('tel:${AppConfig.supportPhone}');
@@ -2345,3 +2348,4 @@ class ContratDetailPageState extends State<ContratDetailPage>
     );
   }
 }
+

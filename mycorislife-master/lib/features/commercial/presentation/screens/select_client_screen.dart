@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import '../../domain/commercial_service.dart';
 
 class SelectClientScreen extends StatefulWidget {
@@ -174,7 +175,7 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
             ),
           ),
 
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
 
           // Liste des clients
           Expanded(
@@ -190,23 +191,23 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                               size: 64,
                               color: Colors.grey[400],
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: context.r(16)),
                             Text(
                               _searchQuery.isEmpty
                                   ? 'Aucun client trouvé'
                                   : 'Aucun client ne correspond à votre recherche',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: context.sp(18),
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: context.r(8)),
                             if (_searchQuery.isEmpty)
                               Text(
                                 'Les clients pour lesquels vous avez déjà fait des souscriptions apparaîtront ici',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                   color: Colors.grey[500],
                                 ),
                                 textAlign: TextAlign.center,
@@ -237,7 +238,7 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                                   child: Text(
                                     '${client['nom']?[0] ?? ''}${client['prenom']?[0] ?? ''}'
                                         .toUpperCase(),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -248,9 +249,9 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                                     Expanded(
                                       child: Text(
                                         '${client['nom'] ?? ''} ${client['prenom'] ?? ''}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 16,
+                                          fontSize: context.sp(16),
                                         ),
                                       ),
                                     ),
@@ -277,11 +278,11 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                                               size: 12,
                                               color: Colors.orange,
                                             ),
-                                            const SizedBox(width: 4),
-                                            const Text(
+                                            SizedBox(width: context.r(4)),
+                                            Text(
                                               'Autre commercial',
                                               style: TextStyle(
-                                                fontSize: 10,
+                                                fontSize: context.sp(10),
                                                 color: Colors.orange,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -294,7 +295,7 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: context.r(4)),
                                     Text(
                                         'Email: ${client['email'] ?? 'Non renseigné'}'),
                                     Text(

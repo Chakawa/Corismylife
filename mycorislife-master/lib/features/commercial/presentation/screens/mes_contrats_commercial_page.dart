@@ -1,39 +1,38 @@
-/**
- * ===============================================
- * PAGE - MES CONTRATS COMMERCIAL
- * ===============================================
- * 
- * Cette page affiche la liste complète des contrats d'un commercial.
- * 
- * FONCTIONNALITÉS :
- * - Affichage de statistiques (Total contrats, Contrats actifs)
- * - Liste des contrats avec recherche et filtres
- * - Navigation vers les détails d'un contrat
- * - Filtrage par statut (Tous, Actif, Inactif)
- * - Recherche par numéro de police ou nom client
- * 
- * ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
- * ==========================================
- * Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
- * - Accès via: contrat['etat']
- * - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
- * - Ne PAS utiliser contrat['statut'] (ancienne convention, maintenant dépréciée)
- * 
- * DESIGN :
- * - Couleur principale: CORIS Blue #002B6B
- * - Actif: Vert #10B981
- * - Inactif: Orange #F59E0B
- * - Fond: Gris clair #F8FAFC
- */
+/// ===============================================
+/// PAGE - MES CONTRATS COMMERCIAL
+/// ===============================================
+/// 
+/// Cette page affiche la liste complÃ¨te des contrats d'un commercial.
+/// 
+/// FONCTIONNALITÃ‰S :
+/// - Affichage de statistiques (Total contrats, Contrats actifs)
+/// - Liste des contrats avec recherche et filtres
+/// - Navigation vers les dÃ©tails d'un contrat
+/// - Filtrage par statut (Tous, Actif, Inactif)
+/// - Recherche par numÃ©ro de police ou nom client
+/// 
+/// âš ï¸ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+/// ==========================================
+/// Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
+/// - AccÃ¨s via: contrat['etat']
+/// - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
+/// - Ne PAS utiliser contrat['statut'] (ancienne convention, maintenant dÃ©prÃ©ciÃ©e)
+/// 
+/// DESIGN :
+/// - Couleur principale: CORIS Blue #002B6B
+/// - Actif: Vert #10B981
+/// - Inactif: Orange #F59E0B
+/// - Fond: Gris clair #F8FAFC
 
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 
 class MesContratsCommercialPage extends StatefulWidget {
-  const MesContratsCommercialPage({Key? key}) : super(key: key);
+  const MesContratsCommercialPage({super.key});
 
   @override
   State<MesContratsCommercialPage> createState() =>
@@ -54,12 +53,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   final Map<String, Map<String, dynamic>> productConfig = {
     '242': {
-      'name': 'ÉPARGNE BONUS',
+      'name': 'Ã‰PARGNE BONUS',
       'color': Color(0xFF8B5CF6),
       'icon': Icons.savings
     },
     '202': {
-      'name': 'CORIS SÉRÉNITÉ',
+      'name': 'CORIS SÃ‰RÃ‰NITÃ‰',
       'color': Color(0xFF002B6B),
       'icon': Icons.health_and_safety
     },
@@ -74,12 +73,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       'icon': Icons.elderly
     },
     '225': {
-      'name': 'CORIS SOLIDARITÉ',
+      'name': 'CORIS SOLIDARITÃ‰',
       'color': Color(0xFF002B6B),
       'icon': Icons.volunteer_activism
     },
     '246': {
-      'name': 'CORIS ÉTUDE',
+      'name': 'CORIS Ã‰TUDE',
       'color': Color(0xFF8B5CF6),
       'icon': Icons.school
     },
@@ -108,20 +107,20 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   }
 
   Future<void> _loadContrats() async {
-    print('📡 [COMMERCIAL CONTRATS] Début chargement...');
+    print('ðŸ“¡ [COMMERCIAL CONTRATS] DÃ©but chargement...');
     setState(() => isLoading = true);
 
     try {
       final token = await storage.read(key: 'token');
       print(
-          '🔑 [COMMERCIAL CONTRATS] Token: ${token != null ? "✅ OK" : "❌ Manquant"}');
+          'ðŸ”‘ [COMMERCIAL CONTRATS] Token: ${token != null ? "âœ… OK" : "âŒ Manquant"}');
 
       if (token == null) {
-        throw Exception('Token non trouvé');
+        throw Exception('Token non trouvÃ©');
       }
 
       final url = '${AppConfig.baseUrl}/commercial/mes_contrats_commercial';
-      print('🌐 [COMMERCIAL CONTRATS] URL: $url');
+      print('ðŸŒ [COMMERCIAL CONTRATS] URL: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -131,12 +130,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
         },
       );
 
-      print('📊 [COMMERCIAL CONTRATS] Status: ${response.statusCode}');
-      print('📦 [COMMERCIAL CONTRATS] Body: ${response.body}');
+      print('ðŸ“Š [COMMERCIAL CONTRATS] Status: ${response.statusCode}');
+      print('ðŸ“¦ [COMMERCIAL CONTRATS] Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('✅ [COMMERCIAL CONTRATS] Données décodées: ${data.keys}');
+        print('âœ… [COMMERCIAL CONTRATS] DonnÃ©es dÃ©codÃ©es: ${data.keys}');
 
         setState(() {
           contrats = data['contrats'] ?? [];
@@ -144,14 +143,14 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
           isLoading = false;
         });
 
-        print('📋 [COMMERCIAL CONTRATS] ${contrats.length} contrats chargés');
+        print('ðŸ“‹ [COMMERCIAL CONTRATS] ${contrats.length} contrats chargÃ©s');
         _animationController.forward();
       } else {
         throw Exception('Erreur ${response.statusCode}');
       }
     } catch (e, stackTrace) {
-      print('❌ [COMMERCIAL CONTRATS] Erreur: $e');
-      print('📍 [COMMERCIAL CONTRATS] Stack: $stackTrace');
+      print('âŒ [COMMERCIAL CONTRATS] Erreur: $e');
+      print('ðŸ“ [COMMERCIAL CONTRATS] Stack: $stackTrace');
 
       setState(() => isLoading = false);
 
@@ -227,10 +226,10 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Rechercher...',
-                  hintStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
@@ -245,16 +244,16 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                   _filterContrats();
                 },
               )
-            : const Text(
+            : Text(
                 'Mes Contrats',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: context.sp(20),
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
         actions: [
-          // Icône de recherche maintenant blanche pour être visible
+          // IcÃ´ne de recherche maintenant blanche pour Ãªtre visible
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close : Icons.search,
@@ -271,7 +270,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
               });
             },
           ),
-          // Icône de filtrage maintenant blanche pour être visible
+          // IcÃ´ne de filtrage maintenant blanche pour Ãªtre visible
           IconButton(
             icon: const Icon(
               Icons.filter_list,
@@ -283,7 +282,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       ),
       body: Column(
         children: [
-          // Statistiques déplacées SOUS la navbar (plus dans la navbar)
+          // Statistiques dÃ©placÃ©es SOUS la navbar (plus dans la navbar)
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -308,7 +307,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                     const Color(0xFF002B6B),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 Expanded(
                   child: _buildStatCard(
                     'Actifs',
@@ -338,13 +337,13 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                           children: [
                             Icon(Icons.inbox,
                                 size: 80, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
+                            SizedBox(height: context.r(16)),
                             Text(
                               _searchQuery.isNotEmpty
-                                  ? 'Aucun contrat trouvé'
+                                  ? 'Aucun contrat trouvÃ©'
                                   : 'Aucun contrat disponible',
                               style: TextStyle(
-                                  fontSize: 18, color: Colors.grey[600]),
+                                  fontSize: context.sp(18), color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -399,7 +398,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
             ),
             child: Icon(icon, color: accentColor, size: 24),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +406,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: context.sp(24),
                     fontWeight: FontWeight.bold,
                     color: accentColor,
                   ),
@@ -415,7 +414,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                     color: const Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
@@ -430,7 +429,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   Widget _buildContratCard(Map<String, dynamic> contrat, int index) {
     final config = _getProductConfig(contrat['codeprod']?.toString());
-    // Utilisation du champ 'etat' depuis la base de données (uniformisation)
+    // Utilisation du champ 'etat' depuis la base de donnÃ©es (uniformisation)
     final etat = contrat['etat']?.toString() ?? 'Inconnu';
     final liaisonpolice = "-";
     final numpolice = contrat['numepoli'] + liaisonpolice + contrat['codeinte'];
@@ -465,7 +464,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              print('🔗 [NAVIGATION] Vers détails: ${contrat['numepoli']}');
+              print('ðŸ”— [NAVIGATION] Vers dÃ©tails: ${contrat['numepoli']}');
               Navigator.pushNamed(
                 context,
                 '/contrat_details',
@@ -490,7 +489,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                         child:
                             Icon(config['icon'], color: Colors.white, size: 24),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: context.r(16)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,13 +497,13 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                             Text(
                               numpolice ?? 'N/A',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: context.sp(18),
                                 fontWeight: FontWeight.bold,
                                 color: config['color'],
                                 letterSpacing: 0.3,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            SizedBox(height: context.r(6)),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
@@ -516,9 +515,9 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                               ),
                               child: Text(
                                 displayStatus.toUpperCase(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: context.sp(11),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -539,12 +538,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                     children: [
                       const Icon(Icons.shield_outlined,
                           size: 18, color: Color(0xFF002B6B)),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Expanded(
                         child: Text(
                           config['name'],
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: TextStyle(
+                            fontSize: context.sp(14),
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF002B6B),
                           ),
@@ -553,19 +552,19 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
 
                   // Client
                   Row(
                     children: [
                       const Icon(Icons.person_outline,
                           size: 18, color: Color(0xFF64748B)),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Expanded(
                         child: Text(
                           contrat['nom_prenom'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: TextStyle(
+                            fontSize: context.sp(14),
                             color: Color(0xFF0F172A),
                             fontWeight: FontWeight.w500,
                           ),
@@ -574,7 +573,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
 
                   // Date
                   Container(
@@ -587,11 +586,11 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                       children: [
                         const Icon(Icons.calendar_today,
                             size: 16, color: Color(0xFF64748B)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: context.r(8)),
                         Text(
                           'Effet: ${_formatDate(contrat['dateeffet'])}',
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: TextStyle(
+                            fontSize: context.sp(13),
                             color: Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
                           ),
@@ -630,10 +629,10 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
             Navigator.pushNamed(context, '/contrats_actifs');
           },
           icon: const Icon(Icons.bar_chart, size: 20),
-          label: const Text(
+          label: Text(
             'Contrats Actifs',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: context.sp(16),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -695,3 +694,4 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     );
   }
 }
+

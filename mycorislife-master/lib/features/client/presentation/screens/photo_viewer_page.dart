@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:photo_view/photo_view.dart';
 import 'dart:io';
 import '../../../../config/app_config.dart';
@@ -13,11 +14,11 @@ class PhotoViewerPage extends StatelessWidget {
   static const Color bleuCoris = Color(0xFF002B6B);
 
   const PhotoViewerPage({
-    Key? key,
+    super.key,
     this.photoUrl,
     this.localFile,
     this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +28,12 @@ class PhotoViewerPage extends StatelessWidget {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           title ?? 'Photo de profil',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white),
         ),
       ),
       body: Center(
@@ -79,10 +80,10 @@ class PhotoViewerPage extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.error_outline,
+                          Icon(Icons.error_outline,
                               color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: context.r(16)),
+                          Text(
                             'Impossible de charger la photo',
                             style: TextStyle(color: Colors.white),
                           ),
@@ -90,12 +91,12 @@ class PhotoViewerPage extends StatelessWidget {
                       ),
                     ),
                   )
-                : const Center(
+                : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.photo, color: Colors.grey, size: 64),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         Text(
                           'Aucune photo disponible',
                           style: TextStyle(color: Colors.white),

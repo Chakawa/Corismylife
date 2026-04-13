@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// Page de vérification OTP pour la connexion avec 2FA activée
 class TwoFALoginOtpScreen extends StatefulWidget {
@@ -115,82 +116,82 @@ class _TwoFALoginOtpScreenState extends State<TwoFALoginOtpScreen> {
         iconTheme: const IconThemeData(color: blanc),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.r(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 40),
+            SizedBox(height: context.r(28)),
 
             // Icône de sécurité
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.r(18)),
               decoration: BoxDecoration(
                 color: bleuCoris.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.security,
-                size: 64,
+                size: context.r(56),
                 color: bleuCoris,
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: context.r(24)),
 
             // Titre
-            const Text(
+            Text(
               'Authentification à deux facteurs',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: context.sp(22),
                 fontWeight: FontWeight.bold,
                 color: bleuCoris,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(14)),
 
             // Description
             Text(
               'Un code de vérification a été envoyé au numéro:',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(15),
                 color: Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text(
               widget.secondaryPhone,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: context.sp(17),
                 fontWeight: FontWeight.bold,
                 color: bleuCoris,
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: context.r(28)),
 
             // Champs OTP
-            const Text(
+            Text(
               'Entrez le code à 6 chiffres',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: context.sp(15),
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(20)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(
                 6,
                 (i) => SizedBox(
-                  width: 50,
+                  width: context.r(44),
                   child: TextField(
                     controller: _otpControllers[i],
                     focusNode: _otpFocusNodes[i],
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     maxLength: 1,
-                    style: const TextStyle(
-                      fontSize: 24,
+                    style: TextStyle(
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.bold,
                     ),
                     decoration: InputDecoration(
@@ -218,12 +219,12 @@ class _TwoFALoginOtpScreenState extends State<TwoFALoginOtpScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: context.r(28)),
 
             // Bouton de vérification
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: context.r(48),
               child: ElevatedButton(
                 onPressed: _isVerifying ? null : _verifyOtp,
                 style: ElevatedButton.styleFrom(
@@ -247,7 +248,7 @@ class _TwoFALoginOtpScreenState extends State<TwoFALoginOtpScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.r(20)),
 
             // Bouton de renvoi du code
             TextButton.icon(
@@ -261,7 +262,7 @@ class _TwoFALoginOtpScreenState extends State<TwoFALoginOtpScreen> {
                   : const Icon(Icons.refresh),
               label: const Text('Renvoyer le code'),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(14)),
 
             // Lien pour annuler
             TextButton(

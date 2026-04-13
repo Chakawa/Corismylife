@@ -1,5 +1,6 @@
+// ignore_for_file: unused_field, unused_element
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
@@ -25,21 +26,21 @@ enum SimulationType { parPrime, parCapital }
 enum Periode { mensuel, trimestriel, semestriel, annuel }
 
 /// Page de souscription pour le produit CORIS RETRAITE
-/// Permet de souscrire à une assurance retraite
+/// Permet de souscrire Ã  une assurance retraite
 ///
-/// [simulationData] : Données de simulation (capital, prime, durée, périodicité)
+/// [simulationData] : DonnÃ©es de simulation (capital, prime, durÃ©e, pÃ©riodicitÃ©)
 /// [clientId] : ID du client si souscription par commercial (optionnel)
-/// [clientData] : Données du client si souscription par commercial (optionnel)
+/// [clientData] : DonnÃ©es du client si souscription par commercial (optionnel)
 /// [subscriptionId] : ID de la souscription si modification d'une proposition existante
-/// [existingData] : Données existantes de la proposition à modifier
+/// [existingData] : DonnÃ©es existantes de la proposition Ã  modifier
 class SouscriptionRetraitePage extends StatefulWidget {
   final Map<String, dynamic>? simulationData;
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
-      clientData; // Données du client si souscription par commercial
+      clientData; // DonnÃ©es du client si souscription par commercial
   final int? subscriptionId; // ID pour modification
   final Map<String, dynamic>?
-      existingData; // Données existantes pour modification
+      existingData; // DonnÃ©es existantes pour modification
 
   const SouscriptionRetraitePage({
     super.key,
@@ -78,7 +79,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   int _currentStep = 0;
   bool _useLocalData = false;
 
-  // Contrôleurs pour la simulation
+  // ContrÃ´leurs pour la simulation
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
@@ -86,8 +87,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   // Variables pour la simulation
   int _dureeEnAnnees = 5;
-  String _selectedUnite = 'années';
-  Periode? _selectedPeriode; // Initialisé dans initState
+  String _selectedUnite = 'annÃ©es';
+  Periode? _selectedPeriode; // InitialisÃ© dans initState
   SimulationType _currentSimulation = SimulationType.parPrime;
   String _selectedSimulationType = 'Par Prime';
   double _calculatedPrime = 0.0;
@@ -101,7 +102,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     '+234'
   ];
 
-  // Données utilisateur
+  // DonnÃ©es utilisateur
   Map<String, dynamic> _userData = {};
   DateTime? _dateNaissance;
   int _age = 0;
@@ -111,7 +112,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
 
-  // Contrôleurs pour les informations client (si commercial)
+  // ContrÃ´leurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
   final TextEditingController _clientDateNaissanceController =
@@ -130,7 +131,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   String _selectedClientCivilite = 'Monsieur';
   String _selectedClientIndicatif = '+225';
 
-  // Contrôleurs pour la souscription
+  // ContrÃ´leurs pour la souscription
   final _formKey = GlobalKey<FormState>();
   final _beneficiaireNomController = TextEditingController();
   final _beneficiaireContactController = TextEditingController();
@@ -166,26 +167,26 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Ecobank',
     'BOA',
     'UBA',
-    'Société Générale',
+    'SociÃ©tÃ© GÃ©nÃ©rale',
     'BNI',
     'Banque Atlantique',
     'Autre',
   ];
   final _banqueController = TextEditingController();
   final _ribUnifiedController =
-      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+      TextEditingController(); // RIB unifiÃ©: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final _nomStructureController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _numeroMatriculeController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _corisMoneyPhoneController =
       TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
     // 'Orange Money',
-    'Prélèvement à la source',
+    'PrÃ©lÃ¨vement Ã  la source',
     // 'CORIS Money',
   ];
 
@@ -194,13 +195,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Enfant',
     'Conjoint',
     'Parent',
-    'Frère/Sœur',
+    'FrÃ¨re/SÅ“ur',
     'Ami',
     'Autre'
   ];
   final storage = FlutterSecureStorage();
 
-  // Primes minimales par périodicité
+  // Primes minimales par pÃ©riodicitÃ©
   final Map<String, int> minPrimes = {
     'mensuel': 5000,
     'trimestriel': 15000,
@@ -208,7 +209,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'annuel': 60000,
   };
 
-  // Table tarifaire: CAPITAL À TERME pour les primes de référence (identique à la simulation)
+  // Table tarifaire: CAPITAL Ã€ TERME pour les primes de rÃ©fÃ©rence (identique Ã  la simulation)
   final Map<int, Map<String, double>> capitalValues = {
     5: {
       'mensuel': 605463.405379,
@@ -488,7 +489,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     },
   };
 
-  // Primes de référence
+  // Primes de rÃ©fÃ©rence
   final Map<String, double> primeReferenceValues = {
     'mensuel': 10000.00000,
     'trimestriel': 30000.00000,
@@ -500,7 +501,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   void initState() {
     super.initState();
 
-    // Initialiser _selectedPeriode avec une valeur par défaut
+    // Initialiser _selectedPeriode avec une valeur par dÃ©faut
     _selectedPeriode = Periode.annuel;
 
     // Initialisation des animations
@@ -520,14 +521,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
     _animationController.forward();
 
-    // Pré-remplir depuis les données existantes OU depuis la simulation
+    // PrÃ©-remplir depuis les donnÃ©es existantes OU depuis la simulation
     if (widget.existingData != null) {
       _prefillFromExistingData();
     } else {
       _prefillSimulationData();
     }
 
-    // Après init, vérifier si le calcul doit être refait (si l'âge a été défini après)
+    // AprÃ¨s init, vÃ©rifier si le calcul doit Ãªtre refait (si l'Ã¢ge a Ã©tÃ© dÃ©fini aprÃ¨s)
     Future.microtask(() {
       if (_age > 0 && (_calculatedCapital == 0 || _calculatedPrime == 0)) {
         _effectuerCalcul();
@@ -538,7 +539,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Vérifier si c'est un commercial qui fait la souscription
+    // VÃ©rifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args['isCommercial'] == true) {
@@ -548,11 +549,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         });
       }
 
-      // Si on est en mode modification (avec existingData), ne rien écraser
+      // Si on est en mode modification (avec existingData), ne rien Ã©craser
       if (args['existingData'] != null) {
-        // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
+        // Le prÃ©-remplissage complet est dÃ©jÃ  gÃ©rÃ© dans initState via _prefillFromExistingData
       }
-      // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
+      // Sinon, prÃ©-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
@@ -569,7 +570,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
-        // Gérer la date de naissance
+        // GÃ©rer la date de naissance
         if (clientInfo['date_naissance'] != null) {
           try {
             DateTime? dateNaissance;
@@ -591,14 +592,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     (now.month == finalDate.month && now.day < finalDate.day)) {
                   _clientAge--;
                 }
-                // Utiliser l'âge du client pour le calcul
+                // Utiliser l'Ã¢ge du client pour le calcul
                 _age = _clientAge;
-                debugPrint('👤 Âge client (commercial) calculé: $_age ans');
+                debugPrint('ðŸ‘¤ Ã‚ge client (commercial) calculÃ©: $_age ans');
               });
-              // Déclencher le calcul après avoir défini l'âge
+              // DÃ©clencher le calcul aprÃ¨s avoir dÃ©fini l'Ã¢ge
               if (_age > 0) {
                 debugPrint(
-                    '📢 Appel _effectuerCalcul depuis didChangeDependencies (commercial)');
+                    'ðŸ“¢ Appel _effectuerCalcul depuis didChangeDependencies (commercial)');
                 _effectuerCalcul();
               }
             }
@@ -607,7 +608,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
         }
 
-        // Extraire l'indicatif du téléphone si présent
+        // Extraire l'indicatif du tÃ©lÃ©phone si prÃ©sent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
           final parts = telephone.split(' ');
@@ -640,10 +641,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     });
 
-    // 🔍 Validation de la durée uniquement à la sortie du champ
+    // ðŸ” Validation de la durÃ©e uniquement Ã  la sortie du champ
     _dureeFocusNode.addListener(() {
       if (!_dureeFocusNode.hasFocus) {
-        // Utiliser Future.delayed pour éviter les appels multiples
+        // Utiliser Future.delayed pour Ã©viter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
 
@@ -653,15 +654,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             if (duree != null) {
               setState(() {
                 _dureeEnAnnees =
-                    _selectedUnite == 'années' ? duree : duree ~/ 12;
+                    _selectedUnite == 'annÃ©es' ? duree : duree ~/ 12;
               });
 
-              // Validation de la durée en années
+              // Validation de la durÃ©e en annÃ©es
               if (_dureeEnAnnees < 5) {
                 _showProfessionalDialog(
-                  title: 'Durée minimale requise',
+                  title: 'DurÃ©e minimale requise',
                   message:
-                      'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                      'La durÃ©e minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durÃ©e du contrat pour continuer.',
                   icon: Icons.access_time,
                   iconColor: orangeWarning,
                   backgroundColor: orangeWarning,
@@ -674,9 +675,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               }
               if (_dureeEnAnnees > 50) {
                 _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
+                  title: 'DurÃ©e maximale dÃ©passÃ©e',
                   message:
-                      'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+                      'La durÃ©e maximale pour CORIS RETRAITE est de 50 ans. Le contrat a Ã©tÃ© ajustÃ© automatiquement.',
                   icon: Icons.access_time,
                   iconColor: orangeWarning,
                   backgroundColor: orangeWarning,
@@ -700,7 +701,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (widget.simulationData != null) {
       final data = widget.simulationData!;
 
-      // Déterminer le type de simulation
+      // DÃ©terminer le type de simulation
       if (data['type'] == 'capital') {
         _currentSimulation = SimulationType.parCapital;
         _selectedSimulationType = 'Par Capital';
@@ -715,21 +716,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
       }
 
-      // Pré-remplir la durée
+      // PrÃ©-remplir la durÃ©e
       if (data['duree'] != null) {
         _dureeController.text = data['duree'].toString();
         _dureeEnAnnees = data['duree'];
         debugPrint(
-            '📅 Durée pré-remplie: $_dureeEnAnnees années (valeur: ${data['duree']})');
+            'ðŸ“… DurÃ©e prÃ©-remplie: $_dureeEnAnnees annÃ©es (valeur: ${data['duree']})');
       }
 
-      // Pré-remplir l'unité si fournie
+      // PrÃ©-remplir l'unitÃ© si fournie
       if (data['unite'] != null) {
         _selectedUnite = data['unite'];
-        debugPrint('📏 Unité pré-remplie: $_selectedUnite');
+        debugPrint('ðŸ“ UnitÃ© prÃ©-remplie: $_selectedUnite');
       }
 
-      // Pré-remplir la périodicité
+      // PrÃ©-remplir la pÃ©riodicitÃ©
       if (data['periodicite'] != null) {
         switch (data['periodicite']) {
           case 'mensuel':
@@ -747,37 +748,37 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
       }
 
-      // Déclencher le calcul si l'âge est disponible
+      // DÃ©clencher le calcul si l'Ã¢ge est disponible
       if (_age > 0) {
         debugPrint(
-            '📢 Appel _effectuerCalcul depuis _prefillSimulationData (âge: $_age)');
+            'ðŸ“¢ Appel _effectuerCalcul depuis _prefillSimulationData (Ã¢ge: $_age)');
         _effectuerCalcul();
       } else {
         debugPrint(
-            '⚠️ _prefillSimulationData: âge non disponible ($_age), calcul différé');
-        // Si l'âge n'est pas encore disponible, attendre qu'il soit chargé
+            'âš ï¸ _prefillSimulationData: Ã¢ge non disponible ($_age), calcul diffÃ©rÃ©');
+        // Si l'Ã¢ge n'est pas encore disponible, attendre qu'il soit chargÃ©
         Future.delayed(Duration(milliseconds: 200), () {
           if (mounted && _age > 0) {
             debugPrint(
-                '📢 Appel _effectuerCalcul depuis _prefillSimulationData (retardé, âge: $_age)');
+                'ðŸ“¢ Appel _effectuerCalcul depuis _prefillSimulationData (retardÃ©, Ã¢ge: $_age)');
             _effectuerCalcul();
           } else if (mounted) {
             debugPrint(
-                '❌ _prefillSimulationData: âge toujours non disponible après délai');
+                'âŒ _prefillSimulationData: Ã¢ge toujours non disponible aprÃ¨s dÃ©lai');
           }
         });
       }
     }
   }
 
-  /// Méthode pour pré-remplir les champs depuis une proposition existante
+  /// MÃ©thode pour prÃ©-remplir les champs depuis une proposition existante
   void _prefillFromExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
-    debugPrint('🔄 Pré-remplissage depuis données existantes: ${data.keys}');
+    debugPrint('ðŸ”„ PrÃ©-remplissage depuis donnÃ©es existantes: ${data.keys}');
 
-    // Détecter si c'est une souscription par commercial (présence de client_info)
+    // DÃ©tecter si c'est une souscription par commercial (prÃ©sence de client_info)
     if (data['client_info'] != null) {
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
@@ -789,8 +790,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       _clientAdresseController.text = clientInfo['adresse'] ?? '';
       _clientNumeroPieceController.text =
           clientInfo['numero_piece_identite'] ?? '';
-      if (clientInfo['civilite'] != null)
+      if (clientInfo['civilite'] != null) {
         _selectedClientCivilite = clientInfo['civilite'];
+      }
       if (clientInfo['date_naissance'] != null) {
         try {
           DateTime? dateNaissance;
@@ -821,14 +823,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
           _selectedClientIndicatif = parts[0];
-          if (parts.length > 1)
+          if (parts.length > 1) {
             _clientTelephoneController.text = parts.sublist(1).join(' ');
+          }
         }
       }
     }
 
     try {
-      // Pré-remplir la durée
+      // PrÃ©-remplir la durÃ©e
       if (data['duree'] != null) {
         _dureeController.text = data['duree'].toString();
         _dureeEnAnnees = data['duree'] is int
@@ -836,12 +839,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             : int.parse(data['duree'].toString());
       }
 
-      // Pré-remplir l'unité
+      // PrÃ©-remplir l'unitÃ©
       if (data['duree_type'] != null) {
         _selectedUnite = data['duree_type'];
       }
 
-      // Pré-remplir la périodicité
+      // PrÃ©-remplir la pÃ©riodicitÃ©
       if (data['periodicite'] != null) {
         final periodicite = data['periodicite'].toString().toLowerCase();
         switch (periodicite) {
@@ -860,7 +863,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
       }
 
-      // Pré-remplir capital et prime
+      // PrÃ©-remplir capital et prime
       if (data['capital'] != null) {
         _calculatedCapital = data['capital'] is double
             ? data['capital']
@@ -874,7 +877,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         _primeController.text = _formatNumber(_calculatedPrime);
       }
 
-      // Pré-remplir bénéficiaire
+      // PrÃ©-remplir bÃ©nÃ©ficiaire
       if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
         final beneficiaire = data['beneficiaire'];
         if (beneficiaire['nom'] != null) {
@@ -882,7 +885,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
         if (beneficiaire['contact'] != null) {
           final contact = beneficiaire['contact'].toString();
-          // Extraire l'indicatif et le numéro (format: "+225 1234567890")
+          // Extraire l'indicatif et le numÃ©ro (format: "+225 1234567890")
           final parts = contact.split(' ');
           if (parts.length >= 2) {
             _selectedBeneficiaireIndicatif = parts[0];
@@ -901,12 +904,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             _beneficiaireDateNaissanceController.text =
                 DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
           } catch (e) {
-            debugPrint('Erreur parsing date_naissance bénéficiaire: $e');
+            debugPrint('Erreur parsing date_naissance bÃ©nÃ©ficiaire: $e');
           }
         }
       }
 
-      // Pré-remplir contact d'urgence
+      // PrÃ©-remplir contact d'urgence
       if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
         final contactUrgence = data['contact_urgence'];
         if (contactUrgence['nom'] != null) {
@@ -938,14 +941,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             assistance['commercial_code_apporteur']?.toString() ?? '';
       }
 
-      // Pré-remplir dates
+      // PrÃ©-remplir dates
       if (data['date_effet'] != null) {
         try {
           _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
           _dateEffetController.text =
               "${_dateEffetContrat!.day.toString().padLeft(2, '0')}/${_dateEffetContrat!.month.toString().padLeft(2, '0')}/${_dateEffetContrat!.year}";
         } catch (e) {
-          debugPrint('⚠️ Erreur parsing date_effet: $e');
+          debugPrint('âš ï¸ Erreur parsing date_effet: $e');
         }
       }
       if (data['date_echeance'] != null) {
@@ -953,11 +956,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           _dateEcheanceContrat =
               DateTime.parse(data['date_echeance'].toString());
         } catch (e) {
-          debugPrint('⚠️ Erreur parsing date_echeance: $e');
+          debugPrint('âš ï¸ Erreur parsing date_echeance: $e');
         }
       }
 
-      // Pré-remplir les informations client si commercial et si données présentes
+      // PrÃ©-remplir les informations client si commercial et si donnÃ©es prÃ©sentes
       if (data['client_info'] != null && data['client_info'] is Map) {
         final clientInfo = data['client_info'];
         _isCommercial = true;
@@ -1009,23 +1012,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               _clientAge--;
             }
           } catch (e) {
-            debugPrint('⚠️ Erreur parsing date_naissance client: $e');
+            debugPrint('âš ï¸ Erreur parsing date_naissance client: $e');
           }
         }
       }
 
-      debugPrint('✅ Pré-remplissage terminé avec succès');
+      debugPrint('âœ… PrÃ©-remplissage terminÃ© avec succÃ¨s');
 
-      // Déclencher un setState pour rafraîchir l'UI
+      // DÃ©clencher un setState pour rafraÃ®chir l'UI
       if (mounted) {
         setState(() {});
       }
     } catch (e) {
-      debugPrint('❌ Erreur lors du pré-remplissage: $e');
+      debugPrint('âŒ Erreur lors du prÃ©-remplissage: $e');
     }
   }
 
-  // Méthode pour charger les données utilisateur
+  // MÃ©thode pour charger les donnÃ©es utilisateur
   Future<void> _loadUserData() async {
     try {
       final token = await storage.read(key: 'token');
@@ -1062,7 +1065,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           if (mounted) {
             setState(() {
               _userData = userData!;
-              // Extraire la date de naissance et calculer l'âge
+              // Extraire la date de naissance et calculer l'Ã¢ge
               if (_userData['date_naissance'] != null) {
                 _dateNaissance = DateTime.parse(_userData['date_naissance']);
                 final maintenant = DateTime.now();
@@ -1073,25 +1076,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   _age--;
                 }
                 debugPrint(
-                    '👤 Âge utilisateur calculé: $_age ans (date naissance: $_dateNaissance)');
+                    'ðŸ‘¤ Ã‚ge utilisateur calculÃ©: $_age ans (date naissance: $_dateNaissance)');
               } else {
-                debugPrint('⚠️ Date de naissance manquante dans userData');
+                debugPrint('âš ï¸ Date de naissance manquante dans userData');
               }
             });
-            // Effectuer le calcul après le chargement des données
+            // Effectuer le calcul aprÃ¨s le chargement des donnÃ©es
             if (_age > 0) {
-              debugPrint('📢 Appel _effectuerCalcul depuis _loadUserData');
+              debugPrint('ðŸ“¢ Appel _effectuerCalcul depuis _loadUserData');
               _effectuerCalcul();
             }
           }
         }
       }
     } catch (e) {
-      debugPrint('Erreur chargement données utilisateur: $e');
+      debugPrint('Erreur chargement donnÃ©es utilisateur: $e');
     }
   }
 
-  // Méthodes pour la simulation
+  // MÃ©thodes pour la simulation
   String _formatNumber(double number) {
     return number.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -1134,7 +1137,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return -1;
     }
 
-    // Si hors ligne, utiliser les données locales
+    // Si hors ligne, utiliser les donnÃ©es locales
     if (_useLocalData) {
       final localPremium = LocalDataService.calculateRetraitePremium(
         duration,
@@ -1149,12 +1152,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return -1;
     }
 
-    // Récupérer le capital pour la prime de référence
+    // RÃ©cupÃ©rer le capital pour la prime de rÃ©fÃ©rence
     double capitalPourPrimeRef =
         capitalValues[duration]![periodicity]!.toDouble();
     double primeReference = primeReferenceValues[periodicity]!;
 
-    // NOUVELLE MÉTHODE: Prime = (Capital_Voulu × Prime_Reference) / Capital_pour_Prime_Reference
+    // NOUVELLE MÃ‰THODE: Prime = (Capital_Voulu Ã— Prime_Reference) / Capital_pour_Prime_Reference
     double calculatedPremium =
         (desiredCapital * primeReference) / capitalPourPrimeRef;
 
@@ -1173,7 +1176,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return -1;
     }
 
-    // Si hors ligne, utiliser les données locales
+    // Si hors ligne, utiliser les donnÃ©es locales
     if (_useLocalData) {
       final localCapital = LocalDataService.calculateRetraiteCapital(
         duration,
@@ -1188,12 +1191,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return -1;
     }
 
-    // Récupérer le capital pour la prime de référence
+    // RÃ©cupÃ©rer le capital pour la prime de rÃ©fÃ©rence
     double capitalPourPrimeRef =
         capitalValues[duration]![periodicity]!.toDouble();
     double primeReference = primeReferenceValues[periodicity]!;
 
-    // NOUVELLE MÉTHODE: Capital = (Prime_Payée × Capital_pour_Prime_Reference) / Prime_Reference
+    // NOUVELLE MÃ‰THODE: Capital = (Prime_PayÃ©e Ã— Capital_pour_Prime_Reference) / Prime_Reference
     double calculatedCapital =
         (paidPremium * capitalPourPrimeRef) / primeReference;
 
@@ -1202,11 +1205,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   void _effectuerCalcul() async {
     debugPrint(
-        '🔍 _effectuerCalcul appelé - âge: $_age, durée: $_dureeEnAnnees années, périodicité: ${_getPeriodiciteKey()}');
+        'ðŸ” _effectuerCalcul appelÃ© - Ã¢ge: $_age, durÃ©e: $_dureeEnAnnees annÃ©es, pÃ©riodicitÃ©: ${_getPeriodiciteKey()}');
 
     if (_age < 18 || _age > 69) {
       debugPrint(
-          '⚠️ Âge invalide pour calcul: $_age (doit être entre 18 et 69)');
+          'âš ï¸ Ã‚ge invalide pour calcul: $_age (doit Ãªtre entre 18 et 69)');
       if (mounted) {
         setState(() {
           _calculatedPrime = 0.0;
@@ -1218,7 +1221,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     if (_dureeEnAnnees < 5 || _dureeEnAnnees > 50) {
       debugPrint(
-          '⚠️ Durée invalide pour calcul: $_dureeEnAnnees (doit être entre 5 et 50 ans)');
+          'âš ï¸ DurÃ©e invalide pour calcul: $_dureeEnAnnees (doit Ãªtre entre 5 et 50 ans)');
       if (mounted) {
         setState(() {
           _calculatedPrime = 0.0;
@@ -1228,7 +1231,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return;
     }
 
-    // Calcul immédiat: suppression du délai artificiel pour une meilleure réactivité
+    // Calcul immÃ©diat: suppression du dÃ©lai artificiel pour une meilleure rÃ©activitÃ©
     if (mounted) {
       setState(() {
         String periodiciteKey = _getPeriodiciteKey();
@@ -1246,9 +1249,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
           capital = calculateCapital(_dureeEnAnnees, periodiciteKey, prime);
           debugPrint(
-              '💰 calculateCapital($_dureeEnAnnees, $periodiciteKey, $prime) = $capital');
+              'ðŸ’° calculateCapital($_dureeEnAnnees, $periodiciteKey, $prime) = $capital');
           if (capital == -1) {
-            debugPrint('❌ calculateCapital a retourné -1 (erreur)');
+            debugPrint('âŒ calculateCapital a retournÃ© -1 (erreur)');
             capital = 0;
           }
         } else {
@@ -1262,9 +1265,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
           prime = calculatePremium(_dureeEnAnnees, periodiciteKey, capital);
           debugPrint(
-              '💰 calculatePremium($_dureeEnAnnees, $periodiciteKey, $capital) = $prime');
+              'ðŸ’° calculatePremium($_dureeEnAnnees, $periodiciteKey, $capital) = $prime');
           if (prime == -1) {
-            debugPrint('❌ calculatePremium a retourné -1 (erreur)');
+            debugPrint('âŒ calculatePremium a retournÃ© -1 (erreur)');
             prime = 0;
           }
         }
@@ -1272,7 +1275,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         _calculatedCapital = capital;
 
         debugPrint(
-            '✅ Calcul effectué - Prime: ${_formatNumber(prime)} FCFA, Capital: ${_formatNumber(capital)} FCFA');
+            'âœ… Calcul effectuÃ© - Prime: ${_formatNumber(prime)} FCFA, Capital: ${_formatNumber(capital)} FCFA');
       });
     }
   }
@@ -1290,9 +1293,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           _dateEffetContrat = picked;
           _dateEffetController.text =
               '${picked.day}/${picked.month}/${picked.year}';
-          // Calculer la date d'échéance
+          // Calculer la date d'Ã©chÃ©ance
           final duree = int.tryParse(_dureeController.text) ?? 0;
-          final dureeAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+          final dureeAnnees = _selectedUnite == 'annÃ©es' ? duree : duree ~/ 12;
           _dateEcheanceContrat = DateTime(
               picked.year + dureeAnnees,
               picked.month,
@@ -1347,14 +1350,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         _selectedUnite = newValue;
         if (_dureeController.text.isNotEmpty) {
           int duree = int.tryParse(_dureeController.text) ?? 0;
-          _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+          _dureeEnAnnees = _selectedUnite == 'annÃ©es' ? duree : duree ~/ 12;
 
-          // Validation de la durée en années
+          // Validation de la durÃ©e en annÃ©es
           if (_dureeEnAnnees < 5) {
             _showProfessionalDialog(
-              title: 'Durée minimale requise',
+              title: 'DurÃ©e minimale requise',
               message:
-                  'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
+                  'La durÃ©e minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durÃ©e du contrat pour continuer.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1365,9 +1368,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
           if (_dureeEnAnnees > 50) {
             _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
+              title: 'DurÃ©e maximale dÃ©passÃ©e',
               message:
-                  'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
+                  'La durÃ©e maximale pour CORIS RETRAITE est de 50 ans. Le contrat a Ã©tÃ© ajustÃ© automatiquement.',
               icon: Icons.access_time,
               iconColor: orangeWarning,
               backgroundColor: orangeWarning,
@@ -1396,7 +1399,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
   }
 
-  // Méthodes pour la souscription
+  // MÃ©thodes pour la souscription
   String _formatMontant(double montant) {
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
@@ -1418,13 +1421,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         });
         _showSuccessSnackBar(
           _pieceIdentiteFiles.length > 1
-              ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
-              : 'Document ajouté avec succès',
+              ? '${_pieceIdentiteFiles.length} documents ajoutÃ©s avec succÃ¨s'
+              : 'Document ajoutÃ© avec succÃ¨s',
         );
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sélection du fichier');
+        _showErrorSnackBar('Erreur lors de la sÃ©lection du fichier');
       }
     }
   }
@@ -1435,7 +1438,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       SnackBar(
         content: Row(children: [
           const Icon(Icons.error_outline, color: blanc),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(child: Text(message)),
         ]),
         backgroundColor: rougeCoris,
@@ -1443,17 +1446,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
   }
 
-  /// Parse le RIB unifié en ses composantes
+  /// Parse le RIB unifiÃ© en ses composantes
   Map<String, String> _parseRibUnified(String rib) {
     final parts = rib.split('/').map((p) => p.trim()).toList();
     return {
-      'code_guichet': parts.length > 0 ? parts[0] : '',
+      'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
     };
   }
 
-  /// Valide le format du RIB unifié
+  /// Valide le format du RIB unifiÃ©
   bool _validateRibUnified(String rib) {
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
@@ -1468,7 +1471,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
 
-  /// Formate l'entrée RIB en temps réel
+  /// Formate l'entrÃ©e RIB en temps rÃ©el
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -1480,7 +1483,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
+    if (onlyDigits.isNotEmpty) {
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
     if (onlyDigits.length > 5) {
@@ -1507,7 +1510,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       SnackBar(
         content: Row(children: [
           const Icon(Icons.check_circle, color: blanc),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(child: Text(message))
         ]),
         backgroundColor: vertSucces,
@@ -1556,27 +1559,27 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     color: iconColor,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: context.r(24)),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 20,
+                  style: TextStyle(
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.bold,
                     color: bleuCoris,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 Text(
                   message,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     color: Colors.black87,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: context.r(28)),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -1590,10 +1593,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ),
                       elevation: 4,
                     ),
-                    child: const Text(
+                    child: Text(
                       'Compris',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1613,7 +1616,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
+        // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bÃ©nÃ©ficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -1624,7 +1627,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
+        // Pour les clients: step 0 = simulation, step 1 = bÃ©nÃ©ficiaire, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
@@ -1640,7 +1643,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           try {
             _effectuerCalcul();
           } catch (e) {
-            debugPrint('Erreur lors du calcul avant récapitulatif: $e');
+            debugPrint('Erreur lors du calcul avant rÃ©capitulatif: $e');
           }
         }
         setState(() => _currentStep++);
@@ -1667,10 +1670,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   bool _validateStep1() {
-    // Vérifier que la date d'effet est sélectionnée
+    // VÃ©rifier que la date d'effet est sÃ©lectionnÃ©e
     if (_dateEffetContrat == null) {
       _showErrorSnackBar(
-          'Veuillez sélectionner une date d\'effet pour le contrat');
+          'Veuillez sÃ©lectionner une date d\'effet pour le contrat');
       return false;
     }
 
@@ -1687,18 +1690,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
 
     if (_dureeController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir une durée');
+      _showErrorSnackBar('Veuillez saisir une durÃ©e');
       return false;
     }
 
-    // Si c'est un commercial, on ne valide pas l'âge à l'étape 1 (les champs client ne sont pas encore remplis)
+    // Si c'est un commercial, on ne valide pas l'Ã¢ge Ã  l'Ã©tape 1 (les champs client ne sont pas encore remplis)
     if (_isCommercial) {
-      // L'âge sera validé à l'étape 2 quand les infos client seront saisies
+      // L'Ã¢ge sera validÃ© Ã  l'Ã©tape 2 quand les infos client seront saisies
       return true;
     }
 
-    // Si c'est un client, valider son propre âge
-    // Recalculer l'âge si la date de naissance est disponible
+    // Si c'est un client, valider son propre Ã¢ge
+    // Recalculer l'Ã¢ge si la date de naissance est disponible
     if (_dateNaissance != null) {
       final maintenant = DateTime.now();
       _age = maintenant.year - _dateNaissance!.year;
@@ -1709,8 +1712,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     }
 
-    // Valider l'âge seulement à l'étape 2 si disponible
-    // À l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
+    // Valider l'Ã¢ge seulement Ã  l'Ã©tape 2 si disponible
+    // Ã€ l'Ã©tape 1, on ne valide pas l'Ã¢ge car il sera calculÃ© automatiquement
     if (_currentStep == 1) {
       if (_age <= 0) {
         _showErrorSnackBar(
@@ -1721,7 +1724,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (_age > 0) {
         if (_age < 18 || _age > 69) {
           _showErrorSnackBar(
-              'Âge non valide (18-69 ans requis). Votre âge: $_age ans');
+              'Ã‚ge non valide (18-69 ans requis). Votre Ã¢ge: $_age ans');
           return false;
         }
       }
@@ -1736,7 +1739,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return false;
     }
     if (_clientPrenomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      _showErrorSnackBar('Veuillez saisir le prÃ©nom du client');
       return false;
     }
     if (_clientDateNaissance == null) {
@@ -1752,15 +1755,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
     if (_clientAge < 18 || _clientAge > 69) {
       _showErrorSnackBar(
-          'Âge du client non valide (18-69 ans requis). Âge calculé: $_clientAge ans');
+          'Ã‚ge du client non valide (18-69 ans requis). Ã‚ge calculÃ©: $_clientAge ans');
       return false;
     }
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      _showErrorSnackBar('Veuillez saisir le tÃ©lÃ©phone du client');
       return false;
     }
-    // Utiliser l'âge du client pour le calcul
+    // Utiliser l'Ã¢ge du client pour le calcul
     _age = _clientAge;
     return true;
   }
@@ -1773,18 +1776,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
       return false;
     }
-    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
+    // La piÃ¨ce d'identitÃ© n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+          'Le tÃ©lÃ©chargement d\'une piÃ¨ce d\'identitÃ© est obligatoire pour continuer.');
       return false;
     }
     if (_isAideParCommercial &&
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
       _showErrorSnackBar(
-          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
+          'Veuillez renseigner le nom/prÃ©nom et le code apporteur du commercial.');
       return false;
     }
     return true;
@@ -1792,18 +1795,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   bool _validateStepModePaiement() {
     if (_selectedModePaiement == null || _selectedModePaiement!.isEmpty) {
-      _showErrorSnackBar('Veuillez sélectionner un mode de paiement');
+      _showErrorSnackBar('Veuillez sÃ©lectionner un mode de paiement');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
       if (_banqueController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez sélectionner votre banque.');
+        _showErrorSnackBar('Veuillez sÃ©lectionner votre banque.');
         return false;
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+            'Veuillez entrer votre numÃ©ro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
@@ -1815,46 +1818,46 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         _selectedModePaiement == 'Orange Money') {
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
         return false;
       }
-      // Validation spécifique pour Orange Money : doit commencer par 07
+      // Validation spÃ©cifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
         if (!phone.startsWith('07')) {
-          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          _showErrorSnackBar('Le numÃ©ro Orange Money doit commencer par 07.');
           return false;
         }
       }
-    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+    } else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') {
       if (_nomStructureController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
       if (_numeroMatriculeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
+        _showErrorSnackBar('Veuillez renseigner votre numÃ©ro de matricule');
         return false;
       }
     } else if (_selectedModePaiement == 'CORIS Money') {
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
         return false;
       }
     }
     return true;
   }
 
-  // Méthodes d'interface utilisateur
+  // MÃ©thodes d'interface utilisateur
   @override
   Widget build(BuildContext context) {
     return ConnectivityBuilder(
@@ -1898,22 +1901,22 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                       children: [
                                         const Icon(Icons.emoji_people_outlined,
                                             color: blanc, size: 28),
-                                        const SizedBox(width: 12),
+                                        SizedBox(width: context.r(12)),
                                         Text('CORIS RETRAITE',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                                 color: blanc,
-                                                fontSize: 22,
+                                                fontSize: context.sp(22),
                                                 fontWeight: FontWeight.w700,
                                                 letterSpacing: 0.5)),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text('Préparez sereinement votre retraite',
+                                    SizedBox(height: context.r(8)),
+                                    Text('PrÃ©parez sereinement votre retraite',
                                         style: TextStyle(
                                             color: blanc.withValues(alpha: 0.9),
-                                            fontSize: 14,
+                                            fontSize: context.sp(14),
                                             fontWeight: FontWeight.w400)),
-                                    const SizedBox(height: 16),
+                                    SizedBox(height: context.r(16)),
                                   ],
                                 ),
                               ),
@@ -1943,15 +1946,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                     ? [
                                         _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
                                         _buildStep1(), // Page 1: Simulation
-                                        _buildStep2(), // Page 2: Bénéficiaire/Contact
+                                        _buildStep2(), // Page 2: BÃ©nÃ©ficiaire/Contact
                                         _buildStepModePaiement(), // Page 3: Mode de paiement
-                                        _buildStep3(), // Page 4: Récapitulatif
+                                        _buildStep3(), // Page 4: RÃ©capitulatif
                                       ]
                                     : [
                                         _buildStep1(), // Page 0: Simulation
-                                        _buildStep2(), // Page 1: Bénéficiaire/Contact
+                                        _buildStep2(), // Page 1: BÃ©nÃ©ficiaire/Contact
                                         _buildStepModePaiement(), // Page 2: Mode de paiement
-                                        _buildStep3(), // Page 3: Récapitulatif
+                                        _buildStep3(), // Page 3: RÃ©capitulatif
                                       ])),
                         _buildNavigationButtons(),
                       ],
@@ -1977,8 +1980,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         Row(
           children: [
             // Dropdown pour l'indicatif
@@ -1999,7 +2002,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child:
-                            Text(value, style: const TextStyle(fontSize: 14)),
+                            Text(value, style: TextStyle(fontSize: context.sp(14))),
                       ),
                     );
                   }).toList(),
@@ -2007,8 +2010,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            // Champ de téléphone
+            SizedBox(width: context.r(10)),
+            // Champ de tÃ©lÃ©phone
             Expanded(
               child: TextFormField(
                 controller: controller,
@@ -2018,7 +2021,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   hintText: '00 00 00 00',
-                  hintStyle: const TextStyle(fontSize: 14),
+                  hintStyle: TextStyle(fontSize: context.sp(14)),
                   prefixIcon: Icon(Icons.phone_outlined,
                       size: 20, color: bleuCoris.withValues(alpha: 0.7)),
                   filled: true,
@@ -2038,7 +2041,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   }
                   if (!RegExp(r'^[0-9]{8,15}$')
                       .hasMatch(value.replaceAll(' ', ''))) {
-                    return 'Numéro de téléphone invalide';
+                    return 'NumÃ©ro de tÃ©lÃ©phone invalide';
                   }
                   return null;
                 },
@@ -2104,7 +2107,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                         : Icons.payment),
                     color: i <= _currentStep ? blanc : grisTexte,
                     size: 20)),
-            const SizedBox(height: 6),
+            SizedBox(height: context.r(6)),
             Text(
                 _isCommercial
                     ? (i == 0
@@ -2116,7 +2119,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 : i == 3
                                     ? 'Paiement'
                                     : i == 4
-                                        ? 'Récapitulatif'
+                                        ? 'RÃ©capitulatif'
                                         : 'Finaliser')
                     : (i == 0
                         ? 'Simulation'
@@ -2125,10 +2128,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             : i == 2
                                 ? 'Paiement'
                                 : i == 3
-                                    ? 'Récapitulatif'
+                                    ? 'RÃ©capitulatif'
                                     : 'Finaliser'),
                 style: TextStyle(
-                    fontSize: 11,
+                    fontSize: context.sp(11),
                     fontWeight:
                         i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                     color: i <= _currentStep ? bleuCoris : grisTexte)),
@@ -2147,7 +2150,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
   }
 
-  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  /// Page sÃ©parÃ©e pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -2166,7 +2169,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     [
                       _buildDropdownField(
                         value: _selectedClientCivilite,
-                        label: 'Civilité',
+                        label: 'CivilitÃ©',
                         icon: Icons.person_outline,
                         items: ['Monsieur', 'Madame', 'Mademoiselle'],
                         onChanged: (value) {
@@ -2175,19 +2178,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           });
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientNomController,
                         label: 'Nom du client',
                         icon: Icons.person_outline,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientPrenomController,
-                        label: 'Prénom du client',
+                        label: 'PrÃ©nom du client',
                         icon: Icons.person_outline,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildDateField(
                         controller: _clientDateNaissanceController,
                         label: 'Date de naissance',
@@ -2197,7 +2200,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             _clientDateNaissance = date;
                             _clientDateNaissanceController.text =
                                 '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-                            // Calculer l'âge et effectuer le calcul
+                            // Calculer l'Ã¢ge et effectuer le calcul
                             final maintenant = DateTime.now();
                             _clientAge = maintenant.year - date.year;
                             if (maintenant.month < date.month ||
@@ -2210,16 +2213,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           });
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientLieuNaissanceController,
                         label: 'Lieu de naissance',
                         icon: Icons.location_on,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildPhoneFieldWithIndicatif(
                         controller: _clientTelephoneController,
-                        label: 'Téléphone du client',
+                        label: 'TÃ©lÃ©phone du client',
                         selectedIndicatif: _selectedClientIndicatif,
                         onIndicatifChanged: (value) {
                           setState(() {
@@ -2227,35 +2230,35 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           });
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientEmailController,
                         label: 'Email du client',
                         icon: Icons.email,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientAdresseController,
                         label: 'Adresse du client',
                         icon: Icons.home,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientProfessionController,
                         label: 'Profession',
                         icon: Icons.work,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientSecteurActiviteController,
-                        label: "Secteur d'activité",
+                        label: "Secteur d'activitÃ©",
                         icon: Icons.business,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientNumeroPieceController,
-                        label: 'Numéro de pièce d\'identité',
+                        label: 'NumÃ©ro de piÃ¨ce d\'identitÃ©',
                         icon: Icons.badge,
                       ),
                     ],
@@ -2304,36 +2307,36 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 decoration: BoxDecoration(
                                     color: bleuCoris.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10))),
-                            const SizedBox(width: 12),
-                            Text("Souscrire à CORIS RETRAITE",
+                            SizedBox(width: context.r(12)),
+                            Text("Souscrire Ã  CORIS RETRAITE",
                                 style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: bleuCoris)),
                           ]),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
 
-                          // Sélecteur de type de simulation
+                          // SÃ©lecteur de type de simulation
                           _buildSimulationTypeDropdown(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
 
                           // Champ pour la prime/capital
                           _buildMontantField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
 
-                          // Champ pour la durée
+                          // Champ pour la durÃ©e
                           _buildDureeField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
 
-                          // Sélecteur de périodicité
+                          // SÃ©lecteur de pÃ©riodicitÃ©
                           _buildPeriodiciteDropdown(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
 
                           // Champ date d'effet
                           _buildDateEffetField(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
 
-                          // Affichage du résultat de simulation
+                          // Affichage du rÃ©sultat de simulation
                           if (_calculatedPrime > 0 || _calculatedCapital > 0)
                             _buildResultSection(),
                         ],
@@ -2355,8 +2358,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       children: [
         Text('Date d\'effet du contrat',
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: _selectDateEffet,
           child: AbsorbPointer(
@@ -2366,8 +2369,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                hintText: 'Sélectionner une date',
-                hintStyle: const TextStyle(fontSize: 14),
+                hintText: 'SÃ©lectionner une date',
+                hintStyle: TextStyle(fontSize: context.sp(14)),
                 prefixIcon: Icon(Icons.calendar_today,
                     size: 20, color: bleuCoris.withValues(alpha: 0.7)),
                 filled: true,
@@ -2401,7 +2404,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: _selectedSimulationType,
+          initialValue: _selectedSimulationType,
           decoration: const InputDecoration(
             border: InputBorder.none,
             labelText: 'Mode de souscription',
@@ -2424,11 +2427,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       children: [
         Text(
             _currentSimulation == SimulationType.parPrime
-                ? 'Prime souhaitée'
-                : 'Capital souhaitée',
+                ? 'Prime souhaitÃ©e'
+                : 'Capital souhaitÃ©e',
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         TextField(
           controller: _currentSimulation == SimulationType.parPrime
               ? _primeController
@@ -2439,7 +2442,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             hintText: 'Ex: 1 000 000',
-            hintStyle: const TextStyle(fontSize: 14),
+            hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20, color: bleuCoris.withValues(alpha: 0.7)),
             suffixText: 'FCFA',
@@ -2461,10 +2464,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Durée',
+        Text('DurÃ©e',
             style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris)),
-        const SizedBox(height: 6),
+                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+        SizedBox(height: context.r(6)),
         Row(
           children: [
             Expanded(
@@ -2477,8 +2480,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
-                    hintText: 'Saisir la durée',
-                    hintStyle: const TextStyle(fontSize: 14),
+                    hintText: 'Saisir la durÃ©e',
+                    hintStyle: TextStyle(fontSize: context.sp(14)),
                     prefixIcon: Icon(Icons.calendar_month,
                         size: 20, color: bleuCoris.withValues(alpha: 0.7)),
                     filled: true,
@@ -2491,11 +2494,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         borderSide: BorderSide(color: bleuCoris, width: 1.5)),
                   ),
                 )),
-            const SizedBox(width: 10),
+            SizedBox(width: context.r(10)),
             Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedUnite,
+                  initialValue: _selectedUnite,
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -2510,7 +2513,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         borderSide: BorderSide(color: bleuCoris, width: 1.5)),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'années', child: Text('Années')),
+                    DropdownMenuItem(value: 'annÃ©es', child: Text('AnnÃ©es')),
                     DropdownMenuItem(value: 'mois', child: Text('Mois'))
                   ],
                   onChanged: _onUniteChanged,
@@ -2535,11 +2538,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<Periode>(
-          value: _selectedPeriode,
+          initialValue: _selectedPeriode,
           decoration: InputDecoration(
               border: InputBorder.none,
               prefixIcon: Icon(Icons.calendar_today, color: bleuCoris),
-              labelText: 'Périodicité'),
+              labelText: 'PÃ©riodicitÃ©'),
           items: const [
             DropdownMenuItem(value: Periode.mensuel, child: Text('Mensuel')),
             DropdownMenuItem(
@@ -2554,33 +2557,33 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
   }
 
-  /// Widget d'affichage du résultat de simulation
+  /// Widget d'affichage du rÃ©sultat de simulation
   Widget _buildResultSection() {
     final resultValue = _currentSimulation == SimulationType.parPrime
         ? _calculatedCapital
         : _calculatedPrime;
     final resultLabel = _currentSimulation == SimulationType.parPrime
-        ? 'Capital estimé à l\'échéance'
-        : 'Prime ${_getPeriodiciteKey()} à verser';
+        ? 'Capital estimÃ© Ã  l\'Ã©chÃ©ance'
+        : 'Prime ${_getPeriodiciteKey()} Ã  verser';
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: vertSucces.withAlpha(26), // Fond vert clair comme CORIS ÉTUDE
+        color: vertSucces.withAlpha(26), // Fond vert clair comme CORIS Ã‰TUDE
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Résultats Calculés :',
+            'RÃ©sultats CalculÃ©s :',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: vertSucces,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             '$resultLabel : ${_formatNumber(resultValue)}',
             style: TextStyle(
@@ -2607,19 +2610,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 child: ListView(
                   children: [
                     _buildFormSection(
-                      'Bénéficiaire en cas de décès',
+                      'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s',
                       Icons.family_restroom,
                       [
                         _buildModernTextField(
                           controller: _beneficiaireNomController,
-                          label: 'Nom complet du bénéficiaire',
+                          label: 'Nom complet du bÃ©nÃ©ficiaire',
                           icon: Icons.person_outline,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         // Champ avec indicatif
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
-                          label: 'Contact du bénéficiaire',
+                          label: 'Contact du bÃ©nÃ©ficiaire',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -2627,14 +2630,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         GestureDetector(
                           onTap: _selectBeneficiaireDateNaissance,
                           child: AbsorbPointer(
                             child: TextFormField(
                               controller: _beneficiaireDateNaissanceController,
                               decoration: InputDecoration(
-                                hintText: 'Date de naissance du bénéficiaire',
+                                hintText: 'Date de naissance du bÃ©nÃ©ficiaire',
                                 prefixIcon: Icon(Icons.calendar_today,
                                     size: 20, color: bleuCoris.withAlpha(179)),
                                 border: OutlineInputBorder(
@@ -2658,10 +2661,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParente,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2672,7 +2675,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildFormSection(
                       'Contact d\'urgence',
                       Icons.contact_phone,
@@ -2682,18 +2685,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           label: 'Nom complet',
                           icon: Icons.person_outline,
                         ),
-                        const SizedBox(height: 16),
-                        // Champ téléphone urgence (avec indicatif dans le numéro)
+                        SizedBox(height: context.r(16)),
+                        // Champ tÃ©lÃ©phone urgence (avec indicatif dans le numÃ©ro)
                         _buildModernTextField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique (ex: +2250707070707)',
+                          label: 'Contact tÃ©lÃ©phonique (ex: +2250707070707)',
                           icon: Icons.phone,
                           keyboardType: TextInputType.phone,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParenteUrgence,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2704,9 +2707,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     if (!_isCommercial) _buildAssistanceCommercialeSection(),
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -2733,12 +2736,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(icon, color: bleuCoris, size: 20),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Text(title,
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
         ]),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(16)),
         ...children,
       ]),
     );
@@ -2750,9 +2753,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       Icons.support_agent,
       [
         Text(
-          'Êtes-vous aidé par un commercial pour la souscription ?',
+          'ÃŠtes-vous aidÃ© par un commercial pour la souscription ?',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(14),
             fontWeight: FontWeight.w600,
             color: grisTexte,
           ),
@@ -2786,13 +2789,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           },
         ),
         if (_isAideParCommercial) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildModernTextField(
             controller: _commercialNomPrenomController,
-            label: 'Nom et prénom du commercial',
+            label: 'Nom et prÃ©nom du commercial',
             icon: Icons.person_search,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildModernTextField(
             controller: _commercialCodeApporteurController,
             label: 'Code apporteur du commercial',
@@ -2815,12 +2818,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         Text(
           label,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: () async {
             final DateTime? picked = await showDatePicker(
@@ -2935,11 +2938,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       required IconData icon,
       required List<String> items,
       required ValueChanged<String?> onChanged}) {
-    // Vérifier si la valeur est valide (null ou dans la liste)
+    // VÃ©rifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
 
     return DropdownButtonFormField<String>(
-      value: validValue,
+      initialValue: validValue,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
@@ -2986,12 +2989,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.document_scanner, color: bleuCoris, size: 20),
-          const SizedBox(width: 12),
-          Text('Pièce d\'identité',
+          SizedBox(width: context.r(12)),
+          Text('PiÃ¨ce d\'identitÃ©',
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
         ]),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(16)),
         GestureDetector(
           onTap: _pickDocument,
           child: AnimatedContainer(
@@ -3019,23 +3022,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       size: 40,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris,
                       key: ValueKey(_pieceIdentite != null))),
-              const SizedBox(height: 10),
+              SizedBox(height: context.r(10)),
               Text(
                   _pieceIdentite != null
-                      ? 'Document ajouté avec succès'
-                      : 'Télécharger votre pièce d\'identité',
+                      ? 'Document ajoutÃ© avec succÃ¨s'
+                      : 'TÃ©lÃ©charger votre piÃ¨ce d\'identitÃ©',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       fontWeight: FontWeight.w600,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris)),
-              const SizedBox(height: 6),
+              SizedBox(height: context.r(6)),
               Text(
                   _pieceIdentite != null
                       ? _pieceIdentite!.path.split('/').last
-                      : 'Formats acceptés: PDF, JPG, PNG (Max: 5MB)',
+                      : 'Formats acceptÃ©s: PDF, JPG, PNG (Max: 5MB)',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: grisTexte)),
+                  style: TextStyle(fontSize: context.sp(11), color: grisTexte)),
             ]),
           ),
         ),
@@ -3043,25 +3046,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
   }
 
-  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
-  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
-  /// si elles ne sont pas déjà disponibles dans _userData
+  /// Charge les donnÃ©es utilisateur pour le rÃ©capitulatif (uniquement pour les clients)
+  /// Cette mÃ©thode est appelÃ©e dans le FutureBuilder pour charger les donnÃ©es Ã  la volÃ©e
+  /// si elles ne sont pas dÃ©jÃ  disponibles dans _userData
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
     try {
-      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      // Si _userData est dÃ©jÃ  chargÃ© et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        debugPrint('âœ… Utilisation des donnÃ©es utilisateur dÃ©jÃ  chargÃ©es');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('❌ Token non trouvé');
+        debugPrint('âŒ Token non trouvÃ©');
         // Retourner un map vide au lieu de lever une exception
         return {};
       }
 
-      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      debugPrint('ðŸ”„ Chargement des donnÃ©es utilisateur depuis l\'API...');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -3079,7 +3082,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
-                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3096,7 +3099,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
-                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+                  'âœ… DonnÃ©es utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -3113,7 +3116,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
-                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3126,7 +3129,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
-                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -3136,19 +3139,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           debugPrint(
-              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+              'âš ï¸ RÃ©ponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+          debugPrint('âš ï¸ Format invalide (non-Map): ${response.body}');
         }
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+        debugPrint('âŒ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
-      // Fallback vers _userData si la requête échoue
+      // Fallback vers _userData si la requÃªte Ã©choue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
       debugPrint(
-          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+          'âŒ Erreur chargement donnÃ©es utilisateur pour rÃ©capitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
@@ -3168,7 +3171,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec gradient
+                  // En-tÃªte avec gradient
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -3190,25 +3193,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           child:
                               const Icon(Icons.payment, color: blanc, size: 32),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: context.r(16)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Mode de Paiement',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: blanc,
-                                  fontSize: 22,
+                                  fontSize: context.sp(22),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
                                   color: blanc.withAlpha(229),
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                 ),
                               ),
                             ],
@@ -3217,18 +3220,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  SizedBox(height: context.r(30)),
 
-                  // Sélection du mode de paiement
+                  // SÃ©lection du mode de paiement
                   Text(
                     'Mode de paiement *',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
@@ -3275,7 +3278,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               },
                             );
                             break;
-                          case 'Prélèvement à la source':
+                          case 'PrÃ©lÃ¨vement Ã  la source':
                             icon = Icons.business;
                             iconColor = Colors.green;
                             break;
@@ -3302,7 +3305,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
-                              // Réinitialiser les champs
+                              // RÃ©initialiser les champs
                               _banqueController.clear();
                               _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
@@ -3339,12 +3342,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                           Icon(icon,
                                               color: iconColor, size: 28)),
                                 ),
-                                SizedBox(width: 16),
+                                SizedBox(width: context.r(16)),
                                 Expanded(
                                   child: Text(
                                     mode,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: context.sp(16),
                                       fontWeight: isSelected
                                           ? FontWeight.bold
                                           : FontWeight.w500,
@@ -3365,25 +3368,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     ),
                   ),
 
-                  // Champs conditionnels selon le mode sélectionné
+                  // Champs conditionnels selon le mode sÃ©lectionnÃ©
                   if (_selectedModePaiement != null) ...[
-                    SizedBox(height: 30),
+                    SizedBox(height: context.r(30)),
 
                     // VIREMENT
                     if (_selectedModePaiement == 'Virement') ...[
                       Text(
                         'Informations Bancaires',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Nom de la banque
                       DropdownButtonFormField<String>(
-                        value: _selectedBanque,
+                        initialValue: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
                           prefixIcon:
@@ -3411,9 +3414,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           });
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
-                      // Champ texte personnalisé si "Autre" est sélectionné
+                      // Champ texte personnalisÃ© si "Autre" est sÃ©lectionnÃ©
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
                           controller: _banqueController,
@@ -3428,25 +3431,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             fillColor: Colors.grey[50],
                           ),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                       ],
 
                       // Informations du RIB
                       Text(
                         'Informations du RIB',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: bleuCoris,
                         ),
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
 
-                      // RIB Unifié (5 / 11 / 2 chiffres)
+                      // RIB UnifiÃ© (5 / 11 / 2 chiffres)
                       TextField(
                         controller: _ribUnifiedController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro RIB complet *',
+                          labelText: 'NumÃ©ro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
                           prefixIcon:
                               Icon(Icons.account_balance, color: bleuCoris),
@@ -3456,31 +3459,31 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           filled: true,
                           fillColor: Colors.grey[50],
                           helperText:
-                              'Format: Code guichet (5) / Compte (11) / Clé (2)',
+                              'Format: Code guichet (5) / Compte (11) / ClÃ© (2)',
                           helperMaxLines: 2,
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
                         maxLength:
-                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractÃ¨res avec les sÃ©parateurs
                         onChanged: (value) => _formatRibInput(),
                       ),
                     ],
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
-                        'Numéro ${_selectedModePaiement}',
+                        'NumÃ©ro $_selectedModePaiement',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone *',
+                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Padding(
                             padding: const EdgeInsets.all(12.0),
@@ -3511,17 +3514,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ),
                     ],
 
-                    // PRÉLÈVEMENT À LA SOURCE
-                    if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                    // PRÃ‰LÃˆVEMENT Ã€ LA SOURCE
+                    if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') ...[
                       Text(
-                        'Informations Prélèvement',
+                        'Informations PrÃ©lÃ¨vement',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _nomStructureController,
                         decoration: InputDecoration(
@@ -3535,11 +3538,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           fillColor: Colors.grey[50],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _numeroMatriculeController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de matricule *',
+                          labelText: 'NumÃ©ro de matricule *',
                           hintText: 'Votre matricule',
                           prefixIcon: Icon(Icons.badge, color: Colors.green),
                           border: OutlineInputBorder(
@@ -3554,18 +3557,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     // CORIS MONEY
                     if (_selectedModePaiement == 'CORIS Money') ...[
                       Text(
-                        'Numéro CORIS Money',
+                        'NumÃ©ro CORIS Money',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _corisMoneyPhoneController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone *',
+                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.account_balance_wallet,
@@ -3582,7 +3585,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     ],
                   ],
 
-                  SizedBox(height: 30),
+                  SizedBox(height: context.r(30)),
 
                   // Note informative
                   Container(
@@ -3596,12 +3599,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       children: [
                         Icon(Icons.info_outline,
                             color: Colors.blue[700], size: 24),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            'Ces informations seront utilisÃ©es pour le prÃ©lÃ¨vement automatique de vos primes.',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: context.sp(14),
                               color: Colors.blue[900],
                             ),
                           ),
@@ -3633,7 +3636,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
-                        // Pour les clients, attendre le chargement des données
+                        // Pour les clients, attendre le chargement des donnÃ©es
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
@@ -3643,7 +3646,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
                         if (snapshot.hasError) {
                           debugPrint(
-                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                              'Erreur chargement donnÃ©es rÃ©capitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
                             return _buildRecapContent(userData: _userData);
@@ -3653,24 +3656,24 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.error, size: 48, color: rougeCoris),
-                                SizedBox(height: 16),
-                                Text('Erreur lors du chargement des données'),
+                                SizedBox(height: context.r(16)),
+                                Text('Erreur lors du chargement des donnÃ©es'),
                                 TextButton(
                                   onPressed: () => setState(() {}),
-                                  child: Text('Réessayer'),
+                                  child: Text('RÃ©essayer'),
                                 ),
                               ],
                             ),
                           );
                         }
 
-                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Pour les clients, utiliser les donnÃ©es chargÃ©es depuis la base de donnÃ©es
                         // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
                         final userData = snapshot.data ?? _userData;
 
-                        // Si userData est vide, recharger les données
+                        // Si userData est vide, recharger les donnÃ©es
                         if (userData.isEmpty && !_isCommercial) {
-                          // Recharger les données utilisateur
+                          // Recharger les donnÃ©es utilisateur
                           _loadUserDataForRecap().then((data) {
                             if (mounted && data.isNotEmpty) {
                               setState(() {
@@ -3699,10 +3702,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         : 0;
 
     /**
-     * CONSTRUCTION DU RÉCAPITULATIF:
+     * CONSTRUCTION DU RÃ‰CAPITULATIF:
      * 
-     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
-     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     * - Si _isCommercial = true: Utiliser les donnÃ©es des contrÃ´leurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connectÃ© depuis la base de donnÃ©es)
      */
     final displayData = _isCommercial
         ? {
@@ -3722,7 +3725,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       // Afficher les informations du client (toujours dans "Informations Personnelles")
       SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
 
-      const SizedBox(height: 20),
+      SizedBox(height: context.r(20)),
       SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit', Icons.emoji_people_outlined, vertSucces, [
         // Produit et Prime
@@ -3732,37 +3735,37 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             'Prime ${_getPeriodeTextForDisplay()}',
             _formatMontant(_calculatedPrime)),
 
-        // Capital au terme et Durée du contrat
+        // Capital au terme et DurÃ©e du contrat
         SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Capital au terme',
             '${_formatNumber(_calculatedCapital)} FCFA',
-            'Durée du contrat',
-            '$duree ${_selectedUnite == 'années' ? 'ans' : 'mois'}'),
+            'DurÃ©e du contrat',
+            '$duree ${_selectedUnite == 'annÃ©es' ? 'ans' : 'mois'}'),
 
-        // Date d'effet et Date d'échéance
+        // Date d'effet et Date d'Ã©chÃ©ance
         SubscriptionRecapWidgets.buildCombinedRecapRow(
             'Date d\'effet',
             _dateEffetContrat != null
                 ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                : 'Non définie',
-            'Date d\'échéance',
+                : 'Non dÃ©finie',
+            'Date d\'Ã©chÃ©ance',
             _dateEcheanceContrat != null
                 ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
-                : 'Non définie'),
+                : 'Non dÃ©finie'),
       ]),
-      const SizedBox(height: 20),
+      SizedBox(height: context.r(20)),
       SubscriptionRecapWidgets.buildRecapSection(
-        'Bénéficiaire et Contact d\'urgence',
+        'BÃ©nÃ©ficiaire et Contact d\'urgence',
         Icons.contacts,
         orangeWarning,
         [
-          // 🔹 Bénéficiaire
-          _buildSubsectionTitle('Bénéficiaire'),
+          // ðŸ”¹ BÃ©nÃ©ficiaire
+          _buildSubsectionTitle('BÃ©nÃ©ficiaire'),
           SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _beneficiaireNomController.text.isNotEmpty
                 ? _beneficiaireNomController.text
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
             'Date de naissance',
@@ -3770,56 +3773,56 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
                     '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
                     '${_beneficiaireDateNaissance!.year}'
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
             'Contact',
             _beneficiaireContactController.text.isNotEmpty
                 ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
-            'Lien de parenté',
+            'Lien de parentÃ©',
             _selectedLienParente.isNotEmpty
                 ? _selectedLienParente
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
-          // 🔹 Contact d'urgence
+          // ðŸ”¹ Contact d'urgence
           _buildSubsectionTitle('Contact d\'urgence'),
           SubscriptionRecapWidgets.buildRecapRow(
             'Nom complet',
             _personneContactNomController.text.isNotEmpty
                 ? _personneContactNomController.text
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
             'Contact',
             _personneContactTelController.text.isNotEmpty
                 ? _personneContactTelController.text
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
-            'Lien de parenté',
+            'Lien de parentÃ©',
             _selectedLienParenteUrgence.isNotEmpty
                 ? _selectedLienParenteUrgence
-                : 'Non renseigné',
+                : 'Non renseignÃ©',
           ),
         ],
       ),
       if (_isAideParCommercial ||
           _commercialNomPrenomController.text.trim().isNotEmpty ||
           _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
         SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
           nomPrenom: _commercialNomPrenomController.text,
           codeApporteur: _commercialCodeApporteurController.text,
         ),
       ],
-      const SizedBox(height: 20),
-      // 💳 SECTION MODE DE PAIEMENT
+      SizedBox(height: context.r(20)),
+      // ðŸ’³ SECTION MODE DE PAIEMENT
       if (_selectedModePaiement != null)
         SubscriptionRecapWidgets.buildRecapSection(
           'Mode de Paiement',
@@ -3828,7 +3831,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               ? bleuCoris
               : _selectedModePaiement == 'Wave'
                   ? Color(0xFF00BFFF)
-                  : _selectedModePaiement == 'Prélèvement à la source'
+                  : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
                       ? Colors.green
                       : _selectedModePaiement == 'CORIS Money'
                           ? Color(0xFF1E3A8A)
@@ -3836,46 +3839,46 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           [
             SubscriptionRecapWidgets.buildRecapRow(
                 'Mode choisi', _selectedModePaiement!),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             if (_selectedModePaiement == 'Virement') ...[
               SubscriptionRecapWidgets.buildRecapRow(
                   'Banque',
                   _banqueController.text.isNotEmpty
                       ? _banqueController.text
-                      : 'Non renseigné'),
+                      : 'Non renseignÃ©'),
               SubscriptionRecapWidgets.buildRecapRow(
                   'RIB complet',
                   _ribUnifiedController.text.isNotEmpty
                       ? _ribUnifiedController.text
-                      : 'Non renseigné'),
+                      : 'Non renseignÃ©'),
             ] else if (_selectedModePaiement == 'Wave' ||
                 _selectedModePaiement == 'Orange Money') ...[
               SubscriptionRecapWidgets.buildRecapRow(
-                  'Numéro ${_selectedModePaiement}',
+                  'NumÃ©ro $_selectedModePaiement',
                   _numeroMobileMoneyController.text.isNotEmpty
                       ? _numeroMobileMoneyController.text
-                      : 'Non renseigné'),
-            ] else if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                      : 'Non renseignÃ©'),
+            ] else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') ...[
               SubscriptionRecapWidgets.buildRecapRow(
                   'Nom de la structure',
                   _nomStructureController.text.isNotEmpty
                       ? _nomStructureController.text
-                      : 'Non renseigné'),
+                      : 'Non renseignÃ©'),
               SubscriptionRecapWidgets.buildRecapRow(
-                  'Numéro de matricule',
+                  'NumÃ©ro de matricule',
                   _numeroMatriculeController.text.isNotEmpty
                       ? _numeroMatriculeController.text
-                      : 'Non renseigné'),
+                      : 'Non renseignÃ©'),
             ] else if (_selectedModePaiement == 'CORIS Money') ...[
               SubscriptionRecapWidgets.buildRecapRow(
-                  'Numéro CORIS Money',
+                  'NumÃ©ro CORIS Money',
                   _corisMoneyPhoneController.text.isNotEmpty
                       ? _corisMoneyPhoneController.text
-                      : 'Non renseigné'),
+                      : 'Non renseignÃ©'),
             ],
           ],
         ),
-      if (_selectedModePaiement != null) const SizedBox(height: 20),
+      if (_selectedModePaiement != null) SizedBox(height: context.r(20)),
 
       SubscriptionRecapWidgets.buildDocumentsSection(
         pieceIdentite:
@@ -3899,7 +3902,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         ),
       ),
 
-      const SizedBox(height: 20),
+      SizedBox(height: context.r(20)),
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -3908,21 +3911,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             border: Border.all(color: orangeWarning.withValues(alpha: 0.3))),
         child: Column(children: [
           Icon(Icons.info_outline, color: orangeWarning, size: 28),
-          const SizedBox(height: 10),
-          Text('Vérification Importante',
+          SizedBox(height: context.r(10)),
+          Text('VÃ©rification Importante',
               style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: orangeWarning,
-                  fontSize: 14),
+                  fontSize: context.sp(14)),
               textAlign: TextAlign.center),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
-              'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
+              'VÃ©rifiez attentivement toutes les informations ci-dessus. Une fois la souscription validÃ©e, certaines modifications ne seront plus possibles.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: grisTexte, fontSize: 12, height: 1.4)),
+              style: TextStyle(color: grisTexte, fontSize: context.sp(12), height: 1.4)),
         ]),
       ),
-      const SizedBox(height: 20),
+      SizedBox(height: context.r(20)),
     ]);
   }
 
@@ -4000,12 +4003,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6)),
               child: Icon(icon, color: color, size: 18)),
-          const SizedBox(width: 10),
+          SizedBox(width: context.r(10)),
           Text(title,
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+                  fontSize: context.sp(16), fontWeight: FontWeight.w700, color: color)),
         ]),
-        const SizedBox(height: 12),
+        SizedBox(height: context.r(12)),
         ...children,
       ]),
     );
@@ -4014,7 +4017,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   Widget _buildSubsectionTitle(String title) {
     return Text(title,
         style: TextStyle(
-            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: 14));
+            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(14)));
   }
 
   Widget _buildCombinedRecapRow(
@@ -4027,7 +4030,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           final isSmallScreen = screenWidth < 360;
           final fontSize = isSmallScreen ? 11.0 : 12.0;
 
-          // Sur très petits écrans, afficher en colonne au lieu de côte à côte
+          // Sur trÃ¨s petits Ã©crans, afficher en colonne au lieu de cÃ´te Ã  cÃ´te
           if (screenWidth < 340) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4049,7 +4052,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         softWrap: true),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: context.r(8)),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -4093,7 +4096,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Flexible(
                 flex: 1,
                 child: Column(
@@ -4133,7 +4136,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
-                  // En-tête de finalisation
+                  // En-tÃªte de finalisation
                   Container(
                     padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -4154,31 +4157,31 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     child: Column(
                       children: [
                         Icon(Icons.check_circle, color: blanc, size: 56),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         Text(
-                          'Souscription Prête !',
+                          'Souscription PrÃªte !',
                           style: TextStyle(
                             color: blanc,
-                            fontSize: 24,
+                            fontSize: context.sp(24),
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Toutes vos informations ont Ã©tÃ© enregistrÃ©es',
                           style: TextStyle(
                             color: blanc.withOpacity(0.9),
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Montant à payer
+                  // Montant Ã  payer
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -4200,37 +4203,37 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Cotisation ${_selectedPeriode.toString().split('.').last.toLowerCase()} à payer',
+                          'Cotisation ${_selectedPeriode.toString().split('.').last.toLowerCase()} Ã  payer',
                           style: TextStyle(
                             color: grisTexte,
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
                           _formatMontant(_calculatedPrime),
                           style: TextStyle(
                             color: vertSucces,
-                            fontSize: 28,
+                            fontSize: context.sp(28),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Titre de la section
                   Text(
                     'Que souhaitez-vous faire maintenant ?',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(18),
                       fontWeight: FontWeight.bold,
                       color: bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Option 1: Payer maintenant
                   InkWell(
@@ -4258,7 +4261,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             ),
                             child: Icon(Icons.payment, color: blanc, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4266,16 +4269,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 Text(
                                   'Payer Maintenant',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: blanc,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
+                                  'Finalisez votre souscription avec un paiement immÃ©diat',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: blanc.withOpacity(0.9),
                                   ),
                                 ),
@@ -4288,7 +4291,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
 
                   // Option 2: Payer plus tard
                   InkWell(
@@ -4318,7 +4321,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             child: Icon(Icons.schedule,
                                 color: orangeWarning, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4326,16 +4329,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 Text(
                                   'Payer Plus Tard',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: orangeWarning,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
+                                  'Enregistrez votre proposition et payez ultÃ©rieurement',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: grisTexte,
                                   ),
                                 ),
@@ -4349,7 +4352,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Note informative
                   Container(
@@ -4363,7 +4366,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info_outline, color: bleuCoris, size: 24),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -4371,16 +4374,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               Text(
                                 'Information importante',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                   fontWeight: FontWeight.bold,
                                   color: bleuCoris,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrÃ©e comme proposition et vous pourrez la finaliser ultÃ©rieurement.',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: context.sp(12),
                                   color: Colors.blue[900],
                                 ),
                               ),
@@ -4390,9 +4393,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Avertissement de sécurité
+                  // Avertissement de sÃ©curitÃ©
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -4403,12 +4406,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            'Vos informations de paiement sont sÃ©curisÃ©es et chiffrÃ©es.',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: context.sp(12),
                               color: grisTexte,
                               height: 1.4,
                             ),
@@ -4417,7 +4420,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                 ],
               ),
             ),
@@ -4450,16 +4453,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 child:
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.arrow_back, color: bleuCoris, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Précédent',
+                  SizedBox(width: context.r(8)),
+                  Text('PrÃ©cÃ©dent',
                       style: TextStyle(
                           color: bleuCoris,
                           fontWeight: FontWeight.w600,
-                          fontSize: 16)),
+                          fontSize: context.sp(16))),
                 ]),
               ),
             ),
-          if (_currentStep > 0) const SizedBox(width: 16),
+          if (_currentStep > 0) SizedBox(width: context.r(16)),
           Expanded(
             child: ElevatedButton(
               onPressed: _currentStep == (_isCommercial ? 4 : 3)
@@ -4481,8 +4484,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
-                        fontSize: 16)),
-                const SizedBox(width: 8),
+                        fontSize: context.sp(16))),
+                SizedBox(width: context.r(8)),
                 Icon(
                     _currentStep == (_isCommercial ? 4 : 3)
                         ? Icons.draw
@@ -4505,7 +4508,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
 
     if (signature == null) {
-      return; // L'utilisateur a annulé
+      return; // L'utilisateur a annulÃ©
     }
 
     setState(() {
@@ -4514,7 +4517,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     if (!mounted) return;
 
-    // Après la signature, afficher les options de paiement
+    // AprÃ¨s la signature, afficher les options de paiement
     _showPaymentOptions();
   }
 
@@ -4574,7 +4577,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : _selectedModePaiement == 'Prélèvement à la source'
+                : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
@@ -4586,7 +4589,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                                 _corisMoneyPhoneController.text.trim(),
                           }
                         : null,
-        // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
+        // NE PAS inclure 'status' ici - il sera 'proposition' par dÃ©faut dans la base
       };
 
       // Ajouter la signature si elle existe
@@ -4631,7 +4634,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNER l'ID de la souscription (créée ou mise à jour)
+      // RETOURNER l'ID de la souscription (crÃ©Ã©e ou mise Ã  jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       debugPrint('Erreur sauvegarde souscription: $e');
@@ -4653,38 +4656,38 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         throw Exception(responseData['message'] ??
-            'Erreur lors de la mise à jour du statut');
+            'Erreur lors de la mise Ã  jour du statut');
       }
 
       debugPrint(
-          'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
+          'Statut mis Ã  jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-      debugPrint('Erreur mise à jour statut: $e');
+      debugPrint('Erreur mise Ã  jour statut: $e');
       rethrow;
     }
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-    // Simulation d'un délai de paiement
+    // Simulation d'un dÃ©lai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
-    // Pour la démo, retournez true pour succès, false pour échec
-    return true; // Changez en false pour tester l'échec
+    // Pour la dÃ©mo, retournez true pour succÃ¨s, false pour Ã©chec
+    return true; // Changez en false pour tester l'Ã©chec
   }
 
   void _processPayment(String paymentMethod) async {
-    // ✅ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    // âœ… SI CORIS MONEY: Afficher le modal de paiement CorisMoney
     if (paymentMethod == 'CORIS Money') {
       try {
         // 1. Sauvegarder la souscription
         final subscriptionId = await _saveSubscriptionData();
 
-        // 2. Upload document si présent
+        // 2. Upload document si prÃ©sent
         if (_pieceIdentite != null) {
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document: $uploadError');
+            debugPrint('âš ï¸ Erreur upload document: $uploadError');
           }
         }
 
@@ -4706,12 +4709,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
         return;
       } catch (e) {
-        _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
+        _showErrorSnackBar('Erreur lors de la prÃ©paration du paiement: $e');
         return;
       }
     }
 
-    // 👇 AUTRES MÉTHODES
+    // ðŸ‘‡ AUTRES MÃ‰THODES
     if (!mounted) return;
     showDialog(
         context: context,
@@ -4719,16 +4722,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         builder: (context) => LoadingDialog(paymentMethod: paymentMethod));
 
     try {
-      // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
+      // Ã‰TAPE 1: Sauvegarder la souscription (statut: 'proposition' par dÃ©faut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      // Ã‰TAPE 1.5: Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          // On continue mÃªme si l'upload Ã©choue
         }
       }
 
@@ -4748,10 +4751,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         return;
       }
 
-      // ÉTAPE 2: Simuler le paiement
+      // Ã‰TAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
-      // ÉTAPE 3: Mettre à jour le statut selon le résultat du paiement
+      // Ã‰TAPE 3: Mettre Ã  jour le statut selon le rÃ©sultat du paiement
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
 
@@ -4759,10 +4762,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         Navigator.pop(context); // Fermer le loading
 
         if (paymentSuccess) {
-          _showSuccessDialog(true); // Contrat activé
+          _showSuccessDialog(true); // Contrat activÃ©
         } else {
           _showErrorSnackBar(
-              'Paiement échoué. Votre proposition a été sauvegardée.');
+              'Paiement Ã©chouÃ©. Votre proposition a Ã©tÃ© sauvegardÃ©e.');
         }
       }
     } catch (e) {
@@ -4775,16 +4778,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   void _saveAsProposition() async {
     try {
-      // Sauvegarde avec statut 'proposition' par défaut
+      // Sauvegarde avec statut 'proposition' par dÃ©faut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Upload du document pièce d'identité si présent
+      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          // On continue mÃªme si l'upload Ã©choue
         }
       }
 
@@ -4798,7 +4801,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
   }
 
-  /// Upload le document pièce d'identité vers le serveur
+  /// Upload le document piÃ¨ce d'identitÃ© vers le serveur
   void _viewLocalDocument(File? documentFile, String fileName) {
     if (documentFile == null) return;
 
@@ -4815,7 +4818,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
-      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      debugPrint('ðŸ“¤ Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
@@ -4833,15 +4836,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         final responseData = jsonDecode(response.body);
 
         if (response.statusCode != 200 || !responseData['success']) {
-          debugPrint('❌ Erreur upload: ${responseData['message']}');
+          debugPrint('âŒ Erreur upload: ${responseData['message']}');
           throw Exception(responseData['message'] ?? 'Erreur upload document');
         }
       }
 
-      debugPrint('✅ Document uploadé avec succès');
+      debugPrint('âœ… Document uploadÃ© avec succÃ¨s');
     } catch (e) {
-      debugPrint('❌ Exception upload document: $e');
-      // Rethrow pour que l'appelant puisse gérer l'erreur
+      debugPrint('âŒ Exception upload document: $e');
+      // Rethrow pour que l'appelant puisse gÃ©rer l'erreur
       rethrow;
     }
   }
@@ -4868,7 +4871,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _beneficiaireDateNaissanceController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
-    // Dispose des contrôleurs client
+    // Dispose des contrÃ´leurs client
     _clientNomController.dispose();
     _clientPrenomController.dispose();
     _clientDateNaissanceController.dispose();
@@ -4911,16 +4914,16 @@ class LoadingDialog extends StatelessWidget {
                 height: 60,
                 child: CircularProgressIndicator(
                     color: Color(0xFF002B6B), strokeWidth: 3)),
-            const SizedBox(height: 20),
-            const Text('Traitement en cours',
+            SizedBox(height: context.r(20)),
+            Text('Traitement en cours',
                 style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF002B6B))),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text('Paiement via $paymentMethod...',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                style: TextStyle(color: Color(0xFF64748B), fontSize: context.sp(14))),
           ]),
         ));
   }
@@ -4959,21 +4962,21 @@ class SuccessDialog extends StatelessWidget {
                         ? const Color(0xFF10B981)
                         : const Color(0xFFF59E0B),
                     size: 40)),
-            const SizedBox(height: 20),
-            Text(isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+            SizedBox(height: context.r(20)),
+            Text(isPaid ? 'Souscription RÃ©ussie!' : 'Proposition EnregistrÃ©e!',
                 style: TextStyle(
-                    fontSize: 20,
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF002B6B))),
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
             Text(
                 isPaid
-                    ? 'Félicitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
-                    : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+                    ? 'FÃ©licitations! Votre contrat CORIS RETRAITE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                    : 'Votre proposition a Ã©tÃ© enregistrÃ©e avec succÃ¨s. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Color(0xFF64748B), fontSize: 14, height: 1.4)),
-            const SizedBox(height: 24),
+                style: TextStyle(
+                    color: Color(0xFF64748B), fontSize: context.sp(14), height: 1.4)),
+            SizedBox(height: context.r(24)),
             SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -4984,7 +4987,7 @@ class SuccessDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12))),
-                    child: Text('Retour à l\'accueil',
+                    child: Text('Retour Ã  l\'accueil',
                         style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600)))),
@@ -5021,22 +5024,23 @@ class PaymentBottomSheet extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   Row(children: [
                     Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                    const SizedBox(width: 12),
+                    SizedBox(width: context.r(12)),
                     Text('Options de Paiement',
                         style: TextStyle(
-                            fontSize: 22,
+                            fontSize: context.sp(22),
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF002B6B)))
                   ]),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   _buildPaymentOptionWithImage(
+                      context,
                       'Wave',
                       'assets/images/icone_wave.jpeg',
                       Colors.blue,
-                      'Paiement mobile sécurisé',
+                      'Paiement mobile sÃ©curisÃ©',
                       () => onPayNow('Wave')),
                   // _buildPaymentOptionWithImage(
                   //     'Orange Money',
@@ -5050,7 +5054,7 @@ class PaymentBottomSheet extends StatelessWidget {
                   //     Color(0xFF1E3A8A),
                   //     'Paiement par CORIS Money',
                   //     () => onPayNow('CORIS Money')),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
                   Row(children: [
                     Expanded(child: Divider(color: Colors.grey[300])),
                     const Padding(
@@ -5061,7 +5065,7 @@ class PaymentBottomSheet extends StatelessWidget {
                                 fontWeight: FontWeight.w500))),
                     Expanded(child: Divider(color: Colors.grey[300]))
                   ]),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                   SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
@@ -5077,19 +5081,18 @@ class PaymentBottomSheet extends StatelessWidget {
                               children: [
                                 Icon(Icons.schedule,
                                     color: Color(0xFF002B6B), size: 20),
-                                const SizedBox(width: 8),
+                                SizedBox(width: context.r(8)),
                                 Text('Payer plus tard',
                                     style: TextStyle(
                                         color: Color(0xFF002B6B),
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16))
+                                        fontSize: context.sp(16)))
                               ]))),
                   SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                 ]))));
   }
 
-  Widget _buildPaymentOption(String title, IconData icon, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -5107,7 +5110,7 @@ class PaymentBottomSheet extends StatelessWidget {
                       color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: color, size: 24)),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5116,18 +5119,17 @@ class PaymentBottomSheet extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF002B6B),
-                            fontSize: 16)),
-                    const SizedBox(height: 4),
+                            fontSize: context.sp(16))),
+                    SizedBox(height: context.r(4)),
                     Text(subtitle,
                         style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
+                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath,
-      Color color, String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -5152,12 +5154,12 @@ class PaymentBottomSheet extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      print('❌ Erreur chargement image: $imagePath - $error');
+                      print('âŒ Erreur chargement image: $imagePath - $error');
                       return Icon(Icons.image_not_supported,
                           size: 32, color: Colors.grey);
                     },
                   )),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5166,13 +5168,15 @@ class PaymentBottomSheet extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF002B6B),
-                            fontSize: 16)),
-                    const SizedBox(height: 4),
+                            fontSize: context.sp(16))),
+                    SizedBox(height: context.r(4)),
                     Text(subtitle,
                         style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: 12))
+                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 }
+
+

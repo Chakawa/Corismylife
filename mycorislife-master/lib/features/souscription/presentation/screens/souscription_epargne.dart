@@ -1,4 +1,6 @@
+// ignore_for_file: unused_field, unused_element
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:http/http.dart' as http;
@@ -18,7 +20,7 @@ import 'dart:typed_data';
 class SouscriptionEpargnePage extends StatefulWidget {
   final int? subscriptionId; // ID pour modification
   final Map<String, dynamic>?
-      existingData; // Données existantes pour modification
+      existingData; // DonnÃ©es existantes pour modification
 
   const SouscriptionEpargnePage(
       {super.key, this.subscriptionId, this.existingData});
@@ -30,7 +32,7 @@ class SouscriptionEpargnePage extends StatefulWidget {
 
 class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     with TickerProviderStateMixin {
-  // Charte graphique CORIS améliorée
+  // Charte graphique CORIS amÃ©liorÃ©e
   static const Color bleuCoris = Color(0xFF002B6B);
   static const Color rougeCoris = Color(0xFFE30613);
   static const Color bleuSecondaire = Color(0xFF1E4A8C);
@@ -50,7 +52,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   int _currentStep = 0;
 
-  // Données utilisateur
+  // DonnÃ©es utilisateur
   Map<String, dynamic> _userData = {};
 
   // Variables pour commercial (souscription pour un client)
@@ -58,7 +60,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   DateTime? _clientDateNaissance;
   int _clientAge = 0;
 
-  // Contrôleurs pour les informations client (si commercial)
+  // ContrÃ´leurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
   final TextEditingController _clientDateNaissanceController =
@@ -91,7 +93,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   DateTime? _dateFinContrat;
 
   File? _pieceIdentite;
-  // ignore: unused_field
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
   bool _isAideParCommercial = false;
@@ -112,30 +113,30 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     'Ecobank',
     'BOA',
     'UBA',
-    'Société Générale',
+    'SociÃ©tÃ© GÃ©nÃ©rale',
     'BNI',
     'Banque Atlantique',
     'Autre',
   ];
   final _ribUnifiedController =
-      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+      TextEditingController(); // RIB unifiÃ©: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final _nomStructureController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _numeroMatriculeController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _corisMoneyPhoneController =
       TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
-    'Prélèvement à la source',
+    'PrÃ©lÃ¨vement Ã  la source',
   ];
 
-  String _selectedBeneficiaireIndicatif = '+225'; // Côte d\'Ivoire par défaut
-  String _selectedContactIndicatif = '+225'; // Côte d\'Ivoire par défaut
+  String _selectedBeneficiaireIndicatif = '+225'; // CÃ´te d\'Ivoire par dÃ©faut
+  String _selectedContactIndicatif = '+225'; // CÃ´te d\'Ivoire par dÃ©faut
   final List<Map<String, String>> _indicatifOptions = [
-    {'code': '+225', 'pays': 'Côte d\'Ivoire'},
+    {'code': '+225', 'pays': 'CÃ´te d\'Ivoire'},
     {'code': '+226', 'pays': 'Burkina Faso'},
   ];
 
@@ -167,12 +168,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     },
   ];
 
-  // Options de lien de parenté
+  // Options de lien de parentÃ©
   final List<String> _lienParenteOptions = [
     'Enfant',
     'Conjoint',
     'Parent',
-    'Frère/Sœur',
+    'FrÃ¨re/SÅ“ur',
     'Ami',
     'Autre'
   ];
@@ -206,14 +207,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
   }
 
-  /// Méthode pour pré-remplir les champs depuis une proposition existante
+  /// MÃ©thode pour prÃ©-remplir les champs depuis une proposition existante
   void _prefillFromExistingData() {
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
-    debugPrint('🔄 Pré-remplissage ÉPARGNE depuis données existantes');
+    debugPrint('ðŸ”„ PrÃ©-remplissage Ã‰PARGNE depuis donnÃ©es existantes');
 
-    // Détecter si c'est une souscription par commercial (présence de client_info)
+    // DÃ©tecter si c'est une souscription par commercial (prÃ©sence de client_info)
     if (data['client_info'] != null) {
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
@@ -223,9 +224,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       _clientTelephoneController.text = clientInfo['telephone'] ?? '';
       _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
       _clientAdresseController.text = clientInfo['adresse'] ?? '';
-      // Note: souscription_epargne n'a pas de champ numéro de pièce
-      if (clientInfo['civilite'] != null)
+      // Note: souscription_epargne n'a pas de champ numÃ©ro de piÃ¨ce
+      if (clientInfo['civilite'] != null) {
         _selectedClientCivilite = clientInfo['civilite'];
+      }
       if (clientInfo['date_naissance'] != null) {
         try {
           DateTime? dateNaissance;
@@ -255,43 +257,47 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
           _selectedClientIndicatif = parts[0];
-          if (parts.length > 1)
+          if (parts.length > 1) {
             _clientTelephoneController.text = parts.sublist(1).join(' ');
+          }
         }
       }
     }
 
     try {
       setState(() {
-        if (data['capital'] != null)
+        if (data['capital'] != null) {
           _selectedCapital = data['capital'] is int
               ? data['capital']
               : int.parse(data['capital'].toString());
-        if (data['prime_mensuelle'] != null)
+        }
+        if (data['prime_mensuelle'] != null) {
           _selectedPrime = data['prime_mensuelle'] is int
               ? data['prime_mensuelle']
               : int.parse(data['prime_mensuelle'].toString());
+        }
 
         if (data['date_effet'] != null) {
           try {
             _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
           } catch (e) {
-            debugPrint('⚠️ Erreur parsing date_effet: $e');
+            debugPrint('âš ï¸ Erreur parsing date_effet: $e');
           }
         }
         if (data['date_fin'] != null) {
           try {
             _dateFinContrat = DateTime.parse(data['date_fin'].toString());
           } catch (e) {
-            debugPrint('⚠️ Erreur parsing date_fin: $e');
+            debugPrint('âš ï¸ Erreur parsing date_fin: $e');
           }
         }
       });
 
       if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
         final beneficiaire = data['beneficiaire'];
-        if (beneficiaire['nom'] != null)
+        if (beneficiaire['nom'] != null) {
           _beneficiaireNomController.text = beneficiaire['nom'].toString();
+        }
         if (beneficiaire['contact'] != null) {
           final contact = beneficiaire['contact'].toString();
           final parts = contact.split(' ');
@@ -300,8 +306,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             _beneficiaireContactController.text = parts.sublist(1).join(' ');
           }
         }
-        if (beneficiaire['lien_parente'] != null)
+        if (beneficiaire['lien_parente'] != null) {
           _selectedLienParente = beneficiaire['lien_parente'].toString();
+        }
         if (beneficiaire['date_naissance'] != null) {
           try {
             _beneficiaireDateNaissance =
@@ -316,8 +323,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
         final contactUrgence = data['contact_urgence'];
-        if (contactUrgence['nom'] != null)
+        if (contactUrgence['nom'] != null) {
           _personneContactNomController.text = contactUrgence['nom'].toString();
+        }
         if (contactUrgence['contact'] != null) {
           final contact = contactUrgence['contact'].toString();
           final parts = contact.split(' ');
@@ -326,9 +334,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             _personneContactTelController.text = parts.sublist(1).join(' ');
           }
         }
-        if (contactUrgence['lien_parente'] != null)
+        if (contactUrgence['lien_parente'] != null) {
           _selectedLienParenteUrgence =
               contactUrgence['lien_parente'].toString();
+        }
       }
 
         if (data['assistance_commerciale'] != null &&
@@ -342,16 +351,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           assistance['commercial_code_apporteur']?.toString() ?? '';
         }
 
-      debugPrint('✅ Pré-remplissage ÉPARGNE terminé');
+      debugPrint('âœ… PrÃ©-remplissage Ã‰PARGNE terminÃ©');
     } catch (e) {
-      debugPrint('❌ Erreur pré-remplissage ÉPARGNE: $e');
+      debugPrint('âŒ Erreur prÃ©-remplissage Ã‰PARGNE: $e');
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Vérifier si c'est un commercial qui fait la souscription
+    // VÃ©rifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args['isCommercial'] == true) {
@@ -361,11 +370,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         });
       }
 
-      // Si on est en mode modification (avec existingData), ne rien écraser
+      // Si on est en mode modification (avec existingData), ne rien Ã©craser
       if (args['existingData'] != null) {
-        // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
+        // Le prÃ©-remplissage complet est dÃ©jÃ  gÃ©rÃ© dans initState via _prefillFromExistingData
       }
-      // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
+      // Sinon, prÃ©-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
@@ -380,7 +389,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
-        // Gérer la date de naissance
+        // GÃ©rer la date de naissance
         if (clientInfo['date_naissance'] != null) {
           try {
             _clientDateNaissance = DateTime.parse(clientInfo['date_naissance']);
@@ -398,7 +407,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           }
         }
 
-        // Gérer l'indicatif téléphonique
+        // GÃ©rer l'indicatif tÃ©lÃ©phonique
         if (clientInfo['telephone'] != null) {
           final telephone = clientInfo['telephone'].toString();
           final parts = telephone.split(' ');
@@ -434,7 +443,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         final data = jsonDecode(response.body);
         if (data == null || data is! Map) {
           debugPrint(
-              '⚠️ Profil: réponse API vide ou non-Map: ${response.body}');
+              'âš ï¸ Profil: rÃ©ponse API vide ou non-Map: ${response.body}');
           if (mounted) {
             setState(() {
               _userData = _userData.isNotEmpty ? _userData : {};
@@ -471,7 +480,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         }
       }
     } catch (e) {
-      debugPrint('Erreur chargement données utilisateur: $e');
+      debugPrint('Erreur chargement donnÃ©es utilisateur: $e');
     }
   }
 
@@ -509,7 +518,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     return "${montant.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
-  /// Parse le RIB unifié en ses 3 composantes
+  /// Parse le RIB unifiÃ© en ses 3 composantes
   Map<String, String> _parseRibUnified(String rib) {
     final parts = rib.split('/').map((s) => s.trim()).toList();
     return {
@@ -519,7 +528,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     };
   }
 
-  /// Valide le format du RIB unifié
+  /// Valide le format du RIB unifiÃ©
   bool _validateRibUnified(String rib) {
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
@@ -534,7 +543,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
 
-  /// Formate l'entrée RIB en temps réel
+  /// Formate l'entrÃ©e RIB en temps rÃ©el
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -546,7 +555,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
+    if (onlyDigits.isNotEmpty) {
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
     if (onlyDigits.length > 5) {
@@ -587,10 +596,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           content: Row(
             children: [
               Icon(Icons.check_circle, color: blanc),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(_pieceIdentiteFiles.length > 1
-                  ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
-                  : 'Document ajouté avec succès'),
+                  ? '${_pieceIdentiteFiles.length} documents ajoutÃ©s avec succÃ¨s'
+                  : 'Document ajoutÃ© avec succÃ¨s'),
             ],
           ),
           backgroundColor: vertSucces,
@@ -602,7 +611,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       );
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sélection du fichier');
+        _showErrorSnackBar('Erreur lors de la sÃ©lection du fichier');
       }
     }
   }
@@ -617,35 +626,35 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   String _getBonusText() {
-    if (_selectedCapital == null) return 'Non défini';
+    if (_selectedCapital == null) return 'Non dÃ©fini';
 
     final option = _capitalOptions.firstWhere(
       (opt) => opt['capital'] == _selectedCapital,
-      orElse: () => {'bonus': 'Bonus non défini'},
+      orElse: () => {'bonus': 'Bonus non dÃ©fini'},
     );
 
     return option['bonus'];
   }
 
-  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
-  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
-  /// si elles ne sont pas déjà disponibles dans _userData
+  /// Charge les donnÃ©es utilisateur pour le rÃ©capitulatif (uniquement pour les clients)
+  /// Cette mÃ©thode est appelÃ©e dans le FutureBuilder pour charger les donnÃ©es Ã  la volÃ©e
+  /// si elles ne sont pas dÃ©jÃ  disponibles dans _userData
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
     try {
-      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      // Si _userData est dÃ©jÃ  chargÃ© et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        debugPrint('âœ… Utilisation des donnÃ©es utilisateur dÃ©jÃ  chargÃ©es');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('❌ Token non trouvé');
+        debugPrint('âŒ Token non trouvÃ©');
         // Retourner un map vide au lieu de lever une exception
         return {};
       }
 
-      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
+      debugPrint('ðŸ”„ Chargement des donnÃ©es utilisateur depuis l\'API...');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -662,7 +671,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               data['user'] != null &&
               data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
-            // Calculer l'âge si la date de naissance est disponible
+            // Calculer l'Ã¢ge si la date de naissance est disponible
             if (userData['date_naissance'] != null) {
               try {
                 final dateNaissance =
@@ -680,7 +689,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               }
             }
             debugPrint(
-                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -713,7 +722,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 }
               }
               debugPrint(
-                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+                  'âœ… DonnÃ©es utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -746,7 +755,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               }
             }
             debugPrint(
-                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -775,7 +784,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               }
             }
             debugPrint(
-                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -785,19 +794,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           }
 
           debugPrint(
-              '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
+              'âš ï¸ RÃ©ponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+          debugPrint('âš ï¸ Format invalide (non-Map): ${response.body}');
         }
       } else {
-        debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
+        debugPrint('âŒ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
-      // Fallback vers _userData si la requête échoue
+      // Fallback vers _userData si la requÃªte Ã©choue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
       debugPrint(
-          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+          'âŒ Erreur chargement donnÃ©es utilisateur pour rÃ©capitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
@@ -811,7 +820,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           content: Row(
             children: [
               Icon(Icons.error_outline, color: blanc),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(child: Text(message)),
             ],
           ),
@@ -853,12 +862,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       }
 
       if (canProceed) {
-        // Si on avance vers le récapitulatif, s'assurer que les valeurs sont calculées
+        // Si on avance vers le rÃ©capitulatif, s'assurer que les valeurs sont calculÃ©es
         if (_currentStep + 1 == maxStep) {
           try {
             _ensureEpargneCalculated();
           } catch (e) {
-            debugPrint('Erreur lors du calcul Epargne avant récap: $e');
+            debugPrint('Erreur lors du calcul Epargne avant rÃ©cap: $e');
           }
         }
 
@@ -917,7 +926,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       return false;
     }
     if (_clientPrenomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      _showErrorSnackBar('Veuillez saisir le prÃ©nom du client');
       return false;
     }
     if (_clientDateNaissance == null) {
@@ -925,12 +934,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       return false;
     }
     if (_clientAge < 18 || _clientAge > 65) {
-      _showErrorSnackBar('L\'âge du client doit être entre 18 et 65 ans');
+      _showErrorSnackBar('L\'Ã¢ge du client doit Ãªtre entre 18 et 65 ans');
       return false;
     }
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      _showErrorSnackBar('Veuillez saisir le tÃ©lÃ©phone du client');
       return false;
     }
     return true;
@@ -938,7 +947,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   bool _validateStep1() {
     if (_selectedCapital == null) {
-      _showErrorSnackBar('Veuillez sélectionner un capital');
+      _showErrorSnackBar('Veuillez sÃ©lectionner un capital');
       return false;
     }
     return true;
@@ -954,18 +963,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
       return false;
     }
-    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
+    // La piÃ¨ce d'identitÃ© n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+          'Le tÃ©lÃ©chargement d\'une piÃ¨ce d\'identitÃ© est obligatoire pour continuer.');
       return false;
     }
     if (_isAideParCommercial &&
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
       _showErrorSnackBar(
-          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
+          'Veuillez renseigner le nom/prÃ©nom et le code apporteur du commercial.');
       return false;
     }
     return true;
@@ -973,7 +982,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   bool _validateStepModePaiement() {
     if (_selectedModePaiement == null || _selectedModePaiement!.isEmpty) {
-      _showErrorSnackBar('Veuillez sélectionner un mode de paiement');
+      _showErrorSnackBar('Veuillez sÃ©lectionner un mode de paiement');
       return false;
     }
 
@@ -995,39 +1004,39 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         _selectedModePaiement == 'Orange Money') {
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
         return false;
       }
-      // Validation spécifique pour Orange Money : doit commencer par 07
+      // Validation spÃ©cifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
         if (!phone.startsWith('07')) {
-          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          _showErrorSnackBar('Le numÃ©ro Orange Money doit commencer par 07.');
           return false;
         }
       }
-    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+    } else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') {
       if (_nomStructureController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
       if (_numeroMatriculeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
+        _showErrorSnackBar('Veuillez renseigner votre numÃ©ro de matricule');
         return false;
       }
     } else if (_selectedModePaiement == 'CORIS Money') {
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
         return false;
       }
     }
@@ -1042,7 +1051,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
 
     if (signature == null) {
-      return; // L'utilisateur a annulé
+      return; // L'utilisateur a annulÃ©
     }
 
     setState(() {
@@ -1051,7 +1060,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
     if (!mounted) return;
 
-    // Après la signature, afficher les options de paiement
+    // AprÃ¨s la signature, afficher les options de paiement
     _showPaymentOptions();
   }
 
@@ -1079,7 +1088,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       final subscriptionData = {
         'product_type': 'coris_epargne_bonus',
-        'montant': _selectedPrime ?? _selectedCapital, // Ajouté pour l'admin
+        'montant': _selectedPrime ?? _selectedCapital, // AjoutÃ© pour l'admin
         'capital': _selectedCapital,
         'prime_mensuelle': _selectedPrime,
         'duree_mois': 180,
@@ -1117,7 +1126,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : _selectedModePaiement == 'Prélèvement à la source'
+                : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
@@ -1190,13 +1199,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         throw Exception(responseData['message'] ??
-            'Erreur lors de la mise à jour du statut');
+            'Erreur lors de la mise Ã  jour du statut');
       }
 
       debugPrint(
-          'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
+          'Statut mis Ã  jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-      debugPrint('Erreur mise à jour statut: $e');
+      debugPrint('Erreur mise Ã  jour statut: $e');
       rethrow;
     }
   }
@@ -1207,12 +1216,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _processPayment(String paymentMethod) async {
-    // Si CORIS Money est sélectionné, utiliser le modal de paiement
+    // Si CORIS Money est sÃ©lectionnÃ©, utiliser le modal de paiement
     if (paymentMethod == 'CORIS Money') {
       try {
         final subscriptionId = await _saveSubscriptionData();
 
-        // Upload du document pièce d'identité si présent
+        // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
         if (_pieceIdentite != null) {
           await _uploadDocument(subscriptionId);
         }
@@ -1225,7 +1234,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             builder: (context) => CorisMoneyPaymentModal(
               subscriptionId: subscriptionId,
               montant: _selectedPrime?.toDouble() ?? 0.0,
-              description: 'Paiement prime CORIS ÉPARGNE',
+              description: 'Paiement prime CORIS Ã‰PARGNE',
               onPaymentSuccess: () {
                 if (mounted) {
                   Navigator.pop(context);
@@ -1236,7 +1245,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           );
         }
       } catch (e) {
-        debugPrint('❌ Erreur lors du processus: $e');
+        debugPrint('âŒ Erreur lors du processus: $e');
         if (mounted) {
           _showErrorSnackBar('Erreur lors du traitement: $e');
         }
@@ -1253,7 +1262,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     try {
       final subscriptionId = await _saveSubscriptionData();
 
-      // Upload du document pièce d'identité si présent
+      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
@@ -1267,7 +1276,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           context,
           subscriptionId: subscriptionId,
           amount: _selectedPrime?.toDouble() ?? 0.0,
-          description: 'Paiement prime CORIS ÉPARGNE',
+          description: 'Paiement prime CORIS Ã‰PARGNE',
           onSuccess: () => _showSuccessDialog(true),
         );
         return;
@@ -1283,7 +1292,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           _showSuccessDialog(true);
         } else {
           _showErrorSnackBar(
-              'Paiement échoué. Votre proposition a été sauvegardée.');
+              'Paiement Ã©chouÃ©. Votre proposition a Ã©tÃ© sauvegardÃ©e.');
         }
       }
     } catch (e) {
@@ -1298,7 +1307,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     try {
       final subscriptionId = await _saveSubscriptionData();
 
-      // Upload du document pièce d'identité si présent
+      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         await _uploadDocument(subscriptionId);
       }
@@ -1309,10 +1318,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
   }
 
-  /// Upload le document pièce d'identité vers le serveur
+  /// Upload le document piÃ¨ce d'identitÃ© vers le serveur
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
-      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      debugPrint('ðŸ“¤ Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
@@ -1328,12 +1337,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         );
         final responseData = jsonDecode(response.body);
         if (response.statusCode != 200 || !responseData['success']) {
-          debugPrint('❌ Erreur upload: ${responseData['message']}');
+          debugPrint('âŒ Erreur upload: ${responseData['message']}');
         }
       }
-      debugPrint('✅ Document uploadé avec succès');
+      debugPrint('âœ… Document uploadÃ© avec succÃ¨s');
     } catch (e) {
-      debugPrint('❌ Exception upload document: $e');
+      debugPrint('âŒ Exception upload document: $e');
     }
   }
 
@@ -1411,28 +1420,28 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             children: [
                               Icon(Icons.savings_outlined,
                                   color: blanc, size: 28),
-                              SizedBox(width: 12),
+                              SizedBox(width: context.r(12)),
                               Text(
-                                'CORIS ÉPARGNE BONUS',
+                                'CORIS Ã‰PARGNE BONUS',
                                 style: TextStyle(
                                   color: blanc,
-                                  fontSize: 22,
+                                  fontSize: context.sp(22),
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: context.r(8)),
                           Text(
                             'Votre avenir financier commence ici',
                             style: TextStyle(
                               color: blanc.withAlpha(230),
-                              fontSize: 14,
+                              fontSize: context.sp(14),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                         ],
                       ),
                     ),
@@ -1462,16 +1471,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   children: _isCommercial
                       ? [
                           _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                          _buildStep1(), // Page 1: Sélection capital/prime
+                          _buildStep1(), // Page 1: SÃ©lection capital/prime
                           _buildStep2(), // Page 2: Informations contrat
                           _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStep3(), // Page 4: Récapitulatif
+                          _buildStep3(), // Page 4: RÃ©capitulatif
                         ]
                       : [
-                          _buildStep1(), // Page 0: Sélection capital/prime
+                          _buildStep1(), // Page 0: SÃ©lection capital/prime
                           _buildStep2(), // Page 1: Informations contrat
                           _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStep3(), // Page 3: Récapitulatif
+                          _buildStep3(), // Page 3: RÃ©capitulatif
                         ],
                 ),
               ),
@@ -1545,7 +1554,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       size: 20,
                     ),
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: context.r(6)),
                   Text(
                     _isCommercial
                         ? (i == 0
@@ -1557,7 +1566,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                     : i == 3
                                         ? 'Paiement'
                                         : i == 4
-                                            ? 'Récap'
+                                            ? 'RÃ©cap'
                                             : 'Finaliser')
                         : (i == 0
                             ? 'Capital'
@@ -1566,10 +1575,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 : i == 2
                                     ? 'Paiement'
                                     : i == 3
-                                        ? 'Récap'
+                                        ? 'RÃ©cap'
                                         : 'Finaliser'),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: context.sp(11),
                       fontWeight:
                           i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                       color: i <= _currentStep ? bleuCoris : grisTexte,
@@ -1595,7 +1604,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
   }
 
-  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  /// Page sÃ©parÃ©e pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -1614,7 +1623,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     [
                       _buildDropdownField(
                         value: _selectedClientCivilite,
-                        label: 'Civilité',
+                        label: 'CivilitÃ©',
                         icon: Icons.person_outline,
                         items: ['Monsieur', 'Madame', 'Mademoiselle'],
                         onChanged: (value) {
@@ -1623,19 +1632,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           });
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientNomController,
                         label: 'Nom du client',
                         icon: Icons.person_outline,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientPrenomController,
-                        label: 'Prénom du client',
+                        label: 'PrÃ©nom du client',
                         icon: Icons.person_outline,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildDateField(
                         controller: _clientDateNaissanceController,
                         label: 'Date de naissance',
@@ -1655,16 +1664,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           });
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientLieuNaissanceController,
                         label: 'Lieu de naissance',
                         icon: Icons.location_on,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildPhoneFieldWithIndicatif(
                         controller: _clientTelephoneController,
-                        label: 'Téléphone du client',
+                        label: 'TÃ©lÃ©phone du client',
                         selectedIndicatif: _selectedClientIndicatif,
                         onIndicatifChanged: (value) {
                           setState(() {
@@ -1672,29 +1681,29 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           });
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientEmailController,
                         label: 'Email du client',
                         icon: Icons.email,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientAdresseController,
                         label: 'Adresse du client',
                         icon: Icons.home,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientProfessionController,
                         label: 'Profession',
                         icon: Icons.work,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _clientSecteurActiviteController,
-                        label: "Secteur d'activité",
+                        label: "Secteur d'activitÃ©",
                         icon: Icons.business,
                       ),
                     ],
@@ -1797,7 +1806,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                                     size: 14, color: blanc)
                                                 : null,
                                           ),
-                                          SizedBox(width: 12),
+                                          SizedBox(width: context.r(12)),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
@@ -1807,16 +1816,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                                   _formatMontant(
                                                       option['capital']!),
                                                   style: TextStyle(
-                                                    fontSize: 16,
+                                                    fontSize: context.sp(16),
                                                     fontWeight: FontWeight.w700,
                                                     color: bleuCoris,
                                                   ),
                                                 ),
-                                                SizedBox(height: 4),
+                                                SizedBox(height: context.r(4)),
                                                 Text(
                                                   '${_formatMontant(option['prime']!)} / mois',
                                                   style: TextStyle(
-                                                    fontSize: 13,
+                                                    fontSize: context.sp(13),
                                                     fontWeight: FontWeight.w500,
                                                     color: grisTexte,
                                                   ),
@@ -1826,7 +1835,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 12),
+                                      SizedBox(height: context.r(12)),
                                       Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
@@ -1838,13 +1847,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                           children: [
                                             Icon(Icons.trending_up,
                                                 color: vertSucces, size: 14),
-                                            SizedBox(width: 6),
+                                            SizedBox(width: context.r(6)),
                                             Expanded(
                                               child: Text(
                                                 option['bonus'],
                                                 style: TextStyle(
                                                   color: vertSucces,
-                                                  fontSize: 11,
+                                                  fontSize: context.sp(11),
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -1878,7 +1887,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                       'POPULAIRE',
                                       style: TextStyle(
                                         color: blanc,
-                                        fontSize: 9,
+                                        fontSize: context.sp(9),
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
                                       ),
@@ -1920,22 +1929,22 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           Row(
             children: [
               Icon(Icons.check_circle, color: vertSucces, size: 18),
-              SizedBox(width: 8),
+              SizedBox(width: context.r(8)),
               Text(
-                'Votre sélection',
+                'Votre sÃ©lection',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: vertSucces,
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: context.r(10)),
           _buildSummaryRow(
               'Capital au terme', _formatMontant(_selectedCapital!)),
           _buildSummaryRow('Prime mensuelle', _formatMontant(_selectedPrime!)),
-          _buildSummaryRow('Durée', '15 ans (180 mois)'),
+          _buildSummaryRow('DurÃ©e', '15 ans (180 mois)'),
         ],
       ),
     );
@@ -1947,13 +1956,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: grisTexte, fontSize: 13)),
+          Text(label, style: TextStyle(color: grisTexte, fontSize: context.sp(13))),
           Text(
             value,
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: bleuCoris,
-              fontSize: 13,
+              fontSize: context.sp(13),
             ),
           ),
         ],
@@ -2028,20 +2037,20 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildFormSection(
-                      'Bénéficiaire en cas de décès',
+                      'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s',
                       Icons.family_restroom,
                       [
                         _buildModernTextField(
                           controller: _beneficiaireNomController,
-                          label: 'Nom complet du bénéficiaire',
+                          label: 'Nom complet du bÃ©nÃ©ficiaire',
                           icon: Icons.person_outline,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
-                          label: 'Contact du bénéficiaire',
+                          label: 'Contact du bÃ©nÃ©ficiaire',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -2049,12 +2058,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             });
                           },
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         TextFormField(
                           controller: _beneficiaireDateNaissanceController,
                           readOnly: true,
                           decoration: InputDecoration(
-                            labelText: 'Date de naissance du bénéficiaire',
+                            labelText: 'Date de naissance du bÃ©nÃ©ficiaire',
                             prefixIcon:
                                 Icon(Icons.calendar_today, color: bleuCoris),
                             border: OutlineInputBorder(
@@ -2078,15 +2087,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez sélectionner la date de naissance';
+                              return 'Veuillez sÃ©lectionner la date de naissance';
                             }
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParente,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2097,7 +2106,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildFormSection(
                       'Contact d\'urgence',
                       Icons.contact_phone,
@@ -2107,10 +2116,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           label: 'Nom complet',
                           icon: Icons.person_outline,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique',
+                          label: 'Contact tÃ©lÃ©phonique',
                           selectedIndicatif: _selectedContactIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -2118,10 +2127,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             });
                           },
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParenteUrgence,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2132,9 +2141,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     if (!_isCommercial) _buildAssistanceCommercialeSection(),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -2152,9 +2161,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       Icons.support_agent,
       [
         Text(
-          'Êtes-vous aidé par un commercial pour la souscription ?',
+          'ÃŠtes-vous aidÃ© par un commercial pour la souscription ?',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(14),
             fontWeight: FontWeight.w600,
             color: grisTexte,
           ),
@@ -2188,13 +2197,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           },
         ),
         if (_isAideParCommercial) ...[
-          SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildModernTextField(
             controller: _commercialNomPrenomController,
-            label: 'Nom et prénom du commercial',
+            label: 'Nom et prÃ©nom du commercial',
             icon: Icons.person_search,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildModernTextField(
             controller: _commercialCodeApporteurController,
             label: 'Code apporteur du commercial',
@@ -2227,8 +2236,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   onPrimary: blanc,
                   surface: blanc,
                   onSurface: bleuCoris,
-                ),
-                dialogBackgroundColor: blanc,
+                ), dialogTheme: DialogThemeData(backgroundColor: blanc),
               ),
               child: child!,
             );
@@ -2292,12 +2300,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(14),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         Row(
           children: [
             Container(
@@ -2319,7 +2327,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         padding: EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           option['code']!,
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: context.sp(12)),
                         ),
                       ),
                     );
@@ -2332,13 +2340,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 ),
               ),
             ),
-            SizedBox(width: 8),
+            SizedBox(width: context.r(8)),
             Expanded(
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  hintText: 'Numéro de téléphone',
+                  hintText: 'NumÃ©ro de tÃ©lÃ©phone',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: grisLeger),
@@ -2358,10 +2366,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Le numéro de téléphone est obligatoire';
+                    return 'Le numÃ©ro de tÃ©lÃ©phone est obligatoire';
                   }
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-                    return 'Numéro de téléphone invalide';
+                    return 'NumÃ©ro de tÃ©lÃ©phone invalide';
                   }
                   return null;
                 },
@@ -2393,18 +2401,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           Row(
             children: [
               Icon(icon, color: bleuCoris, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: bleuCoris,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           ...children,
         ],
       ),
@@ -2468,11 +2476,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    // Vérifier si la valeur est dans la liste
+    // VÃ©rifier si la valeur est dans la liste
     final validValue = items.contains(value) ? value : null;
 
     return DropdownButtonFormField<String>(
-      value: validValue,
+      initialValue: validValue,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
@@ -2536,18 +2544,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           Row(
             children: [
               Icon(Icons.document_scanner, color: bleuCoris, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(
-                'Pièce d\'identité',
+                'PiÃ¨ce d\'identitÃ©',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: bleuCoris,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           GestureDetector(
             onTap: _pickDocument,
             child: AnimatedContainer(
@@ -2579,26 +2587,26 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       key: ValueKey(_pieceIdentite != null),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: context.r(10)),
                   Text(
                     _pieceIdentite != null
-                        ? 'Document ajouté avec succès'
-                        : 'Télécharger votre pièce d\'identité',
+                        ? 'Document ajoutÃ© avec succÃ¨s'
+                        : 'TÃ©lÃ©charger votre piÃ¨ce d\'identitÃ©',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       fontWeight: FontWeight.w600,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: context.r(6)),
                   Text(
                     _pieceIdentite != null
                         ? _pieceIdentite!.path.split('/').last
-                        : 'Formats acceptés: PDF, JPG, PNG (Max: 5MB)',
+                        : 'Formats acceptÃ©s: PDF, JPG, PNG (Max: 5MB)',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: context.sp(11),
                       color: grisTexte,
                     ),
                   ),
@@ -2624,7 +2632,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec gradient
+                  // En-tÃªte avec gradient
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -2646,25 +2654,25 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           child:
                               const Icon(Icons.payment, color: blanc, size: 32),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: context.r(16)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Mode de Paiement',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: blanc,
-                                  fontSize: 22,
+                                  fontSize: context.sp(22),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
                                   color: blanc.withAlpha(229),
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                 ),
                               ),
                             ],
@@ -2673,18 +2681,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Sélection du mode de paiement
+                  // SÃ©lection du mode de paiement
                   Text(
                     'Mode de paiement *',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
@@ -2731,7 +2739,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               },
                             );
                             break;
-                          case 'Prélèvement à la source':
+                          case 'PrÃ©lÃ¨vement Ã  la source':
                             icon = Icons.business;
                             iconColor = Colors.green;
                             break;
@@ -2758,7 +2766,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
-                              // Réinitialiser les champs
+                              // RÃ©initialiser les champs
                               _banqueController.clear();
                               _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
@@ -2795,12 +2803,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                           Icon(icon,
                                               color: iconColor, size: 28)),
                                 ),
-                                SizedBox(width: 16),
+                                SizedBox(width: context.r(16)),
                                 Expanded(
                                   child: Text(
                                     mode,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: context.sp(16),
                                       fontWeight: isSelected
                                           ? FontWeight.bold
                                           : FontWeight.w500,
@@ -2821,25 +2829,25 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ),
                   ),
 
-                  // Champs conditionnels selon le mode sélectionné
+                  // Champs conditionnels selon le mode sÃ©lectionnÃ©
                   if (_selectedModePaiement != null) ...[
-                    SizedBox(height: 30),
+                    SizedBox(height: context.r(30)),
 
                     // VIREMENT
                     if (_selectedModePaiement == 'Virement') ...[
                       Text(
                         'Informations Bancaires',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Nom de la banque
                       DropdownButtonFormField<String>(
-                        value: _selectedBanque,
+                        initialValue: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
                           prefixIcon:
@@ -2867,16 +2875,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           });
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
-                      // Champ texte personnalisé si "Autre" est sélectionné
+                      // Champ texte personnalisÃ© si "Autre" est sÃ©lectionnÃ©
                       if (_selectedBanque == 'Autre') ...[
                         _buildModernTextField(
                           controller: _banqueController,
                           label: 'Nom de votre banque',
                           icon: Icons.edit,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                       ],
 
                       // Informations du RIB
@@ -2885,17 +2893,17 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         child: Text(
                           'Informations du RIB',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: context.sp(16),
                             fontWeight: FontWeight.w600,
                             color: bleuCoris,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
 
                       _buildModernTextField(
                         controller: _ribUnifiedController,
-                        label: 'Numéro RIB complet (XXXXX / XXXXXXXXXXX / XX)',
+                        label: 'NumÃ©ro RIB complet (XXXXX / XXXXXXXXXXX / XX)',
                         icon: Icons.account_balance,
                         keyboardType: TextInputType.number,
                         maxLength: 24,
@@ -2904,19 +2912,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ] else if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
-                        'Numéro Mobile Money',
+                        'NumÃ©ro Mobile Money',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextFormField(
                         controller: _numeroMobileMoneyController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone',
+                          labelText: 'NumÃ©ro de tÃ©lÃ©phone',
                           labelStyle: TextStyle(
                               color: bleuCoris.withValues(alpha: 0.7)),
                           prefixIcon: Padding(
@@ -2960,49 +2968,49 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 : null,
                       ),
                     ] else if (_selectedModePaiement ==
-                        'Prélèvement à la source') ...[
+                        'PrÃ©lÃ¨vement Ã  la source') ...[
                       Text(
-                        'Informations Prélèvement',
+                        'Informations PrÃ©lÃ¨vement',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _nomStructureController,
                         label: 'Nom de la structure',
                         icon: Icons.business,
                         keyboardType: TextInputType.text,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _numeroMatriculeController,
-                        label: 'Numéro de matricule',
+                        label: 'NumÃ©ro de matricule',
                         icon: Icons.badge,
                         keyboardType: TextInputType.text,
                       ),
                     ] else if (_selectedModePaiement == 'CORIS Money') ...[
                       Text(
-                        'Numéro CORIS Money',
+                        'NumÃ©ro CORIS Money',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildModernTextField(
                         controller: _corisMoneyPhoneController,
-                        label: 'Numéro de téléphone',
+                        label: 'NumÃ©ro de tÃ©lÃ©phone',
                         icon: Icons.account_balance_wallet,
                         keyboardType: TextInputType.phone,
                       ),
                     ],
                   ],
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Note informative
                   Container(
@@ -3017,13 +3025,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       children: [
                         Icon(Icons.info_outline,
                             color: Colors.blue.shade700, size: 24),
-                        const SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            'Ces informations seront utilisÃ©es pour le prÃ©lÃ¨vement automatique de vos primes.',
                             style: TextStyle(
                               color: Colors.blue.shade900,
-                              fontSize: 14,
+                              fontSize: context.sp(14),
                               height: 1.4,
                             ),
                           ),
@@ -3039,8 +3047,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       },
     );
   }
-
-  // ignore: unused_element
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3053,7 +3059,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
-                  // En-tête de finalisation
+                  // En-tÃªte de finalisation
                   Container(
                     padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -3074,31 +3080,31 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     child: Column(
                       children: [
                         Icon(Icons.check_circle, color: blanc, size: 56),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         Text(
-                          'Souscription Prête !',
+                          'Souscription PrÃªte !',
                           style: TextStyle(
                             color: blanc,
-                            fontSize: 24,
+                            fontSize: context.sp(24),
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Toutes vos informations ont Ã©tÃ© enregistrÃ©es',
                           style: TextStyle(
                             color: blanc.withOpacity(0.9),
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Montant à payer
+                  // Montant Ã  payer
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -3120,37 +3126,37 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Cotisation mensuelle à payer',
+                          'Cotisation mensuelle Ã  payer',
                           style: TextStyle(
                             color: grisTexte,
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
                           _formatMontant(_selectedPrime ?? 0),
                           style: TextStyle(
                             color: vertSucces,
-                            fontSize: 28,
+                            fontSize: context.sp(28),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Titre de la section
                   Text(
                     'Que souhaitez-vous faire maintenant ?',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(18),
                       fontWeight: FontWeight.bold,
                       color: bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Option 1: Payer maintenant
                   InkWell(
@@ -3178,7 +3184,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             ),
                             child: Icon(Icons.payment, color: blanc, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3186,16 +3192,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 Text(
                                   'Payer Maintenant',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: blanc,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
+                                  'Finalisez votre souscription avec un paiement immÃ©diat',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: blanc.withOpacity(0.9),
                                   ),
                                 ),
@@ -3208,7 +3214,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
 
                   // Option 2: Payer plus tard
                   InkWell(
@@ -3238,7 +3244,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             child: Icon(Icons.schedule,
                                 color: orangeWarning, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3246,16 +3252,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                 Text(
                                   'Payer Plus Tard',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: orangeWarning,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
+                                  'Enregistrez votre proposition et payez ultÃ©rieurement',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: grisTexte,
                                   ),
                                 ),
@@ -3269,7 +3275,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Note informative
                   Container(
@@ -3283,7 +3289,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info_outline, color: bleuCoris, size: 24),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -3291,16 +3297,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               Text(
                                 'Information importante',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                   fontWeight: FontWeight.bold,
                                   color: bleuCoris,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrÃ©e comme proposition et vous pourrez la finaliser ultÃ©rieurement.',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: context.sp(12),
                                   color: Colors.blue[900],
                                 ),
                               ),
@@ -3310,9 +3316,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Avertissement de sécurité
+                  // Avertissement de sÃ©curitÃ©
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -3323,12 +3329,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            'Vos informations de paiement sont sÃ©curisÃ©es et chiffrÃ©es.',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: context.sp(12),
                               color: grisTexte,
                               height: 1.4,
                             ),
@@ -3337,7 +3343,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                 ],
               ),
             ),
@@ -3362,7 +3368,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
-                        // Pour les clients, attendre le chargement des données
+                        // Pour les clients, attendre le chargement des donnÃ©es
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
@@ -3372,7 +3378,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                         if (snapshot.hasError) {
                           debugPrint(
-                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                              'Erreur chargement donnÃ©es rÃ©capitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
                             return _buildRecapContent(userData: _userData);
@@ -3382,24 +3388,24 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.error, size: 48, color: rougeCoris),
-                                SizedBox(height: 16),
-                                Text('Erreur lors du chargement des données'),
+                                SizedBox(height: context.r(16)),
+                                Text('Erreur lors du chargement des donnÃ©es'),
                                 TextButton(
                                   onPressed: () => setState(() {}),
-                                  child: Text('Réessayer'),
+                                  child: Text('RÃ©essayer'),
                                 ),
                               ],
                             ),
                           );
                         }
 
-                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Pour les clients, utiliser les donnÃ©es chargÃ©es depuis la base de donnÃ©es
                         // Prioriser snapshot.data, sinon utiliser _userData, sinon Map vide
                         final userData = snapshot.data ?? _userData;
 
-                        // Si userData est vide, recharger les données
+                        // Si userData est vide, recharger les donnÃ©es
                         if (userData.isEmpty && !_isCommercial) {
-                          // Recharger les données utilisateur
+                          // Recharger les donnÃ©es utilisateur
                           _loadUserDataForRecap().then((data) {
                             if (mounted && data.isNotEmpty) {
                               setState(() {
@@ -3424,10 +3430,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
     /**
-     * CONSTRUCTION DU RÉCAPITULATIF:
+     * CONSTRUCTION DU RÃ‰CAPITULATIF:
      * 
-     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
-     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     * - Si _isCommercial = true: Utiliser les donnÃ©es des contrÃ´leurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connectÃ© depuis la base de donnÃ©es)
      */
     final displayData = _isCommercial
         ? {
@@ -3451,137 +3457,137 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           bleuCoris,
           [
             _buildCombinedRecapRow(
-                'Civilité',
-                displayData['civilite'] ?? 'Non renseigné',
+                'CivilitÃ©',
+                displayData['civilite'] ?? 'Non renseignÃ©',
                 'Nom',
-                displayData['nom'] ?? 'Non renseigné'),
+                displayData['nom'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Prénom',
-                displayData['prenom'] ?? 'Non renseigné',
+                'PrÃ©nom',
+                displayData['prenom'] ?? 'Non renseignÃ©',
                 'Email',
-                displayData['email'] ?? 'Non renseigné'),
+                displayData['email'] ?? 'Non renseignÃ©'),
             _buildCombinedRecapRow(
-                'Téléphone',
-                displayData['telephone'] ?? 'Non renseigné',
+                'TÃ©lÃ©phone',
+                displayData['telephone'] ?? 'Non renseignÃ©',
                 'Date de naissance',
                 displayData['date_naissance'] != null
                     ? _formatDate(displayData['date_naissance'].toString())
-                    : 'Non renseigné'),
+                    : 'Non renseignÃ©'),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                displayData['lieu_naissance'] ?? 'Non renseigné',
+                displayData['lieu_naissance'] ?? 'Non renseignÃ©',
                 'Adresse',
-                displayData['adresse'] ?? 'Non renseigné'),
+                displayData['adresse'] ?? 'Non renseignÃ©'),
           ],
         ),
-        SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
         _buildRecapSection(
           'Produit Souscrit',
           Icons.savings,
           vertSucces,
           [
-            _buildRecapRow('Produit', 'CORIS ÉPARGNE BONUS'),
+            _buildRecapRow('Produit', 'CORIS Ã‰PARGNE BONUS'),
             _buildRecapRow(
                 'Capital au terme', _formatMontant(_selectedCapital ?? 0)),
             _buildRecapRow(
                 'Prime mensuelle', _formatMontant(_selectedPrime ?? 0)),
-            _buildRecapRow('Durée', '15 ans (180 mois)'),
+            _buildRecapRow('DurÃ©e', '15 ans (180 mois)'),
             _buildRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                    : 'Non définie'),
+                    : 'Non dÃ©finie'),
             _buildRecapRow(
                 'Date de fin',
                 _dateFinContrat != null
                     ? '${_dateFinContrat!.day}/${_dateFinContrat!.month}/${_dateFinContrat!.year}'
-                    : 'Non définie'),
+                    : 'Non dÃ©finie'),
             _buildRecapRow('Bonus', _getBonusText()),
           ],
         ),
-        SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 // SECTION CONTACTS
         _buildRecapSection(
           'Contacts',
           Icons.contacts,
           bleuSecondaire,
           [
-            // 🔹 Bénéficiaire
-            _buildSubsectionTitle('Bénéficiaire en cas de décès'),
-            const SizedBox(height: 8),
+            // ðŸ”¹ BÃ©nÃ©ficiaire
+            _buildSubsectionTitle('BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s'),
+            SizedBox(height: context.r(8)),
             _buildCombinedRecapRow(
               'Nom complet',
               _beneficiaireNomController.text.isNotEmpty
                   ? _beneficiaireNomController.text
-                  : 'Non renseigné',
-              'Lien de parenté',
+                  : 'Non renseignÃ©',
+              'Lien de parentÃ©',
               _selectedLienParente.isNotEmpty
                   ? _selectedLienParente
-                  : 'Non renseigné',
+                  : 'Non renseignÃ©',
             ),
             _buildRecapRow(
               'Date de naissance',
               _beneficiaireDateNaissanceController.text.isNotEmpty
                   ? SubscriptionRecapWidgets.formatDate(
                       _beneficiaireDateNaissanceController.text)
-                  : 'Non renseigné',
+                  : 'Non renseignÃ©',
             ),
             _buildRecapRow(
-              'Téléphone',
+              'TÃ©lÃ©phone',
               _beneficiaireContactController.text.isNotEmpty
                   ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                  : 'Non renseigné',
+                  : 'Non renseignÃ©',
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
 
-            // 🔹 Contact d'urgence
+            // ðŸ”¹ Contact d'urgence
             _buildSubsectionTitle('Contact d\'urgence'),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             _buildCombinedRecapRow(
               'Nom complet',
               _personneContactNomController.text.isNotEmpty
                   ? _personneContactNomController.text
-                  : 'Non renseigné',
-              'Lien de parenté',
+                  : 'Non renseignÃ©',
+              'Lien de parentÃ©',
               _selectedLienParenteUrgence.isNotEmpty
                   ? _selectedLienParenteUrgence
-                  : 'Non renseigné',
+                  : 'Non renseignÃ©',
             ),
             _buildRecapRow(
-              'Téléphone',
+              'TÃ©lÃ©phone',
               _personneContactTelController.text.isNotEmpty
                   ? _personneContactTelController.text
-                  : 'Non renseigné',
+                  : 'Non renseignÃ©',
             ),
           ],
         ),
         if (_isAideParCommercial ||
             _commercialNomPrenomController.text.trim().isNotEmpty ||
             _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
-          SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           _buildRecapSection(
             'Assistance commerciale',
             Icons.support_agent,
             orangeCoris,
             [
               _buildRecapRow(
-                'Nom et prénom du commercial',
+                'Nom et prÃ©nom du commercial',
                 _commercialNomPrenomController.text.isNotEmpty
                     ? _commercialNomPrenomController.text
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
               _buildRecapRow(
                 'Code apporteur',
                 _commercialCodeApporteurController.text.isNotEmpty
                     ? _commercialCodeApporteurController.text
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
               ),
             ],
           ),
         ],
-        SizedBox(height: 20),
-        // 💳 SECTION MODE DE PAIEMENT
+        SizedBox(height: context.r(20)),
+        // ðŸ’³ SECTION MODE DE PAIEMENT
         if (_selectedModePaiement != null)
           _buildRecapSection(
             'Mode de Paiement',
@@ -3593,29 +3599,29 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     : orangeCoris,
             [
               _buildRecapRow('Mode choisi', _selectedModePaiement!),
-              SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               if (_selectedModePaiement == 'Virement') ...[
                 _buildRecapRow(
                     'Banque',
                     _banqueController.text.isNotEmpty
                         ? _banqueController.text
-                        : 'Non renseigné'),
+                        : 'Non renseignÃ©'),
                 _buildRecapRow(
-                    'Numéro RIB',
+                    'NumÃ©ro RIB',
                     _ribUnifiedController.text.isNotEmpty
                         ? _ribUnifiedController.text
-                        : 'Non renseigné'),
+                        : 'Non renseignÃ©'),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[
                 _buildRecapRow(
-                    'Numéro ${_selectedModePaiement}',
+                    'NumÃ©ro $_selectedModePaiement',
                     _numeroMobileMoneyController.text.isNotEmpty
                         ? _numeroMobileMoneyController.text
-                        : 'Non renseigné'),
+                        : 'Non renseignÃ©'),
               ],
             ],
           ),
-        if (_selectedModePaiement != null) SizedBox(height: 20),
+        if (_selectedModePaiement != null) SizedBox(height: context.r(20)),
         SubscriptionRecapWidgets.buildDocumentsSection(
           pieceIdentite: _pieceIdentiteLabel ??
               _pieceIdentite?.path.split(RegExp(r'[\\/]+')).last,
@@ -3637,7 +3643,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             label ?? path.split(RegExp(r'[\\/]+')).last,
           ),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -3648,29 +3654,29 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           child: Column(
             children: [
               Icon(Icons.info_outline, color: orangeWarning, size: 28),
-              SizedBox(height: 10),
+              SizedBox(height: context.r(10)),
               Text(
-                'Vérification Importante',
+                'VÃ©rification Importante',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: orangeWarning,
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                 ),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               Text(
-                'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
+                'VÃ©rifiez attentivement toutes les informations ci-dessus. Une fois la souscription validÃ©e, certaines modifications ne seront plus possibles.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: grisTexte,
-                  fontSize: 12,
+                  fontSize: context.sp(12),
                   height: 1.4,
                 ),
               ),
             ],
           ),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
       ],
     );
   }
@@ -3718,18 +3724,18 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 ),
                 child: Icon(icon, color: color, size: 18),
               ),
-              SizedBox(width: 10),
+              SizedBox(width: context.r(10)),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w700,
                   color: color,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           ...children,
         ],
       ),
@@ -3742,7 +3748,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       style: TextStyle(
         fontWeight: FontWeight.w600,
         color: bleuCoris,
-        fontSize: 14,
+        fontSize: context.sp(14),
       ),
     );
   }
@@ -3760,7 +3766,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: grisTexte,
-                fontSize: 12,
+                fontSize: context.sp(12),
               ),
             ),
           ),
@@ -3770,7 +3776,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: bleuCoris,
-                fontSize: 12,
+                fontSize: context.sp(12),
               ),
             ),
           ),
@@ -3794,7 +3800,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                   ),
                 ),
                 Text(
@@ -3802,13 +3808,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: bleuCoris,
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3818,7 +3824,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: grisTexte,
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                   ),
                 ),
                 Text(
@@ -3826,7 +3832,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: bleuCoris,
-                    fontSize: 12,
+                    fontSize: context.sp(12),
                   ),
                 ),
               ],
@@ -3868,20 +3874,20 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.arrow_back, color: bleuCoris, size: 20),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text(
-                        'Précédent',
+                        'PrÃ©cÃ©dent',
                         style: TextStyle(
                           color: bleuCoris,
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (_currentStep > 0) SizedBox(width: 16),
+            if (_currentStep > 0) SizedBox(width: context.r(16)),
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 4 : 3)
@@ -3906,10 +3912,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    SizedBox(width: context.r(8)),
                     Icon(
                       _currentStep == (_isCommercial ? 4 : 3)
                           ? Icons.draw
@@ -3961,22 +3967,22 @@ class LoadingDialog extends StatelessWidget {
                 strokeWidth: 3,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             Text(
               'Traitement en cours',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: context.sp(18),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF002B6B),
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text(
               'Paiement via $paymentMethod...',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
             ),
           ],
@@ -3986,7 +3992,7 @@ class LoadingDialog extends StatelessWidget {
   }
 }
 
-// Dialog de succès moderne
+// Dialog de succÃ¨s moderne
 class SuccessDialog extends StatelessWidget {
   final bool isPaid;
   const SuccessDialog({super.key, required this.isPaid});
@@ -4026,33 +4032,33 @@ class SuccessDialog extends StatelessWidget {
                 size: 40,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             Text(
-              isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+              isPaid ? 'Souscription RÃ©ussie!' : 'Proposition EnregistrÃ©e!',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF002B6B),
               ),
             ),
-            SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS ÉPARGNE BONUS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
-                  : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+                  ? 'FÃ©licitations! Votre contrat CORIS Ã‰PARGNE BONUS est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  : 'Votre proposition a Ã©tÃ© enregistrÃ©e avec succÃ¨s. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 14,
+                fontSize: context.sp(14),
                 height: 1.4,
               ),
             ),
-            SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Retour à la page d'accueil client
+                  // Retour Ã  la page d'accueil client
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
                 },
@@ -4064,7 +4070,7 @@ class SuccessDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Retour à l\'accueil',
+                  'Retour Ã  l\'accueil',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -4117,27 +4123,28 @@ class PaymentBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                  SizedBox(width: 12),
+                  SizedBox(width: context.r(12)),
                   Text(
                     'Options de Paiement',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF002B6B),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               _buildPaymentOptionWithImage(
+                context,
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sécurisé',
+                'Paiement mobile sÃ©curisÃ©',
                 () => onPayNow('Wave'),
               ),
               // _buildPaymentOptionWithImage(
@@ -4154,7 +4161,7 @@ class PaymentBottomSheet extends StatelessWidget {
               //   'Paiement via CORIS Money',
               //   () => onPayNow('CORIS Money'),
               // ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Expanded(child: Divider(color: Colors.grey[300])),
@@ -4171,7 +4178,7 @@ class PaymentBottomSheet extends StatelessWidget {
                   Expanded(child: Divider(color: Colors.grey[300])),
                 ],
               ),
-              SizedBox(height: 20),
+              SizedBox(height: context.r(20)),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -4187,13 +4194,13 @@ class PaymentBottomSheet extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.schedule, color: Color(0xFF002B6B)),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text(
                         'Payer plus tard',
                         style: TextStyle(
                           color: Color(0xFF002B6B),
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                         ),
                       ),
                     ],
@@ -4208,8 +4215,7 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOption(String title, IconData icon, Color color,
-      String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4231,7 +4237,7 @@ class PaymentBottomSheet extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -4241,15 +4247,15 @@ class PaymentBottomSheet extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
@@ -4266,8 +4272,7 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(String title, String imagePath,
-      Color color, String subtitle, VoidCallback onTap) {
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4294,13 +4299,13 @@ class PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('❌ Erreur chargement image: $imagePath - $error');
+                  print('âŒ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -4310,15 +4315,15 @@ class PaymentBottomSheet extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
@@ -4335,3 +4340,6 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 }
+
+
+

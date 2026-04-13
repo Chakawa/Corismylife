@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/models/subscription.dart';
@@ -12,12 +13,12 @@ import 'package:mycorislife/services/wave_payment_handler.dart';
 /// ============================================
 /// Cette page affiche la liste de toutes les propositions d'assurance
 /// de l'utilisateur. Une proposition est une souscription en attente
-/// de paiement qui n'a pas encore été transformée en contrat.
+/// de paiement qui n'a pas encore Ã©tÃ© transformÃ©e en contrat.
 ///
-/// Fonctionnalités:
+/// FonctionnalitÃ©s:
 /// - Affichage de la liste des propositions
 /// - Filtrage par type de produit
-/// - Visualisation des détails d'une proposition
+/// - Visualisation des dÃ©tails d'une proposition
 /// - Paiement direct depuis la liste
 /// - Animations fluides lors du chargement
 class PropositionsPage extends StatefulWidget {
@@ -30,7 +31,7 @@ class PropositionsPage extends StatefulWidget {
 class _PropositionsPageState extends State<PropositionsPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   // ===================================
-  // SERVICES ET DONNÉES
+  // SERVICES ET DONNÃ‰ES
   // ===================================
   final SubscriptionService _service = SubscriptionService();
   List<Subscription> propositions = [];
@@ -81,7 +82,7 @@ class _PropositionsPageState extends State<PropositionsPage>
   }
 
   /// Charge la liste des propositions depuis l'API
-  /// Récupère toutes les souscriptions avec le statut 'proposition'
+  /// RÃ©cupÃ¨re toutes les souscriptions avec le statut 'proposition'
   Future<void> _loadPropositions() async {
     if (!mounted) return;
 
@@ -128,15 +129,15 @@ class _PropositionsPageState extends State<PropositionsPage>
 
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
-      return 'CORIS SOLIDARITÉ';
+      return 'CORIS SOLIDARITÃ‰';
     } else if (produit.toLowerCase().contains('emprunteur')) {
       return 'FLEX EMPRUNTEUR';
     } else if (produit.toLowerCase().contains('etude')) {
-      return 'CORIS ÉTUDE';
+      return 'CORIS Ã‰TUDE';
     } else if (produit.toLowerCase().contains('retraite')) {
       return 'CORIS RETRAITE';
     } else if (produit.toLowerCase().contains('serenite')) {
-      return 'CORIS SÉRÉNITÉ';
+      return 'CORIS SÃ‰RÃ‰NITÃ‰';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
     } else if (produit.toLowerCase().contains('assure') ||
@@ -147,7 +148,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       return 'MON BON PLAN CORIS';
     } else if (produit.toLowerCase().contains('epargne') ||
         produit.toLowerCase().contains('bonus')) {
-      return 'ÉPARGNE BONUS';
+      return 'Ã‰PARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
     }
@@ -161,7 +162,7 @@ class _PropositionsPageState extends State<PropositionsPage>
     } else if (produit.toLowerCase().contains('etude')) {
       return Icons.school_outlined;
     } else if (produit.toLowerCase().contains('retraite')) {
-      return Icons.elderly_outlined; // Icône de personne âgée pour retraite
+      return Icons.elderly_outlined; // IcÃ´ne de personne Ã¢gÃ©e pour retraite
     } else if (produit.toLowerCase().contains('serenite')) {
       return Icons.health_and_safety_outlined;
     } else if (produit.toLowerCase().contains('familis')) {
@@ -195,7 +196,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       return const Color(0xFFEC4899); // Rose
     } else if (produit.toLowerCase().contains('assure') ||
         produit.toLowerCase().contains('prestige')) {
-      return const Color(0xFF059669); // Vert émeraude pour Prestige
+      return const Color(0xFF059669); // Vert Ã©meraude pour Prestige
     } else if (produit.toLowerCase().contains('bon') &&
         produit.toLowerCase().contains('plan')) {
       return const Color(0xFF8B5CF6); // Violet pour Bon Plan
@@ -203,7 +204,7 @@ class _PropositionsPageState extends State<PropositionsPage>
         produit.toLowerCase().contains('bonus')) {
       return const Color(0xFF3B82F6); // Bleu
     } else {
-      return const Color(0xFF002B6B); // Bleu par défaut
+      return const Color(0xFF002B6B); // Bleu par dÃ©faut
     }
   }
 
@@ -251,20 +252,20 @@ class _PropositionsPageState extends State<PropositionsPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             "Mes Propositions",
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              fontSize: 20,
+              fontSize: context.sp(20),
               color: Colors.white,
               letterSpacing: -0.5,
             ),
           ),
           Text(
             "${propositions.length} proposition${propositions.length > 1 ? 's' : ''}",
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w400,
-              fontSize: 13,
+              fontSize: context.sp(13),
               color: Color(0xCCFFFFFF),
             ),
           ),
@@ -281,10 +282,10 @@ class _PropositionsPageState extends State<PropositionsPage>
           ),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
+          icon: Icon(Icons.arrow_back_ios_new,
               color: Colors.white, size: 18),
           onPressed: () {
-            // Retour à la page d'accueil client
+            // Retour Ã  la page d'accueil client
             Navigator.pushNamedAndRemoveUntil(
                 context, '/client_home', (route) => false);
           },
@@ -302,7 +303,7 @@ class _PropositionsPageState extends State<PropositionsPage>
             ),
           ),
           child: IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
+            icon: Icon(Icons.refresh, color: Colors.white, size: 20),
             tooltip: 'Actualiser',
             onPressed: _loadPropositions,
           ),
@@ -318,7 +319,7 @@ class _PropositionsPageState extends State<PropositionsPage>
             ),
           ),
           child: IconButton(
-            icon: const Icon(Icons.tune, color: Colors.white, size: 20),
+            icon: Icon(Icons.tune, color: Colors.white, size: 20),
             onPressed: _showFilterMenu,
           ),
         ),
@@ -327,18 +328,18 @@ class _PropositionsPageState extends State<PropositionsPage>
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           Text(
             "Chargement des propositions...",
             style: TextStyle(
-              fontSize: 16,
+              fontSize: context.sp(16),
               color: Color(0xFF64748B),
             ),
           ),
@@ -390,7 +391,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                         ],
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.description_outlined,
                       size: 40,
                       color: Colors.white,
@@ -398,22 +399,22 @@ class _PropositionsPageState extends State<PropositionsPage>
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              const Text(
+              SizedBox(height: context.r(32)),
+              Text(
                 "Aucune proposition",
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: context.sp(24),
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF0F172A),
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: context.r(12)),
               Text(
-                "Vos propositions d'assurance\napparaîtront ici",
+                "Vos propositions d'assurance\napparaÃ®tront ici",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   color: const Color(0xFF64748B),
                   height: 1.5,
                 ),
@@ -458,15 +459,15 @@ class _PropositionsPageState extends State<PropositionsPage>
               children: [
                 Text(
                   selectedFilter,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: context.r(8)),
                 GestureDetector(
                   onTap: () => setState(() => selectedFilter = 'Tous'),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
                     color: Colors.white,
                     size: 16,
@@ -542,10 +543,10 @@ class _PropositionsPageState extends State<PropositionsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header avec icône, numéro et badge statut
+                // Header avec icÃ´ne, numÃ©ro et badge statut
                 Row(
                   children: [
-                    // Icône avec effet glassmorphism et couleur selon produit
+                    // IcÃ´ne avec effet glassmorphism et couleur selon produit
                     Container(
                       width: 56,
                       height: 56,
@@ -577,7 +578,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                         size: 26,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: context.r(16)),
                     // Informations principales
                     Expanded(
                       child: Column(
@@ -588,8 +589,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                               Expanded(
                                 child: Text(
                                   _getPropositionNumber(index),
-                                  style: const TextStyle(
-                                    fontSize: 17,
+                                  style: TextStyle(
+                                    fontSize: context.sp(17),
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF0F172A),
                                     letterSpacing: -0.3,
@@ -621,11 +622,11 @@ class _PropositionsPageState extends State<PropositionsPage>
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    const Text(
+                                    SizedBox(width: context.r(6)),
+                                    Text(
                                       'En attente',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: context.sp(11),
                                         fontWeight: FontWeight.w600,
                                         color: Color(0xFFB45309),
                                       ),
@@ -635,8 +636,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          // Badge produit redesigné
+                          SizedBox(height: context.r(6)),
+                          // Badge produit redesignÃ©
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -657,8 +658,8 @@ class _PropositionsPageState extends State<PropositionsPage>
                             ),
                             child: Text(
                               _getBadgeText(subscription.produitNom),
-                              style: const TextStyle(
-                                fontSize: 11,
+                              style: TextStyle(
+                                fontSize: context.sp(11),
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF002B6B),
                                 letterSpacing: 0.3,
@@ -671,9 +672,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                   ],
                 ),
 
-                const SizedBox(height: 18),
+                SizedBox(height: context.r(18)),
 
-                // Divider élégant
+                // Divider Ã©lÃ©gant
                 Container(
                   height: 1,
                   decoration: BoxDecoration(
@@ -687,12 +688,12 @@ class _PropositionsPageState extends State<PropositionsPage>
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                SizedBox(height: context.r(18)),
 
                 // Section informations et actions
                 Row(
                   children: [
-                    // Date de création avec icône
+                    // Date de crÃ©ation avec icÃ´ne
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -715,29 +716,29 @@ class _PropositionsPageState extends State<PropositionsPage>
                                 color: const Color(0xFF002B6B).withAlpha(15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.calendar_today_rounded,
                                 size: 14,
                                 color: Color(0xFF002B6B),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: context.r(8)),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Créée le',
+                                  Text(
+                                    'CrÃ©Ã©e le',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: context.sp(10),
                                       color: Color(0xFF64748B),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   Text(
                                     _formatDate(subscription.dateCreation),
-                                    style: const TextStyle(
-                                      fontSize: 12,
+                                    style: TextStyle(
+                                      fontSize: context.sp(12),
                                       color: Color(0xFF0F172A),
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -750,9 +751,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    SizedBox(width: context.r(12)),
 
-                    // Bouton PDF avec design élégant
+                    // Bouton PDF avec design Ã©lÃ©gant
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -789,7 +790,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                                   final excludeQ = prod.contains('etude') ||
                                       prod.contains('familis') ||
                                       prod.contains('serenite') ||
-                                      prod.contains('sérénité');
+                                      prod.contains('sÃ©rÃ©nitÃ©');
                                   return PdfViewerPage(
                                       subscriptionId: subscription.id,
                                       excludeQuestionnaire: excludeQ);
@@ -800,7 +801,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.all(12),
-                            child: const Icon(
+                            child: Icon(
                               Icons.picture_as_pdf_rounded,
                               size: 22,
                               color: Color(0xFF002B6B),
@@ -812,9 +813,9 @@ class _PropositionsPageState extends State<PropositionsPage>
                   ],
                 ),
 
-                const SizedBox(height: 14),
+                SizedBox(height: context.r(14)),
 
-                // Bouton "Payer maintenant" redesigné en vert
+                // Bouton "Payer maintenant" redesignÃ© en vert
                 Container(
                   width: double.infinity,
                   height: 52,
@@ -852,17 +853,17 @@ class _PropositionsPageState extends State<PropositionsPage>
                                 color: Colors.white.withAlpha(30),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.payment_rounded,
                                 color: Colors.white,
                                 size: 18,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            const Text(
+                            SizedBox(width: context.r(12)),
+                            Text(
                               'Payer maintenant',
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: context.sp(15),
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                                 letterSpacing: 0.2,
@@ -875,7 +876,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                                 color: Colors.white.withAlpha(30),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.arrow_forward_rounded,
                                 color: Colors.white,
                                 size: 16,
@@ -914,7 +915,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Paiement confirmé. La proposition a été retirée de la liste.'),
+              'Paiement confirmÃ©. La proposition a Ã©tÃ© retirÃ©e de la liste.'),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -961,30 +962,30 @@ class _PropositionsPageState extends State<PropositionsPage>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Icon(Icons.payment, color: const Color(0xFF002B6B), size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
+                  SizedBox(width: context.r(12)),
+                  Text(
                     'Options de Paiement',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF002B6B),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               _buildPaymentOptionWithImage(
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sécurisé',
+                'Paiement mobile sÃ©curisÃ©',
                 () => _processPayment(subscription, 'Wave'),
               ),
-              // const SizedBox(height: 12),
+              // SizedBox(height: context.r(12)),
               // _buildPaymentOptionWithImage(
               //   'Orange Money',
               //   'assets/images/icone_orange_money.jpeg',
@@ -992,7 +993,7 @@ class _PropositionsPageState extends State<PropositionsPage>
               //   'Paiement mobile Orange',
               //   () => _processPayment(subscription, 'Orange Money'),
               // ),
-              // const SizedBox(height: 12),
+              // SizedBox(height: context.r(12)),
               // _buildPaymentOptionWithImage(
               //   'CORIS Money',
               //   'assets/images/icone_corismoney.jpeg',
@@ -1008,6 +1009,7 @@ class _PropositionsPageState extends State<PropositionsPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildPaymentOption(
     String title,
     IconData icon,
@@ -1036,30 +1038,30 @@ class _PropositionsPageState extends State<PropositionsPage>
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
-                        fontSize: 16),
+                        fontSize: context.sp(16)),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
+            Icon(Icons.arrow_forward_ios,
                 color: Color(0xFF64748B), size: 16),
           ],
         ),
@@ -1100,36 +1102,36 @@ class _PropositionsPageState extends State<PropositionsPage>
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('❌ Erreur chargement image: $imagePath - $error');
+                  print('âŒ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
-                        fontSize: 16),
+                        fontSize: context.sp(16)),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
+            Icon(Icons.arrow_forward_ios,
                 color: Color(0xFF64748B), size: 16),
           ],
         ),
@@ -1146,20 +1148,18 @@ class _PropositionsPageState extends State<PropositionsPage>
       final souscriptionData = subscription.souscriptionData;
       double montant = 0.0;
 
-      // Essayer de récupérer le montant selon le produit
-      if (souscriptionData != null) {
-        montant = (souscriptionData['prime_totale'] ??
-                souscriptionData['montant_total'] ??
-                souscriptionData['prime'] ??
-                souscriptionData['montant'] ??
-                souscriptionData['versement_initial'] ??
-                souscriptionData['montant_cotisation'] ??
-                souscriptionData['prime_mensuelle'] ??
-                souscriptionData['capital'] ??
-                0.0)
-            .toDouble();
-      }
-
+      // Essayer de rÃ©cupÃ©rer le montant selon le produit
+      montant = (souscriptionData['prime_totale'] ??
+              souscriptionData['montant_total'] ??
+              souscriptionData['prime'] ??
+              souscriptionData['montant'] ??
+              souscriptionData['versement_initial'] ??
+              souscriptionData['montant_cotisation'] ??
+              souscriptionData['prime_mensuelle'] ??
+              souscriptionData['capital'] ??
+              0.0)
+          .toDouble();
+    
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -1169,12 +1169,12 @@ class _PropositionsPageState extends State<PropositionsPage>
           description:
               'Paiement ${subscription.produitNom} #${subscription.id}',
           onPaymentSuccess: () {
-            // Rafraîchir la liste après paiement réussi
+            // RafraÃ®chir la liste aprÃ¨s paiement rÃ©ussi
             _loadPropositions();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content:
-                    Text('✅ Votre proposition a été transformée en contrat !'),
+                    Text('âœ… Votre proposition a Ã©tÃ© transformÃ©e en contrat !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -1186,24 +1186,22 @@ class _PropositionsPageState extends State<PropositionsPage>
       final souscriptionData = subscription.souscriptionData;
       double montant = 0.0;
 
-      if (souscriptionData != null) {
-        final value = souscriptionData['prime_totale'] ??
-            souscriptionData['montant_total'] ??
-            souscriptionData['prime'] ??
-            souscriptionData['montant'] ??
-            souscriptionData['versement_initial'] ??
-            souscriptionData['montant_cotisation'] ??
-            souscriptionData['prime_mensuelle'] ??
-            souscriptionData['capital'] ??
-            0.0;
+      final value = souscriptionData['prime_totale'] ??
+          souscriptionData['montant_total'] ??
+          souscriptionData['prime'] ??
+          souscriptionData['montant'] ??
+          souscriptionData['versement_initial'] ??
+          souscriptionData['montant_cotisation'] ??
+          souscriptionData['prime_mensuelle'] ??
+          souscriptionData['capital'] ??
+          0.0;
 
-        if (value is num) {
-          montant = value.toDouble();
-        } else {
-          montant = double.tryParse(value.toString()) ?? 0.0;
-        }
+      if (value is num) {
+        montant = value.toDouble();
+      } else {
+        montant = double.tryParse(value.toString()) ?? 0.0;
       }
-
+    
       await WavePaymentHandler.startPayment(
         context,
         subscriptionId: subscription.id,
@@ -1215,7 +1213,7 @@ class _PropositionsPageState extends State<PropositionsPage>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                  'Paiement Wave confirmé. Votre contrat est maintenant actif.'),
+                  'Paiement Wave confirmÃ©. Votre contrat est maintenant actif.'),
               backgroundColor: Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
             ),
@@ -1234,27 +1232,27 @@ class _PropositionsPageState extends State<PropositionsPage>
             ),
             child: Row(
               children: [
-                const Icon(Icons.construction, color: Colors.white, size: 24),
-                const SizedBox(width: 12),
+                Icon(Icons.construction, color: Colors.white, size: 24),
+                SizedBox(width: context.r(12)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '$paymentMethod bientôt disponible',
-                        style: const TextStyle(
+                        '$paymentMethod bientÃ´t disponible',
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: context.r(4)),
+                      Text(
                         'Utilisez CORIS Money pour le moment',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: context.sp(12),
                         ),
                       ),
                     ],
@@ -1276,15 +1274,15 @@ class _PropositionsPageState extends State<PropositionsPage>
   void _showFilterMenu() {
     final filters = [
       'Tous',
-      'CORIS SOLIDARITÉ',
+      'CORIS SOLIDARITÃ‰',
       'FLEX EMPRUNTEUR',
-      'CORIS ÉTUDE',
+      'CORIS Ã‰TUDE',
       'CORIS RETRAITE',
-      'CORIS SÉRÉNITÉ',
+      'CORIS SÃ‰RÃ‰NITÃ‰',
       'CORIS FAMILIS',
       'CORIS ASSURE PRESTIGE',
       'MON BON PLAN CORIS',
-      'ÉPARGNE BONUS'
+      'Ã‰PARGNE BONUS'
     ];
 
     showModalBottomSheet(
@@ -1309,12 +1307,12 @@ class _PropositionsPageState extends State<PropositionsPage>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(20),
                 child: Text(
                   "Filtrer par type",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                   ),
@@ -1330,7 +1328,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                     children: filters
                         .map((filter) => ListTile(
                               leading: filter == 'Tous'
-                                  ? const Icon(Icons.list_alt,
+                                  ? Icon(Icons.list_alt,
                                       color: Color(0xFF64748B))
                                   : Icon(
                                       filter == selectedFilter
@@ -1360,7 +1358,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: context.r(20)),
             ],
           ),
         ),
@@ -1368,3 +1366,4 @@ class _PropositionsPageState extends State<PropositionsPage>
     );
   }
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/commercial_service.dart';
 
@@ -186,7 +187,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
             color: condition ? Colors.green : Colors.grey,
             size: fontSize * 0.9,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: context.r(8)),
           Text(
             text,
             style: TextStyle(
@@ -919,7 +920,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                         ),
                       )
                     else
-                      const SizedBox(width: 1),
+                      SizedBox(width: context.r(1)),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(

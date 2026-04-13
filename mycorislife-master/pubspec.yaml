@@ -36,6 +36,7 @@ dependencies:
   syncfusion_flutter_signaturepad: ^28.1.36  # Widget de signature professionnel
   # signature: ^5.5.0  # Widget de signature manuscrite - REMPLACÉ PAR SYNCFUSION
 
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

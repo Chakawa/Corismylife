@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 class CommissionDetailsPage extends StatelessWidget {
   final Map<String, dynamic> commission;
 
   const CommissionDetailsPage({
-    Key? key,
+    super.key,
     required this.commission,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +25,9 @@ class CommissionDetailsPage extends StatelessWidget {
     final Color orangeCoris = const Color(0xFFFF9500);
     final Color rougeErreur = const Color(0xFFEF4444);
 
-    final statutColor = statut == 'Reçue' 
+    final statutColor = statut == 'ReÃ§ue' 
         ? vertSucces 
-        : statut == 'Rejetée' 
+        : statut == 'RejetÃ©e' 
         ? rougeErreur 
         : orangeCoris;
 
@@ -39,7 +39,7 @@ class CommissionDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Détails de la Commission'),
+        title: const Text('DÃ©tails de la Commission'),
         backgroundColor: bleuCoris,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -70,36 +70,36 @@ class CommissionDetailsPage extends StatelessWidget {
                     ),
                     child: Text(
                       statut,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: context.r(16)),
+                  Text(
                     'Montant de la Commission',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       color: Colors.white70,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.r(8)),
                   Text(
                     '$montantCommission FCFA',
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: TextStyle(
+                      fontSize: context.sp(36),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
-                    'Soit $tauxCommission% du montant encaissé',
-                    style: const TextStyle(
-                      fontSize: 13,
+                    'Soit $tauxCommission% du montant encaissÃ©',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
                       color: Colors.white70,
                     ),
                   ),
@@ -107,56 +107,50 @@ class CommissionDetailsPage extends StatelessWidget {
               ),
             ),
 
-            // Détails
+            // DÃ©tails
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Carte - Informations du contrat
                   _buildCard(
-                    title: 'Informations du Contrat',
+                    context: context,
+                    title: 'Informations du contrat',
                     icon: Icons.description_outlined,
                     color: bleuCoris,
                     children: [
-                      _buildInfoRow('Numéro de Police', numeroPolice),
-                      _buildInfoRow('Code Apporteur', codeApporteur),
-                      _buildInfoRow('Montant Encaissé', '$montantEncaisse FCFA'),
-                      _buildInfoRow('Taux de Commission', '$tauxCommission%'),
+                      _buildInfoRow(context, 'NumÃ©ro de Police', numeroPolice),
+                      _buildInfoRow(context, 'Code Apporteur', codeApporteur),
+                      _buildInfoRow(context, 'Montant EncaissÃ©', '$montantEncaisse FCFA'),
+                      _buildInfoRow(context, 'Taux de Commission', '$tauxCommission%'),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Carte - Dates
+                  SizedBox(height: context.r(16)),
                   _buildCard(
-                    title: 'Dates',
+                    context: context,
+                    title: 'Dates importantes',
                     icon: Icons.calendar_today_outlined,
                     color: bleuCoris,
                     children: [
-                      _buildInfoRow('Date de Calcul', _formatDate(dateCalcul)),
+                      _buildInfoRow(context, 'Date de Calcul', _formatDate(dateCalcul)),
                       if (dateReception != null)
-                        _buildInfoRow('Date de Réception', _formatDate(dateReception)),
+                        _buildInfoRow(context, 'Date de RÃ©ception', _formatDate(dateReception)),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Carte - Statut
+                  SizedBox(height: context.r(16)),
                   _buildCard(
-                    title: 'Statut de Réception',
+                    context: context,
+                    title: 'Statut de RÃ©ception',
                     icon: Icons.info_outline,
                     color: statutColor,
                     children: [
-                      _buildInfoRow('Statut Actuel', statut, valueColor: statutColor),
+                      _buildInfoRow(context, 'Statut Actuel', statut, valueColor: statutColor),
                       if (notes != null && notes.isNotEmpty)
-                        _buildInfoRow('Notes', notes, maxLines: 3),
+                        _buildInfoRow(context, 'Notes', notes, maxLines: 3),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Carte - Calcul de la commission
+                  SizedBox(height: context.r(16)),
                   _buildCard(
+                    context: context,
                     title: 'Calcul de la Commission',
                     icon: Icons.calculate_outlined,
                     color: vertSucces,
@@ -174,12 +168,12 @@ class CommissionDetailsPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCalculRow('Montant Encaissé', '$montantEncaisse FCFA'),
-                            const SizedBox(height: 8),
+                            _buildCalculRow('Montant EncaissÃ©', '$montantEncaisse FCFA'),
+                            SizedBox(height: context.r(8)),
                             _buildCalculRow('Taux de Commission', '5%'),
                             const Divider(height: 24),
                             _buildCalculRow(
-                              'Commission = $montantEncaisse × 5%',
+                              'Commission = $montantEncaisse Ã— 5%',
                               '$montantCommission FCFA',
                               isBold: true,
                             ),
@@ -188,8 +182,7 @@ class CommissionDetailsPage extends StatelessWidget {
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 100),
+                  SizedBox(height: context.r(100)),
                 ],
               ),
             ),
@@ -201,6 +194,7 @@ class CommissionDetailsPage extends StatelessWidget {
   }
 
   Widget _buildCard({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required Color color,
@@ -226,18 +220,18 @@ class CommissionDetailsPage extends StatelessWidget {
                   ),
                   child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             ...children,
           ],
         ),
@@ -245,7 +239,7 @@ class CommissionDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor, int maxLines = 1}) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, {Color? valueColor, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -256,7 +250,7 @@ class CommissionDetailsPage extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: context.sp(14),
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
@@ -270,7 +264,7 @@ class CommissionDetailsPage extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: context.sp(14),
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? const Color(0xFF002B6B),
               ),
@@ -315,3 +309,4 @@ class CommissionDetailsPage extends StatelessWidget {
     }
   }
 }
+

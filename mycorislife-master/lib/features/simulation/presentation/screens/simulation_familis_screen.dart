@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/features/souscription/presentation/screens/souscription_familis.dart';
 import 'package:mycorislife/services/produit_sync_service.dart';
@@ -24,7 +25,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
   Map<String, dynamic>? result;
   int? age;
 
-  // Service pour synchroniser avec la base de données
+  // Service pour synchroniser avec la base de donnÃ©es
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -2264,27 +2265,27 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     color: iconColor,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: context.r(24)),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 20,
+                  style: TextStyle(
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF002B6B),
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 Text(
                   message,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: context.sp(14),
                     color: Colors.black87,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: context.r(28)),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -2298,10 +2299,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                       ),
                       elevation: 4,
                     ),
-                    child: const Text(
+                    child: Text(
                       'Compris',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -2320,7 +2321,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner le montant du capital à garantir pour continuer la simulation.',
+            'Veuillez renseigner le montant du capital Ã  garantir pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2332,7 +2333,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner la durée du contrat pour continuer la simulation.',
+            'Veuillez renseigner la durÃ©e du contrat pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2344,7 +2345,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            "Veuillez renseigner la date de naissance de l'assuré pour continuer la simulation.",
+            "Veuillez renseigner la date de naissance de l'assurÃ© pour continuer la simulation.",
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2354,8 +2355,8 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     if (age == null || age! < 18 || age! > 65) {
       _showProfessionalDialog(
-        title: 'Âge non admissible',
-        message: "L'âge doit être compris entre 18 et 65 ans inclus.",
+        title: 'Ã‚ge non admissible',
+        message: "L'Ã¢ge doit Ãªtre compris entre 18 et 65 ans inclus.",
         icon: Icons.warning_amber_rounded,
         iconColor: Colors.red,
         backgroundColor: Colors.red,
@@ -2371,15 +2372,15 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     required int dureeAnnees,
   }) async {
     print(
-        '\n╔═══════════════════════════════════════════════════════════════╗');
-    print('║ 🔍 [FAMILIS] Recherche tarif                                ║');
-    print('╚═══════════════════════════════════════════════════════════════╝');
+        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+    print('â•‘ ðŸ” [FAMILIS] Recherche tarif                                â•‘');
+    print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print(
-        '   📊 Paramètres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
+        '   ðŸ“Š ParamÃ¨tres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
 
-    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
+    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
     print(
-        '\n   📍 ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
+        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS FAMILIS',
@@ -2390,26 +2391,26 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       final tarifFromDB = result['tarif'] as TarifProduit?;
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
-        print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
+        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: ${tarifFromDB.prime}');
         print(
-            '\n╔═══════════════════════════════════════════════════════════════╗');
+            '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            '║ ✅ [FAMILIS] Données utilisées depuis SERVEUR                 ║');
+            'â•‘ âœ… [FAMILIS] DonnÃ©es utilisÃ©es depuis SERVEUR                 â•‘');
         print(
-            '╚═══════════════════════════════════════════════════════════════╝\n');
+            'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return tarifFromDB.prime!;
       } else {
-        print('   ⚠️  Tarif non trouvé dans la DB, utilisation du fallback');
+        print('   âš ï¸  Tarif non trouvÃ© dans la DB, utilisation du fallback');
       }
     } catch (e) {
       print(
-          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
+          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
     }
 
-    // Étape 2: Fallback - Utiliser les données codées en dur
-    print('\n   📍 ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
+    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
+    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
 
-    // Étape 2: Fallback - Utiliser les données codées en dur
+    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
     final Map<int, Map<int, double>> selectedTable =
         periodicite == 'unique' ? tauxUnique : tauxAnnuel;
 
@@ -2440,12 +2441,12 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     }
 
     final rate = selectedTable[age]![dureeAnnees]!;
-    print('   ✅ Tarif depuis FALLBACK (données hardcodées): $rate');
+    print('   âœ… Tarif depuis FALLBACK (donnÃ©es hardcodÃ©es): $rate');
     print(
-        '\n╔═══════════════════════════════════════════════════════════════╗');
-    print('║ ⚠️  [FAMILIS] Données utilisées depuis FALLBACK               ║');
+        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+    print('â•‘ âš ï¸  [FAMILIS] DonnÃ©es utilisÃ©es depuis FALLBACK               â•‘');
     print(
-        '╚═══════════════════════════════════════════════════════════════╝\n');
+        'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     return rate;
   }
 
@@ -2476,7 +2477,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Erreur de calcul',
         message:
-            'Une erreur est survenue lors du calcul. Veuillez vérifier vos données.\nDétail: $e',
+            'Une erreur est survenue lors du calcul. Veuillez vÃ©rifier vos donnÃ©es.\nDÃ©tail: $e',
         icon: Icons.error_outline,
         iconColor: rougeCoris,
         backgroundColor: rougeCoris,
@@ -2485,7 +2486,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     setState(() => isLoading = false);
 
-    // Sauvegarder la simulation en base de données
+    // Sauvegarder la simulation en base de donnÃ©es
     if (result != null && result!['primeTotal'] != null && result!['primeTotal'] > 0) {
       final capital = _parseDouble(_capitalController.text);
       int dureeAnnees = _parseInt(_dureeController.text);
@@ -2534,15 +2535,15 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               const Icon(Icons.family_restroom, color: Colors.white, size: 32),
-              const SizedBox(width: 12),
-              const Expanded(
+              SizedBox(width: context.r(12)),
+              Expanded(
                 child: Text(
                   "CORIS FAMILIS",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2595,26 +2596,26 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                                 child: Icon(Icons.settings,
                                     color: bleuCoris, size: 22),
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                "Paramètres de simulation",
+                              SizedBox(width: context.r(12)),
+                              Text(
+                                "ParamÃ¨tres de simulation",
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: context.sp(18),
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF002B6B),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
                           _buildCapitalField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildPeriodiciteDropdown(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildDureeField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildDateNaissanceField(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
                           SizedBox(
                             width: double.infinity,
                             height: 50,
@@ -2629,7 +2630,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                                 elevation: 4,
                               ),
                               child: isLoading
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
@@ -2639,17 +2640,17 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Row(
+                                  : Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.play_circle_filled,
                                             size: 22),
-                                        SizedBox(width: 8),
+                                        SizedBox(width: context.r(8)),
                                         Text(
                                           "Simuler",
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: context.sp(16),
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -2661,7 +2662,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                   if (result != null) _buildResultCard(),
                 ],
               ),
@@ -2688,11 +2689,11 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: periodicite,
+          initialValue: periodicite,
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'Périodicité',
+            labelText: 'PÃ©riodicitÃ©',
           ),
           items: const [
             DropdownMenuItem(
@@ -2717,14 +2718,14 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Capital à garantir',
+          'Capital Ã  garantir',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         TextField(
           controller: _capitalController,
           keyboardType: TextInputType.number,
@@ -2734,7 +2735,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             hintText: 'Ex: 5 000 000',
-            hintStyle: const TextStyle(fontSize: 14),
+            hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20, color: bleuCoris.withAlpha(178)),
             suffixText: 'FCFA',
@@ -2759,14 +2760,14 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Durée du contrat',
+          'DurÃ©e du contrat',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         TextField(
           controller: _dureeController,
           keyboardType: TextInputType.number,
@@ -2774,8 +2775,8 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            hintText: 'Durée en années',
-            hintStyle: const TextStyle(fontSize: 14),
+            hintText: 'DurÃ©e en annÃ©es',
+            hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.calendar_month,
                 size: 20, color: bleuCoris.withAlpha(178)),
             suffixText: 'ans',
@@ -2802,12 +2803,12 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
         Text(
           'Date de naissance',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         TextField(
           controller: _dateNaissanceController,
           readOnly: true,
@@ -2832,7 +2833,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             hintText: 'JJ/MM/AAAA',
-            hintStyle: const TextStyle(fontSize: 14),
+            hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.calendar_today,
                 size: 20, color: bleuCoris.withAlpha(178)),
             suffixText: age != null ? '($age ans)' : null,
@@ -2852,10 +2853,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'L\'âge doit être compris entre 18 et 65 ans',
+              'L\'Ã¢ge doit Ãªtre compris entre 18 et 65 ans',
               style: TextStyle(
                 color: Colors.orange,
-                fontSize: 12,
+                fontSize: context.sp(12),
               ),
             ),
           ),
@@ -2893,15 +2894,15 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                   child:
                       Icon(Icons.monetization_on, color: vertCoris, size: 22),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.r(12)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Résultat de la simulation",
+                        "RÃ©sultat de la simulation",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
                           color: bleuCoris,
                         ),
@@ -2911,7 +2912,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                             ? 'Prime unique'
                             : 'Prime annuelle',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                           color: Colors.black54,
                         ),
                       ),
@@ -2925,7 +2926,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             // Afficher TOUJOURS capital ET prime
             Container(
               width: double.infinity,
@@ -2945,38 +2946,38 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                       Text(
                         'Capital garanti :',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                           color: Colors.black87,
                         ),
                       ),
                       Text(
                         '${_formatNumber(double.parse(_capitalController.text.replaceAll(' ', '')))} FCFA',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.bold,
                           color: bleuCoris,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.r(8)),
                   Divider(color: Colors.grey.shade300),
-                  const SizedBox(height: 8),
-                  // Prime calculée
+                  SizedBox(height: context.r(8)),
+                  // Prime calculÃ©e
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Prime ${periodicite == 'unique' ? 'unique' : 'annuelle'} :',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: context.sp(14),
                           color: Colors.black87,
                         ),
                       ),
                       Text(
                         '${_formatNumber(result!['primeTotal'])} FCFA',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.bold,
                           color: vertCoris,
                         ),
@@ -2986,13 +2987,13 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.r(16)),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
                 onPressed: () async {
-                  // Préparer les données de simulation
+                  // PrÃ©parer les donnÃ©es de simulation
                   final simulationData = {
                     'capital': double.parse(
                         _capitalController.text.replaceAll(' ', '')),
@@ -3000,10 +3001,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     'periodicite': periodicite,
                   };
 
-                  // Vérifier le rôle et rediriger
+                  // VÃ©rifier le rÃ´le et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
-                    // Pour les commerciaux, rediriger vers la sélection de client
+                    // Pour les commerciaux, rediriger vers la sÃ©lection de client
                     Navigator.pushNamed(
                       context,
                       '/commercial/select_client',
@@ -3032,10 +3033,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                   ),
                   elevation: 4,
                 ),
-                child: const Text(
+                child: Text(
                   "Souscrire",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -3047,3 +3048,4 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     );
   }
 }
+

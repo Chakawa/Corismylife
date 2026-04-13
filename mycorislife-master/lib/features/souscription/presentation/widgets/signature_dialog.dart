@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 /// NOUVELLE APPROCHE RADICALE: Dessiner dans un vrai Canvas offscreen
 /// sans aucun widget Flutter pour éviter tout risque de capture d'UI

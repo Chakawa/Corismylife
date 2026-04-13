@@ -106,9 +106,9 @@ void main() {
     // Build answer string (même logique que le widget)
     String answer = '';
     if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
-      final oui_non = r['reponse_oui_non'];
+      final ouiNon = r['reponse_oui_non'];
       answer =
-          (oui_non == true || oui_non == 'OUI' || oui_non == 'true')
+          (ouiNon == true || ouiNon == 'OUI' || ouiNon == 'true')
               ? 'OUI'
               : 'NON';
 
@@ -131,7 +131,7 @@ void main() {
       answer = 'Non renseigné';
     }
 
-    print('  ${i + 1}. "${question}"');
+    print('  ${i + 1}. "$question"');
     print('     ➜ Réponse: $answer\n');
   }
 

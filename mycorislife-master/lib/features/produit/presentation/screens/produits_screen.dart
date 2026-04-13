@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 class ProduitsPage extends StatelessWidget {
   const ProduitsPage({super.key}); // ✅ super paramètre moderne
@@ -58,12 +59,12 @@ class ProduitsPage extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: [
             bleuCoris,
-            bleuCoris.withValues(alpha: 0.85), // ✅ corrigé
+            bleuCoris.withValues(alpha: 0.85),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: bleuCoris.withValues(alpha: 0.3), // ✅ corrigé
+            color: bleuCoris.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -71,22 +72,25 @@ class ProduitsPage extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.r(16),
+            vertical: context.r(12),
+          ),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                icon: Icon(Icons.arrow_back, color: Colors.white, size: context.r(24)),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 12),
-              const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 32),
-              const SizedBox(width: 12),
-              const Expanded(
+              SizedBox(width: context.r(8)),
+              Icon(Icons.shopping_bag_outlined, color: Colors.white, size: context.r(28)),
+              SizedBox(width: context.r(8)),
+              Expanded(
                 child: Text(
                   "Nos Produits",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: context.sp(20),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -99,73 +103,59 @@ class ProduitsPage extends StatelessWidget {
   }
 
   /// ----------- CARD BLEUE ---------------
-  Widget _buildHeaderCard() {
+  Widget _buildHeaderCard(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      margin: EdgeInsets.fromLTRB(
+        context.r(16), context.r(16), context.r(16), context.r(16)),
       constraints: const BoxConstraints(maxWidth: 600),
       child: Container(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(context.r(18)),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              bleuCoris,
-              Color.fromARGB(255, 0, 60, 140), // cette ligne reste valide
-            ],
+            colors: [bleuCoris, Color.fromARGB(255, 0, 60, 140)],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(context.r(18)),
           boxShadow: [
             BoxShadow(
-              color: bleuCoris.withValues(alpha: 0.25), // ✅ corrigé
+              color: bleuCoris.withValues(alpha: 0.25),
               blurRadius: 20,
               offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: ombrage.withValues(alpha: 0.05), // ✅ corrigé
-              blurRadius: 40,
-              offset: const Offset(0, 12),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(context.r(12)),
               decoration: BoxDecoration(
-                color: blanc.withValues(alpha: 0.15), // ✅ corrigé
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: blanc.withValues(alpha: 0.2), // ✅ corrigé
-                  width: 1,
-                ),
+                color: blanc.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(context.r(12)),
+                border: Border.all(color: blanc.withValues(alpha: 0.2), width: 1),
               ),
-              child: const Icon(
-                Icons.calculate_outlined,
-                size: 36,
-                color: blanc,
-              ),
+              child: Icon(Icons.calculate_outlined, size: context.r(32), color: blanc),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: context.r(14)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Simulation Personnalisée',
                     style: TextStyle(
                       color: blanc,
-                      fontSize: 18,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: context.r(5)),
                   Text(
                     'Découvrez la solution qui vous correspond avec notre outil de simulation avancé',
                     style: TextStyle(
-                      color: blanc.withValues(alpha: 0.9), // ✅ corrigé
-                      fontSize: 13,
+                      color: blanc.withValues(alpha: 0.9),
+                      fontSize: context.sp(12),
                       fontWeight: FontWeight.w400,
                       height: 1.3,
                     ),
@@ -181,33 +171,36 @@ class ProduitsPage extends StatelessWidget {
 
   /// ----------- SECTION PRODUITS ---------------
   Widget _buildProductsSection(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = context.r(30);
+    final fontSize = context.sp(12.5);
+    final pad = context.r(10);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: context.r(16)),
       constraints: const BoxConstraints(maxWidth: 600),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 2.8,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: context.gridColumns,
+          crossAxisSpacing: context.r(10),
+          mainAxisSpacing: context.r(10),
+          childAspectRatio: context.cardAspectRatio,
         ),
         itemCount: produits.length,
         itemBuilder: (context, index) {
           final produit = produits[index];
           return InkWell(
+            borderRadius: BorderRadius.circular(context.r(12)),
             onTap: () => Navigator.pushNamed(context, produit['route']),
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(pad),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(context.r(12)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05), // ✅ corrigé
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -217,19 +210,20 @@ class ProduitsPage extends StatelessWidget {
                 children: [
                   Image.asset(
                     produit['image'],
-                    width: 32,
-                    height: 32,
+                    width: iconSize,
+                    height: iconSize,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.image_not_supported, size: 32, color: bleuCoris);
+                      return Icon(Icons.image_not_supported,
+                          size: iconSize, color: bleuCoris);
                     },
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: context.r(8)),
                   Expanded(
                     child: Text(
                       produit['title'],
                       style: TextStyle(
-                        fontSize: screenWidth * 0.028,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                         color: bleuCoris,
                         height: 1.2,
@@ -249,113 +243,79 @@ class ProduitsPage extends StatelessWidget {
 
   /// ----------- SECTION ASSISTANCE ---------------
   Widget _buildAssistanceSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      constraints: const BoxConstraints(maxWidth: 600),
-      child: GestureDetector(
-        onTap: () async {
-          final Uri phoneUri = Uri.parse('tel:0778685858');
-          if (await canLaunchUrl(phoneUri)) {
-            await launchUrl(phoneUri);
-          }
-        },
-        child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.grey[50]!,
-              Colors.grey[100]!.withValues(alpha: 0.8), // ✅ corrigé
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: rougeCoris.withValues(alpha: 0.15), // ✅ corrigé
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: rougeCoris.withValues(alpha: 0.08), // ✅ corrigé
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+    return Builder(builder: (context) {
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: context.r(16)),
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: GestureDetector(
+          onTap: () async {
+            final Uri phoneUri = Uri.parse('tel:0778685858');
+            if (await canLaunchUrl(phoneUri)) {
+              await launchUrl(phoneUri);
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.all(context.r(16)),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.grey[50]!, Colors.grey[100]!.withValues(alpha: 0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(context.r(16)),
+              border: Border.all(color: rougeCoris.withValues(alpha: 0.15), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: rougeCoris.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 8)),
+              ],
             ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03), // ✅ corrigé
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: rougeCoris.withValues(alpha: 0.1), // ✅ corrigé
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: rougeCoris.withValues(alpha: 0.2), // ✅ corrigé
-                  width: 1,
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.r(10)),
+                  decoration: BoxDecoration(
+                    color: rougeCoris.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(context.r(12)),
+                    border: Border.all(color: rougeCoris.withValues(alpha: 0.2), width: 1),
+                  ),
+                  child: Icon(Icons.support_agent, color: rougeCoris, size: context.r(24)),
                 ),
-              ),
-              child: const Icon(
-                Icons.support_agent,
-                color: rougeCoris,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Appeler un Conseiller",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: bleuCoris,
-                    ),
+                SizedBox(width: context.r(14)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Appeler un Conseiller",
+                        style: TextStyle(
+                          fontSize: context.sp(15),
+                          fontWeight: FontWeight.w600,
+                          color: bleuCoris,
+                        ),
+                      ),
+                      SizedBox(height: context.r(3)),
+                      Text(
+                        "Nos conseillers sont à votre écoute",
+                        style: TextStyle(fontSize: context.sp(12), color: Colors.black54),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Nos conseillers sont à votre écoute",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    rougeCoris,
-                    rougeCoris.withValues(alpha: 0.8), // ✅ corrigé
-                  ],
                 ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: rougeCoris.withValues(alpha: 0.3), // ✅ corrigé
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                Container(
+                  padding: EdgeInsets.all(context.r(10)),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [rougeCoris, rougeCoris.withValues(alpha: 0.8)]),
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: rougeCoris.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 3))],
                   ),
-                ],
-              ),
-              child: const Icon(Icons.phone, color: Colors.white, size: 18),
+                  child: Icon(Icons.phone, color: Colors.white, size: context.r(17)),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        ),
-      ),
-    );
+      );
+    });
   }
 
   @override
@@ -369,12 +329,12 @@ class ProduitsPage extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildHeaderCard(),
-                  const SizedBox(height: 10),
+                  _buildHeaderCard(context),
+                  SizedBox(height: context.r(10)),
                   _buildProductsSection(context),
-                  const SizedBox(height: 30),
+                  SizedBox(height: context.r(24)),
                   _buildAssistanceSection(),
-                  const SizedBox(height: 30),
+                  SizedBox(height: context.r(24)),
                 ],
               ),
             ),

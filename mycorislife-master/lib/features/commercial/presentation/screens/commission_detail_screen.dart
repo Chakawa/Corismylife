@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// ===============================================
-/// PAGE DE DÉTAILS D'UN BORDEREAU DE COMMISSION
+/// PAGE DE DÃ‰TAILS D'UN BORDEREAU DE COMMISSION
 /// ===============================================
 ///
-/// Affiche les détails complets d'un bordereau de commission
+/// Affiche les dÃ©tails complets d'un bordereau de commission
 /// avec toutes les informations pertinentes.
 ///
-/// INFORMATIONS AFFICHÉES :
-/// - Numéro du bordereau et exercice
-/// - Référence (nom du commercial)
-/// - Période (date début et date fin)
-/// - État du bordereau
+/// INFORMATIONS AFFICHÃ‰ES :
+/// - NumÃ©ro du bordereau et exercice
+/// - RÃ©fÃ©rence (nom du commercial)
+/// - PÃ©riode (date dÃ©but et date fin)
+/// - Ã‰tat du bordereau
 /// - Montant de la commission
-/// - Type d'apporteur (A = Commercial/Apporteur, B = Intermédiaire)
+/// - Type d'apporteur (A = Commercial/Apporteur, B = IntermÃ©diaire)
 /// - Code apporteur
 class CommissionDetailScreen extends StatelessWidget {
   final Map<String, dynamic> bordereau;
@@ -37,16 +38,16 @@ class CommissionDetailScreen extends StatelessWidget {
 
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return 'Non renseigné';
+    if (date == null || date.isEmpty) return 'Non renseignÃ©';
     
-    // Si la date contient déjà le bon format DD/MM/YYYY, la retourner telle quelle
+    // Si la date contient dÃ©jÃ  le bon format DD/MM/YYYY, la retourner telle quelle
     if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) {
       return date;
     }
     
     // Sinon, parser et formater proprement (enlever les timestamps)
     try {
-      // Supprimer les timestamps et heures si présents
+      // Supprimer les timestamps et heures si prÃ©sents
       String cleanDate = date.split('T')[0].split(' ')[0];
       
       // Parser la date
@@ -55,13 +56,13 @@ class CommissionDetailScreen extends StatelessWidget {
         // Format ISO 8601 : YYYY-MM-DD
         parsedDate = DateTime.parse(cleanDate);
       } else if (cleanDate.contains('/')) {
-        // Format déjà DD/MM/YYYY ou MM/DD/YYYY
+        // Format dÃ©jÃ  DD/MM/YYYY ou MM/DD/YYYY
         final parts = cleanDate.split('/');
         if (parts.length == 3) {
           // Assumer DD/MM/YYYY si le premier nombre est <= 31
           if (int.parse(parts[0]) <= 31) {
             parsedDate = DateTime(
-              int.parse(parts[2]), // année
+              int.parse(parts[2]), // annÃ©e
               int.parse(parts[1]), // mois
               int.parse(parts[0]), // jour
             );
@@ -99,11 +100,11 @@ class CommissionDetailScreen extends StatelessWidget {
         )} FCFA';
   }
 
-  /// Obtient la couleur selon l'état du bordereau
+  /// Obtient la couleur selon l'Ã©tat du bordereau
   Color _getEtatColor(String? etat) {
     if (etat == null) return grisTexte;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payé') || etatLower.contains('payee')) {
+    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
       return vertSucces;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -113,11 +114,11 @@ class CommissionDetailScreen extends StatelessWidget {
     }
   }
 
-  /// Obtient l'icône selon l'état du bordereau
+  /// Obtient l'icÃ´ne selon l'Ã©tat du bordereau
   IconData _getEtatIcon(String? etat) {
     if (etat == null) return Icons.help_outline;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payé') || etatLower.contains('payee')) {
+    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
       return Icons.check_circle;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -133,19 +134,19 @@ class CommissionDetailScreen extends StatelessWidget {
     if (type == 'A') {
       return bleuCoris; // Commercial/Apporteur
     } else if (type == 'B') {
-      return orangeWarning; // Intermédiaire
+      return orangeWarning; // IntermÃ©diaire
     } else {
       return grisTexte;
     }
   }
 
-  /// Obtient l'icône selon le type d'apporteur
+  /// Obtient l'icÃ´ne selon le type d'apporteur
   IconData _getTypeApporteurIcon(String? type) {
     if (type == null) return Icons.person_outline;
     if (type == 'A') {
       return Icons.person; // Commercial/Apporteur
     } else if (type == 'B') {
-      return Icons.business; // Intermédiaire
+      return Icons.business; // IntermÃ©diaire
     } else {
       return Icons.person_outline;
     }
@@ -155,7 +156,7 @@ class CommissionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final etat = bordereau['etat'] ?? '';
     final typeApporteur = bordereau['typeApporteur'] ?? 'A';
-    final typeApporteurLabel = bordereau['typeApporteurLabel'] ?? 'Non défini';
+    final typeApporteurLabel = bordereau['typeApporteurLabel'] ?? 'Non dÃ©fini';
 
     return Scaffold(
       backgroundColor: grisLeger,
@@ -163,7 +164,7 @@ class CommissionDetailScreen extends StatelessWidget {
         backgroundColor: bleuCoris,
         elevation: 0,
         title: const Text(
-          'Détails du Bordereau',
+          'DÃ©tails du Bordereau',
           style: TextStyle(
             color: blanc,
             fontWeight: FontWeight.w600,
@@ -177,27 +178,31 @@ class CommissionDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Carte principale avec numéro et exercice
-              _buildMainCard(),
-              const SizedBox(height: 16),
-              // Informations générales
+              // Carte principale avec numÃ©ro et exercice
+              _buildMainCard(context),
+              SizedBox(height: context.r(16)),
+              // Informations gÃ©nÃ©rales
               _buildInfoSection(
-                'Informations Générales',
+                context,
+                'Informations GÃ©nÃ©rales',
                 Icons.info_outline,
                 [
                   _buildInfoRow(
-                    'Référence',
-                    bordereau['reference'] ?? 'Non renseigné',
+                    context,
+                    'RÃ©fÃ©rence',
+                    bordereau['reference'] ?? 'Non renseignÃ©',
                     Icons.person_outline,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   _buildInfoRow(
+                    context,
                     'Code Apporteur',
-                    bordereau['codeApporteur'] ?? 'Non renseigné',
+                    bordereau['codeApporteur'] ?? 'Non renseignÃ©',
                     Icons.badge_outlined,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   _buildInfoRow(
+                    context,
                     'Type d\'Apporteur',
                     typeApporteurLabel,
                     _getTypeApporteurIcon(typeApporteur),
@@ -205,32 +210,37 @@ class CommissionDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // Période
+              SizedBox(height: context.r(16)),
+              // PÃ©riode
               _buildInfoSection(
-                'Période',
+                context,
+                'PÃ©riode',
                 Icons.date_range,
                 [
                   _buildInfoRow(
-                    'Date de début',
+                    context,
+                    'Date de dÃ©but',
                     _formatDate(bordereau['dateDebut']),
                     Icons.calendar_today,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   _buildInfoRow(
+                    context,
                     'Date de fin',
                     _formatDate(bordereau['dateFin']),
                     Icons.event,
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // Montant et état
+              SizedBox(height: context.r(16)),
+              // Montant et Ã©tat
               _buildInfoSection(
-                'Montant et État',
+                context,
+                'Montant et Ã‰tat',
                 Icons.monetization_on,
                 [
                   _buildInfoRow(
+                    context,
                     'Montant',
                     bordereau['montantFormate'] ??
                         _formatMoney(bordereau['montant']),
@@ -238,9 +248,10 @@ class CommissionDetailScreen extends StatelessWidget {
                     color: vertSucces,
                     isBold: true,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   _buildInfoRow(
-                    'État',
+                    context,
+                    'Ã‰tat',
                     etat,
                     _getEtatIcon(etat),
                     color: _getEtatColor(etat),
@@ -254,8 +265,8 @@ class CommissionDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Construit la carte principale avec le numéro et l'exercice
-  Widget _buildMainCard() {
+  /// Construit la carte principale avec le numÃ©ro et l'exercice
+  Widget _buildMainCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -287,12 +298,12 @@ class CommissionDetailScreen extends StatelessWidget {
               size: 48,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           Text(
-            'Bordereau N° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
-            style: const TextStyle(
+            'Bordereau NÂ° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
+            style: TextStyle(
               color: blanc,
-              fontSize: 24,
+              fontSize: context.sp(24),
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -303,7 +314,7 @@ class CommissionDetailScreen extends StatelessWidget {
   }
 
   /// Construit une section d'informations
-  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+  Widget _buildInfoSection(BuildContext context, String title, IconData icon, List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -334,18 +345,18 @@ class CommissionDetailScreen extends StatelessWidget {
                   size: 20,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: context.sp(18),
                   fontWeight: FontWeight.bold,
                   color: bleuCoris,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           ...children,
         ],
       ),
@@ -354,6 +365,7 @@ class CommissionDetailScreen extends StatelessWidget {
 
   /// Construit une ligne d'information
   Widget _buildInfoRow(
+    BuildContext context,
     String label,
     String value,
     IconData icon, {
@@ -369,7 +381,7 @@ class CommissionDetailScreen extends StatelessWidget {
           size: 20,
           color: displayColor,
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: context.r(12)),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,16 +389,16 @@ class CommissionDetailScreen extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: context.sp(13),
                   color: grisTexte,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: context.r(4)),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: context.sp(15),
                   color: displayColor,
                   fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
                 ),
@@ -398,3 +410,4 @@ class CommissionDetailScreen extends StatelessWidget {
     );
   }
 }
+

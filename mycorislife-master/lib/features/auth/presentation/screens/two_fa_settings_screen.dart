@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -246,7 +247,7 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Statut actuel
                   Card(
@@ -265,35 +266,35 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                                 _is2FAEnabled ? Icons.check_circle : Icons.info_outline,
                                 color: _is2FAEnabled ? vertAccent : Colors.orange,
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: context.r(12)),
                               Text(
                                 _is2FAEnabled ? 'Activée' : 'Désactivée',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: context.sp(18),
                                   fontWeight: FontWeight.bold,
                                   color: _is2FAEnabled ? vertAccent : Colors.orange,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: context.r(12)),
                           Text(
                             _is2FAEnabled
                                 ? 'L\'authentification à deux facteurs est active sur votre compte. Vous devrez entrer un code envoyé à votre numéro secondaire à chaque connexion.'
                                 : 'Activez l\'authentification à deux facteurs pour renforcer la sécurité de votre compte.',
-                            style: const TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Colors.grey),
                           ),
                           if (_is2FAEnabled && _secondaryPhone != null) ...[
-                            const SizedBox(height: 12),
+                            SizedBox(height: context.r(12)),
                             const Divider(),
-                            const SizedBox(height: 12),
+                            SizedBox(height: context.r(12)),
                             Row(
                               children: [
                                 const Icon(Icons.phone, size: 20, color: bleuCoris),
-                                const SizedBox(width: 8),
+                                SizedBox(width: context.r(8)),
                                 Text(
                                   'Numéro secondaire: $_secondaryPhone',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -302,23 +303,23 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: context.r(32)),
 
                   // Section d'activation ou désactivation
                   if (!_is2FAEnabled) ...[
-                    const Text(
+                    Text(
                       'Activer la 2FA',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: context.sp(20),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.r(16)),
                     const Text(
                       'Entrez un numéro de téléphone secondaire qui recevra les codes de vérification lors de vos connexions.',
                       style: TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: context.r(24)),
                     
                     // Champ de numéro de téléphone
                     Row(
@@ -342,7 +343,7 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: TextField(
                             controller: _phoneController,
@@ -359,7 +360,7 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: context.r(24)),
 
                     if (!_showOtpInput)
                       SizedBox(
@@ -382,23 +383,23 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Envoyer le code OTP',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(fontSize: context.sp(16)),
                                 ),
                         ),
                       ),
 
                     // Section OTP
                     if (_showOtpInput) ...[
-                      const Text(
+                      Text(
                         'Entrez le code à 6 chiffres',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: List.generate(
@@ -431,7 +432,7 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: context.r(24)),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -452,13 +453,13 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Vérifier et activer',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(fontSize: context.sp(16)),
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       Center(
                         child: TextButton(
                           onPressed: () {
@@ -475,19 +476,19 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                     ],
                   ] else ...[
                     // Bouton de désactivation
-                    const Text(
+                    Text(
                       'Gérer la 2FA',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: context.sp(20),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.r(16)),
                     const Text(
                       'Vous pouvez désactiver l\'authentification à deux facteurs si vous ne souhaitez plus l\'utiliser.',
                       style: TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: context.r(24)),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -499,9 +500,9 @@ class _TwoFASettingsScreenState extends State<TwoFASettingsScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Désactiver la 2FA',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(fontSize: context.sp(16)),
                         ),
                       ),
                     ),

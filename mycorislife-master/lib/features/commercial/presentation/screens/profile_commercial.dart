@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/user_service.dart';
 import '../../../../services/auth_service.dart';
@@ -125,7 +126,7 @@ class _CommercialProfileState extends State<CommercialProfile>
       backgroundColor: lightGrey,
       appBar: _buildAppBar(primaryBlue),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -140,24 +141,24 @@ class _CommercialProfileState extends State<CommercialProfile>
                         // Header Profile Card
                         _buildProfileHeader(primaryBlue, corisRed, textDark),
 
-                        const SizedBox(height: 28),
+                        SizedBox(height: context.r(28)),
 
-                        const SizedBox(height: 28),
+                        SizedBox(height: context.r(28)),
 
                         // Personal Info avec option de modification
                         _buildPersonalInfo(primaryBlue, textDark, darkGrey),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: context.r(20)),
 
                         // Section Sécurité - Changement de mot de passe
                         _buildSecuritySection(primaryBlue, textDark),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: context.r(20)),
 
                         // Section Centre d'aide
                         _buildHelpSection(primaryBlue, textDark),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: context.r(20)),
                       ],
                     ),
                   ),
@@ -173,17 +174,17 @@ class _CommercialProfileState extends State<CommercialProfile>
       backgroundColor: primaryBlue,
       leading: IconButton(
         onPressed: () => Navigator.of(context).pop(),
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           color: Colors.white,
           size: 22,
         ),
       ),
-      title: const Text(
+      title: Text(
         'Profil Commercial',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: context.sp(20),
           fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
         ),
@@ -206,18 +207,18 @@ class _CommercialProfileState extends State<CommercialProfile>
                 context: context,
                 builder: (ctx) => AlertDialog(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Row(
+                  title: Row(
                     children: [
                       Icon(Icons.logout_rounded, color: Colors.red),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text('Déconnexion'),
                     ],
                   ),
-                  content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+                  content: Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Annuler'),
+                      child: Text('Annuler'),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -235,13 +236,13 @@ class _CommercialProfileState extends State<CommercialProfile>
                         backgroundColor: Colors.red,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
+                      child: Text('Déconnexion', style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
               );
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.logout_rounded,
               color: Colors.white,
               size: 20,
@@ -295,14 +296,14 @@ class _CommercialProfileState extends State<CommercialProfile>
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.business_center_rounded,
               size: 45,
               color: Colors.white,
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: context.r(24)),
 
           // Nom
           Text(
@@ -310,14 +311,14 @@ class _CommercialProfileState extends State<CommercialProfile>
                 ? '${_userData!['nom'] ?? ''} ${_userData!['prenom'] ?? ''}'
                 : 'Chargement...',
             style: TextStyle(
-              fontSize: 26,
+              fontSize: context.sp(26),
               fontWeight: FontWeight.w800,
               color: textDark,
               letterSpacing: -0.7,
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
 
           // Email avec design amélioré
           Container(
@@ -338,12 +339,12 @@ class _CommercialProfileState extends State<CommercialProfile>
                   size: 18,
                   color: primaryBlue.withValues(alpha: 0.8),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: context.r(10)),
                 Text(
                   _userData?['email'] ?? 'Chargement...',
                   style: TextStyle(
                     color: primaryBlue.withValues(alpha: 0.9),
-                    fontSize: 15,
+                    fontSize: context.sp(15),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -352,7 +353,7 @@ class _CommercialProfileState extends State<CommercialProfile>
           ),
 
           if (_userData?['code_apporteur'] != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
             // Code apporteur
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -372,12 +373,12 @@ class _CommercialProfileState extends State<CommercialProfile>
                     size: 18,
                     color: corisRed.withValues(alpha: 0.8),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: context.r(10)),
                   Text(
                     'Code Apporteur: ${_userData!['code_apporteur']}',
                     style: TextStyle(
                       color: corisRed.withValues(alpha: 0.9),
-                      fontSize: 15,
+                      fontSize: context.sp(15),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -386,7 +387,7 @@ class _CommercialProfileState extends State<CommercialProfile>
             ),
           ],
 
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
         ],
       ),
     );
@@ -429,18 +430,18 @@ class _CommercialProfileState extends State<CommercialProfile>
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.person_rounded,
                         color: Colors.white,
                         size: 22,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: context.r(16)),
                     Expanded(
                       child: Text(
                         'Informations Personnelles',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: context.sp(18),
                           fontWeight: FontWeight.w800,
                           color: textDark,
                           letterSpacing: -0.3,
@@ -451,7 +452,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: context.r(8)),
               Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -473,10 +474,10 @@ class _CommercialProfileState extends State<CommercialProfile>
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: context.r(28)),
           _buildInfoRow(Icons.badge_rounded, 'Nom complet',
               _nameController.text, primaryBlue),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           if (_userData?['date_naissance'] != null)
             _buildInfoRow(
               Icons.cake_rounded,
@@ -484,19 +485,19 @@ class _CommercialProfileState extends State<CommercialProfile>
               _formatDate(_userData!['date_naissance']),
               darkGrey,
             ),
-          if (_userData?['date_naissance'] != null) const SizedBox(height: 20),
+          if (_userData?['date_naissance'] != null) SizedBox(height: context.r(20)),
           _buildInfoRow(Icons.phone_rounded, 'Téléphone', _phoneController.text,
               darkGrey),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           _buildInfoRow(
               Icons.email_rounded, 'Email', _emailController.text, darkGrey),
           if (_userData?['code_apporteur'] != null) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             _buildInfoRow(Icons.badge_rounded, 'Code Apporteur',
                 _codeApporteurController.text, primaryBlue),
           ],
           if (_userData?['adresse'] != null) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             _buildInfoRow(Icons.location_on_rounded, 'Adresse',
                 _userData!['adresse'] ?? '', darkGrey),
           ],
@@ -538,18 +539,18 @@ class _CommercialProfileState extends State<CommercialProfile>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.security_rounded,
                   color: Colors.white,
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                 child: Text(
                   'Sécurité',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.w800,
                     color: textDark,
                     letterSpacing: -0.3,
@@ -558,7 +559,7 @@ class _CommercialProfileState extends State<CommercialProfile>
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           GestureDetector(
             onTap: () => _showChangePasswordDialog(),
             child: Container(
@@ -585,24 +586,24 @@ class _CommercialProfileState extends State<CommercialProfile>
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  const Expanded(
+                  SizedBox(width: context.r(16)),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Modifier le mot de passe',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: context.sp(16),
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: context.r(4)),
                         Text(
                           'Changez votre mot de passe pour plus de sécurité',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: context.sp(12),
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF94A3B8),
                           ),
@@ -650,18 +651,18 @@ class _CommercialProfileState extends State<CommercialProfile>
                       color: rougeCoris.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.lock_reset_rounded,
                       color: rougeCoris,
                       size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Flexible(
+                  SizedBox(width: context.r(12)),
+                  Flexible(
                     child: Text(
                       'Modifier le mot de passe',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: context.sp(18),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -681,7 +682,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.lock_outline,
                           color: Color(0xFF001B3D),
                         ),
@@ -707,7 +708,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.r(16)),
                     // Nouveau mot de passe
                     TextField(
                       controller: newPasswordController,
@@ -717,7 +718,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.lock,
                           color: Color(0xFF001B3D),
                         ),
@@ -743,7 +744,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.r(16)),
                     // Confirmation nouveau mot de passe
                     TextField(
                       controller: confirmPasswordController,
@@ -753,7 +754,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.lock,
                           color: Color(0xFF001B3D),
                         ),
@@ -779,7 +780,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: context.r(12)),
                     // Info
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -794,12 +795,12 @@ class _CommercialProfileState extends State<CommercialProfile>
                             size: 20,
                             color: Colors.blue.shade700,
                           ),
-                          const SizedBox(width: 10),
-                          const Expanded(
+                          SizedBox(width: context.r(10)),
+                          Expanded(
                             child: Text(
                               'Le mot de passe doit contenir au moins 6 caractères',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: context.sp(12),
                                 color: Color(0xFF1E40AF),
                               ),
                             ),
@@ -879,10 +880,10 @@ class _CommercialProfileState extends State<CommercialProfile>
                             
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Row(
+                                content: Row(
                                   children: [
                                     Icon(Icons.check_circle, color: Colors.white),
-                                    SizedBox(width: 12),
+                                    SizedBox(width: context.r(12)),
                                     Text('Mot de passe modifié avec succès'),
                                   ],
                                 ),
@@ -919,7 +920,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                     ),
                   ),
                   child: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -927,7 +928,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Modifier',
                           style: TextStyle(
                             color: Colors.white,
@@ -973,18 +974,18 @@ class _CommercialProfileState extends State<CommercialProfile>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.help_outline_rounded,
                   color: Colors.white,
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                 child: Text(
                   'Centre d\'aide',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.w800,
                     color: textDark,
                     letterSpacing: -0.3,
@@ -993,7 +994,7 @@ class _CommercialProfileState extends State<CommercialProfile>
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: context.r(24)),
           GestureDetector(
             onTap: () async {
               final Uri phoneUri = Uri.parse('tel:0778685858');
@@ -1008,7 +1009,7 @@ class _CommercialProfileState extends State<CommercialProfile>
               primaryBlue,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           GestureDetector(
             onTap: () async {
               final Uri emailUri =
@@ -1051,25 +1052,25 @@ class _CommercialProfileState extends State<CommercialProfile>
             ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: context.r(16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF94A3B8),
                     letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: context.r(6)),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF0F172A),
                   ),
@@ -1109,25 +1110,25 @@ class _CommercialProfileState extends State<CommercialProfile>
             ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: context.r(16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: context.sp(12),
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF94A3B8),
                     letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: context.r(6)),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF0F172A),
                   ),
@@ -1159,11 +1160,11 @@ class _CommercialProfileState extends State<CommercialProfile>
                 ),
                 child: Icon(Icons.edit_rounded, color: primaryBlue, size: 24),
               ),
-              const SizedBox(width: 12),
-              const Flexible(
+              SizedBox(width: context.r(12)),
+              Flexible(
                 child: Text(
                   'Modifier les informations',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -1186,7 +1187,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 TextField(
                   controller: _phoneController,
                   decoration: InputDecoration(
@@ -1201,7 +1202,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.r(16)),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -1251,10 +1252,10 @@ class _CommercialProfileState extends State<CommercialProfile>
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Row(
+                      content: Row(
                         children: [
                           Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 12),
+                          SizedBox(width: context.r(12)),
                           Text('Informations mises à jour avec succès'),
                         ],
                       ),
@@ -1284,7 +1285,7 @@ class _CommercialProfileState extends State<CommercialProfile>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
-              child: const Text(
+              child: Text(
                 'Sauvegarder',
                 style: TextStyle(
                   color: Colors.white,

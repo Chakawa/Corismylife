@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// Page de réinitialisation de mot de passe
 class ForgotPasswordScreen extends StatefulWidget {
@@ -310,13 +311,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          padding: EdgeInsets.symmetric(horizontal: context.r(18), vertical: context.r(24)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Indicateur d'étape
               _buildStepIndicator(),
-              const SizedBox(height: 30),
+              SizedBox(height: context.r(24)),
 
               // Contenu selon l'étape
               if (_currentStep == STEP_PHONE) _buildPhoneStep(),
@@ -367,21 +368,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Text(
               'Téléphone',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: context.sp(11),
                 color: _currentStep >= 0 ? bleuCoris : Colors.grey,
               ),
             ),
             Text(
               'Vérification',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: context.sp(11),
                 color: _currentStep >= 1 ? bleuCoris : Colors.grey,
               ),
             ),
             Text(
               'Nouveau mot de passe',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: context.sp(11),
                 color: _currentStep >= 2 ? bleuCoris : Colors.grey,
               ),
             ),
@@ -394,8 +395,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   /// Point d'étape
   Widget _buildStepDot(int step, bool active) {
     return Container(
-      width: 36,
-      height: 36,
+      width: context.r(34),
+      height: context.r(34),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: active ? vertSucces : Colors.grey[300],
@@ -446,7 +447,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: DropdownButton<String>(
                   value: _selectedIndicatif,
                   icon: const Icon(Icons.arrow_drop_down, color: bleuCoris),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: bleuCoris,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -491,7 +492,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: context.r(48),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submitPhone,
             style: ElevatedButton.styleFrom(
@@ -535,7 +536,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 8),
         Text(
           'Nous avons envoyé un code à $_storedTelephone',
-          style: const TextStyle(color: grisTexte),
+          style: TextStyle(color: grisTexte),
         ),
         const SizedBox(height: 24),
         TextField(
@@ -543,7 +544,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           keyboardType: TextInputType.number,
           maxLength: 5,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8),
+          style: TextStyle(fontSize: context.sp(22), letterSpacing: context.r(6)),
           decoration: InputDecoration(
             hintText: '00000',
             counterText: '',
@@ -585,7 +586,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: context.r(48),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submitOtp,
             style: ElevatedButton.styleFrom(
@@ -692,7 +693,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: context.r(48),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submitNewPassword,
             style: ElevatedButton.styleFrom(

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 
 /// ===============================================
-/// ❌❌❌ PRODUIT DÉSACTIVÉ - NE PAS UTILISER ❌❌❌
+/// âŒâŒâŒ PRODUIT DÃ‰SACTIVÃ‰ - NE PAS UTILISER âŒâŒâŒ
 /// ===============================================
-/// PAGE DE SOUSCRIPTION - PRÊTS SCOLAIRES
+/// PAGE DE SOUSCRIPTION - PRÃŠTS SCOLAIRES
 /// ===============================================
-/// ⚠️ CE PRODUIT A ÉTÉ TEMPORAIREMENT DÉSACTIVÉ ⚠️
+/// âš ï¸ CE PRODUIT A Ã‰TÃ‰ TEMPORAIREMENT DÃ‰SACTIVÃ‰ âš ï¸
 
 class SouscriptionPretsScolairePage extends StatefulWidget {
   const SouscriptionPretsScolairePage({super.key});
@@ -27,7 +28,7 @@ class _SouscriptionPretsScolairePageState
       appBar: AppBar(
         backgroundColor: bleuCoris,
         title: const Text(
-          'PRÊTS SCOLAIRES',
+          'PRÃŠTS SCOLAIRES',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
@@ -45,27 +46,27 @@ class _SouscriptionPretsScolairePageState
                 color: bleuCoris,
                 size: 64,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Text(
                 'Souscription non disponible',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: context.sp(20),
                   fontWeight: FontWeight.w600,
                   color: bleuCoris,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.r(16)),
               Text(
                 'La souscription en ligne n\'est pas disponible pour ce produit.\nVeuillez vous rendre en agence.',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   color: Colors.grey[700],
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: context.r(32)),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
@@ -73,10 +74,10 @@ class _SouscriptionPretsScolairePageState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 ),
-                child: const Text(
+                child: Text(
                   'Retour',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: context.sp(16),
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -89,3 +90,4 @@ class _SouscriptionPretsScolairePageState
     );
   }
 }
+

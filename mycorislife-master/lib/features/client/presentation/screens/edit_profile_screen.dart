@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -66,9 +67,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _telephoneController.text = user['telephone'] ?? '';
         _adresseController.text = user['adresse'] ?? '';
         _civilite = user['civilite'];
-        _photoUrl = user['photo_url'] != null
-            ? user['photo_url'].toString().trim()
-            : null;
+        _photoUrl = user['photo_url']?.toString().trim();
         _isLoading = false;
       });
     } catch (e) {
@@ -345,34 +344,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: context.r(8)),
                       Center(
                         child: Column(
                           children: [
                             Text(
                               'Appuyez pour changer la photo',
-                              style: TextStyle(fontSize: 12, color: grisTexte),
+                              style: TextStyle(fontSize: context.sp(12), color: grisTexte),
                             ),
                             if (_photoUrl != null || _selectedPhoto != null)
                               Text(
                                 'Maintenez appuyé pour voir',
                                 style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: context.sp(11),
                                     color: grisTexte.withOpacity(0.7)),
                               ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: context.r(30)),
 
                       // Section Civilité
                       _buildSectionTitle('Civilité'),
                       _buildCiviliteSelector(),
-                      const SizedBox(height: 24),
+                      SizedBox(height: context.r(24)),
 
                       // Section Informations personnelles
                       _buildSectionTitle('Informations personnelles'),
-                      const SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
                       _buildTextField(
                         controller: _nomController,
                         label: 'Nom',
@@ -384,7 +383,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildTextField(
                         controller: _prenomController,
                         label: 'Prénom',
@@ -396,11 +395,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: context.r(24)),
 
                       // Section Contact
                       _buildSectionTitle('Contact'),
-                      const SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
                       _buildTextField(
                         controller: _emailController,
                         label: 'Email',
@@ -417,7 +416,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       _buildTextField(
                         controller: _telephoneController,
                         label: 'Téléphone',
@@ -430,18 +429,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: context.r(24)),
 
                       // Section Adresse
                       _buildSectionTitle('Adresse'),
-                      const SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
                       _buildTextField(
                         controller: _adresseController,
                         label: 'Adresse complète',
                         icon: Icons.location_on_outlined,
                         maxLines: 3,
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: context.r(40)),
 
                       // Bouton de sauvegarde
                       SizedBox(
@@ -465,17 +464,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Enregistrer les modifications',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: context.sp(16),
                                     fontWeight: FontWeight.w600,
                                     color: blanc,
                                   ),
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: context.r(20)),
                     ],
                   ),
                 ),
@@ -488,8 +487,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
+      style: TextStyle(
+        fontSize: context.sp(18),
         fontWeight: FontWeight.w700,
         color: bleuCoris,
       ),
@@ -517,11 +516,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Expanded(
             child: _buildCiviliteOption('Monsieur', 'M'),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: _buildCiviliteOption('Madame', 'Mme'),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.r(12)),
           Expanded(
             child: _buildCiviliteOption('Mademoiselle', 'Mlle'),
           ),
@@ -552,7 +551,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           style: TextStyle(
             color: isSelected ? blanc : grisTexte,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            fontSize: 14,
+            fontSize: context.sp(14),
           ),
         ),
       ),
@@ -587,7 +586,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: grisTexte),
+          labelStyle: TextStyle(color: grisTexte),
           prefixIcon: Icon(icon, color: bleuCoris),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

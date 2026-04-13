@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class DescriptionPretScolairePage extends StatelessWidget {
@@ -60,7 +61,7 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
         elevation: 0,
         backgroundColor: const Color(0xFF002B6B),
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'PRÊT SCOLAIRE',
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -105,28 +106,28 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                           color: const Color(0xFFE30613),
                           borderRadius: BorderRadius.circular(25.0),
                         ),
-                        child: const Text(
+                        child: Text(
                           'ÉDUCATION',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
+                            fontSize: context.sp(12.0),
                             letterSpacing: 1.0,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16.0),
+                      SizedBox(height: context.r(16.0)),
                       const Icon(
                         Icons.school_outlined,
                         size: 48.0,
                         color: Colors.white70,
                       ),
-                      const SizedBox(height: 16.0),
-                      const Text(
+                      SizedBox(height: context.r(16.0)),
+                      Text(
                         'Financez l\'avenir éducatif de vos enfants',
                         style: TextStyle(
                           color: Colors.white70,
-                          fontSize: 18.0,
+                          fontSize: context.sp(18.0),
                           fontWeight: FontWeight.w300,
                         ),
                         textAlign: TextAlign.center,
@@ -144,30 +145,30 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                   child: MarkdownBody(
                     data: markdownContent,
                     styleSheet: MarkdownStyleSheet(
-                      h3: const TextStyle(
-                        fontSize: 28.0,
+                      h3: TextStyle(
+                        fontSize: context.sp(28.0),
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF002B6B),
                         height: 1.3,
                       ),
-                      h4: const TextStyle(
-                        fontSize: 22.0,
+                      h4: TextStyle(
+                        fontSize: context.sp(22.0),
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                         height: 1.4,
                       ),
-                      p: const TextStyle(
-                        fontSize: 16.0,
+                      p: TextStyle(
+                        fontSize: context.sp(16.0),
                         height: 1.6,
                         color: Color(0xFF333333),
                         fontWeight: FontWeight.w400,
                       ),
-                      strong: const TextStyle(
+                      strong: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF002B6B),
                       ),
-                      listBullet: const TextStyle(
-                        fontSize: 16.0,
+                      listBullet: TextStyle(
+                        fontSize: context.sp(16.0),
                         color: Color(0xFFE30613),
                         fontWeight: FontWeight.bold,
                       ),
@@ -179,10 +180,10 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                           ),
                         ),
                       ),
-                      code: const TextStyle(
+                      code: TextStyle(
                         backgroundColor: Colors.transparent,
                         color: Color(0xFFE30613),
-                        fontSize: 16.0,
+                        fontSize: context.sp(16.0),
                       ),
                     ),
                   ),
@@ -219,27 +220,27 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                       size: 64.0,
                       color: Colors.orange[700],
                     ),
-                    const SizedBox(height: 16.0),
+                    SizedBox(height: context.r(16.0)),
                     Text(
                       'BIENTÔT DISPONIBLE',
                       style: TextStyle(
-                        fontSize: 24.0,
+                        fontSize: context.sp(24.0),
                         fontWeight: FontWeight.bold,
                         color: Colors.orange[900],
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12.0),
+                    SizedBox(height: context.r(12.0)),
                     Text(
                       'Ce produit sera prochainement disponible.\nNous travaillons activement à sa mise en place pour mieux vous servir.',
                       style: TextStyle(
-                        fontSize: 16.0,
+                        fontSize: context.sp(16.0),
                         color: Colors.orange[800],
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24.0),
+                    SizedBox(height: context.r(24.0)),
                     Container(
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
@@ -248,7 +249,7 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                       ),
                       child: Column(
                         children: [
-                          const Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
@@ -256,22 +257,22 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                                 color: Color(0xFF002B6B),
                                 size: 20,
                               ),
-                              SizedBox(width: 8),
+                              SizedBox(width: context.r(8)),
                               Text(
                                 'Pour plus d\'informations',
                                 style: TextStyle(
-                                  fontSize: 16.0,
+                                  fontSize: context.sp(16.0),
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF002B6B),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12.0),
+                          SizedBox(height: context.r(12.0)),
                           Text(
                             'Contactez nos équipes',
                             style: TextStyle(
-                              fontSize: 14.0,
+                              fontSize: context.sp(14.0),
                               color: Colors.grey[700],
                             ),
                           ),
@@ -282,7 +283,7 @@ Pour plus d'informations ou pour être informé de sa disponibilité, n'hésitez
                 ),
               ),
 
-              const SizedBox(height: 24.0),
+              SizedBox(height: context.r(24.0)),
             ],
           ),
         ),

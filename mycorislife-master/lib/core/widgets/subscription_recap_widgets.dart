@@ -691,14 +691,14 @@ class SubscriptionRecapWidgets {
     final children = <Widget>[];
 
     // Helper to extract filename from a path (Windows or Unix)
-    String? _extractNameFromPath(dynamic path) {
+    String? extractNameFromPath(dynamic path) {
       if (path == null) return null;
       final s = path.toString();
       if (s.isEmpty) return null;
       return s.split(RegExp(r'[\\/]+')).last;
     }
 
-    bool _isTechnicalGeneratedName(String? value) {
+    bool isTechnicalGeneratedName(String? value) {
       if (value == null) return true;
       final v = value.trim().toLowerCase();
       if (v.isEmpty) return true;
@@ -709,7 +709,7 @@ class SubscriptionRecapWidgets {
           v.contains(RegExp(r'^[a-f0-9]{8,}-[a-f0-9-]{8,}'));
     }
 
-    String _friendlyIdentityLabel(int index, int total) {
+    String friendlyIdentityLabel(int index, int total) {
       if (total >= 2) {
         if (index == 0) return 'Pièce d\'identité - Recto';
         if (index == 1) return 'Pièce d\'identité - Verso';
@@ -725,11 +725,12 @@ class SubscriptionRecapWidgets {
           filename != 'Non téléchargée' &&
           filename != 'null';
 
-      final rawName = has ? (_extractNameFromPath(filename) ?? filename) : null;
+      final rawName = has ? (extractNameFromPath(filename) ?? filename) : null;
       final displayName = rawName ?? 'Non téléchargée';
       final normalizedTitle = title.trim().toLowerCase();
       final normalizedName = displayName.trim().toLowerCase();
 
+      // ignore: unused_element
       bool isImageFile(String name) {
         final ext = name.split('.').last.toLowerCase();
         return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif']
@@ -741,7 +742,7 @@ class SubscriptionRecapWidgets {
       final showFileName = has &&
           normalizedName.isNotEmpty &&
           (normalizedName != normalizedTitle ||
-              !_isTechnicalGeneratedName(displayName));
+              !isTechnicalGeneratedName(displayName));
 
       return GestureDetector(
         onTap: has ? onTap : null,
@@ -818,7 +819,7 @@ class SubscriptionRecapWidgets {
       String? displayPiece;
       if (pieceIdentite != null && pieceIdentite.toString().isNotEmpty) {
         displayPiece =
-            _extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
+            extractNameFromPath(pieceIdentite) ?? pieceIdentite.toString();
       } else {
         displayPiece = 'Non téléchargée';
       }
@@ -830,27 +831,27 @@ class SubscriptionRecapWidgets {
 
     // Additional documents list (if provided)
     if (hasDocuments) {
-      final total = documents!.length;
+      final total = documents.length;
       for (int i = 0; i < documents.length; i++) {
         final doc = documents[i];
         final rawLabel =
             doc['label'] ?? doc['name'] ?? doc['filename'] ?? doc['title'];
         final path =
             doc['path'] ?? doc['url'] ?? doc['filename'] ?? doc['name'];
-        final extractedName = _extractNameFromPath(path);
+        final extractedName = extractNameFromPath(path);
 
         String label;
         if (rawLabel != null && rawLabel.toString().trim().isNotEmpty) {
           final candidate = rawLabel.toString().trim();
-          if (_isTechnicalGeneratedName(candidate) ||
+          if (isTechnicalGeneratedName(candidate) ||
               (extractedName != null &&
                   candidate.toLowerCase() == extractedName.toLowerCase())) {
-            label = _friendlyIdentityLabel(i, total);
+            label = friendlyIdentityLabel(i, total);
           } else {
             label = candidate;
           }
         } else {
-          label = _friendlyIdentityLabel(i, total);
+          label = friendlyIdentityLabel(i, total);
         }
 
         children.add(buildDocRow(
@@ -870,7 +871,7 @@ class SubscriptionRecapWidgets {
 
     return buildRecapSection(
       documentCount != null && documentCount > 0
-          ? 'Documents (${documentCount})'
+          ? 'Documents ($documentCount)'
           : 'Documents',
       Icons.description,
       bleuSecondaire,
@@ -911,8 +912,9 @@ class SubscriptionRecapWidgets {
       final respById = <dynamic, Map<String, dynamic>>{};
       if (reponses != null) {
         for (final r in reponses) {
-          if (r is Map && r['question_id'] != null)
+          if (r['question_id'] != null) {
             respById[r['question_id']] = r;
+          }
         }
       }
 
@@ -951,7 +953,7 @@ class SubscriptionRecapWidgets {
           'question_index': i,
           'question_id': r['question_id'] ?? (i + 1),
         };
-        if (r is Map) item.addAll(r);
+        item.addAll(r);
         merged.add(item);
       }
     }
@@ -967,8 +969,8 @@ class SubscriptionRecapWidgets {
       String answer = '';
 
       if (r.containsKey('reponse_oui_non') && r['reponse_oui_non'] != null) {
-        final oui_non = r['reponse_oui_non'];
-        answer = (oui_non == true || oui_non == 'OUI' || oui_non == 'true')
+        final ouiNon = r['reponse_oui_non'];
+        answer = (ouiNon == true || ouiNon == 'OUI' || ouiNon == 'true')
             ? 'OUI'
             : 'NON';
 
@@ -1263,7 +1265,7 @@ class SubscriptionRecapWidgets {
     final infosPaiement = souscriptionData['infos_paiement'] ?? {};
 
     // Helper pour chercher une valeur d'abord au niveau racine puis dans infos_paiement
-    String _getValue(String key) {
+    String getValue(String key) {
       if (souscriptionData[key]?.toString().isNotEmpty == true) {
         return souscriptionData[key].toString();
       }
@@ -1384,22 +1386,22 @@ class SubscriptionRecapWidgets {
 
         // Afficher les détails selon le mode
         if (modePaiement.toLowerCase().contains('virement')) ...[
-          buildRecapRow('Banque', _getValue('banque')),
+          buildRecapRow('Banque', getValue('banque')),
           buildRecapRow(
             'RIB',
-            _getValue('rib').isNotEmpty && _getValue('rib') != 'Non renseigné'
-                ? _getValue('rib')
-                : _getValue('numero_compte'),
+            getValue('rib').isNotEmpty && getValue('rib') != 'Non renseigné'
+                ? getValue('rib')
+                : getValue('numero_compte'),
           ),
         ] else if (modePaiement.toLowerCase().contains('wave') ||
             modePaiement.toLowerCase().contains('orange')) ...[
-          buildRecapRow('Numéro de téléphone', _getValue('numero_telephone')),
+          buildRecapRow('Numéro de téléphone', getValue('numero_telephone')),
         ] else if (modePaiement.toLowerCase().contains('prélèvement') ||
             modePaiement.toLowerCase().contains('prelevement')) ...[
-          buildRecapRow('Nom de la structure', _getValue('nom_structure')),
-          buildRecapRow('Numéro matricule', _getValue('numero_matricule')),
+          buildRecapRow('Nom de la structure', getValue('nom_structure')),
+          buildRecapRow('Numéro matricule', getValue('numero_matricule')),
         ] else if (modePaiement.toLowerCase().contains('coris money')) ...[
-          buildRecapRow('Numéro CORIS Money', _getValue('numero_telephone')),
+          buildRecapRow('Numéro CORIS Money', getValue('numero_telephone')),
         ],
       ],
     );

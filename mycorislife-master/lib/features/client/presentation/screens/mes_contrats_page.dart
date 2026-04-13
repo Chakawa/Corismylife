@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/features/client/presentation/screens/contrat_detail_page.dart';
@@ -10,14 +11,14 @@ import 'package:mycorislife/services/wave_payment_handler.dart';
 /// ============================================
 /// Cette page affiche la liste de tous les contrats actifs
 /// de l'utilisateur. Un contrat est une proposition qui a
-/// été payée et est maintenant active.
+/// Ã©tÃ© payÃ©e et est maintenant active.
 ///
-/// Fonctionnalités:
+/// FonctionnalitÃ©s:
 /// - Affichage de la liste des contrats
 /// - Filtrage par type de produit
-/// - Visualisation des détails d'un contrat
+/// - Visualisation des dÃ©tails d'un contrat
 /// - Paiement des primes (mensuelles, annuelles, etc.)
-/// - Téléchargement du PDF du contrat
+/// - TÃ©lÃ©chargement du PDF du contrat
 class MesContratsPage extends StatefulWidget {
   const MesContratsPage({super.key});
 
@@ -28,7 +29,7 @@ class MesContratsPage extends StatefulWidget {
 class _MesContratsPageState extends State<MesContratsPage>
     with TickerProviderStateMixin {
   // ===================================
-  // SERVICES ET DONNÉES
+  // SERVICES ET DONNÃ‰ES
   // ===================================
   final SubscriptionService _service = SubscriptionService();
   List<Contrat> contrats = [];
@@ -128,11 +129,11 @@ class _MesContratsPageState extends State<MesContratsPage>
     return AppBar(
       elevation: 0,
       backgroundColor: const Color(0xFF2563EB),
-      title: const Text(
+      title: Text(
         'Mes Contrats',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 22,
+          fontSize: context.sp(22),
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -149,9 +150,9 @@ class _MesContratsPageState extends State<MesContratsPage>
               ),
               child: Text(
                 '${filteredContrats.length} contrat${filteredContrats.length > 1 ? 's' : ''}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: context.sp(12),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -170,12 +171,12 @@ class _MesContratsPageState extends State<MesContratsPage>
           const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           Text(
             'Chargement des contrats...',
             style: TextStyle(
               color: Colors.grey[600],
-              fontSize: 14,
+              fontSize: context.sp(14),
             ),
           ),
         ],
@@ -193,22 +194,22 @@ class _MesContratsPageState extends State<MesContratsPage>
             size: 80,
             color: Colors.grey[300],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           Text(
             'Aucun contrat',
             style: TextStyle(
               color: Colors.grey[700],
-              fontSize: 18,
+              fontSize: context.sp(18),
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.r(8)),
           Text(
             'Vous n\'avez pas encore de contrats actifs',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey[500],
-              fontSize: 14,
+              fontSize: context.sp(14),
             ),
           ),
         ],
@@ -275,8 +276,8 @@ class _MesContratsPageState extends State<MesContratsPage>
           ),
 
           // Padding bottom
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 30),
+          SliverToBoxAdapter(
+            child: SizedBox(height: context.r(30)),
           ),
         ],
       ),
@@ -317,7 +318,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // En-tête du contrat
+                // En-tÃªte du contrat
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -327,21 +328,21 @@ class _MesContratsPageState extends State<MesContratsPage>
                         children: [
                           Text(
                             contrat.nomProduit ?? 'Sans titre',
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: context.sp(16),
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: context.r(4)),
                           Text(
                             'Police: ${contrat.numepoli ?? contrat.id}',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: context.sp(12),
                               color: Colors.grey[600],
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: context.r(6)),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -358,7 +359,7 @@ class _MesContratsPageState extends State<MesContratsPage>
                                   ? 'Souscrit via app'
                                   : 'Contrat historique',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: context.sp(11),
                                 fontWeight: FontWeight.w600,
                                 color: (contrat.source ?? '').toLowerCase() == 'subscription'
                                     ? const Color(0xFF1D4ED8)
@@ -378,10 +379,10 @@ class _MesContratsPageState extends State<MesContratsPage>
                         color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Actif',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: context.sp(12),
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF10B981),
                         ),
@@ -389,7 +390,7 @@ class _MesContratsPageState extends State<MesContratsPage>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.r(12)),
 
                 // Montant principal
                 Row(
@@ -398,30 +399,30 @@ class _MesContratsPageState extends State<MesContratsPage>
                     Text(
                       'Prime:',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: context.sp(13),
                         color: Colors.grey[600],
                       ),
                     ),
                     Text(
                       '${_extractAmount(contrat).toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF2563EB),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.r(12)),
 
                 // Boutons d'action
                 Row(
                   children: [
-                    // Bouton Détails
+                    // Bouton DÃ©tails
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.info_outline, size: 18),
-                        label: const Text('Détails'),
+                        icon: Icon(Icons.info_outline, size: 18),
+                        label: Text('DÃ©tails'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFF3F4F6),
                           foregroundColor: const Color(0xFF2563EB),
@@ -443,13 +444,13 @@ class _MesContratsPageState extends State<MesContratsPage>
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: context.r(8)),
 
                     // Bouton Payer Prime
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.payment, size: 18),
-                        label: const Text('Payer Prime'),
+                        icon: Icon(Icons.payment, size: 18),
+                        label: Text('Payer Prime'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
@@ -479,7 +480,7 @@ class _MesContratsPageState extends State<MesContratsPage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Méthode de paiement'),
+        title: Text('MÃ©thode de paiement'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -488,7 +489,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             //     'assets/images/corismoney_logo.png',
             //     height: 24,
             //   ),
-            //   title: const Text('CORIS Money'),
+            //   title: Text('CORIS Money'),
             //   onTap: () {
             //     Navigator.pop(context);
             //     _processPayment(contrat, 'CORIS Money');
@@ -499,7 +500,7 @@ class _MesContratsPageState extends State<MesContratsPage>
                 'assets/images/icone_wave.jpeg',
                 height: 24,
               ),
-              title: const Text('Wave'),
+              title: Text('Wave'),
               onTap: () {
                 Navigator.pop(context);
                 _processPayment(contrat, 'Wave');
@@ -510,7 +511,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             //     'assets/images/OrangeMoney.png',
             //     height: 24,
             //   ),
-            //   title: const Text('Orange Money'),
+            //   title: Text('Orange Money'),
             //   onTap: () {
             //     Navigator.pop(context);
             //     _processPayment(contrat, 'Orange Money');
@@ -534,11 +535,11 @@ class _MesContratsPageState extends State<MesContratsPage>
           montant: montant,
           description: 'Paiement prime ${contrat.nomProduit} #${contrat.id}',
           onPaymentSuccess: () {
-            // Rafraîchir la liste après paiement réussi
+            // RafraÃ®chir la liste aprÃ¨s paiement rÃ©ussi
             _loadContrats();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('✅ Prime payée avec succès !'),
+                content: Text('âœ… Prime payÃ©e avec succÃ¨s !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -547,7 +548,7 @@ class _MesContratsPageState extends State<MesContratsPage>
         ),
       );
     } else if (paymentMethod == 'Wave') {
-      // Démarrer le paiement Wave
+      // DÃ©marrer le paiement Wave
       try {
         await WavePaymentHandler.startPayment(
           context,
@@ -558,7 +559,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             _loadContrats();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('✅ Paiement Wave réussi !'),
+                content: Text('âœ… Paiement Wave rÃ©ussi !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -574,10 +575,10 @@ class _MesContratsPageState extends State<MesContratsPage>
         );
       }
     } else {
-      // Orange Money - à implémenter
+      // Orange Money - Ã  implÃ©menter
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$paymentMethod sera disponible bientôt'),
+          content: Text('$paymentMethod sera disponible bientÃ´t'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -592,3 +593,4 @@ class _MesContratsPageState extends State<MesContratsPage>
     return contrat.subscriptionId ?? contrat.id;
   }
 }
+

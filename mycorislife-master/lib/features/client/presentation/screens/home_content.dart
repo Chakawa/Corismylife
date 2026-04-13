@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/notification_service.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
 import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
@@ -182,8 +183,8 @@ class _HomeContentState extends State<HomeContent> {
         title: Row(
           children: [
             Container(
-              width: 35,
-              height: 35,
+              width: context.r(35),
+              height: context.r(35),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -196,13 +197,13 @@ class _HomeContentState extends State<HomeContent> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            const Text(
+            SizedBox(width: context.r(10)),
+            Text(
               'MyCorisLife',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
-                fontSize: 20,
+                fontSize: context.sp(18),
               ),
             ),
           ],
@@ -233,7 +234,7 @@ class _HomeContentState extends State<HomeContent> {
                       _unreadNotificationsCount > 99
                           ? '99+'
                           : _unreadNotificationsCount.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -420,7 +421,7 @@ class _HomeContentState extends State<HomeContent> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: context.r(24)),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                   child: Row(
@@ -433,20 +434,17 @@ class _HomeContentState extends State<HomeContent> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _selectedProductTab == 'particuliers'
-                                    ? bleuCoris
-                                    : Colors.grey[300],
-                            foregroundColor:
-                                _selectedProductTab == 'particuliers'
-                                    ? Colors.white
-                                    : Colors.black87,
+                            backgroundColor: _selectedProductTab == 'particuliers'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'particuliers'
+                                ? Colors.white
+                                : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation:
-                                _selectedProductTab == 'particuliers' ? 4 : 1,
+                            elevation: _selectedProductTab == 'particuliers' ? 4 : 1,
                           ),
                           child: Text(
                             'Nos produits aux particuliers',
@@ -467,20 +465,17 @@ class _HomeContentState extends State<HomeContent> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _selectedProductTab == 'entreprises'
-                                    ? bleuCoris
-                                    : Colors.grey[300],
-                            foregroundColor:
-                                _selectedProductTab == 'entreprises'
-                                    ? Colors.white
-                                    : Colors.black87,
+                            backgroundColor: _selectedProductTab == 'entreprises'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'entreprises'
+                                ? Colors.white
+                                : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation:
-                                _selectedProductTab == 'entreprises' ? 4 : 1,
+                            elevation: _selectedProductTab == 'entreprises' ? 4 : 1,
                           ),
                           child: Text(
                             'Nos produits aux entreprises',
@@ -495,18 +490,17 @@ class _HomeContentState extends State<HomeContent> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.r(16)),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 2.8,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: context.gridColumns,
+                      crossAxisSpacing: context.r(10),
+                      mainAxisSpacing: context.r(10),
+                      childAspectRatio: context.cardAspectRatio,
                     ),
                     itemCount: _selectedProductTab == 'particuliers'
                         ? _produitsParticuliers.length
@@ -522,7 +516,7 @@ class _HomeContentState extends State<HomeContent> {
                           Navigator.pushNamed(context, product['route']);
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(context.r(10)),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(12),
@@ -537,57 +531,39 @@ class _HomeContentState extends State<HomeContent> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              if (product['isIcon'] == true)
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: (product['iconColor'] as Color)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    product['icon'],
-                                    size: 28,
-                                    color: product['iconColor'],
-                                  ),
-                                )
-                              else
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.asset(
-                                      product['image'],
-                                      width: 40,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.image_not_supported,
-                                            size: 24,
-                                            color: Colors.grey,
-                                          ),
-                                        );
-                                      },
-                                    ),
+                              Container(
+                                width: context.r(40),
+                                height: context.r(40),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.asset(
+                                    product['image'],
+                                    width: context.r(40),
+                                    height: context.r(40),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: context.r(40),
+                                        height: context.r(40),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: context.r(22),
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
-                              const SizedBox(width: 10),
+                              ),
+                              SizedBox(width: context.r(10)),
                               Expanded(
                                 child: Text(
                                   product['title'],
@@ -608,7 +584,7 @@ class _HomeContentState extends State<HomeContent> {
                     },
                   ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: context.r(24)),
               ],
             ),
           );

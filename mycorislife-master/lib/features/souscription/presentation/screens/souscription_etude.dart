@@ -1,4 +1,6 @@
+// ignore_for_file: unused_field, unused_element
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
@@ -29,10 +31,10 @@ class SouscriptionEtudePage extends StatefulWidget {
       dateNaissanceParent; // Date de naissance du parent depuis la simulation
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
-      clientData; // Données du client si souscription par commercial
+      clientData; // DonnÃ©es du client si souscription par commercial
   final int?
-      subscriptionId; // ID de la souscription à modifier (si mode édition)
-  final Map<String, dynamic>? existingData; // Données existantes à préremplir
+      subscriptionId; // ID de la souscription Ã  modifier (si mode Ã©dition)
+  final Map<String, dynamic>? existingData; // DonnÃ©es existantes Ã  prÃ©remplir
   const SouscriptionEtudePage({
     super.key,
     this.ageParent,
@@ -53,7 +55,7 @@ class SouscriptionEtudePage extends StatefulWidget {
 
 class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     with TickerProviderStateMixin {
-  // Charte graphique CORIS améliorée
+  // Charte graphique CORIS amÃ©liorÃ©e
   static const Color bleuCoris = Color(0xFF002B6B);
   static const Color rougeCoris = Color(0xFFE30613);
   static const Color bleuSecondaire = Color(0xFF1E4A8C);
@@ -72,12 +74,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   int _currentStep = 0;
   Future<bool> Function()? _questionnaireValidate;
 
-  // Données utilisateur (pour les clients)
+  // DonnÃ©es utilisateur (pour les clients)
   Map<String, dynamic> _userData = {};
 
   // Form controllers
-  // Clés de formulaire séparées pour chaque étape afin d'éviter
-  // la réutilisation d'un même GlobalKey dans l'arbre de widgets.
+  // ClÃ©s de formulaire sÃ©parÃ©es pour chaque Ã©tape afin d'Ã©viter
+  // la rÃ©utilisation d'un mÃªme GlobalKey dans l'arbre de widgets.
   final _formKeyClientInfo = GlobalKey<FormState>();
   final _formKeyStep1 = GlobalKey<FormState>();
   final _formKeyStep2 = GlobalKey<FormState>();
@@ -91,10 +93,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final _professionController = TextEditingController();
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
-  String _selectedBeneficiaireIndicatif = '+225'; // Côte d'Ivoire par défaut
-  String _selectedContactIndicatif = '+225'; // Côte d'Ivoire par défaut
+  String _selectedBeneficiaireIndicatif = '+225'; // CÃ´te d'Ivoire par dÃ©faut
+  final String _selectedContactIndicatif = '+225'; // CÃ´te d'Ivoire par dÃ©faut
   final List<Map<String, String>> _indicatifOptions = [
-    {'code': '+225', 'pays': 'Côte d\'Ivoire'},
+    {'code': '+225', 'pays': 'CÃ´te d\'Ivoire'},
     {'code': '+226', 'pays': 'Burkina Faso'},
   ];
 
@@ -118,33 +120,33 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
   final List<File> _pieceIdentiteFiles = [];
-  // Variable pour éviter les soumissions multiples
+  // Variable pour Ã©viter les soumissions multiples
   bool _isProcessing = false;
 
-  // 📝 SIGNATURE DU CLIENT
+  // ðŸ“ SIGNATURE DU CLIENT
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
 
-  // 🔒 Flag pour afficher le message du capital sous risque UNE SEULE FOIS
-  bool _messageCapitalAffiche = false;
+  // ðŸ”’ Flag pour afficher le message du capital sous risque UNE SEULE FOIS
+  final bool _messageCapitalAffiche = false;
 
-  // 💳 VARIABLES MODE DE PAIEMENT
+  // ðŸ’³ VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
   final _ribUnifiedController =
-      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+      TextEditingController(); // RIB unifiÃ©: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final _nomStructureController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _numeroMatriculeController =
-      TextEditingController(); // Pour Prélèvement à la source
+      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
   final _corisMoneyPhoneController =
       TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
     // 'Orange Money',
-    'Prélèvement à la source',
+    'PrÃ©lÃ¨vement Ã  la source',
     // 'CORIS Money',
   ];
   final List<String> _banques = [
@@ -154,35 +156,35 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     'Ecobank',
     'BOA',
     'UBA',
-    'Société Générale',
+    'SociÃ©tÃ© GÃ©nÃ©rale',
     'BNI',
     'Banque Atlantique',
     'Autre',
   ];
 
-  // 📋 QUESTIONNAIRE MÉDICAL
+  // ðŸ“‹ QUESTIONNAIRE MÃ‰DICAL
   List<Map<String, dynamic>> _questionnaireMedicalQuestions =
-      []; // ✅ Questions de la BD
+      []; // âœ… Questions de la BD
   List<Map<String, dynamic>> _questionnaireMedicalReponses =
-      []; // Réponses locales ou de la BD
+      []; // RÃ©ponses locales ou de la BD
 
-  // Options de lien de parenté
+  // Options de lien de parentÃ©
   final List<String> _lienParenteOptions = [
     'Enfant',
     'Conjoint',
     'Parent',
-    'Frère/Sœur',
+    'FrÃ¨re/SÅ“ur',
     'Ami',
     'Autre'
   ];
-  // Options de périodicité
+  // Options de pÃ©riodicitÃ©
   final List<String> _periodiciteOptions = [
     'Mensuel',
     'Trimestriel',
     'Semestriel',
     'Annuel'
   ];
-  // Tableau tarifaire pour les rentes fixes (identique à simulation-etude.dart)
+  // Tableau tarifaire pour les rentes fixes (identique Ã  simulation-etude.dart)
   final Map<int, Map<int, double>> tarifRenteFixe = {
     18: {
       60: 754.14414,
@@ -966,7 +968,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   DateTime? _dateNaissanceParent;
   int? _clientAgeParent;
 
-  // Contrôleurs pour les informations client (si commercial)
+  // ContrÃ´leurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
   final TextEditingController _clientDateNaissanceController =
@@ -985,35 +987,35 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   String _selectedClientCivilite = 'Monsieur';
   String _selectedClientIndicatif = '+225';
 
-  // Nouvelles variables ajoutées
+  // Nouvelles variables ajoutÃ©es
   int?
-      _calculatedAgeParent; // Âge calculé à partir de la BD si widget.ageParent est null
+      _calculatedAgeParent; // Ã‚ge calculÃ© Ã  partir de la BD si widget.ageParent est null
 
   @override
   void initState() {
     super.initState();
 
-    // ⚡ LISTENER AUTOMATIQUE - DÉSACTIVÉ (message formulaire médical supprimé)
+    // âš¡ LISTENER AUTOMATIQUE - DÃ‰SACTIVÃ‰ (message formulaire mÃ©dical supprimÃ©)
     // _dureeController.addListener(_verifierCapitalSousRisqueAuto);
     // _montantController.addListener(_verifierCapitalSousRisqueAuto);
 
-    // Si on modifie une proposition existante, préremplir avec les données
+    // Si on modifie une proposition existante, prÃ©remplir avec les donnÃ©es
     if (widget.existingData != null) {
       _prefillFromExistingData();
     } else {
-      // Chargez les données utilisateur dès l'initialisation si pas de simulation
+      // Chargez les donnÃ©es utilisateur dÃ¨s l'initialisation si pas de simulation
       if (widget.ageParent == null) {
         _loadUserData().then((data) {
           _calculatedAgeParent =
               _calculateAgeFromBirthDate(data['date_naissance']);
-          _recalculerValeurs(); // Recalculer après chargement
+          _recalculerValeurs(); // Recalculer aprÃ¨s chargement
           if (mounted) {
-            setState(() {}); // Rafraîchir l'UI
+            setState(() {}); // RafraÃ®chir l'UI
           }
         }).catchError((e) {
           if (mounted) {
             _showErrorSnackBar(
-                'Erreur lors du chargement des données utilisateur: $e');
+                'Erreur lors du chargement des donnÃ©es utilisateur: $e');
           }
         });
       } else {
@@ -1028,7 +1030,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
 
-    // ✅ CHARGER LES QUESTIONS DU QUESTIONNAIRE MÉDICAL AU DÉMARRAGE
+    // âœ… CHARGER LES QUESTIONS DU QUESTIONNAIRE MÃ‰DICAL AU DÃ‰MARRAGE
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuestionnaireMedicalQuestions();
     });
@@ -1037,7 +1039,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Vérifier si c'est un commercial qui fait la souscription
+    // VÃ©rifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args['isCommercial'] == true) {
@@ -1047,12 +1049,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         });
       }
 
-      // Si on est en mode modification (avec existingData), pré-remplir tout
+      // Si on est en mode modification (avec existingData), prÃ©-remplir tout
       if (args['existingData'] != null) {
-        // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
-        // On ne fait rien ici pour éviter d'écraser les données
+        // Le prÃ©-remplissage complet est dÃ©jÃ  gÃ©rÃ© dans initState via _prefillFromExistingData
+        // On ne fait rien ici pour Ã©viter d'Ã©craser les donnÃ©es
       }
-      // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
+      // Sinon, prÃ©-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
@@ -1069,7 +1071,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
-        // Gérer la date de naissance du parent
+        // GÃ©rer la date de naissance du parent
         if (clientInfo['date_naissance'] != null) {
           try {
             DateTime? dateNaissance;
@@ -1092,7 +1094,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         maintenant.day < finalDate.day)) {
                   _clientAgeParent = (_clientAgeParent ?? 0) - 1;
                 }
-                // Utiliser l'âge du client pour le calcul
+                // Utiliser l'Ã¢ge du client pour le calcul
                 _calculatedAgeParent = _clientAgeParent;
               });
             }
@@ -1101,7 +1103,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           }
         }
 
-        // Extraire l'indicatif du téléphone si présent
+        // Extraire l'indicatif du tÃ©lÃ©phone si prÃ©sent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
           final parts = telephone.split(' ');
@@ -1130,11 +1132,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _animationController.forward();
-    // Ajouter un délai pour s'assurer que tout est initialisé avant le calcul
+    // Ajouter un dÃ©lai pour s'assurer que tout est initialisÃ© avant le calcul
     Future.delayed(Duration(milliseconds: 100), () {
       _recalculerValeurs();
       if (mounted) {
-        setState(() {}); // Forcer le rafraîchissement de l'interface
+        setState(() {}); // Forcer le rafraÃ®chissement de l'interface
       }
     });
   }
@@ -1143,7 +1145,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     try {
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('❌ Token non trouvé');
+        debugPrint('âŒ Token non trouvÃ©');
         // Retourner un map vide au lieu de lever une exception
         return {};
       }
@@ -1194,12 +1196,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
     final data = widget.existingData!;
 
-    // Détecter si c'est une souscription par commercial (présence de client_info)
+    // DÃ©tecter si c'est une souscription par commercial (prÃ©sence de client_info)
     if (data['client_info'] != null) {
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
 
-      // Pré-remplir les champs client
+      // PrÃ©-remplir les champs client
       _clientNomController.text = clientInfo['nom'] ?? '';
       _clientPrenomController.text = clientInfo['prenom'] ?? '';
       _clientEmailController.text = clientInfo['email'] ?? '';
@@ -1241,7 +1243,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         }
       }
 
-      // Extraire l'indicatif du téléphone si présent
+      // Extraire l'indicatif du tÃ©lÃ©phone si prÃ©sent
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
         final parts = telephone.split(' ');
@@ -1271,14 +1273,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
     }
 
-    // Âge parent
+    // Ã‚ge parent
     if (data['age_parent'] != null) {
       _calculatedAgeParent = data['age_parent'] is int
           ? data['age_parent']
           : int.tryParse(data['age_parent'].toString());
     }
 
-    // Âge enfant
+    // Ã‚ge enfant
     if (data['age_enfant'] != null) {
       _dureeController.text = data['age_enfant'].toString();
     }
@@ -1303,20 +1305,20 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
     }
 
-    // Périodicité
+    // PÃ©riodicitÃ©
     if (data['periodicite'] != null) {
       String periodicite = data['periodicite'].toString().toLowerCase();
       _selectedPeriodicite =
           periodicite[0].toUpperCase() + periodicite.substring(1);
     }
 
-    // Bénéficiaire
+    // BÃ©nÃ©ficiaire
     if (data['beneficiaire'] != null) {
       final benef = data['beneficiaire'];
       _beneficiaireNomController.text = benef['nom'] ?? '';
       if (benef['contact'] != null) {
         final contact = benef['contact'].toString();
-        // Extraire l'indicatif et le numéro
+        // Extraire l'indicatif et le numÃ©ro
         if (contact.startsWith('+')) {
           final parts = contact.split(' ');
           if (parts.length >= 2) {
@@ -1333,7 +1335,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _beneficiaireDateNaissanceController.text =
               DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
         } catch (e) {
-          debugPrint('Erreur parsing date_naissance bénéficiaire: $e');
+          debugPrint('Erreur parsing date_naissance bÃ©nÃ©ficiaire: $e');
         }
       }
       _selectedLienParente = benef['lien_parente'] ?? 'Enfant';
@@ -1383,7 +1385,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
     }
 
-    // 💳 MODE DE PAIEMENT - Pré-remplissage
+    // ðŸ’³ MODE DE PAIEMENT - PrÃ©-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
 
@@ -1391,7 +1393,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
           _banqueController.text = infos['banque'] ?? '';
-          // Pas de reconstruction du RIB unifié nécessaire car les données séparées ne sont plus utilisées
+          // Pas de reconstruction du RIB unifiÃ© nÃ©cessaire car les donnÃ©es sÃ©parÃ©es ne sont plus utilisÃ©es
           _banqueController.text = infos['banque'] ?? '';
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
@@ -1407,14 +1409,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         setState(() {});
       }
 
-      // Charger les réponses questionnaire avec libelle du serveur
+      // Charger les rÃ©ponses questionnaire avec libelle du serveur
       if (widget.subscriptionId != null) {
         _loadQuestionnaireMedicalReponses();
       }
     });
   }
 
-  /// Charger les réponses questionnaire avec libelle du serveur
+  /// Charger les rÃ©ponses questionnaire avec libelle du serveur
   Future<void> _loadQuestionnaireMedicalReponses() async {
     try {
       final questionnaireService = QuestionnaireMedicalService();
@@ -1422,7 +1424,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           await questionnaireService.getReponses(widget.subscriptionId!);
       if (completReponses != null && completReponses.isNotEmpty) {
         debugPrint(
-            '✅ Réponses questionnaire chargées (${completReponses.length} items)');
+            'âœ… RÃ©ponses questionnaire chargÃ©es (${completReponses.length} items)');
         if (mounted) {
           setState(() {
             _questionnaireMedicalReponses = completReponses;
@@ -1430,41 +1432,41 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Erreur lors du chargement des réponses questionnaire: $e');
+      debugPrint('âš ï¸ Erreur lors du chargement des rÃ©ponses questionnaire: $e');
     }
   }
 
   void _prefillFromSimulation() {
-    // Déterminer le mode de souscription
+    // DÃ©terminer le mode de souscription
     if (widget.mode != null) {
       _selectedMode = widget.mode == 'prime' ? 'Mode Prime' : 'Mode Rente';
     } else {
-      _selectedMode = 'Mode Prime'; // Valeur par défaut
+      _selectedMode = 'Mode Prime'; // Valeur par dÃ©faut
     }
 
     // Initialiser la date de naissance du parent depuis la simulation
     if (widget.dateNaissanceParent != null) {
       _dateNaissanceParent = widget.dateNaissanceParent;
-      // Pré-remplir le champ texte avec la date formatée
+      // PrÃ©-remplir le champ texte avec la date formatÃ©e
       _dateNaissanceParentController.text =
           DateFormat('dd/MM/yyyy').format(widget.dateNaissanceParent!);
     }
 
-    // Pré-remplir l'âge de l'enfant si disponible
+    // PrÃ©-remplir l'Ã¢ge de l'enfant si disponible
     if (widget.ageEnfant != null) {
       _dureeController.text = widget.ageEnfant!.toString();
     }
 
-    // Pré-remplir le montant selon le mode
+    // PrÃ©-remplir le montant selon le mode
     if (widget.prime != null && _selectedMode == 'Mode Prime') {
       _montantController.text = widget.prime!.toStringAsFixed(0);
     } else if (widget.rente != null && _selectedMode == 'Mode Rente') {
       _montantController.text = widget.rente!.toStringAsFixed(0);
     }
 
-    // Pré-remplir la périodicité
+    // PrÃ©-remplir la pÃ©riodicitÃ©
     if (widget.periodicite != null) {
-      // Convertir la périodicité du format de la simulation au format de souscription
+      // Convertir la pÃ©riodicitÃ© du format de la simulation au format de souscription
       String periodicite = widget.periodicite!;
       switch (periodicite) {
         case 'mensuel':
@@ -1485,15 +1487,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     } else {
       _selectedPeriodicite = _periodiciteOptions.first;
     }
-    // Date d'effet par défaut (aujourd'hui)
+    // Date d'effet par dÃ©faut (aujourd'hui)
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
 
-    // Mettre à jour la date d'échéance
+    // Mettre Ã  jour la date d'Ã©chÃ©ance
     _updateEcheanceDate();
 
-    // Forcer le recalcul immédiat des valeurs
+    // Forcer le recalcul immÃ©diat des valeurs
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _recalculerValeurs();
       if (mounted) {
@@ -1502,7 +1504,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     });
   }
 
-  // Méthode auxiliaire pour trouver la durée la plus proche
+  // MÃ©thode auxiliaire pour trouver la durÃ©e la plus proche
   int _closestDuree(int mois) {
     final palliers = [
       60,
@@ -1541,7 +1543,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     _beneficiaireContactController.dispose();
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
-    // Dispose des contrôleurs client
+    // Dispose des contrÃ´leurs client
     _clientNomController.dispose();
     _clientPrenomController.dispose();
     _clientDateNaissanceController.dispose();
@@ -1558,7 +1560,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     super.dispose();
   }
 
-  /// ✅ Charger les questions du questionnaire médical au démarrage
+  /// âœ… Charger les questions du questionnaire mÃ©dical au dÃ©marrage
   Future<void> _loadQuestionnaireMedicalQuestions() async {
     try {
       final questionnaireService = QuestionnaireMedicalService();
@@ -1567,15 +1569,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         setState(() {
           _questionnaireMedicalQuestions = questions;
         });
-        debugPrint('✅ Questions chargées: ${questions.length} questions');
+        debugPrint('âœ… Questions chargÃ©es: ${questions.length} questions');
       }
     } catch (e) {
-      debugPrint('⚠️ Erreur lors du chargement des questions: $e');
+      debugPrint('âš ï¸ Erreur lors du chargement des questions: $e');
     }
   }
 
   String _formatMontant(double montant) {
-    // Enlever les décimales - affichage sans virgule
+    // Enlever les dÃ©cimales - affichage sans virgule
     final rounded = montant.round();
     return "${rounded.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
@@ -1594,7 +1596,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   String _formatNumber(double number) {
-    // Enlever les décimales - affichage sans virgule
+    // Enlever les dÃ©cimales - affichage sans virgule
     final rounded = number.round();
     return rounded.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -1621,37 +1623,37 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       if (mounted) {
         _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
-            ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
-            : 'Votre pièce d\'identité a été téléchargée avec succès.');
+            ? '${_pieceIdentiteFiles.length} documents ont Ã©tÃ© tÃ©lÃ©chargÃ©s avec succÃ¨s.'
+            : 'Votre piÃ¨ce d\'identitÃ© a Ã©tÃ© tÃ©lÃ©chargÃ©e avec succÃ¨s.');
       }
     } catch (e) {
       if (mounted) {
         _showErrorSnackBar(
-            'Une erreur s\'est produite lors de la sélection du fichier. Veuillez réessayer.');
+            'Une erreur s\'est produite lors de la sÃ©lection du fichier. Veuillez rÃ©essayer.');
       }
     }
   }
 
-  /// Charge les données utilisateur pour le récapitulatif (uniquement pour les clients)
-  /// Cette méthode est appelée dans le FutureBuilder pour charger les données à la volée
-  /// si elles ne sont pas déjà disponibles dans _userData
+  /// Charge les donnÃ©es utilisateur pour le rÃ©capitulatif (uniquement pour les clients)
+  /// Cette mÃ©thode est appelÃ©e dans le FutureBuilder pour charger les donnÃ©es Ã  la volÃ©e
+  /// si elles ne sont pas dÃ©jÃ  disponibles dans _userData
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
     try {
-      // Si _userData est déjà chargé et non vide, l'utiliser directement
+      // Si _userData est dÃ©jÃ  chargÃ© et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
+        debugPrint('âœ… Utilisation des donnÃ©es utilisateur dÃ©jÃ  chargÃ©es');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('❌ Token non trouvé');
+        debugPrint('âŒ Token non trouvÃ©');
         // Retourner un map vide au lieu de lever une exception
         return {};
       }
 
-      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
-      // Pour les clients, charger les données depuis le profil utilisateur
+      debugPrint('ðŸ”„ Chargement des donnÃ©es utilisateur depuis l\'API...');
+      // Pour les clients, charger les donnÃ©es depuis le profil utilisateur
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -1659,7 +1661,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           'Authorization': 'Bearer $token',
         },
       ).timeout(Duration(seconds: 10), onTimeout: () {
-        debugPrint('⏱️ Timeout lors de la requête API profil');
+        debugPrint('â±ï¸ Timeout lors de la requÃªte API profil');
         throw Exception('Timeout API');
       });
 
@@ -1672,7 +1674,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               data['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
-                '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1689,7 +1691,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
-                  '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
+                  'âœ… DonnÃ©es utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
                 setState(() {
                   _userData = userData;
@@ -1706,7 +1708,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               data['data']['user'] is Map) {
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
-                '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1719,7 +1721,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           if (data.containsKey('id') && data.containsKey('email')) {
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
-                '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
+                'âœ… DonnÃ©es utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData;
@@ -1729,23 +1731,23 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           }
 
           // Aucune correspondance
-          debugPrint('⚠️ Réponse API inattendue (200): ${response.body}');
+          debugPrint('âš ï¸ RÃ©ponse API inattendue (200): ${response.body}');
         } else {
-          debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
+          debugPrint('âš ï¸ Format invalide (non-Map): ${response.body}');
         }
       } else if (response.statusCode == 401) {
-        debugPrint('❌ Non authentifié (401): Token expiré ou invalide');
+        debugPrint('âŒ Non authentifiÃ© (401): Token expirÃ© ou invalide');
       } else {
         debugPrint(
-            '❌ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
+            'âŒ Erreur HTTP ${response.statusCode}: ${response.reasonPhrase} - body: ${response.body}');
       }
 
-      // Fallback vers _userData si la requête échoue - GARANTIR non-null
+      // Fallback vers _userData si la requÃªte Ã©choue - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     } catch (e) {
       debugPrint(
-          '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
+          'âŒ Erreur chargement donnÃ©es utilisateur pour rÃ©capitulatif: $e');
       // Fallback vers _userData en cas d'erreur - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
@@ -1764,7 +1766,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           child: Row(
             children: [
               Icon(Icons.error_outline, color: blanc, size: 24),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1774,15 +1776,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontSize: context.sp(14),
                       ),
                     ),
-                    SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
                     Text(
                       message,
                       style: TextStyle(
                         color: blanc,
-                        fontSize: 12,
+                        fontSize: context.sp(12),
                       ),
                     ),
                   ],
@@ -1800,66 +1802,66 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// 🏥 Vérification du capital sous risque - DÉSACTIVÉE
-  /// (Message formulaire médical supprimé à la demande)
+  /// ðŸ¥ VÃ©rification du capital sous risque - DÃ‰SACTIVÃ‰E
+  /// (Message formulaire mÃ©dical supprimÃ© Ã  la demande)
   Future<bool> _verifierCapitalSousRisque() async {
-    // Fonction désactivée - retourne toujours true pour continuer
+    // Fonction dÃ©sactivÃ©e - retourne toujours true pour continuer
     return true;
 
-    /* CODE ORIGINAL DÉSACTIVÉ
-    debugPrint('\n╔════════════════════════════════════════════════════════════╗');
-    debugPrint('║  🏥 CORIS ÉTUDE - Vérification Capital Sous Risque       ║');
-    debugPrint('╚════════════════════════════════════════════════════════════╝');
+    /* CODE ORIGINAL DÃ‰SACTIVÃ‰
+    debugPrint('\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+    debugPrint('â•‘  ðŸ¥ CORIS Ã‰TUDE - VÃ©rification Capital Sous Risque       â•‘');
+    debugPrint('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     
-    // Pour Coris Étude: Capital sous risque = (Durée cotisation × 0.5 × Rente) + (5 × Rente)
-    // Durée = (17 - âge enfant) × 12 mois
+    // Pour Coris Ã‰tude: Capital sous risque = (DurÃ©e cotisation Ã— 0.5 Ã— Rente) + (5 Ã— Rente)
+    // DurÃ©e = (17 - Ã¢ge enfant) Ã— 12 mois
     final ageEnfant = int.tryParse(_dureeController.text) ?? 0;
     final dureeCotisationMois = ((17 - ageEnfant) * 12).toDouble();
     final rente = _renteCalculee;
     
     final capitalSousRisque = (dureeCotisationMois * 0.5 * rente) + (5 * rente);
     
-    // Déterminer l'âge du parent (_calculatedAgeParent est utilisé pour tous)
+    // DÃ©terminer l'Ã¢ge du parent (_calculatedAgeParent est utilisÃ© pour tous)
     final age = _calculatedAgeParent ?? 0;
     
-    debugPrint('📊 Données de calcul:');
-    debugPrint('   - Âge enfant: $ageEnfant ans');
-    debugPrint('   - Durée cotisation: (17 - $ageEnfant) × 12 = $dureeCotisationMois mois');
+    debugPrint('ðŸ“Š DonnÃ©es de calcul:');
+    debugPrint('   - Ã‚ge enfant: $ageEnfant ans');
+    debugPrint('   - DurÃ©e cotisation: (17 - $ageEnfant) Ã— 12 = $dureeCotisationMois mois');
     debugPrint('   - Rente annuelle: ${_formatNumber(rente)} FCFA');
-    debugPrint('   - Formule: (Durée × 0.5 × Rente) + (5 × Rente)');
-    debugPrint('   - Calcul: ($dureeCotisationMois × 0.5 × ${_formatNumber(rente)}) + (5 × ${_formatNumber(rente)})');
+    debugPrint('   - Formule: (DurÃ©e Ã— 0.5 Ã— Rente) + (5 Ã— Rente)');
+    debugPrint('   - Calcul: ($dureeCotisationMois Ã— 0.5 Ã— ${_formatNumber(rente)}) + (5 Ã— ${_formatNumber(rente)})');
     debugPrint('   - Capital sous risque = ${_formatNumber(capitalSousRisque)} FCFA');
-    debugPrint('   - Âge parent (souscripteur): $age ans');
+    debugPrint('   - Ã‚ge parent (souscripteur): $age ans');
     
-    // Vérifier les conditions
+    // VÃ©rifier les conditions
     bool afficherMessage = false;
     String raison = '';
     
     if (age < 45 && capitalSousRisque > 30000000) {
       afficherMessage = true;
-      raison = 'Âge parent < 45 ans ET Capital > 30M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
+      raison = 'Ã‚ge parent < 45 ans ET Capital > 30M FCFA';
+      debugPrint('âš ï¸  Condition dÃ©clenchÃ©e: $raison');
     } else if (age >= 45 && capitalSousRisque > 15000000) {
       afficherMessage = true;
-      raison = 'Âge parent ≥ 45 ans ET Capital > 15M FCFA';
-      debugPrint('⚠️  Condition déclenchée: $raison');
+      raison = 'Ã‚ge parent â‰¥ 45 ans ET Capital > 15M FCFA';
+      debugPrint('âš ï¸  Condition dÃ©clenchÃ©e: $raison');
     } else {
-      debugPrint('✅ Aucune condition déclenchée - Pas de formulaire médical requis');
+      debugPrint('âœ… Aucune condition dÃ©clenchÃ©e - Pas de formulaire mÃ©dical requis');
       if (age < 45) {
-        debugPrint('   - Âge parent < 45: Capital doit être > 30M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
+        debugPrint('   - Ã‚ge parent < 45: Capital doit Ãªtre > 30M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
       } else {
-        debugPrint('   - Âge parent ≥ 45: Capital doit être > 15M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
+        debugPrint('   - Ã‚ge parent â‰¥ 45: Capital doit Ãªtre > 15M (actuellement: ${_formatNumber(capitalSousRisque)} FCFA)');
       }
     }
     
     if (!afficherMessage) {
-      debugPrint('═══════════════════════════════════════════════════════════\n');
+      debugPrint('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return true; // Pas de message, on peut continuer
     }
     
-    debugPrint('🔔 Affichage du dialog de confirmation...');
+    debugPrint('ðŸ”” Affichage du dialog de confirmation...');
     
-    // Marquer que le message est affiché
+    // Marquer que le message est affichÃ©
     _messageCapitalAffiche = true;
     
     // Afficher le dialog
@@ -1887,7 +1889,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Icône avec fond coloré
+                // IcÃ´ne avec fond colorÃ©
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1900,28 +1902,28 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     size: 48,
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.r(20)),
                 // Titre
-                const Text(
-                  'Formulaire Médical',
+                Text(
+                  'Formulaire MÃ©dical',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: context.sp(24),
                     fontWeight: FontWeight.bold,
                     color: bleuCoris,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
-                const Text(
+                SizedBox(height: context.r(20)),
+                Text(
                   'Souhaitez-vous continuer ?',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.bold,
                     color: bleuCoris,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.r(20)),
                 // Boutons Oui/Non
                 Row(
                   children: [
@@ -1929,7 +1931,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       child: OutlinedButton(
                         onPressed: () async {
                           Navigator.of(context).pop(false); // Fermer le dialog
-                          // Naviguer vers la page de sélection des produits
+                          // Naviguer vers la page de sÃ©lection des produits
                           await Future.delayed(const Duration(milliseconds: 100));
                           if (mounted) {
                             Navigator.of(context).pushNamedAndRemoveUntil(
@@ -1945,17 +1947,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Non',
                           style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 16,
+                            fontSize: context.sp(16),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: context.r(16)),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -1969,11 +1971,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           ),
                           elevation: 4,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Oui',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: context.sp(16),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1988,39 +1990,38 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       },
     );
     
-    // Si l'utilisateur clique "Non", il a déjà été redirigé vers l'accueil
+    // Si l'utilisateur clique "Non", il a dÃ©jÃ  Ã©tÃ© redirigÃ© vers l'accueil
     if (result == false) {
-      debugPrint('❌ Utilisateur a choisi de NE PAS continuer - Retour à l\'accueil');
-      debugPrint('═══════════════════════════════════════════════════════════\n');
+      debugPrint('âŒ Utilisateur a choisi de NE PAS continuer - Retour Ã  l\'accueil');
+      debugPrint('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return false;
     }
     
-    debugPrint('✅ Utilisateur a choisi de CONTINUER la souscription');
-    debugPrint('═══════════════════════════════════════════════════════════\n');
-    return true; // L'utilisateur a cliqué "Continuer"
+    debugPrint('âœ… Utilisateur a choisi de CONTINUER la souscription');
+    debugPrint('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+    return true; // L'utilisateur a cliquÃ© "Continuer"
     */
   }
 
-  /// ⚡ Vérification AUTOMATIQUE - DÉSACTIVÉE
-  /// (Message formulaire médical supprimé à la demande)
-  // ignore: unused_element
+  /// âš¡ VÃ©rification AUTOMATIQUE - DÃ‰SACTIVÃ‰E
+  /// (Message formulaire mÃ©dical supprimÃ© Ã  la demande)
   void _verifierCapitalSousRisqueAuto() {
-    // Fonction désactivée - ne fait plus rien
+    // Fonction dÃ©sactivÃ©e - ne fait plus rien
     return;
   }
 
   Future<void> _nextStep() async {
     debugPrint(
-        '\n🔵 [ÉTUDE] _nextStep() appelé - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
-    // Ajout du questionnaire médical: +1 étape avant le récap
-    // Clients: 0 (params), 1 (bénéficiaire), 2 (mode paiement), 3 (questionnaire médical), 4 (recap)
-    // Commerciaux: 0 (client), 1 (params), 2 (bénéficiaire), 3 (mode paiement), 4 (questionnaire médical), 5 (recap)
+        '\nðŸ”µ [Ã‰TUDE] _nextStep() appelÃ© - Step actuel: $_currentStep, Mode: ${_isCommercial ? "Commercial" : "Client"}');
+    // Ajout du questionnaire mÃ©dical: +1 Ã©tape avant le rÃ©cap
+    // Clients: 0 (params), 1 (bÃ©nÃ©ficiaire), 2 (mode paiement), 3 (questionnaire mÃ©dical), 4 (recap)
+    // Commerciaux: 0 (client), 1 (params), 2 (bÃ©nÃ©ficiaire), 3 (mode paiement), 4 (questionnaire mÃ©dical), 5 (recap)
     final maxStep = _isCommercial ? 5 : 4;
     if (_currentStep < maxStep) {
       bool canProceed = false;
 
       if (_isCommercial) {
-        // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap
+        // Pour les commerciaux: step 0 = infos client, step 1 = paramÃ¨tres, step 2 = bÃ©nÃ©ficiaire, step 3 = mode paiement, step 4 = questionnaire mÃ©dical, step 5 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
@@ -2030,15 +2031,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _recalculerValeurs();
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           debugPrint(
-              '\n🔍 [ÉTUDE Commercial] Étape 3 validée - Lancement vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque avant de passer au questionnaire médical
+              '\nðŸ” [Ã‰TUDE Commercial] Ã‰tape 3 validÃ©e - Lancement vÃ©rification capital sous risque...');
+          // âœ… VÃ©rifier le capital sous risque avant de passer au questionnaire mÃ©dical
           final canContinue = await _verifierCapitalSousRisque();
-          if (!canContinue)
+          if (!canContinue) {
             return; // L'utilisateur a choisi de ne pas continuer
-          // Validation du mode de paiement avant questionnaire médical
+          }
+          // Validation du mode de paiement avant questionnaire mÃ©dical
           canProceed = true;
         } else if (_currentStep == 4) {
-          // Questionnaire médical avant récap — trigger widget validation
+          // Questionnaire mÃ©dical avant rÃ©cap â€” trigger widget validation
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
             debugPrint('[_nextStep] questionnaireValidate returned: $ok');
@@ -2048,7 +2050,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
+                content: Text('Veuillez complÃ©ter le questionnaire mÃ©dical'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -2057,7 +2059,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           canProceed = true;
         }
       } else {
-        // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap
+        // Pour les clients: step 0 = paramÃ¨tres, step 1 = bÃ©nÃ©ficiaire, step 2 = mode paiement, step 3 = questionnaire mÃ©dical, step 4 = recap
         if (_currentStep == 0 && _validateStep1()) {
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
@@ -2065,24 +2067,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _recalculerValeurs();
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
           debugPrint(
-              '\n🔍 [ÉTUDE Client] Étape 2 validée - Vérification capital sous risque...');
-          // ✅ Vérifier le capital sous risque SEULEMENT si pas déjà affiché
+              '\nðŸ” [Ã‰TUDE Client] Ã‰tape 2 validÃ©e - VÃ©rification capital sous risque...');
+          // âœ… VÃ©rifier le capital sous risque SEULEMENT si pas dÃ©jÃ  affichÃ©
           if (!_messageCapitalAffiche) {
             final canContinue = await _verifierCapitalSousRisque();
-            if (!canContinue)
+            if (!canContinue) {
               return; // L'utilisateur a choisi de ne pas continuer
+            }
           }
-          // Validation du mode de paiement avant questionnaire médical
+          // Validation du mode de paiement avant questionnaire mÃ©dical
           canProceed = true;
         } else if (_currentStep == 3) {
-          // Questionnaire médical avant récap — trigger widget validation
+          // Questionnaire mÃ©dical avant rÃ©cap â€” trigger widget validation
           if (_questionnaireValidate != null) {
             final ok = await _questionnaireValidate!();
             if (!ok) return;
           } else if (_questionnaireMedicalReponses.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Veuillez compléter le questionnaire médical'),
+                content: Text('Veuillez complÃ©ter le questionnaire mÃ©dical'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -2123,15 +2126,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       return false;
     }
     if (_clientPrenomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le prénom du client');
+      _showErrorSnackBar('Veuillez saisir le prÃ©nom du client');
       return false;
     }
 
-    // Pour le commercial, vérifier que la date de naissance a bien été saisie à l'étape précédente
-    // (elle est déjà synchronisée dans _dateNaissanceParent)
+    // Pour le commercial, vÃ©rifier que la date de naissance a bien Ã©tÃ© saisie Ã  l'Ã©tape prÃ©cÃ©dente
+    // (elle est dÃ©jÃ  synchronisÃ©e dans _dateNaissanceParent)
     if (_dateNaissanceParent == null) {
       _showErrorSnackBar(
-          'Veuillez saisir la date de naissance du souscripteur à l\'étape précédente');
+          'Veuillez saisir la date de naissance du souscripteur Ã  l\'Ã©tape prÃ©cÃ©dente');
       return false;
     }
 
@@ -2146,24 +2149,24 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _clientAgeParent! < 18 ||
         _clientAgeParent! > 60) {
       _showErrorSnackBar(
-          'Âge du souscripteur non valide (18-60 ans requis). Âge calculé: ${_clientAgeParent ?? 0} ans');
+          'Ã‚ge du souscripteur non valide (18-60 ans requis). Ã‚ge calculÃ©: ${_clientAgeParent ?? 0} ans');
       return false;
     }
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le téléphone du client');
+      _showErrorSnackBar('Veuillez saisir le tÃ©lÃ©phone du client');
       return false;
     }
-    // Utiliser l'âge du client pour le calcul
+    // Utiliser l'Ã¢ge du client pour le calcul
     _calculatedAgeParent = _clientAgeParent;
     return true;
   }
 
   bool _validateStep1() {
-    // Si c'est un client, valider son propre âge
+    // Si c'est un client, valider son propre Ã¢ge
     if (!_isCommercial) {
-      // Si c'est un client, valider son propre âge seulement à l'étape 2
-      // À l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
+      // Si c'est un client, valider son propre Ã¢ge seulement Ã  l'Ã©tape 2
+      // Ã€ l'Ã©tape 1, on ne valide pas l'Ã¢ge car il sera calculÃ© automatiquement
       if (_currentStep == 1) {
         if (_calculatedAgeParent == null || _calculatedAgeParent! <= 0) {
           _showErrorSnackBar(
@@ -2173,7 +2176,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         if (_calculatedAgeParent! < 18 || _calculatedAgeParent! > 60) {
           _showErrorSnackBar(
-              'L\'âge du souscripteur doit être compris entre 18 et 60 ans pour ce produit. Âge calculé: ${_calculatedAgeParent} ans');
+              'L\'Ã¢ge du souscripteur doit Ãªtre compris entre 18 et 60 ans pour ce produit. Ã‚ge calculÃ©: $_calculatedAgeParent ans');
           return false;
         }
       }
@@ -2185,14 +2188,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _selectedPeriodicite == null ||
         _dateEffetContrat == null) {
       _showErrorSnackBar(
-          'Veuillez compléter tous les champs obligatoires avant de continuer.');
+          'Veuillez complÃ©ter tous les champs obligatoires avant de continuer.');
       return false;
     }
 
     final age = int.tryParse(_dureeController.text);
     if (age == null || age < 0 || age > 17) {
       _showErrorSnackBar(
-          'L\'âge de l\'enfant doit être compris entre 0 et 17 ans.');
+          'L\'Ã¢ge de l\'enfant doit Ãªtre compris entre 0 et 17 ans.');
       return false;
     }
 
@@ -2213,30 +2216,30 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
       _showErrorSnackBar(
-          'Veuillez renseigner tous les contacts et informations de bénéficiaire.');
+          'Veuillez renseigner tous les contacts et informations de bÃ©nÃ©ficiaire.');
       return false;
     }
 
-    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
+    // La piÃ¨ce d'identitÃ© n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
-          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
+          'Le tÃ©lÃ©chargement d\'une piÃ¨ce d\'identitÃ© est obligatoire pour continuer.');
       return false;
     }
 
-    // Validation des numéros de téléphone
+    // Validation des numÃ©ros de tÃ©lÃ©phone
     if (!RegExp(r'^[0-9]{8,15}$')
         .hasMatch(_beneficiaireContactController.text)) {
       _showErrorSnackBar(
-          'Le numéro du bénéficiaire semble invalide. Veuillez vérifier.');
+          'Le numÃ©ro du bÃ©nÃ©ficiaire semble invalide. Veuillez vÃ©rifier.');
       return false;
     }
 
     if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
       _showErrorSnackBar(
-          'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
+          'Le numÃ©ro de contact d\'urgence semble invalide. Veuillez vÃ©rifier.');
       return false;
     }
 
@@ -2244,17 +2247,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
       _showErrorSnackBar(
-          'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
+          'Veuillez renseigner le nom/prÃ©nom et le code apporteur du commercial.');
       return false;
     }
 
     return true;
   }
 
-  /// 💳 VALIDATION MODE DE PAIEMENT
+  /// ðŸ’³ VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
     if (_selectedModePaiement == null) {
-      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
+      _showErrorSnackBar('Veuillez sÃ©lectionner un mode de paiement.');
       return false;
     }
 
@@ -2265,7 +2268,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       }
       if (_ribUnifiedController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
+            'Veuillez entrer votre numÃ©ro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
@@ -2277,40 +2280,40 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numéro de téléphone ${_selectedModePaiement}.');
+            'Veuillez entrer votre numÃ©ro de tÃ©lÃ©phone $_selectedModePaiement.');
         return false;
       }
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
         _showErrorSnackBar(
-            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
+            'Le numÃ©ro de tÃ©lÃ©phone semble invalide (8 Ã  10 chiffres attendus).');
         return false;
       }
-      // Validation spécifique pour Orange Money : doit commencer par 07
+      // Validation spÃ©cifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
+          _showErrorSnackBar('Le numÃ©ro Orange Money doit commencer par 07.');
           return false;
         }
       }
-    } else if (_selectedModePaiement == 'Prélèvement à la source') {
+    } else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') {
       if (_nomStructureController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
       if (_numeroMatriculeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
+        _showErrorSnackBar('Veuillez renseigner votre numÃ©ro de matricule');
         return false;
       }
     } else if (_selectedModePaiement == 'CORIS Money') {
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
+        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numéro de téléphone doit contenir au moins 8 chiffres');
+            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
         return false;
       }
     }
@@ -2318,17 +2321,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     return true;
   }
 
-  /// Parse le RIB unifié en ses composantes
+  /// Parse le RIB unifiÃ© en ses composantes
   Map<String, String> _parseRibUnified(String rib) {
     final parts = rib.split('/').map((p) => p.trim()).toList();
     return {
-      'code_guichet': parts.length > 0 ? parts[0] : '',
+      'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
     };
   }
 
-  /// Valide le format du RIB unifié
+  /// Valide le format du RIB unifiÃ©
   bool _validateRibUnified(String rib) {
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
@@ -2343,7 +2346,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
 
-  /// Formate l'entrée RIB en temps réel
+  /// Formate l'entrÃ©e RIB en temps rÃ©el
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -2355,7 +2358,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
-    if (onlyDigits.length > 0) {
+    if (onlyDigits.isNotEmpty) {
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
     if (onlyDigits.length > 5) {
@@ -2388,25 +2391,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           child: Row(
             children: [
               Icon(Icons.check_circle, color: blanc, size: 24),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Succès',
+                      'SuccÃ¨s',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontSize: context.sp(14),
                       ),
                     ),
-                    SizedBox(height: 4),
+                    SizedBox(height: context.r(4)),
                     Text(
                       message,
                       style: TextStyle(
                         color: blanc,
-                        fontSize: 12,
+                        fontSize: context.sp(12),
                       ),
                     ),
                   ],
@@ -2424,11 +2427,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// Assure que le client a signé avant de continuer.
+  /// Assure que le client a signÃ© avant de continuer.
   ///
-  /// Affiche le dialogue de signature à chaque appel afin que l'utilisateur
+  /// Affiche le dialogue de signature Ã  chaque appel afin que l'utilisateur
   /// puisse voir (et modifier) sa signature avant le paiement.
-  /// Retourne `true` si une signature est présente après l'appel.
+  /// Retourne `true` si une signature est prÃ©sente aprÃ¨s l'appel.
   Future<bool> _ensureClientSignature() async {
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
@@ -2447,7 +2450,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     return true;
   }
 
-  /// Affiche d'abord le dialogue de signature (si nécessaire), puis les options de paiement
+  /// Affiche d'abord le dialogue de signature (si nÃ©cessaire), puis les options de paiement
   Future<void> _showSignatureAndPayment() async {
     final hasSignature = await _ensureClientSignature();
     if (!hasSignature) return;
@@ -2474,19 +2477,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// Sauvegarde les données de souscription
+  /// Sauvegarde les donnÃ©es de souscription
   /// Si c'est une souscription commerciale, utilise le client_id du client
-  /// Sinon, utilise l'ID de l'utilisateur connecté
-  /// Si subscriptionId existe, met à jour la souscription existante
+  /// Sinon, utilise l'ID de l'utilisateur connectÃ©
+  /// Si subscriptionId existe, met Ã  jour la souscription existante
   Future<int> _saveSubscriptionData() async {
     try {
       final subscriptionService = SubscriptionService();
 
-      // Calculer la durée en mois (jusqu'à 17 ans)
+      // Calculer la durÃ©e en mois (jusqu'Ã  17 ans)
       final ageEnfant = int.tryParse(_dureeController.text) ?? 0;
       final dureeMois = ((17 - ageEnfant) * 12).round();
 
-      // Préparer les données de souscription
+      // PrÃ©parer les donnÃ©es de souscription
       final subscriptionData = {
         'product_type': 'coris_etude',
         'duree_mois': dureeMois,
@@ -2525,7 +2528,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         'age_parent': _calculatedAgeParent,
         'date_naissance_parent':
             _dateNaissanceParent?.toIso8601String().split('T').first,
-        // 💳 MODE DE PAIEMENT
+        // ðŸ’³ MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
@@ -2538,7 +2541,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : _selectedModePaiement == 'Prélèvement à la source'
+                : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
@@ -2576,7 +2579,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         };
       }
 
-      // Si on modifie une proposition existante, mettre à jour au lieu de créer
+      // Si on modifie une proposition existante, mettre Ã  jour au lieu de crÃ©er
       final http.Response response;
       if (widget.subscriptionId != null) {
         response = await subscriptionService.updateSubscription(
@@ -2597,7 +2600,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
+      // RETOURNEZ l'ID de la souscription (crÃ©Ã©e ou mise Ã  jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       rethrow; // Correction: utiliser rethrow au lieu de throw
@@ -2618,39 +2621,39 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         throw Exception(responseData['message'] ??
-            'Erreur lors de la mise à jour du statut');
+            'Erreur lors de la mise Ã  jour du statut');
       }
 
       debugPrint(
-          'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
+          'Statut mis Ã  jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-      debugPrint('Erreur mise à jour statut: $e');
+      debugPrint('Erreur mise Ã  jour statut: $e');
       rethrow; // Correction: utiliser rethrow au lieu de throw
     }
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-    // Simulation d'un délai de paiement
+    // Simulation d'un dÃ©lai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
-    // Pour la démo, retournez true pour succès, false pour échec
-    return true; // Changez en false pour tester l'échec
+    // Pour la dÃ©mo, retournez true pour succÃ¨s, false pour Ã©chec
+    return true; // Changez en false pour tester l'Ã©chec
   }
 
   void _processPayment(String paymentMethod) async {
-    // Assurer qu'une signature a bien été collectée avant tout paiement
+    // Assurer qu'une signature a bien Ã©tÃ© collectÃ©e avant tout paiement
     if (_clientSignature == null) {
-      _showErrorSnackBar('Veuillez signer avant de procéder au paiement.');
+      _showErrorSnackBar('Veuillez signer avant de procÃ©der au paiement.');
       return;
     }
 
-    // ⚠️ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
+    // âš ï¸ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
     if (paymentMethod == 'CORIS Money') {
       try {
         // 1. Sauvegarder d'abord la souscription en tant que 'proposition'
         final subscriptionId = await _saveSubscriptionData();
 
-        // 2. Sauvegarder le questionnaire médical si présent
+        // 2. Sauvegarder le questionnaire mÃ©dical si prÃ©sent
         if (_questionnaireMedicalReponses.isNotEmpty) {
           try {
             final questionnaireService = QuestionnaireMedicalService();
@@ -2659,16 +2662,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               reponses: _questionnaireMedicalReponses,
             );
           } catch (e) {
-            debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+            debugPrint('âŒ Erreur sauvegarde questionnaire: $e');
           }
         }
 
-        // 3. Upload du document si présent
+        // 3. Upload du document si prÃ©sent
         if (_pieceIdentite != null) {
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document: $uploadError');
+            debugPrint('âš ï¸ Erreur upload document: $uploadError');
           }
         }
 
@@ -2681,10 +2684,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           builder: (context) => CorisMoneyPaymentModal(
             subscriptionId: subscriptionId,
             montant: _primeCalculee,
-            description: 'Paiement prime CORIS ÉTUDE',
+            description: 'Paiement prime CORIS Ã‰TUDE',
             onPaymentSuccess: () {
               // Le modal se ferme automatiquement
-              // Afficher le message de succès
+              // Afficher le message de succÃ¨s
               _showSuccessDialog(true);
             },
           ),
@@ -2692,13 +2695,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
         return; // Sortir de la fonction
       } catch (e) {
-        _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
+        _showErrorSnackBar('Erreur lors de la prÃ©paration du paiement: $e');
         return;
       }
     }
 
-    // 👇 POUR LES AUTRES MÉTHODES DE PAIEMENT (Wave, Orange Money)
-    // Éviter les soumissions multiples
+    // ðŸ‘‡ POUR LES AUTRES MÃ‰THODES DE PAIEMENT (Wave, Orange Money)
+    // Ã‰viter les soumissions multiples
     if (_isProcessing) return;
 
     setState(() {
@@ -2712,10 +2715,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
 
     try {
-      // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
+      // Ã‰TAPE 1: Sauvegarder la souscription (statut: 'proposition' par dÃ©faut)
       final subscriptionId = await _saveSubscriptionData();
 
-      // ÉTAPE 1.25: Sauvegarder les réponses du questionnaire médical
+      // Ã‰TAPE 1.25: Sauvegarder les rÃ©ponses du questionnaire mÃ©dical
       if (_questionnaireMedicalReponses.isNotEmpty) {
         try {
           final questionnaireService = QuestionnaireMedicalService();
@@ -2724,19 +2727,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             reponses: _questionnaireMedicalReponses,
           );
           debugPrint(
-              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+              'âœ… RÃ©ponses questionnaire mÃ©dical sauvegardÃ©es pour souscription $subscriptionId');
         } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+          debugPrint('âŒ Erreur sauvegarde questionnaire: $e');
         }
       }
 
-      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
+      // Ã‰TAPE 1.5: Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          // On continue mÃªme si l'upload Ã©choue
         }
       }
 
@@ -2750,16 +2753,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           subscriptionId: subscriptionId,
           amount: TestModeHelper.applyTestModeIfNeeded(_primeCalculee,
               context: 'souscription_etude'),
-          description: 'Paiement prime CORIS ÉTUDE',
+          description: 'Paiement prime CORIS Ã‰TUDE',
           onSuccess: () => _showSuccessDialog(true),
         );
         return;
       }
 
-      // ÉTAPE 2: Simuler le paiement
+      // Ã‰TAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
-      // ÉTAPE 3: Mettre à jour le statut selon le résultat du paiement
+      // Ã‰TAPE 3: Mettre Ã  jour le statut selon le rÃ©sultat du paiement
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
 
@@ -2771,7 +2774,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _showSuccessDialog(true);
       } else {
         _showErrorSnackBar(
-            'Paiement échoué. Votre proposition a été sauvegardée.');
+            'Paiement Ã©chouÃ©. Votre proposition a Ã©tÃ© sauvegardÃ©e.');
       }
     } catch (e) {
       if (mounted) {
@@ -2788,7 +2791,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _saveAsProposition() async {
-    // Assurer qu'une signature a bien été collectée avant de sauvegarder
+    // Assurer qu'une signature a bien Ã©tÃ© collectÃ©e avant de sauvegarder
     if (_clientSignature == null) {
       _showErrorSnackBar(
           'Veuillez signer avant de sauvegarder la proposition.');
@@ -2796,10 +2799,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     }
 
     try {
-      // Sauvegarde avec statut 'proposition' par défaut
+      // Sauvegarde avec statut 'proposition' par dÃ©faut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Sauvegarder les réponses du questionnaire médical
+      // Sauvegarder les rÃ©ponses du questionnaire mÃ©dical
       if (_questionnaireMedicalReponses.isNotEmpty) {
         try {
           final questionnaireService = QuestionnaireMedicalService();
@@ -2808,19 +2811,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             reponses: _questionnaireMedicalReponses,
           );
           debugPrint(
-              '✅ Réponses questionnaire médical sauvegardées pour souscription $subscriptionId');
+              'âœ… RÃ©ponses questionnaire mÃ©dical sauvegardÃ©es pour souscription $subscriptionId');
         } catch (e) {
-          debugPrint('❌ Erreur sauvegarde questionnaire: $e');
+          debugPrint('âŒ Erreur sauvegarde questionnaire: $e');
         }
       }
 
-      // Upload du document pièce d'identité si présent
+      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          // On continue mÃªme si l'upload Ã©choue
         }
       }
 
@@ -2830,10 +2833,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     }
   }
 
-  /// Upload le document pièce d'identité vers le serveur
+  /// Upload le document piÃ¨ce d'identitÃ© vers le serveur
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
-      debugPrint('📤 Upload document pour souscription $subscriptionId');
+      debugPrint('ðŸ“¤ Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
@@ -2850,19 +2853,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         final localData = jsonDecode(response.body) as Map<String, dynamic>;
         responseData = localData;
         if (response.statusCode != 200 || !(localData['success'] == true)) {
-          debugPrint('❌ Erreur upload: ${localData['message']}');
+          debugPrint('âŒ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
       }
 
-      // Si le serveur renvoie le subscription mis à jour, récupérer le label original
+      // Si le serveur renvoie le subscription mis Ã  jour, rÃ©cupÃ©rer le label original
       try {
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
           final souscriptiondata = updated['souscriptiondata'];
           if (souscriptiondata != null) {
-            // Le champ peut être stocké sous forme d'objet/d'une string JSON
+            // Le champ peut Ãªtre stockÃ© sous forme d'objet/d'une string JSON
             if (souscriptiondata is Map) {
               _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
             } else if (souscriptiondata is String) {
@@ -2877,13 +2880,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         }
       } catch (e) {
         debugPrint(
-            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
+            'âš ï¸ Impossible de lire piece_identite_label depuis la rÃ©ponse: $e');
       }
 
-      debugPrint('✅ Document uploadé avec succès');
+      debugPrint('âœ… Document uploadÃ© avec succÃ¨s');
     } catch (e) {
-      debugPrint('❌ Exception upload document: $e');
-      // Ne pas bloquer la souscription si l'upload échoue
+      debugPrint('âŒ Exception upload document: $e');
+      // Ne pas bloquer la souscription si l'upload Ã©choue
     }
   }
 
@@ -2936,7 +2939,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   void _updateEcheanceDate() {
     if (_dureeController.text.isNotEmpty && _dateEffetContrat != null) {
       final ageEnfant = int.tryParse(_dureeController.text) ?? 0;
-      // La durée du contrat est de 17 - âge de l'enfant
+      // La durÃ©e du contrat est de 17 - Ã¢ge de l'enfant
       final dureeContratAnnees = 17 - ageEnfant;
       setState(() {
         _dateEcheanceContrat = DateTime(
@@ -3025,7 +3028,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _recalculerValeurs() {
-    // Vérifier que toutes les données nécessaires sont disponibles
+    // VÃ©rifier que toutes les donnÃ©es nÃ©cessaires sont disponibles
     if (_calculatedAgeParent == null ||
         _dureeController.text.isEmpty ||
         _montantController.text.isEmpty ||
@@ -3039,12 +3042,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final montantText = _montantController.text.replaceAll(' ', '');
       final montant = double.parse(montantText);
 
-      // Calculer la durée en mois (jusqu'à 17 ans)
+      // Calculer la durÃ©e en mois (jusqu'Ã  17 ans)
       final ageEnfant = int.parse(_dureeController.text);
       final dureeMois = ((17 - ageEnfant) * 12).round();
       final dureeEffective = _closestDuree(dureeMois);
 
-      // Déterminer le mode de calcul en fonction de _selectedMode
+      // DÃ©terminer le mode de calcul en fonction de _selectedMode
       if (_selectedMode == 'Mode Prime') {
         // Mode Prime: calculer la rente correspondante
         double primeMensuelle =
@@ -3063,12 +3066,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         _renteCalculee = montant;
       }
 
-      // Forcer la mise à jour de l'interface
+      // Forcer la mise Ã  jour de l'interface
       if (mounted) {
         setState(() {});
       }
     } catch (e) {
-      // En cas d'erreur, mettre les valeurs à 0
+      // En cas d'erreur, mettre les valeurs Ã  0
       _primeCalculee = 0;
       _renteCalculee = 0;
       if (mounted) {
@@ -3110,29 +3113,29 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             children: [
                               Icon(Icons.school_outlined,
                                   color: blanc, size: 28),
-                              SizedBox(width: 12),
+                              SizedBox(width: context.r(12)),
                               Text(
-                                'CORIS ÉTUDE',
+                                'CORIS Ã‰TUDE',
                                 style: TextStyle(
                                   color: blanc,
-                                  fontSize: 22,
+                                  fontSize: context.sp(22),
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: context.r(8)),
                           Text(
-                            'Préparez l\'avenir éducatif de vos enfants',
+                            'PrÃ©parez l\'avenir Ã©ducatif de vos enfants',
                             style: TextStyle(
                               color: blanc
-                                  .withAlpha(230), // .withOpacity(0.9) remplacé
-                              fontSize: 14,
+                                  .withAlpha(230), // .withOpacity(0.9) remplacÃ©
+                              fontSize: context.sp(14),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                         ],
                       ),
                     ),
@@ -3162,18 +3165,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   children: _isCommercial
                       ? [
                           _buildStepClientInfo(), // Page 0: Informations client (commercial uniquement)
-                          _buildStep1(), // Page 1: Paramètres de souscription
-                          _buildStep2(), // Page 2: Bénéficiaire/Contact
+                          _buildStep1(), // Page 1: ParamÃ¨tres de souscription
+                          _buildStep2(), // Page 2: BÃ©nÃ©ficiaire/Contact
                           _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStepQuestionnaireMedical(), // Page 4: Questionnaire médical
-                          _buildStep3(), // Page 5: Récapitulatif (Finaliser ouvre modal)
+                          _buildStepQuestionnaireMedical(), // Page 4: Questionnaire mÃ©dical
+                          _buildStep3(), // Page 5: RÃ©capitulatif (Finaliser ouvre modal)
                         ]
                       : [
-                          _buildStep1(), // Page 0: Paramètres de souscription
-                          _buildStep2(), // Page 1: Bénéficiaire/Contact
+                          _buildStep1(), // Page 0: ParamÃ¨tres de souscription
+                          _buildStep2(), // Page 1: BÃ©nÃ©ficiaire/Contact
                           _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStepQuestionnaireMedical(), // Page 3: Questionnaire médical
-                          _buildStep3(), // Page 4: Récapitulatif (Finaliser ouvre modal)
+                          _buildStepQuestionnaireMedical(), // Page 3: Questionnaire mÃ©dical
+                          _buildStep3(), // Page 4: RÃ©capitulatif (Finaliser ouvre modal)
                         ],
                 ),
               ),
@@ -3193,7 +3196,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(8), // .withOpacity(0.03) remplacé
+            color: Colors.black.withAlpha(8), // .withOpacity(0.03) remplacÃ©
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -3215,7 +3218,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           ? [
                               BoxShadow(
                                 color: bleuCoris.withAlpha(
-                                    51), // .withOpacity(0.2) remplacé
+                                    51), // .withOpacity(0.2) remplacÃ©
                                 blurRadius: 4,
                                 offset: Offset(0, 1),
                               ),
@@ -3250,7 +3253,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       size: 16,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     _isCommercial
                         ? (i == 0
@@ -3262,7 +3265,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                     : i == 3
                                         ? 'Paiement'
                                         : i == 4
-                                            ? 'Questionnaire médical'
+                                            ? 'Questionnaire mÃ©dical'
                                             : i == 5
                                                 ? 'Recap'
                                                 : 'Finaliser')
@@ -3273,10 +3276,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                 : i == 2
                                     ? 'Paiement'
                                     : i == 3
-                                        ? 'Questionnaire médical'
+                                        ? 'Questionnaire mÃ©dical'
                                         : 'Recap'),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: context.sp(10),
                       fontWeight:
                           i <= _currentStep ? FontWeight.w600 : FontWeight.w400,
                       color: i <= _currentStep ? bleuCoris : grisTexte,
@@ -3302,7 +3305,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// Page séparée pour les informations client (uniquement pour les commerciaux)
+  /// Page sÃ©parÃ©e pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3327,7 +3330,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       [
                         _buildDropdownField(
                           value: _selectedClientCivilite,
-                          label: 'Civilité',
+                          label: 'CivilitÃ©',
                           icon: Icons.person_outline,
                           items: ['Monsieur', 'Madame', 'Mademoiselle'],
                           onChanged: (value) {
@@ -3336,19 +3339,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientNomController,
                           label: 'Nom du client',
                           icon: Icons.person_outline,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientPrenomController,
-                          label: 'Prénom du client',
+                          label: 'PrÃ©nom du client',
                           icon: Icons.person_outline,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDateField(
                           context: context,
                           controller: _clientDateNaissanceController,
@@ -3359,7 +3362,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               _dateNaissanceParent = date;
                               _clientDateNaissanceController.text =
                                   '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-                              // Calculer l'âge du parent
+                              // Calculer l'Ã¢ge du parent
                               final maintenant = DateTime.now();
                               _clientAgeParent = maintenant.year - date.year;
                               if (maintenant.month < date.month ||
@@ -3372,16 +3375,16 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientLieuNaissanceController,
                           label: 'Lieu de naissance',
                           icon: Icons.location_on,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _clientTelephoneController,
-                          label: 'Téléphone du client',
+                          label: 'TÃ©lÃ©phone du client',
                           selectedIndicatif: _selectedClientIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -3389,35 +3392,35 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientEmailController,
                           label: 'Email du client',
                           icon: Icons.email,
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientAdresseController,
                           label: 'Adresse du client',
                           icon: Icons.home,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientProfessionController,
                           label: 'Profession',
                           icon: Icons.work,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientSecteurActiviteController,
-                          label: "Secteur d'activité",
+                          label: "Secteur d'activitÃ©",
                           icon: Icons.business,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientNumeroPieceController,
-                          label: 'Numéro de pièce d\'identité',
+                          label: 'NumÃ©ro de piÃ¨ce d\'identitÃ©',
                           icon: Icons.badge,
                         ),
                       ],
@@ -3458,7 +3461,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black
-                                .withAlpha(10), // .withOpacity(0.04) remplacé
+                                .withAlpha(10), // .withOpacity(0.04) remplacÃ©
                             blurRadius: 8,
                             offset: Offset(0, 4),
                           ),
@@ -3469,12 +3472,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         children: [
                           Row(
                             children: [
-                              const SizedBox(width: 10),
+                              SizedBox(width: context.r(10)),
                               Expanded(
                                 child: Text(
-                                  "Souscrire à CORIS ÉTUDE",
+                                  "Souscrire Ã  CORIS Ã‰TUDE",
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: context.sp(16),
                                     fontWeight: FontWeight.bold,
                                     color: bleuCoris,
                                   ),
@@ -3482,39 +3485,39 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: context.r(20)),
                           _buildModeDropdown(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           // Masquer le champ date de naissance du parent pour les commerciaux
-                          // Car le client EST le parent, on utilise sa date de naissance déjà saisie
+                          // Car le client EST le parent, on utilise sa date de naissance dÃ©jÃ  saisie
                           if (!_isCommercial) ...[
                             _buildDateNaissanceParentField(),
-                            const SizedBox(height: 16),
+                            SizedBox(height: context.r(16)),
                           ],
                           _buildAgeEnfantField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildPeriodiciteDropdown(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildMontantField(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           _buildDateEffetField(),
-                          SizedBox(height: 16),
+                          SizedBox(height: context.r(16)),
                           if (_calculatedAgeParent != null)
                             Container(
                               padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: vertSucces.withAlpha(
-                                    26), // .withOpacity(0.1) remplacé
+                                    26), // .withOpacity(0.1) remplacÃ©
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Résultats Calculés :',
+                                  Text('RÃ©sultats CalculÃ©s :',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: vertSucces)),
-                                  SizedBox(height: 8),
+                                  SizedBox(height: context.r(8)),
                                   Text(
                                       'Prime : ${_formatMontant(_primeCalculee)}'),
                                   Text(
@@ -3542,7 +3545,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -3551,7 +3554,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: _selectedMode,
+          initialValue: _selectedMode,
           decoration: const InputDecoration(
             border: InputBorder.none,
             labelText: 'Quel montant souhaitez-vous saisir ?',
@@ -3632,7 +3635,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     _dateNaissanceParent = picked;
                     _dateNaissanceParentController.text =
                         DateFormat('dd/MM/yyyy').format(picked);
-                    // Calculer l'âge du parent
+                    // Calculer l'Ã¢ge du parent
                     final now = DateTime.now();
                     int age = now.year - picked.year;
                     if (now.month < picked.month ||
@@ -3662,14 +3665,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Âge de l\'enfant',
+          'Ã‚ge de l\'enfant',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         TextFormField(
           controller: _dureeController,
           keyboardType: TextInputType.number,
@@ -3679,11 +3682,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           },
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'L\'âge est obligatoire';
+              return 'L\'Ã¢ge est obligatoire';
             }
             final age = int.tryParse(value);
             if (age == null || age < 0 || age > 17) {
-              return 'L\'âge doit être entre 0 et 17 ans';
+              return 'L\'Ã¢ge doit Ãªtre entre 0 et 17 ans';
             }
             return null;
           },
@@ -3693,9 +3696,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             hintText: 'saisissez l\'age de votre enfant',
             prefixIcon: Icon(Icons.child_care,
                 size: 20,
-                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacé
+                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacÃ©
             filled: true,
-            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
+            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -3704,17 +3707,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: bleuCoris, width: 1.5),
             ),
-            errorStyle: TextStyle(fontSize: 12),
+            errorStyle: TextStyle(fontSize: context.sp(12)),
           ),
         ),
         if (_dureeController.text.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(top: 4),
             child: Text(
-              'Durée du contrat: ${(17 - (int.tryParse(_dureeController.text) ?? 0))} ans (jusqu\'\u00e0 17 ans)',
+              'DurÃ©e du contrat: ${(17 - (int.tryParse(_dureeController.text) ?? 0))} ans (jusqu\'\u00e0 17 ans)',
               style: TextStyle(
                 color: bleuCoris,
-                fontSize: 12,
+                fontSize: context.sp(12),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -3730,7 +3733,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -3739,11 +3742,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.0),
         child: DropdownButtonFormField<String>(
-          value: _selectedPeriodicite,
+          initialValue: _selectedPeriodicite,
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'Périodicité',
+            labelText: 'PÃ©riodicitÃ©',
           ),
           items: _periodiciteOptions.map((String value) {
             return DropdownMenuItem<String>(
@@ -3775,21 +3778,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         Text(
           label,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         TextFormField(
           controller: _montantController,
           keyboardType: TextInputType.number,
           onChanged: (value) {
-            // Recalculer uniquement quand l'utilisateur arrête de taper
+            // Recalculer uniquement quand l'utilisateur arrÃªte de taper
             _recalculerValeurs();
           },
           onEditingComplete: () {
-            // Formater seulement après la saisie
+            // Formater seulement aprÃ¨s la saisie
             _formatMontantInput();
           },
           decoration: InputDecoration(
@@ -3798,10 +3801,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             hintText: hint,
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20,
-                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacé
+                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacÃ©
             suffixText: 'CFA',
             filled: true,
-            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
+            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -3823,12 +3826,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         Text(
           'Date d\'effet du contrat',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: bleuCoris,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: _selectDateEffet,
           child: AbsorbPointer(
@@ -3841,7 +3844,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color:
-                        bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacé
+                        bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.calendar_today, color: bleuCoris, size: 20),
@@ -3889,19 +3892,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     _buildFormSection(
-                      'Bénéficiaire en cas de décès',
+                      'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s',
                       Icons.family_restroom,
                       [
                         _buildModernTextField(
                           controller: _beneficiaireNomController,
-                          label: 'Nom complet du bénéficiaire',
+                          label: 'Nom complet du bÃ©nÃ©ficiaire',
                           icon: Icons.person_outline,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         // Champ avec indicatif
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
-                          label: 'Contact du bénéficiaire',
+                          label: 'Contact du bÃ©nÃ©ficiaire',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -3909,14 +3912,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             });
                           },
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         GestureDetector(
                           onTap: _selectBeneficiaireDateNaissance,
                           child: AbsorbPointer(
                             child: TextFormField(
                               controller: _beneficiaireDateNaissanceController,
                               decoration: InputDecoration(
-                                hintText: 'Date de naissance du bénéficiaire',
+                                hintText: 'Date de naissance du bÃ©nÃ©ficiaire',
                                 prefixIcon: Icon(Icons.calendar_today,
                                     size: 20,
                                     color: bleuCoris.withAlpha(179)),
@@ -3938,10 +3941,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParente,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -3952,7 +3955,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildFormSection(
                       'Contact d\'urgence',
                       Icons.contact_phone,
@@ -3962,17 +3965,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           label: 'Nom complet',
                           icon: Icons.person_outline,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique (ex: +2250707070707)',
+                          label: 'Contact tÃ©lÃ©phonique (ex: +2250707070707)',
                           icon: Icons.phone,
                           keyboardType: TextInputType.phone,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParenteUrgence,
-                          label: 'Lien de parenté',
+                          label: 'Lien de parentÃ©',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -3983,9 +3986,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     if (!_isCommercial) _buildAssistanceCommercialeSection(),
-                    SizedBox(height: 20),
+                    SizedBox(height: context.r(20)),
                     _buildDocumentUploadSection(),
                   ],
                 ),
@@ -4009,12 +4012,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(14),
             fontWeight: FontWeight.w600,
             color: SouscriptionEtudePageState.bleuCoris,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         Row(
           children: [
             // Dropdown pour l'indicatif (plus petit et discret)
@@ -4037,7 +4040,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                         padding: EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           option['code']!,
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: context.sp(12)),
                         ),
                       ),
                     );
@@ -4050,14 +4053,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 ),
               ),
             ),
-            SizedBox(width: 8),
-            // Champ de texte pour le numéro
+            SizedBox(width: context.r(8)),
+            // Champ de texte pour le numÃ©ro
             Expanded(
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  hintText: 'Numéro de téléphone',
+                  hintText: 'NumÃ©ro de tÃ©lÃ©phone',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: grisLeger),
@@ -4077,10 +4080,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Le numéro de téléphone est obligatoire';
+                    return 'Le numÃ©ro de tÃ©lÃ©phone est obligatoire';
                   }
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-                    return 'Numéro de téléphone invalide';
+                    return 'NumÃ©ro de tÃ©lÃ©phone invalide';
                   }
                   return null;
                 },
@@ -4098,9 +4101,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       Icons.support_agent,
       [
         Text(
-          'Êtes-vous aidé par un commercial pour la souscription ?',
+          'ÃŠtes-vous aidÃ© par un commercial pour la souscription ?',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: context.sp(14),
             fontWeight: FontWeight.w600,
             color: grisTexte,
           ),
@@ -4134,13 +4137,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           },
         ),
         if (_isAideParCommercial) ...[
-          SizedBox(height: 12),
+          SizedBox(height: context.r(12)),
           _buildModernTextField(
             controller: _commercialNomPrenomController,
-            label: 'Nom et prénom du commercial',
+            label: 'Nom et prÃ©nom du commercial',
             icon: Icons.person_search,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           _buildModernTextField(
             controller: _commercialCodeApporteurController,
             label: 'Code apporteur du commercial',
@@ -4159,7 +4162,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacé
+            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacÃ©
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -4171,18 +4174,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Row(
             children: [
               Icon(icon, color: bleuCoris, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: bleuCoris,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           ...children,
         ],
       ),
@@ -4206,7 +4209,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           margin: EdgeInsets.all(8),
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacé
+            color: bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: bleuCoris, size: 20),
@@ -4249,12 +4252,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         Text(
           label,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
             color: SouscriptionEtudePageState.bleuCoris,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: () async {
             final DateTime? picked = await showDatePicker(
@@ -4333,18 +4336,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    // Vérifier si la valeur est valide (null ou dans la liste)
+    // VÃ©rifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
 
     return DropdownButtonFormField<String>(
-      value: validValue,
+      initialValue: validValue,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
           margin: EdgeInsets.all(8),
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacé
+            color: bleuCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: bleuCoris, size: 20),
@@ -4389,7 +4392,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacé
+            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacÃ©
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -4401,18 +4404,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           Row(
             children: [
               Icon(Icons.document_scanner, color: bleuCoris, size: 20),
-              SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               Text(
-                'Pièce d\'identité',
+                'PiÃ¨ce d\'identitÃ©',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
                   color: bleuCoris,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: context.r(16)),
           GestureDetector(
             onTap: _pickDocument,
             child: AnimatedContainer(
@@ -4421,13 +4424,13 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: _pieceIdentite != null
-                    ? vertSucces.withAlpha(26) // .withOpacity(0.1) remplacé
-                    : bleuCoris.withAlpha(13), // .withOpacity(0.05) remplacé
+                    ? vertSucces.withAlpha(26) // .withOpacity(0.1) remplacÃ©
+                    : bleuCoris.withAlpha(13), // .withOpacity(0.05) remplacÃ©
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _pieceIdentite != null
                       ? vertSucces
-                      : bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacé
+                      : bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacÃ©
                   width: 2,
                 ),
               ),
@@ -4444,26 +4447,26 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       key: ValueKey(_pieceIdentite != null),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: context.r(10)),
                   Text(
                     _pieceIdentite != null
-                        ? 'Document ajouté avec succès'
-                        : 'Télécharger votre pièce d\'identité',
+                        ? 'Document ajoutÃ© avec succÃ¨s'
+                        : 'TÃ©lÃ©charger votre piÃ¨ce d\'identitÃ©',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: context.sp(14),
                       fontWeight: FontWeight.w600,
                       color: _pieceIdentite != null ? vertSucces : bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: context.r(6)),
                   Text(
                     _pieceIdentite != null
                         ? _pieceIdentite!.path.split('/').last
-                        : 'Formats acceptés: PDF, JPG, PNG (Max: 5MB)',
+                        : 'Formats acceptÃ©s: PDF, JPG, PNG (Max: 5MB)',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: context.sp(11),
                       color: grisTexte,
                     ),
                   ),
@@ -4476,7 +4479,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// 💳 ÉTAPE MODE DE PAIEMENT
+  /// ðŸ’³ Ã‰TAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -4491,7 +4494,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tête avec gradient
+                  // En-tÃªte avec gradient
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -4513,25 +4516,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           child:
                               const Icon(Icons.payment, color: blanc, size: 32),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: context.r(16)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Mode de Paiement',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: blanc,
-                                  fontSize: 22,
+                                  fontSize: context.sp(22),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
                                 'Comment souhaitez-vous payer vos primes ?',
                                 style: TextStyle(
                                   color: blanc.withAlpha(229),
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                 ),
                               ),
                             ],
@@ -4540,18 +4543,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  SizedBox(height: context.r(30)),
 
-                  // Sélection du mode de paiement
+                  // SÃ©lection du mode de paiement
                   Text(
                     'Mode de paiement *',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                       fontWeight: FontWeight.w600,
                       color: grisTexte,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: context.r(12)),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
@@ -4598,7 +4601,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               },
                             );
                             break;
-                          case 'Prélèvement à la source':
+                          case 'PrÃ©lÃ¨vement Ã  la source':
                             icon = Icons.business;
                             iconColor = Colors.green;
                             break;
@@ -4625,7 +4628,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
-                              // Réinitialiser les champs
+                              // RÃ©initialiser les champs
                               _banqueController.clear();
                               _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
@@ -4662,12 +4665,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                                           Icon(icon,
                                               color: iconColor, size: 28)),
                                 ),
-                                SizedBox(width: 16),
+                                SizedBox(width: context.r(16)),
                                 Expanded(
                                   child: Text(
                                     mode,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: context.sp(16),
                                       fontWeight: isSelected
                                           ? FontWeight.bold
                                           : FontWeight.w500,
@@ -4688,25 +4691,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ),
                   ),
 
-                  // Champs conditionnels selon le mode sélectionné
+                  // Champs conditionnels selon le mode sÃ©lectionnÃ©
                   if (_selectedModePaiement != null) ...[
-                    SizedBox(height: 30),
+                    SizedBox(height: context.r(30)),
 
                     // VIREMENT
                     if (_selectedModePaiement == 'Virement') ...[
                       Text(
                         'Informations Bancaires',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
                       // Nom de la banque
                       DropdownButtonFormField<String>(
-                        value: _selectedBanque,
+                        initialValue: _selectedBanque,
                         decoration: InputDecoration(
                           labelText: 'Nom de la banque *',
                           prefixIcon:
@@ -4734,9 +4737,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           });
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
 
-                      // Champ texte personnalisé si "Autre" est sélectionné
+                      // Champ texte personnalisÃ© si "Autre" est sÃ©lectionnÃ©
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
                           controller: _banqueController,
@@ -4751,25 +4754,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             fillColor: Colors.grey[50],
                           ),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                       ],
 
                       // Informations du RIB
                       Text(
                         'Informations du RIB',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: bleuCoris,
                         ),
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(height: context.r(12)),
 
-                      // RIB Unifié (5 / 11 / 2 chiffres)
+                      // RIB UnifiÃ© (5 / 11 / 2 chiffres)
                       TextField(
                         controller: _ribUnifiedController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro RIB complet *',
+                          labelText: 'NumÃ©ro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
                           prefixIcon:
                               Icon(Icons.account_balance, color: bleuCoris),
@@ -4779,31 +4782,31 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           filled: true,
                           fillColor: Colors.grey[50],
                           helperText:
-                              'Format: Code guichet (5) / Compte (11) / Clé (2)',
+                              'Format: Code guichet (5) / Compte (11) / ClÃ© (2)',
                           helperMaxLines: 2,
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
                         maxLength:
-                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractÃ¨res avec les sÃ©parateurs
                         onChanged: (value) => _formatRibInput(),
                       ),
                     ],
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
-                        'Numéro ${_selectedModePaiement}',
+                        'NumÃ©ro $_selectedModePaiement',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone *',
+                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Padding(
                             padding: const EdgeInsets.all(12.0),
@@ -4834,17 +4837,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       ),
                     ],
 
-                    // PRÉLÈVEMENT À LA SOURCE
-                    if (_selectedModePaiement == 'Prélèvement à la source') ...[
+                    // PRÃ‰LÃˆVEMENT Ã€ LA SOURCE
+                    if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') ...[
                       Text(
-                        'Informations Prélèvement',
+                        'Informations PrÃ©lÃ¨vement',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _nomStructureController,
                         decoration: InputDecoration(
@@ -4858,11 +4861,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           fillColor: Colors.grey[50],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _numeroMatriculeController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de matricule *',
+                          labelText: 'NumÃ©ro de matricule *',
                           hintText: 'Votre matricule',
                           prefixIcon: Icon(Icons.badge, color: Colors.green),
                           border: OutlineInputBorder(
@@ -4877,18 +4880,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     // CORIS MONEY
                     if (_selectedModePaiement == 'CORIS Money') ...[
                       Text(
-                        'Numéro CORIS Money',
+                        'NumÃ©ro CORIS Money',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
                           color: grisTexte,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.r(16)),
                       TextField(
                         controller: _corisMoneyPhoneController,
                         decoration: InputDecoration(
-                          labelText: 'Numéro de téléphone *',
+                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.account_balance_wallet,
@@ -4905,7 +4908,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                     ],
                   ],
 
-                  SizedBox(height: 30),
+                  SizedBox(height: context.r(30)),
 
                   // Note informative
                   Container(
@@ -4919,12 +4922,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                       children: [
                         Icon(Icons.info_outline,
                             color: Colors.blue[700], size: 24),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
+                            'Ces informations seront utilisÃ©es pour le prÃ©lÃ¨vement automatique de vos primes.',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: context.sp(14),
                               color: Colors.blue[900],
                             ),
                           ),
@@ -4941,7 +4944,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     );
   }
 
-  /// Étape du questionnaire médical
+  /// Ã‰tape du questionnaire mÃ©dical
   Widget _buildStepQuestionnaireMedical() {
     return QuestionnaireMedicalDynamicWidget(
       subscriptionId: widget.subscriptionId,
@@ -4955,7 +4958,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _questionnaireMedicalReponses = reponses;
         });
 
-        // Sauvegarder les réponses du questionnaire avant de passer à l'étape suivante
+        // Sauvegarder les rÃ©ponses du questionnaire avant de passer Ã  l'Ã©tape suivante
         try {
           if (widget.subscriptionId != null) {
             final questionnaireService = QuestionnaireMedicalService();
@@ -4963,7 +4966,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               subscriptionId: widget.subscriptionId!,
               reponses: reponses,
             );
-            debugPrint('✅ Questionnaire médical sauvegardé');
+            debugPrint('âœ… Questionnaire mÃ©dical sauvegardÃ©');
 
             // Fetch complete responses with libelle from server
             final completReponses =
@@ -4973,11 +4976,11 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 _questionnaireMedicalReponses = completReponses;
               });
               debugPrint(
-                  '✅ Réponses complètes avec libelle récupérées (${completReponses.length} items)');
+                  'âœ… RÃ©ponses complÃ¨tes avec libelle rÃ©cupÃ©rÃ©es (${completReponses.length} items)');
             }
           }
         } catch (e) {
-          debugPrint('❌ Erreur lors de la sauvegarde du questionnaire: $e');
+          debugPrint('âŒ Erreur lors de la sauvegarde du questionnaire: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content:
@@ -4988,7 +4991,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           return;
         }
 
-        // Validation/save complete — parent will advance after validate returns true
+        // Validation/save complete â€” parent will advance after validate returns true
       },
       onCancel: () {
         _previousStep();
@@ -5011,7 +5014,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
-                        // Pour les clients, attendre le chargement des données
+                        // Pour les clients, attendre le chargement des donnÃ©es
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
@@ -5021,7 +5024,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
                         if (snapshot.hasError) {
                           debugPrint(
-                              'Erreur chargement données récapitulatif: ${snapshot.error}');
+                              'Erreur chargement donnÃ©es rÃ©capitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
                             return _buildRecapContent(userData: _userData);
@@ -5031,21 +5034,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.error, size: 48, color: rougeCoris),
-                                SizedBox(height: 16),
-                                Text('Erreur lors du chargement des données'),
+                                SizedBox(height: context.r(16)),
+                                Text('Erreur lors du chargement des donnÃ©es'),
                                 TextButton(
                                   onPressed: () => setState(() {}),
-                                  child: Text('Réessayer'),
+                                  child: Text('RÃ©essayer'),
                                 ),
                               ],
                             ),
                           );
                         }
 
-                        // Pour les clients, utiliser les données chargées depuis la base de données
+                        // Pour les clients, utiliser les donnÃ©es chargÃ©es depuis la base de donnÃ©es
                         final userData = snapshot.data ?? _userData;
 
-                        // Si userData est vide, recharger les données
+                        // Si userData est vide, recharger les donnÃ©es
                         if (userData.isEmpty && !_isCommercial) {
                           _loadUserDataForRecap().then((data) {
                             if (mounted && data.isNotEmpty) {
@@ -5070,7 +5073,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    // S'assurer que les calculs sont effectués avant d'afficher
+    // S'assurer que les calculs sont effectuÃ©s avant d'afficher
     if (_primeCalculee == 0 || _renteCalculee == 0) {
       _recalculerValeurs();
     }
@@ -5080,10 +5083,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     final duree = int.tryParse(_dureeController.text) ?? 0;
 
     /**
-     * CONSTRUCTION DU RÉCAPITULATIF:
+     * CONSTRUCTION DU RÃ‰CAPITULATIF:
      * 
-     * - Si _isCommercial = true: Utiliser les données des contrôleurs (infos client saisies par le commercial)
-     * - Si _isCommercial = false: Utiliser userData (infos du client connecté depuis la base de données)
+     * - Si _isCommercial = true: Utiliser les donnÃ©es des contrÃ´leurs (infos client saisies par le commercial)
+     * - Si _isCommercial = false: Utiliser userData (infos du client connectÃ© depuis la base de donnÃ©es)
      */
     final displayData = _isCommercial
         ? {
@@ -5107,7 +5110,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         // Afficher les informations du client (toujours dans "Informations Personnelles")
         SubscriptionRecapWidgets.buildPersonalInfoSection(displayData),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
         SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit',
@@ -5115,80 +5118,80 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           vertSucces,
           [
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Produit', 'CORIS ÉTUDE', 'Mode', _selectedMode),
+                'Produit', 'CORIS Ã‰TUDE', 'Mode', _selectedMode),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Âge du parent',
+                'Ã‚ge du parent',
                 _calculatedAgeParent != null
                     ? '$_calculatedAgeParent ans'
-                    : 'Non renseigné',
+                    : 'Non renseignÃ©',
                 'Date de naissance',
                 _dateNaissanceParent != null
                     ? '${_dateNaissanceParent!.day.toString().padLeft(2, '0')}/${_dateNaissanceParent!.month.toString().padLeft(2, '0')}/${_dateNaissanceParent!.year}'
-                    : 'Non renseigné'),
+                    : 'Non renseignÃ©'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Cotisation ${_selectedPeriodicite ?? "Mensuel"}',
                 _formatMontant(primeDisplay),
                 'Rente au terme',
                 _formatMontant(renteDisplay)),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Durée du contrat',
-                '${17 - duree} ans (jusqu\'à 17 ans)',
-                'Périodicité',
+                'DurÃ©e du contrat',
+                '${17 - duree} ans (jusqu\'Ã  17 ans)',
+                'PÃ©riodicitÃ©',
                 _selectedPeriodicite ?? 'Mensuel'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                    : 'Non définie',
-                'Date d\'échéance',
+                    : 'Non dÃ©finie',
+                'Date d\'Ã©chÃ©ance',
                 _dateEcheanceContrat != null
                     ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
-                    : 'Non définie'),
+                    : 'Non dÃ©finie'),
           ],
         ),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
-        // SECTION PARAMÈTRES DE SOUSCRIPTION
+        // SECTION PARAMÃˆTRES DE SOUSCRIPTION
         SubscriptionRecapWidgets.buildRecapSection(
-          'Paramètres de Souscription',
+          'ParamÃ¨tres de Souscription',
           Icons.calculate,
           bleuSecondaire,
           [
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Mode',
                 _selectedMode,
-                'Périodicité',
-                _selectedPeriodicite ?? 'Non sélectionnée'),
+                'PÃ©riodicitÃ©',
+                _selectedPeriodicite ?? 'Non sÃ©lectionnÃ©e'),
             SubscriptionRecapWidgets.buildRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                    : 'Non définie'),
+                    : 'Non dÃ©finie'),
           ],
         ),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
-// SECTION BÉNÉFICIAIRE ET CONTACT D'URGENCE
+// SECTION BÃ‰NÃ‰FICIAIRE ET CONTACT D'URGENCE
 SubscriptionRecapWidgets.buildRecapSection(
-  'Bénéficiaire et Contact d\'urgence',
+  'BÃ©nÃ©ficiaire et Contact d\'urgence',
   Icons.contacts,
   Colors.amber,
   [
-    // 🔹 Bénéficiaire
+    // ðŸ”¹ BÃ©nÃ©ficiaire
     SubscriptionRecapWidgets.buildSubsectionTitle(
-        'Bénéficiaire en cas de décès'),
-    const SizedBox(height: 8),
+        'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s'),
+    SizedBox(height: context.r(8)),
     SubscriptionRecapWidgets.buildCombinedRecapRow(
       'Nom complet',
       _beneficiaireNomController.text.isNotEmpty
           ? _beneficiaireNomController.text
-          : 'Non renseigné',
-      'Lien de parenté',
+          : 'Non renseignÃ©',
+      'Lien de parentÃ©',
       _selectedLienParente.isNotEmpty
           ? _selectedLienParente
-          : 'Non renseigné',
+          : 'Non renseignÃ©',
     ),
     SubscriptionRecapWidgets.buildRecapRow(
       'Date de naissance',
@@ -5196,50 +5199,50 @@ SubscriptionRecapWidgets.buildRecapSection(
           ? '${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/'
             '${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/'
             '${_beneficiaireDateNaissance!.year}'
-          : 'Non renseigné',
+          : 'Non renseignÃ©',
     ),
     SubscriptionRecapWidgets.buildRecapRow(
-      'Téléphone',
+      'TÃ©lÃ©phone',
       _beneficiaireContactController.text.isNotEmpty
           ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-          : 'Non renseigné',
+          : 'Non renseignÃ©',
     ),
 
-    const SizedBox(height: 16),
+    SizedBox(height: context.r(16)),
 
-    // 🔹 Contact d'urgence
+    // ðŸ”¹ Contact d'urgence
     SubscriptionRecapWidgets.buildSubsectionTitle('Contact d\'urgence'),
-    const SizedBox(height: 8),
+    SizedBox(height: context.r(8)),
     SubscriptionRecapWidgets.buildCombinedRecapRow(
       'Nom complet',
       _personneContactNomController.text.isNotEmpty
           ? _personneContactNomController.text
-          : 'Non renseigné',
-      'Lien de parenté',
+          : 'Non renseignÃ©',
+      'Lien de parentÃ©',
       _selectedLienParenteUrgence.isNotEmpty
           ? _selectedLienParenteUrgence
-          : 'Non renseigné',
+          : 'Non renseignÃ©',
     ),
     SubscriptionRecapWidgets.buildRecapRow(
-      'Téléphone',
+      'TÃ©lÃ©phone',
       _personneContactTelController.text.isNotEmpty
           ? _personneContactTelController.text
-          : 'Non renseigné',
+          : 'Non renseignÃ©',
     ),
   ],
 ),
         if (_isAideParCommercial ||
             _commercialNomPrenomController.text.trim().isNotEmpty ||
             _commercialCodeApporteurController.text.trim().isNotEmpty) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: context.r(20)),
           SubscriptionRecapWidgets.buildAssistanceCommercialeSection(
             nomPrenom: _commercialNomPrenomController.text,
             codeApporteur: _commercialCodeApporteurController.text,
           ),
         ],
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
-        // 💳 SECTION MODE DE PAIEMENT
+        // ðŸ’³ SECTION MODE DE PAIEMENT
         if (_selectedModePaiement != null)
           SubscriptionRecapWidgets.buildRecapSection(
             'Mode de Paiement',
@@ -5254,40 +5257,40 @@ SubscriptionRecapWidgets.buildRecapSection(
                 'Mode choisi',
                 _selectedModePaiement!,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.r(8)),
               if (_selectedModePaiement == 'Virement') ...[
                 SubscriptionRecapWidgets.buildRecapRow(
                   'Banque',
                   _banqueController.text.isNotEmpty
                       ? _banqueController.text
-                      : 'Non renseigné',
+                      : 'Non renseignÃ©',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
                   'RIB complet',
                   _ribUnifiedController.text.isNotEmpty
                       ? _ribUnifiedController.text
-                      : 'Non renseigné',
+                      : 'Non renseignÃ©',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[
                 SubscriptionRecapWidgets.buildRecapRow(
-                  'Numéro ${_selectedModePaiement}',
+                  'NumÃ©ro $_selectedModePaiement',
                   _numeroMobileMoneyController.text.isNotEmpty
                       ? _numeroMobileMoneyController.text
-                      : 'Non renseigné',
+                      : 'Non renseignÃ©',
                 ),
               ],
             ],
           ),
 
-        if (_selectedModePaiement != null) const SizedBox(height: 20),
+        if (_selectedModePaiement != null) SizedBox(height: context.r(20)),
 
-        // RÉCAP: Questionnaire médical (questions + réponses)
-        // Passe la liste des questions pour afficher toutes les questions avec réponses
+        // RÃ‰CAP: Questionnaire mÃ©dical (questions + rÃ©ponses)
+        // Passe la liste des questions pour afficher toutes les questions avec rÃ©ponses
         SubscriptionRecapWidgets.buildQuestionnaireMedicalSection(
             _questionnaireMedicalReponses, _questionnaireMedicalQuestions),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
         SubscriptionRecapWidgets.buildDocumentsSection(
           pieceIdentite:
@@ -5308,11 +5311,11 @@ SubscriptionRecapWidgets.buildRecapSection(
           ),
         ),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
 
         SubscriptionRecapWidgets.buildVerificationWarning(),
 
-        const SizedBox(height: 20),
+        SizedBox(height: context.r(20)),
       ],
     );
   }
@@ -5324,7 +5327,7 @@ SubscriptionRecapWidgets.buildRecapSection(
           content: Row(
             children: [
               Icon(Icons.info_outline, color: blanc, size: 20),
-              const SizedBox(width: 12),
+              SizedBox(width: context.r(12)),
               const Expanded(
                 child: Text('Document non disponible'),
               ),
@@ -5360,7 +5363,7 @@ SubscriptionRecapWidgets.buildRecapSection(
         color: blanc,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacé
+            color: Colors.black.withAlpha(13), // .withOpacity(0.05) remplacÃ©
             blurRadius: 20,
             offset: Offset(0, -4),
           ),
@@ -5384,20 +5387,20 @@ SubscriptionRecapWidgets.buildRecapSection(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.arrow_back, color: bleuCoris, size: 20),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text(
-                        'Précédent',
+                        'PrÃ©cÃ©dent',
                         style: TextStyle(
                           color: bleuCoris,
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (_currentStep > 0) SizedBox(width: 16),
+            if (_currentStep > 0) SizedBox(width: context.r(16)),
             Expanded(
               child: ElevatedButton(
                 onPressed: _currentStep == (_isCommercial ? 5 : 4)
@@ -5411,7 +5414,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                   ),
                   elevation: 0,
                   shadowColor:
-                      bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacé
+                      bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacÃ©
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -5423,10 +5426,10 @@ SubscriptionRecapWidgets.buildRecapSection(
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: context.sp(16),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    SizedBox(width: context.r(8)),
                     Icon(
                       _currentStep == (_isCommercial ? 5 : 4)
                           ? Icons.draw
@@ -5444,8 +5447,7 @@ SubscriptionRecapWidgets.buildRecapSection(
     );
   }
 
-  /// Page étape 4: Paiement
-  // ignore: unused_element
+  /// Page Ã©tape 4: Paiement
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -5458,7 +5460,7 @@ SubscriptionRecapWidgets.buildRecapSection(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
-                  // En-tête de finalisation
+                  // En-tÃªte de finalisation
                   Container(
                     padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -5479,31 +5481,31 @@ SubscriptionRecapWidgets.buildRecapSection(
                     child: Column(
                       children: [
                         Icon(Icons.check_circle, color: blanc, size: 56),
-                        SizedBox(height: 16),
+                        SizedBox(height: context.r(16)),
                         Text(
-                          'Souscription Prête !',
+                          'Souscription PrÃªte !',
                           style: TextStyle(
                             color: blanc,
-                            fontSize: 24,
+                            fontSize: context.sp(24),
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
-                          'Toutes vos informations ont été enregistrées',
+                          'Toutes vos informations ont Ã©tÃ© enregistrÃ©es',
                           style: TextStyle(
                             color: blanc.withOpacity(0.9),
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Montant à payer
+                  // Montant Ã  payer
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -5526,39 +5528,39 @@ SubscriptionRecapWidgets.buildRecapSection(
                       children: [
                         Text(
                           _selectedMode == 'prime'
-                              ? 'Prime ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} à payer'
-                              : 'Rente ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} à payer',
+                              ? 'Prime ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} Ã  payer'
+                              : 'Rente ${_selectedPeriodicite?.toLowerCase() ?? 'mensuel'} Ã  payer',
                           style: TextStyle(
                             color: grisTexte,
-                            fontSize: 14,
+                            fontSize: context.sp(14),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: context.r(8)),
                         Text(
                           _formatMontant(
                               double.tryParse(_montantController.text) ?? 0),
                           style: TextStyle(
                             color: vertSucces,
-                            fontSize: 28,
+                            fontSize: context.sp(28),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Titre de la section
                   Text(
                     'Que souhaitez-vous faire maintenant ?',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: context.sp(18),
                       fontWeight: FontWeight.bold,
                       color: bleuCoris,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
 
                   // Option 1: Payer maintenant (avec signature)
                   InkWell(
@@ -5586,7 +5588,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                             ),
                             child: Icon(Icons.payment, color: blanc, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5594,16 +5596,16 @@ SubscriptionRecapWidgets.buildRecapSection(
                                 Text(
                                   'Payer Maintenant',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: blanc,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Finalisez votre souscription avec un paiement immédiat',
+                                  'Finalisez votre souscription avec un paiement immÃ©diat',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: blanc.withOpacity(0.9),
                                   ),
                                 ),
@@ -5616,7 +5618,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: context.r(16)),
 
                   // Option 2: Payer plus tard
                   InkWell(
@@ -5651,7 +5653,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                             child: Icon(Icons.schedule,
                                 color: orangeWarning, size: 32),
                           ),
-                          SizedBox(width: 16),
+                          SizedBox(width: context.r(16)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5659,16 +5661,16 @@ SubscriptionRecapWidgets.buildRecapSection(
                                 Text(
                                   'Payer Plus Tard',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: context.sp(18),
                                     fontWeight: FontWeight.bold,
                                     color: orangeWarning,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: context.r(4)),
                                 Text(
-                                  'Enregistrez votre proposition et payez ultérieurement',
+                                  'Enregistrez votre proposition et payez ultÃ©rieurement',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: context.sp(13),
                                     color: grisTexte,
                                   ),
                                 ),
@@ -5682,7 +5684,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
                   // Note informative
                   Container(
@@ -5696,7 +5698,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info_outline, color: bleuCoris, size: 24),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -5704,16 +5706,16 @@ SubscriptionRecapWidgets.buildRecapSection(
                               Text(
                                 'Information importante',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: context.sp(14),
                                   fontWeight: FontWeight.bold,
                                   color: bleuCoris,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: context.r(4)),
                               Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrÃ©e comme proposition et vous pourrez la finaliser ultÃ©rieurement.',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: context.sp(12),
                                   color: Colors.blue[900],
                                 ),
                               ),
@@ -5723,9 +5725,9 @@ SubscriptionRecapWidgets.buildRecapSection(
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: context.r(24)),
 
-                  // Avertissement de sécurité
+                  // Avertissement de sÃ©curitÃ©
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -5736,12 +5738,12 @@ SubscriptionRecapWidgets.buildRecapSection(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sécurisées et chiffrées.',
+                            'Vos informations de paiement sont sÃ©curisÃ©es et chiffrÃ©es.',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: context.sp(12),
                               color: grisTexte,
                               height: 1.4,
                             ),
@@ -5750,7 +5752,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: context.r(20)),
                 ],
               ),
             ),
@@ -5760,9 +5762,8 @@ SubscriptionRecapWidgets.buildRecapSection(
     );
   }
 
-  /// Widget pour afficher les méthodes de paiement
-  // Méthode non utilisée - conservée pour référence future
-  // ignore: unused_element
+  /// Widget pour afficher les mÃ©thodes de paiement
+  // MÃ©thode non utilisÃ©e - conservÃ©e pour rÃ©fÃ©rence future
   Widget _buildPaymentMethodCard({
     required IconData icon,
     required String title,
@@ -5801,7 +5802,7 @@ SubscriptionRecapWidgets.buildRecapSection(
                 ),
                 child: Icon(icon, color: bleuCoris, size: 24),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -5811,15 +5812,15 @@ SubscriptionRecapWidgets.buildRecapSection(
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: bleuCoris,
-                        fontSize: 14,
+                        fontSize: context.sp(14),
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: context.r(2)),
                     Text(
                       description,
                       style: TextStyle(
                         color: grisTexte,
-                        fontSize: 12,
+                        fontSize: context.sp(12),
                       ),
                     ),
                   ],
@@ -5848,7 +5849,7 @@ class _LoadingDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+              color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
@@ -5865,22 +5866,22 @@ class _LoadingDialog extends StatelessWidget {
                 strokeWidth: 3,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             Text(
               'Traitement en cours',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: context.sp(18),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF002B6B),
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text(
               'Paiement via $paymentMethod...',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 14,
+                fontSize: context.sp(14),
               ),
             ),
           ],
@@ -5904,7 +5905,7 @@ class _SuccessDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+              color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
@@ -5920,7 +5921,7 @@ class _SuccessDialog extends StatelessWidget {
                 color: isPaid
                     ? Color(0xFF10B981).withAlpha(26)
                     : Color(0xFFF59E0B)
-                        .withAlpha(26), // .withOpacity(0.1) remplacé
+                        .withAlpha(26), // .withOpacity(0.1) remplacÃ©
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -5929,33 +5930,33 @@ class _SuccessDialog extends StatelessWidget {
                 size: 40,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: context.r(20)),
             Text(
-              isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
+              isPaid ? 'Souscription RÃ©ussie!' : 'Proposition EnregistrÃ©e!',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF002B6B),
               ),
             ),
-            SizedBox(height: 12),
+            SizedBox(height: context.r(12)),
             Text(
               isPaid
-                  ? 'Félicitations! Votre contrat CORIS ÉTUDE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
-                  : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+                  ? 'FÃ©licitations! Votre contrat CORIS Ã‰TUDE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  : 'Votre proposition a Ã©tÃ© enregistrÃ©e avec succÃ¨s. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 14,
+                fontSize: context.sp(14),
                 height: 1.4,
               ),
             ),
-            SizedBox(height: 24),
+            SizedBox(height: context.r(24)),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Retour à la page d'accueil client
+                  // Retour Ã  la page d'accueil client
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
                 },
@@ -5967,7 +5968,7 @@ class _SuccessDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Retour à l\'accueil',
+                  'Retour Ã  l\'accueil',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -5997,7 +5998,7 @@ class _PaymentBottomSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
             blurRadius: 20,
             offset: Offset(0, -4),
           ),
@@ -6017,23 +6018,24 @@ class _PaymentBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Icon(Icons.payment, color: Color(0xFF002B6B), size: 28),
-                  SizedBox(width: 12),
+                  SizedBox(width: context.r(12)),
                   Text(
                     'Options de Paiement',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: context.sp(22),
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF002B6B),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               _buildPaymentOptionWithImage(
+                context,
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
@@ -6054,7 +6056,7 @@ class _PaymentBottomSheet extends StatelessWidget {
               //   'Paiement par CORIS Money',
               //   () => onPayNow('CORIS Money'),
               // ),
-              SizedBox(height: 24),
+              SizedBox(height: context.r(24)),
               Row(
                 children: [
                   Expanded(child: Divider(color: Colors.grey[300])),
@@ -6071,7 +6073,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                   Expanded(child: Divider(color: Colors.grey[300])),
                 ],
               ),
-              SizedBox(height: 20),
+              SizedBox(height: context.r(20)),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -6087,13 +6089,13 @@ class _PaymentBottomSheet extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.schedule, color: Color(0xFF002B6B)),
-                      SizedBox(width: 8),
+                      SizedBox(width: context.r(8)),
                       Text(
                         'Payer plus tard',
                         style: TextStyle(
                           color: Color(0xFF002B6B),
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: context.sp(16),
                         ),
                       ),
                     ],
@@ -6107,9 +6109,7 @@ class _PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
-
-  // ignore: unused_element
-  Widget _buildPaymentOption(String title, IconData icon, Color color,
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color,
       String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -6121,19 +6121,19 @@ class _PaymentBottomSheet extends StatelessWidget {
           color: Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: Colors.grey.withAlpha(51)), // .withOpacity(0.2) remplacé
+              color: Colors.grey.withAlpha(51)), // .withOpacity(0.2) remplacÃ©
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withAlpha(26), // .withOpacity(0.1) remplacé
+                color: color.withAlpha(26), // .withOpacity(0.1) remplacÃ©
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -6143,15 +6143,15 @@ class _PaymentBottomSheet extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
@@ -6167,9 +6167,7 @@ class _PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
-
-  // ignore: unused_element
-  Widget _buildPaymentOptionWithImage(String title, String imagePath,
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath,
       Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -6197,13 +6195,13 @@ class _PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('❌ Erreur chargement image: $imagePath - $error');
+                  print('âŒ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: context.r(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -6213,15 +6211,15 @@ class _PaymentBottomSheet extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF002B6B),
-                      fontSize: 16,
+                      fontSize: context.sp(16),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: context.r(4)),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: context.sp(12),
                     ),
                   ),
                 ],
@@ -6238,3 +6236,6 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 }
+
+
+

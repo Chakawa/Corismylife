@@ -71,9 +71,9 @@ class ConnectivityBanner extends StatelessWidget {
   final bool isConnected;
 
   const ConnectivityBanner({
-    Key? key,
+    super.key,
     required this.isConnected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +107,9 @@ class ConnectivityBuilder extends StatefulWidget {
   final Widget Function(BuildContext context, bool isConnected) builder;
 
   const ConnectivityBuilder({
-    Key? key,
+    super.key,
     required this.builder,
-  }) : super(key: key);
+  });
 
   @override
   State<ConnectivityBuilder> createState() => _ConnectivityBuilderState();
