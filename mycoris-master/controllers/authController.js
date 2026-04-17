@@ -14,6 +14,25 @@ const bcrypt = require('bcrypt');  // Pour hasher les mots de passe
 const jwt = require('jsonwebtoken');  // Pour créer les tokens JWT
 const pool = require('../db');  // Connexion à la base de données PostgreSQL
 
+function buildActivityUserAgent(reason = 'unknown', userAgent = 'unknown') {
+  const safeReason = String(reason || 'unknown').trim() || 'unknown';
+  const safeUserAgent = String(userAgent || 'unknown').replace(/\s+/g, ' ').trim();
+  return `${safeReason}|${safeUserAgent}`.slice(0, 1000);
+}
+
+async function logUserActivity({
+  userId,
+  type,
+  ipAddress = 'api-request',
+  userAgent = 'unknown',
+  reason = 'manual_logout'
+}) {
+  await pool.query(
+    'INSERT INTO user_activity_logs (user_id, type, ip_address, user_agent) VALUES ($1, $2, $3, $4)',
+    [userId, type, ipAddress, buildActivityUserAgent(reason, userAgent)]
+  );
+}
+
 /**
  * ===============================================
  * DÉTECTION AUTOMATIQUE DU RÔLE UTILISATEUR
@@ -278,8 +297,13 @@ async function registerCommercial(userData) {
  * 4. Génère un token JWT
  * 5. Retourne le token et les informations utilisateur
  */
-async function login(identifier, password) {
+async function login(identifier, password, metadata = {}) {
   console.log('🔐 Tentative de connexion avec:', identifier);
+
+  const {
+    ipAddress = 'api-request',
+    userAgent = 'unknown'
+  } = metadata;
   
   // ============================================
   // ÉTAPE 1 : Déterminer le type d'identifiant
@@ -379,10 +403,13 @@ async function login(identifier, password) {
   // ÉTAPE 3.5 : Logger la connexion
   // ============================================
   try {
-    await pool.query(
-      'INSERT INTO user_activity_logs (user_id, type, ip_address) VALUES ($1, $2, $3)',
-      [user.id, 'login', 'api-request'] // L'IP sera ajoutée plus tard depuis req
-    );
+    await logUserActivity({
+      userId: user.id,
+      type: 'login',
+      ipAddress,
+      userAgent,
+      reason: 'login_success'
+    });
     console.log('📝 Connexion enregistrée dans les logs');
   } catch (logError) {
     console.error('⚠️ Erreur lors de l\'enregistrement de la connexion:', logError);
@@ -436,14 +463,27 @@ async function login(identifier, password) {
  * @param {number} userId - ID de l'utilisateur
  * @param {string} ipAddress - Adresse IP (optionnel)
  */
-async function logout(userId, ipAddress = 'api-request') {
+async function logout(userId, options = {}) {
+  const normalizedOptions = typeof options === 'string'
+    ? { ipAddress: options }
+    : options;
+
+  const {
+    ipAddress = 'api-request',
+    userAgent = 'unknown',
+    reason = 'manual_logout'
+  } = normalizedOptions;
+
   try {
-    await pool.query(
-      'INSERT INTO user_activity_logs (user_id, type, ip_address) VALUES ($1, $2, $3)',
-      [userId, 'logout', ipAddress]
-    );
-    console.log('📝 Déconnexion enregistrée pour utilisateur:', userId);
-    return { success: true, message: 'Déconnexion enregistrée' };
+    await logUserActivity({
+      userId,
+      type: 'logout',
+      ipAddress,
+      userAgent,
+      reason
+    });
+    console.log(`📝 Déconnexion enregistrée pour utilisateur: ${userId} (${reason})`);
+    return { success: true, message: 'Déconnexion enregistrée', reason };
   } catch (error) {
     console.error('❌ Erreur lors de l\'enregistrement de la déconnexion:', error);
     throw error;

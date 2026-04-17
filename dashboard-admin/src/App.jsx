@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
@@ -15,10 +15,15 @@ import ActivitiesPage from './pages/ActivitiesPage'
 import SimulationsPage from './pages/SimulationsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import permissionsService from './services/permissions.service'
+import { authService } from './services/api.service'
+
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const inactivityTimerRef = useRef(null)
+  const logoutInProgressRef = useRef(false)
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà connecté
@@ -31,6 +36,54 @@ function App() {
     setIsLoading(false)
   }, [])
 
+  const performLogout = async (reason = 'manual_logout') => {
+    if (logoutInProgressRef.current) return
+
+    logoutInProgressRef.current = true
+    try {
+      await authService.logout(reason)
+    } finally {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current)
+      }
+      permissionsService.clearCache()
+      setIsAuthenticated(false)
+      logoutInProgressRef.current = false
+    }
+  }
+
+  const resetInactivityTimer = () => {
+    if (!isAuthenticated) return
+
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current)
+    }
+
+    inactivityTimerRef.current = setTimeout(() => {
+      performLogout('system_timeout')
+    }, SESSION_TIMEOUT_MS)
+  }
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current)
+      }
+      return
+    }
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, resetInactivityTimer, true))
+    resetInactivityTimer()
+
+    return () => {
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetInactivityTimer, true))
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current)
+      }
+    }
+  }, [isAuthenticated])
+
   const handleLogin = () => {
     setIsAuthenticated(true)
     // Charger les permissions après connexion
@@ -38,9 +91,7 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    permissionsService.clearCache()
-    setIsAuthenticated(false)
+    performLogout('manual_logout')
   }
 
   if (isLoading) {

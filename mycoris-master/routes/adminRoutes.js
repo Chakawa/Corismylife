@@ -348,7 +348,8 @@ router.get('/users', async (req, res) => {
         suspendeur.nom as suspendeur_nom,
         suspendeur.prenom as suspendeur_prenom,
         (SELECT MAX(created_at) FROM user_activity_logs WHERE user_id = u.id AND type = 'login') as derniere_connexion,
-        (SELECT MAX(created_at) FROM user_activity_logs WHERE user_id = u.id AND type = 'logout') as derniere_deconnexion
+        (SELECT MAX(created_at) FROM user_activity_logs WHERE user_id = u.id AND type = 'logout') as derniere_deconnexion,
+        (SELECT user_agent FROM user_activity_logs WHERE user_id = u.id AND type = 'logout' ORDER BY created_at DESC LIMIT 1) as derniere_deconnexion_detail
       FROM users u
       LEFT JOIN users suspendeur ON u.suspendu_par = suspendeur.id
       WHERE 1=1
@@ -1806,7 +1807,7 @@ router.post('/notifications/create', async (req, res) => {
     
     for (const admin of admins.rows) {
       await pool.query(
-        `INSERT INTO notifications (admin_id, type, title, message, reference_id, reference_type, action_url)
+        `INSERT INTO notifications_admin (admin_id, type, title, message, reference_id, reference_type, action_url)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [admin.id, type, title, message, reference_id, reference_type, action_url]
       );
@@ -1844,13 +1845,24 @@ router.post('/users/:id/suspend', async (req, res) => {
       [raison || 'Aucune raison spécifiée', adminId, id]
     );
 
+    // Enregistrer une déconnexion système immédiate visible côté admin
+    await client.query(
+      `INSERT INTO user_activity_logs (user_id, type, ip_address, user_agent)
+       VALUES ($1, 'logout', $2, $3)`,
+      [
+        id,
+        req.ip || req.headers['x-forwarded-for'] || 'admin-panel',
+        `account_suspended|admin:${adminId}|${String(raison || 'Non spécifiée').slice(0, 180)}`
+      ]
+    );
+
     // Créer notification pour tous les admins
     const admins = await client.query("SELECT id FROM users WHERE role IN ('super_admin', 'admin', 'moderation')");
     
     for (const admin of admins.rows) {
       await client.query(
-        `INSERT INTO notifications (admin_id, type, title, message, reference_id, reference_type, action_url, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+        `INSERT INTO notifications_admin (admin_id, type, title, message, reference_id, reference_type, action_url, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
         [
           admin.id,
           'user_action',

@@ -81,7 +81,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 
 // Pages de reponse Wave Payment (success/error)
-app.use(express.json());
+// Le parsing JSON global est déjà configuré plus haut via bodyParser.json().
 app.use('/api/payment', require('./routes/waveResponseRoutes'));
 
 app.get('/api/config/support', (_, res) => {

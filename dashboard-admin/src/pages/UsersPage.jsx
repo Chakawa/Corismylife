@@ -64,6 +64,20 @@ export default function UsersPage() {
     }
   }
 
+  const getLogoutTypeLabel = (detail) => {
+    const normalizedDetail = String(detail || '').toLowerCase()
+
+    if (normalizedDetail.startsWith('system_timeout|')) {
+      return 'Système (5 min)'
+    }
+
+    if (normalizedDetail.startsWith('manual_logout|')) {
+      return 'Utilisateur'
+    }
+
+    return null
+  }
+
   const handleCreateUser = async (e) => {
     e.preventDefault()
     try {
@@ -417,14 +431,21 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {user.derniere_deconnexion ? (
-                        <span className="text-xs">
-                          {new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
-                            day: '2-digit', 
-                            month: '2-digit',
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-xs">
+                            {new Date(user.derniere_deconnexion).toLocaleString('fr-FR', { 
+                              day: '2-digit', 
+                              month: '2-digit',
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                          {getLogoutTypeLabel(user.derniere_deconnexion_detail) && (
+                            <span className="text-[11px] text-blue-600 font-medium">
+                              {getLogoutTypeLabel(user.derniere_deconnexion_detail)}
+                            </span>
+                          )}
+                        </div>
                       ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">

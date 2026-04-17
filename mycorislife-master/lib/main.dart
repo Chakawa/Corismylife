@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mycorislife/config/routes.dart';
 import 'package:mycorislife/config/theme.dart';
+import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
 import 'package:mycorislife/services/download_notification_service.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,23 @@ Future<void> main() async {
 
   // Initialiser les notifications de téléchargement
   await DownloadNotificationService.initialize();
+
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final logicalSize = view.physicalSize / view.devicePixelRatio;
+  final isTablet = logicalSize.shortestSide >= 600;
+
+  await SystemChrome.setPreferredOrientations(
+    isTablet
+        ? const [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]
+        : const [
+            DeviceOrientation.portraitUp,
+          ],
+  );
 
   runApp(const MyCorisLifeApp());
 }
@@ -32,8 +50,13 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
 
   // Variables pour gérer le timeout de reconnexion
   DateTime? _pausedTime;
+  Timer? _inactivityTimer;
+  Timer? _sessionCheckTimer;
+  bool _isForcingReconnection = false;
   static const Duration _sessionTimeout =
-      Duration(minutes: 5); // 5 minutes d'inactivité en arrière-plan
+      Duration(minutes: 5); // 5 minutes d'inactivité
+  static const Duration _sessionCheckInterval =
+      Duration(seconds: 10); // vérification active côté serveur
 
   // Channel natif pour détecter le verrouillage d'écran
   static const MethodChannel _screenLockChannel =
@@ -44,10 +67,14 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initScreenLockListener();
+    _resetInactivityTimer();
+    _startSessionStatusMonitoring();
   }
 
   @override
   void dispose() {
+    _inactivityTimer?.cancel();
+    _sessionCheckTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -70,8 +97,60 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
         '✅ Listener natif initialisé pour verrouillage d\'écran (DÉSACTIVÉ)');
   }
 
-  void _forceReconnection(String reason) {
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(_sessionTimeout, () async {
+      final token = await AuthService.getToken();
+      if (token == null) return;
+      _forceReconnection(
+        'Session expirée après 5 minutes d\'inactivité',
+        logoutReason: 'system_timeout',
+      );
+    });
+  }
+
+  void _startSessionStatusMonitoring() {
+    _sessionCheckTimer?.cancel();
+    _sessionCheckTimer = Timer.periodic(_sessionCheckInterval, (_) async {
+      if (_isForcingReconnection) return;
+
+      final token = await AuthService.getToken();
+      if (token == null) return;
+
+      final sessionState = await AuthService.checkSessionStatus();
+      if (sessionState['authenticated'] == false) {
+        final isSuspended = sessionState['suspended'] == true;
+        await _forceReconnection(
+          isSuspended
+              ? 'Votre compte a été suspendu par un administrateur'
+              : 'Votre session a été fermée par le système',
+          logoutReason:
+              isSuspended ? 'account_suspended' : 'system_forced_logout',
+        );
+      }
+    });
+  }
+
+  Future<void> _forceReconnection(String reason,
+      {String logoutReason = 'system_timeout'}) async {
+    if (_isForcingReconnection) return;
+    _isForcingReconnection = true;
+
     debugPrint('🔒 $reason - reconnexion requise');
+
+    try {
+      final token = await AuthService.getToken();
+      if (token != null) {
+        await AuthService.logout(reason: logoutReason);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Impossible d\'enregistrer la déconnexion automatique: $e');
+    }
+
+    if (!mounted) {
+      _isForcingReconnection = false;
+      return;
+    }
 
     // Forcer la reconnexion
     _navigatorKey.currentState?.pushNamedAndRemoveUntil(
@@ -81,19 +160,25 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
 
     // Afficher un message
     Future.delayed(const Duration(milliseconds: 500), () {
-      final context = _navigatorKey.currentContext;
-      if (context != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                reason.contains('écran') || reason.contains('verrouillé')
-                    ? 'Veuillez vous reconnecter pour des raisons de sécurité.'
-                    : 'Votre session a expiré. Veuillez vous reconnecter.'),
-            backgroundColor: const Color(0xFF002B6B),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+      if (!mounted || _navigatorKey.currentContext == null) {
+        _isForcingReconnection = false;
+        return;
       }
+
+      final messenger =
+          ScaffoldMessenger.maybeOf(_navigatorKey.currentContext!);
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(reason.toLowerCase().contains('suspend')
+              ? 'Votre compte a été suspendu. Reconnexion impossible tant qu’il n’est pas réactivé.'
+              : reason.contains('écran') || reason.contains('verrouillé')
+                  ? 'Veuillez vous reconnecter pour des raisons de sécurité.'
+                  : 'Votre session a expiré. Veuillez vous reconnecter.'),
+          backgroundColor: const Color(0xFF002B6B),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      _isForcingReconnection = false;
     });
   }
 
@@ -110,6 +195,7 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
     if (state == AppLifecycleState.paused) {
       // L'app passe en arrière-plan : enregistrer l'heure de début
       _pausedTime = DateTime.now();
+      _inactivityTimer?.cancel();
       debugPrint('⏸️ App mise en arrière-plan à $_pausedTime');
     } else if (state == AppLifecycleState.resumed) {
       // L'app revient au premier plan
@@ -127,13 +213,18 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
           debugPrint(
               '🔒 Session expirée après ${timeInBackground.inMinutes} minutes - reconnexion requise');
           _forceReconnection(
-              'Session expirée (${timeInBackground.inMinutes} minutes)');
+            'Session expirée (${timeInBackground.inMinutes} minutes)',
+            logoutReason: 'system_timeout',
+          );
         } else {
           debugPrint(
               '✅ Session toujours valide (${timeInBackground.inMinutes}min ${timeInBackground.inSeconds % 60}s) - pas de reconnexion nécessaire');
+          _resetInactivityTimer();
         }
 
         _pausedTime = null;
+      } else {
+        _resetInactivityTimer();
       }
     }
   }
@@ -155,7 +246,12 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
         final clampedScale = mq.textScaler.scale(1.0).clamp(0.85, 1.10);
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(clampedScale)),
-          child: _AppResponsiveShell(child: child!),
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) => _resetInactivityTimer(),
+            onPointerMove: (_) => _resetInactivityTimer(),
+            child: _AppResponsiveShell(child: child!),
+          ),
         );
       },
       // Configuration de la localisation en français
@@ -182,11 +278,16 @@ class _AppResponsiveShell extends StatelessWidget {
     final mq = MediaQuery.of(context);
     final width = mq.size.width;
 
-    // Sur tablette/desktop, on centre le contenu avec une largeur max cohérente.
+    // Sur tablette et grands écrans, on utilise bien toute la largeur
+    // disponible pour éviter l'effet "colonne étroite".
     if (width >= 600) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+      final horizontalPadding = width >= 1024 ? 24.0 : 16.0;
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 8,
+          ),
           child: child,
         ),
       );

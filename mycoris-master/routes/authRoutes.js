@@ -369,7 +369,10 @@ router.post('/login', async (req, res) => {
       console.log('🔍 Type détecté:', email.includes('@') ? 'EMAIL' : 'TÉLÉPHONE');
       
       // Appeler la fonction login du contrôleur (accepte téléphone OU email)
-      const result = await authController.login(email, password);
+      const result = await authController.login(email, password, {
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown'
+      });
       
       console.log('✅ Connexion réussie pour:', result.user.email);
       
@@ -1234,7 +1237,11 @@ router.post('/logout', verifyToken, async (req, res) => {
   
   try {
     if (authController && authController.logout) {
-      await authController.logout(req.user.id, req.ip || 'unknown');
+      await authController.logout(req.user.id, {
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown',
+        reason: req.body?.reason || 'manual_logout'
+      });
     }
     
     res.json({ 

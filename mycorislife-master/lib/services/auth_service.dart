@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
@@ -169,7 +170,7 @@ class AuthService {
   /// @returns true si l'email existe déjà, false sinon
   static Future<bool> checkEmailExists(String email) async {
     if (email.isEmpty) return false;
-    
+
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/auth/check-email'),
@@ -196,7 +197,8 @@ class AuthService {
   /// @param telephone Le numéro de téléphone
   /// @param userData Les données utilisateur à stocker temporairement
   /// @returns Le code OTP (en développement seulement)
-  static Future<String?> sendOtp(String telephone, Map<String, dynamic> userData) async {
+  static Future<String?> sendOtp(
+      String telephone, Map<String, dynamic> userData) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/auth/send-otp'),
@@ -214,7 +216,7 @@ class AuthService {
           return data['otpCode'];
         }
       }
-      
+
       throw Exception('Erreur lors de l\'envoi du code OTP');
     } catch (e) {
       throw Exception('Impossible d\'envoyer le code OTP: ${e.toString()}');
@@ -228,7 +230,8 @@ class AuthService {
   ///
   /// @param telephone Le numéro de téléphone
   /// @param otpCode Le code OTP à vérifier
-  static Future<void> verifyOtpAndRegister(String telephone, String otpCode) async {
+  static Future<void> verifyOtpAndRegister(
+      String telephone, String otpCode) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/auth/verify-otp'),
@@ -381,11 +384,69 @@ class AuthService {
   }
 
   /// ==========================================
+  /// VÉRIFIER SI LA SESSION EST TOUJOURS ACTIVE
+  /// ==========================================
+  /// Interroge le backend pour savoir si le token est encore valide
+  /// et si le compte n'a pas été suspendu par un administrateur.
+  static Future<Map<String, dynamic>> checkSessionStatus() async {
+    final token = await getToken();
+    if (token == null) {
+      return {
+        'authenticated': false,
+        'message': 'Aucun token trouvé',
+      };
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/auth/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        return {
+          'authenticated': true,
+          'message': 'Session active',
+        };
+      }
+
+      String message = 'Session invalide';
+      try {
+        final data = jsonDecode(response.body);
+        if (data is Map && data['message'] != null) {
+          message = data['message'].toString();
+        }
+      } catch (_) {
+        if (response.body.isNotEmpty) {
+          message = response.body;
+        }
+      }
+
+      return {
+        'authenticated': false,
+        'statusCode': response.statusCode,
+        'message': message,
+        'suspended': message.toLowerCase().contains('suspend'),
+      };
+    } catch (e) {
+      // Ne pas forcer de déconnexion sur un simple problème réseau temporaire.
+      debugPrint('⚠️ Vérification de session ignorée: $e');
+      return {
+        'authenticated': true,
+        'message': 'Vérification différée',
+      };
+    }
+  }
+
+  /// ==========================================
   /// DÉCONNEXION DE L'UTILISATEUR
   /// ==========================================
   /// Déconnecte l'utilisateur en supprimant le token et les données utilisateur
   /// du stockage sécurisé. Enregistre aussi la déconnexion sur le serveur.
-  static Future<void> logout() async {
+  static Future<void> logout({String reason = 'manual_logout'}) async {
     try {
       // Enregistrer la déconnexion sur le serveur
       final token = await getToken();
@@ -399,14 +460,17 @@ class AuthService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: json.encode({'userId': user['id']}),
+            body: json.encode({
+              'userId': user['id'],
+              'reason': reason,
+            }),
           );
-          print('✅ Déconnexion enregistrée sur le serveur');
+          debugPrint('✅ Déconnexion enregistrée sur le serveur ($reason)');
         }
       }
     } catch (e) {
       // Continuer même si l'appel API échoue (ex: pas de connexion Internet)
-      print('⚠️ Erreur lors de l\'enregistrement de la déconnexion: $e');
+      debugPrint('⚠️ Erreur lors de l\'enregistrement de la déconnexion: $e');
     } finally {
       // Supprimer le token JWT et les données utilisateur (local)
       await _storage.delete(key: _tokenKey);

@@ -10,8 +10,14 @@ export const authService = {
     throw new Error('Connexion échouée')
   },
 
-  logout: () => {
-    localStorage.removeItem('adminToken')
+  logout: async (reason = 'manual_logout') => {
+    try {
+      await api.post('/auth/logout', { reason })
+    } catch (error) {
+      console.warn('Erreur lors de l\'enregistrement de la déconnexion admin:', error)
+    } finally {
+      localStorage.removeItem('adminToken')
+    }
   },
 
   getCurrentUser: async () => {

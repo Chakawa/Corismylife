@@ -7,6 +7,7 @@
 /// ============================================
 
 const jwt = require('jsonwebtoken');
+const pool = require('../db');
 
 /**
  * Middleware de vérification du token JWT
@@ -18,7 +19,7 @@ const jwt = require('jsonwebtoken');
  * @param {Function} next - Fonction suivante
  * @returns {void}
  */
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   // ===================================
   // ÉTAPE 1 : RÉCUPÉRER LE TOKEN
   // ===================================
@@ -44,13 +45,41 @@ function verifyToken(req, res, next) {
   try {
     // Vérifier et décoder le token avec la clé secrète
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userResult = await pool.query(
+      `SELECT id, email, role, code_apporteur, est_suspendu, raison_suspension
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [decoded.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      console.log('❌ Utilisateur introuvable pour le token:', decoded.id);
+      return res.status(401).json({
+        success: false,
+        message: 'Utilisateur introuvable ou supprimé'
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    if (user.est_suspendu) {
+      console.log('⛔ Compte suspendu pour utilisateur:', user.email);
+      return res.status(403).json({
+        success: false,
+        suspended: true,
+        forceLogout: true,
+        message: 'Votre compte a été suspendu',
+        reason: user.raison_suspension || 'Aucune raison spécifiée'
+      });
+    }
     
     // Le token est valide, on ajoute les infos utilisateur à req
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      code_apporteur: decoded.code_apporteur
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      code_apporteur: user.code_apporteur
     };
     
     console.log('✅ Token valide pour utilisateur:', req.user.email);
@@ -131,7 +160,7 @@ function requireRole(roles) {
  * @param {Function} next - Fonction suivante
  * @returns {void}
  */
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   
@@ -144,11 +173,25 @@ function optionalAuth(req, res, next) {
   // Si token présent, on vérifie
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userResult = await pool.query(
+      `SELECT id, email, role, code_apporteur, est_suspendu
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [decoded.id]
+    );
+
+    if (userResult.rows.length === 0 || userResult.rows[0].est_suspendu) {
+      console.log('⚠️ Auth optionnelle ignorée: utilisateur introuvable ou suspendu');
+      return next();
+    }
+
+    const user = userResult.rows[0];
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      code_apporteur: decoded.code_apporteur
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      code_apporteur: user.code_apporteur
     };
     console.log('✅ Token valide (auth optionnelle) pour:', req.user.email);
   } catch (error) {

@@ -19,7 +19,24 @@ exports.saveSimulation = async (req, res) => {
     } = req.body;
 
     // Récupérer l'user_id si l'utilisateur est connecté
-    const user_id = req.user ? req.user.id : null;
+    let user_id = null;
+
+    if (req.user?.id) {
+      try {
+        const userCheck = await pool.query(
+          'SELECT id FROM users WHERE id = $1 LIMIT 1',
+          [req.user.id]
+        );
+
+        if (userCheck.rows.length > 0) {
+          user_id = req.user.id;
+        } else {
+          console.warn(`⚠️ Utilisateur ${req.user.id} introuvable dans la base active, simulation enregistrée en anonyme`);
+        }
+      } catch (userCheckError) {
+        console.warn('⚠️ Vérification utilisateur impossible, simulation enregistrée en anonyme:', userCheckError.message);
+      }
+    }
     
     // Récupérer l'IP et le user agent
     const ip_address = req.ip || req.connection.remoteAddress;
@@ -34,7 +51,7 @@ exports.saveSimulation = async (req, res) => {
       RETURNING id
     `;
 
-    const result = await pool.query(query, [
+    const values = [
       user_id,
       produit_nom,
       type_simulation,
@@ -48,7 +65,21 @@ exports.saveSimulation = async (req, res) => {
       resultat_capital,
       ip_address,
       user_agent
-    ]);
+    ];
+
+    let result;
+
+    try {
+      result = await pool.query(query, values);
+    } catch (dbError) {
+      if (dbError.code === '23503' && user_id !== null) {
+        console.warn(`⚠️ Contrainte FK sur user_id=${user_id}, nouvelle tentative en anonyme`);
+        values[0] = null;
+        result = await pool.query(query, values);
+      } else {
+        throw dbError;
+      }
+    }
 
     res.status(201).json({
       success: true,
