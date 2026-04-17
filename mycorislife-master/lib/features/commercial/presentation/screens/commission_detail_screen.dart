@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 
 /// ===============================================
-/// PAGE DE DÃ‰TAILS D'UN BORDEREAU DE COMMISSION
+/// PAGE DE DÉTAILS D'UN BORDEREAU DE COMMISSION
 /// ===============================================
 ///
-/// Affiche les dÃ©tails complets d'un bordereau de commission
+/// Affiche les détails complets d'un bordereau de commission
 /// avec toutes les informations pertinentes.
 ///
-/// INFORMATIONS AFFICHÃ‰ES :
-/// - NumÃ©ro du bordereau et exercice
-/// - RÃ©fÃ©rence (nom du commercial)
-/// - PÃ©riode (date dÃ©but et date fin)
-/// - Ã‰tat du bordereau
+/// INFORMATIONS AFFICHÉES :
+/// - Numéro du bordereau et exercice
+/// - Référence (nom du commercial)
+/// - Période (date début et date fin)
+/// - État du bordereau
 /// - Montant de la commission
-/// - Type d'apporteur (A = Commercial/Apporteur, B = IntermÃ©diaire)
+/// - Type d'apporteur (A = Commercial/Apporteur, B = Intermédiaire)
 /// - Code apporteur
 class CommissionDetailScreen extends StatelessWidget {
   final Map<String, dynamic> bordereau;
@@ -38,16 +38,16 @@ class CommissionDetailScreen extends StatelessWidget {
 
   /// Formate une date au format DD/MM/YYYY
   String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return 'Non renseignÃ©';
+    if (date == null || date.isEmpty) return 'Non renseigné';
     
-    // Si la date contient dÃ©jÃ  le bon format DD/MM/YYYY, la retourner telle quelle
+    // Si la date contient déjà le bon format DD/MM/YYYY, la retourner telle quelle
     if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) {
       return date;
     }
     
     // Sinon, parser et formater proprement (enlever les timestamps)
     try {
-      // Supprimer les timestamps et heures si prÃ©sents
+      // Supprimer les timestamps et heures si présents
       String cleanDate = date.split('T')[0].split(' ')[0];
       
       // Parser la date
@@ -56,13 +56,13 @@ class CommissionDetailScreen extends StatelessWidget {
         // Format ISO 8601 : YYYY-MM-DD
         parsedDate = DateTime.parse(cleanDate);
       } else if (cleanDate.contains('/')) {
-        // Format dÃ©jÃ  DD/MM/YYYY ou MM/DD/YYYY
+        // Format déjà DD/MM/YYYY ou MM/DD/YYYY
         final parts = cleanDate.split('/');
         if (parts.length == 3) {
           // Assumer DD/MM/YYYY si le premier nombre est <= 31
           if (int.parse(parts[0]) <= 31) {
             parsedDate = DateTime(
-              int.parse(parts[2]), // annÃ©e
+              int.parse(parts[2]), // année
               int.parse(parts[1]), // mois
               int.parse(parts[0]), // jour
             );
@@ -100,11 +100,11 @@ class CommissionDetailScreen extends StatelessWidget {
         )} FCFA';
   }
 
-  /// Obtient la couleur selon l'Ã©tat du bordereau
+  /// Obtient la couleur selon l'état du bordereau
   Color _getEtatColor(String? etat) {
     if (etat == null) return grisTexte;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
+    if (etatLower.contains('payé') || etatLower.contains('payee')) {
       return vertSucces;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -114,11 +114,11 @@ class CommissionDetailScreen extends StatelessWidget {
     }
   }
 
-  /// Obtient l'icÃ´ne selon l'Ã©tat du bordereau
+  /// Obtient l'icône selon l'état du bordereau
   IconData _getEtatIcon(String? etat) {
     if (etat == null) return Icons.help_outline;
     final etatLower = etat.toLowerCase();
-    if (etatLower.contains('payÃ©') || etatLower.contains('payee')) {
+    if (etatLower.contains('payé') || etatLower.contains('payee')) {
       return Icons.check_circle;
     } else if (etatLower.contains('en attente') ||
         etatLower.contains('attente')) {
@@ -134,19 +134,19 @@ class CommissionDetailScreen extends StatelessWidget {
     if (type == 'A') {
       return bleuCoris; // Commercial/Apporteur
     } else if (type == 'B') {
-      return orangeWarning; // IntermÃ©diaire
+      return orangeWarning; // Intermédiaire
     } else {
       return grisTexte;
     }
   }
 
-  /// Obtient l'icÃ´ne selon le type d'apporteur
+  /// Obtient l'icône selon le type d'apporteur
   IconData _getTypeApporteurIcon(String? type) {
     if (type == null) return Icons.person_outline;
     if (type == 'A') {
       return Icons.person; // Commercial/Apporteur
     } else if (type == 'B') {
-      return Icons.business; // IntermÃ©diaire
+      return Icons.business; // Intermédiaire
     } else {
       return Icons.person_outline;
     }
@@ -156,7 +156,7 @@ class CommissionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final etat = bordereau['etat'] ?? '';
     final typeApporteur = bordereau['typeApporteur'] ?? 'A';
-    final typeApporteurLabel = bordereau['typeApporteurLabel'] ?? 'Non dÃ©fini';
+    final typeApporteurLabel = bordereau['typeApporteurLabel'] ?? 'Non défini';
 
     return Scaffold(
       backgroundColor: grisLeger,
@@ -164,7 +164,7 @@ class CommissionDetailScreen extends StatelessWidget {
         backgroundColor: bleuCoris,
         elevation: 0,
         title: const Text(
-          'DÃ©tails du Bordereau',
+          'Détails du bordereau',
           style: TextStyle(
             color: blanc,
             fontWeight: FontWeight.w600,
@@ -178,26 +178,26 @@ class CommissionDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Carte principale avec numÃ©ro et exercice
+              // Carte principale avec numéro et exercice
               _buildMainCard(context),
               SizedBox(height: context.r(16)),
-              // Informations gÃ©nÃ©rales
+              // Informations générales
               _buildInfoSection(
                 context,
-                'Informations GÃ©nÃ©rales',
+                'Informations générales',
                 Icons.info_outline,
                 [
                   _buildInfoRow(
                     context,
-                    'RÃ©fÃ©rence',
-                    bordereau['reference'] ?? 'Non renseignÃ©',
+                    'Référence',
+                    bordereau['reference'] ?? 'Non renseigné',
                     Icons.person_outline,
                   ),
                   SizedBox(height: context.r(12)),
                   _buildInfoRow(
                     context,
                     'Code Apporteur',
-                    bordereau['codeApporteur'] ?? 'Non renseignÃ©',
+                    bordereau['codeApporteur'] ?? 'Non renseigné',
                     Icons.badge_outlined,
                   ),
                   SizedBox(height: context.r(12)),
@@ -211,15 +211,15 @@ class CommissionDetailScreen extends StatelessWidget {
                 ],
               ),
               SizedBox(height: context.r(16)),
-              // PÃ©riode
+              // Période
               _buildInfoSection(
                 context,
-                'PÃ©riode',
+                'Période',
                 Icons.date_range,
                 [
                   _buildInfoRow(
                     context,
-                    'Date de dÃ©but',
+                    'Date de début',
                     _formatDate(bordereau['dateDebut']),
                     Icons.calendar_today,
                   ),
@@ -233,10 +233,10 @@ class CommissionDetailScreen extends StatelessWidget {
                 ],
               ),
               SizedBox(height: context.r(16)),
-              // Montant et Ã©tat
+              // Montant et état
               _buildInfoSection(
                 context,
-                'Montant et Ã‰tat',
+                'Montant et état',
                 Icons.monetization_on,
                 [
                   _buildInfoRow(
@@ -251,7 +251,7 @@ class CommissionDetailScreen extends StatelessWidget {
                   SizedBox(height: context.r(12)),
                   _buildInfoRow(
                     context,
-                    'Ã‰tat',
+                    'État',
                     etat,
                     _getEtatIcon(etat),
                     color: _getEtatColor(etat),
@@ -265,7 +265,7 @@ class CommissionDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Construit la carte principale avec le numÃ©ro et l'exercice
+  /// Construit la carte principale avec le numéro et l'exercice
   Widget _buildMainCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -300,7 +300,7 @@ class CommissionDetailScreen extends StatelessWidget {
           ),
           SizedBox(height: context.r(20)),
           Text(
-            'Bordereau NÂ° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
+            'Bordereau N° ${bordereau['numeroBordereau'] ?? 'N/A'}/${bordereau['exercice'] ?? 'N/A'}',
             style: TextStyle(
               color: blanc,
               fontSize: context.sp(24),

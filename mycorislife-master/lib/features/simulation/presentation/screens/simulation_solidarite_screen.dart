@@ -22,7 +22,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   static const Color texteGris = Color(0xFF666666);
   static const Color grisClair = Color(0xFFE0E0E0);
 
-  // Service pour synchroniser avec la base de donnÃ©es
+  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
   int? selectedCapital = 500000;
@@ -35,7 +35,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   final periodicites = ['Mensuel', 'Trimestriel', 'Semestriel', 'Annuel'];
   final capitalOptions = [500000, 1000000, 1500000, 2000000];
 
-  // Tableaux tarifaires (Ã  insÃ©rer manuellement)
+  // Tableaux tarifaires (à insérer manuellement)
   final Map<int, Map<String, double>> primeTotaleFamilleBase = {
     500000: {
       'mensuel': 2699,
@@ -141,67 +141,67 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     },
   };
 
-  // Helper pour rÃ©cupÃ©rer un tarif depuis la DB ou fallback
+  // Helper pour récupérer un tarif depuis la DB ou fallback
   Future<double> _getTarifFromDbOrFallback(
     Map<int, Map<String, double>> fallbackData,
     String categorie,
   ) async {
     if (selectedCapital == null) return 0.0;
 
-    // DÃ©termine la clÃ© de la pÃ©riodicitÃ©
+    // Détermine la clé de la périodicité
     String periodiciteKey = selectedPeriodicite.toLowerCase();
     if (periodiciteKey == 'annuel') periodiciteKey = 'annuelle';
 
     print(
-        'ðŸ” [SOLIDARITÃ‰] Recherche tarif: capital=$selectedCapital, periodicite=$periodiciteKey, categorie=$categorie');
+        '🔍 [SOLIDARITÉ] Recherche tarif: capital=$selectedCapital, periodicite=$periodiciteKey, categorie=$categorie');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final tarifs = await _produitSyncService.getTarifs(
-        produitLibelle: 'CORIS SOLIDARITÃ‰',
+        produitLibelle: 'CORIS SOLIDARITÉ',
         capital: selectedCapital!.toDouble(),
         periodicite: periodiciteKey == 'annuelle' ? 'annuel' : periodiciteKey,
         categorie: categorie,
       );
 
       if (tarifs.isNotEmpty && tarifs[0].prime != null) {
-        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: ${tarifs[0].prime}');
-        print('   ðŸ’¡ Cache local IGNORÃ‰ - DonnÃ©es du serveur uniquement');
+        print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifs[0].prime}');
+        print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
         print(
             '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            'â•‘ âœ… [SOLIDARITÃ‰] DonnÃ©es utilisÃ©es depuis SERVEUR               â•‘');
+            'â•‘ ✅ [SOLIDARITÉ] Données utilisées depuis SERVEUR               â•‘');
         print(
             'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return tarifs[0].prime!;
       } else {
         print(
-            '   âš ï¸  Tarif non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   ðŸ’¡ Passage au fallback (données hardcodées)');
       }
     } catch (e) {
       print(
-          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
     final tarif = fallbackData[selectedCapital]?[periodiciteKey] ?? 0.0;
     if (tarif > 0.0) {
-      print('   âœ… Tarif depuis FALLBACK (donnÃ©es hardcodÃ©es): $tarif');
+      print('   ✅ Tarif depuis FALLBACK (données hardcodées): $tarif');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
       print(
-          'â•‘ âš ï¸  [SOLIDARITÃ‰] DonnÃ©es utilisÃ©es depuis FALLBACK             â•‘');
+          'â•‘ ⚠️  [SOLIDARITÉ] Données utilisées depuis FALLBACK             â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     } else {
-      print('   âŒ Aucun tarif disponible dans le fallback');
+      print('   ❌ Aucun tarif disponible dans le fallback');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [SOLIDARITÃ‰] ERREUR: Aucune donnÃ©e disponible              â•‘');
+      print('â•‘ ❌ [SOLIDARITÉ] ERREUR: Aucune donnée disponible              â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     }
@@ -245,7 +245,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       primeTotaleResult = base + conjointSuppl + enfantsSuppl + ascendantsSuppl;
     });
 
-    // Sauvegarder la simulation en base de donnÃ©es
+    // Sauvegarder la simulation en base de données
     if (primeTotaleResult != null && primeTotaleResult! > 0) {
       SimulationService.saveSimulation(
         produitNom: 'CORIS SOLIDARITE',
@@ -265,7 +265,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   }
 
   void _navigateToSubscription() async {
-    // PrÃ©parer les donnÃ©es de simulation
+    // Préparer les données de simulation
     final simulationData = {
       'capital': selectedCapital,
       'periodicite': selectedPeriodicite,
@@ -274,10 +274,10 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       'nbAscendants': nbAscendants,
     };
 
-    // VÃ©rifier le rÃ´le et rediriger
+    // Vérifier le rôle et rediriger
     final userRole = await AuthService.getUserRole();
     if (userRole == 'commercial') {
-      // Pour les commerciaux, rediriger vers la sÃ©lection de client
+      // Pour les commerciaux, rediriger vers la sélection de client
       Navigator.pushNamed(
         context,
         '/commercial/select_client',
@@ -312,11 +312,11 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           colors: [
             bleuCoris,
             Color(0xFF002B6B).withAlpha(204)
-          ], // .withOpacity(0.8) remplacÃ©
+          ], // .withOpacity(0.8) remplacé
         ),
         boxShadow: [
           BoxShadow(
-            color: bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+            color: bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacé
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -337,7 +337,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
               SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
-                  "CORIS SOLIDARITÃ‰",
+                  "CORIS SOLIDARITÉ",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: context.sp(20),
@@ -374,7 +374,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black
-                              .withAlpha(26), // .withOpacity(0.1) remplacÃ©
+                              .withAlpha(26), // .withOpacity(0.1) remplacé
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -385,14 +385,14 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // En-tÃªte avec icÃ´ne et titre
+                          // En-tête avec icône et titre
                           Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: bleuCoris.withAlpha(
-                                      26), // .withOpacity(0.1) remplacÃ©
+                                      26), // .withOpacity(0.1) remplacé
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(Icons.settings,
@@ -400,7 +400,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                               ),
                               SizedBox(width: context.r(12)),
                               Text(
-                                "ParamÃ¨tres de simulation",
+                                "Paramètres de simulation",
                                 style: TextStyle(
                                   fontSize: context.sp(18),
                                   fontWeight: FontWeight.bold,
@@ -411,15 +411,15 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                           ),
                           SizedBox(height: context.r(20)),
 
-                          // SÃ©lecteur de capital
+                          // Sélecteur de capital
                           _buildCapitalDropdown(),
                           SizedBox(height: context.r(16)),
 
-                          // SÃ©lecteur de pÃ©riodicitÃ©
+                          // Sélecteur de périodicité
                           _buildPeriodiciteDropdown(),
                           SizedBox(height: context.r(25)),
 
-                          // SÃ©parateur
+                          // Séparateur
                           const Divider(
                               color: grisClair, height: 1, thickness: 1),
                           SizedBox(height: context.r(25)),
@@ -477,7 +477,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
 
                   SizedBox(height: context.r(20)),
 
-                  // Carte de rÃ©sultat
+                  // Carte de résultat
                   if (primeTotaleResult != null) _buildResultCard(),
                 ],
               ),
@@ -495,7 +495,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -508,7 +508,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.attach_money, color: Color(0xFF002B6B)),
-            labelText: 'Capital Ã  garantir',
+            labelText: 'Capital à garantir',
           ),
           items: capitalOptions
               .map((val) => DropdownMenuItem(
@@ -534,7 +534,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -547,7 +547,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'PÃ©riodicitÃ©',
+            labelText: 'Périodicité',
           ),
           items: periodicites
               .map((p) => DropdownMenuItem(
@@ -624,14 +624,14 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            vertCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
             Colors.white,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: vertCoris.withAlpha(51),
-            width: 1), // .withOpacity(0.2) remplacÃ©
+            width: 1), // .withOpacity(0.2) remplacé
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -643,7 +643,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color:
-                        vertCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+                        vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child:
@@ -655,7 +655,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
@@ -663,7 +663,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                         ),
                       ),
                       Text(
-                        "Prime totale estimÃ©e",
+                        "Prime totale estimée",
                         style: TextStyle(
                           fontSize: context.sp(14),
                           color: Colors.black54,
@@ -684,7 +684,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                     color:
-                        vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacÃ©
+                        vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacé
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,7 +713,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                   SizedBox(height: context.r(8)),
                   Divider(color: Colors.grey.shade300),
                   SizedBox(height: context.r(8)),
-                  // Prime calculÃ©e
+                  // Prime calculée
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -743,7 +743,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
               height: 48,
               child: ElevatedButton(
                 onPressed:
-                    _navigateToSubscription, // Utiliser la nouvelle mÃ©thode
+                    _navigateToSubscription, // Utiliser la nouvelle méthode
                 style: ElevatedButton.styleFrom(
                   backgroundColor: vertCoris,
                   foregroundColor: Colors.white,

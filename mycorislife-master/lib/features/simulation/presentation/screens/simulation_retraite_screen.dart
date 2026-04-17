@@ -20,8 +20,8 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   String selectedOption = 'capital';
   String selectedPeriodicite = 'annuel';
   double? result;
-  double calculatedPrime = 0.0; // Prime calculÃ©e (toujours afficher)
-  double calculatedCapital = 0.0; // Capital calculÃ© (toujours afficher)
+  double calculatedPrime = 0.0; // Prime calculée (toujours afficher)
+  double calculatedCapital = 0.0; // Capital calculé (toujours afficher)
   String resultLabel = '';
   bool isLoading = false;
   bool _useLocalData = false;
@@ -33,11 +33,11 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color grisClairBg = Color(0xFFF8FAFB);
 
-  // Primes minimales par pÃ©riodicitÃ© (alignÃ© avec la souscription CORIS RETRAITE)
+  // Primes minimales par périodicité (aligné avec la souscription CORIS RETRAITE)
   final Map<String, int> minPrimes = LocalDataService.retraiteMinPrimes;
 
-  // Nouvelles valeurs: CAPITAL Ã€ TERME pour une prime de 10000 FCFA (mensuel)
-  // ou Ã©quivalent (30000 tri, 60000 sem, 120000 ann)
+  // Nouvelles valeurs: CAPITAL é€ TERME pour une prime de 10000 FCFA (mensuel)
+  // ou équivalent (30000 tri, 60000 sem, 120000 ann)
   final Map<int, Map<String, double>> capitalValues = {
     5: {
       'mensuel': 605463.405379,
@@ -448,7 +448,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
 
   void showError(String message) {
     _showProfessionalDialog(
-      title: 'ParamÃ¨tres invalides',
+      title: 'Paramètres invalides',
       message: message,
       icon: Icons.warning_rounded,
       iconColor: Colors.orange,
@@ -461,7 +461,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner la durÃ©e du contrat pour continuer la simulation.',
+            'Veuillez renseigner la durée du contrat pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -471,7 +471,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
 
     if (_valeurController.text.trim().isEmpty) {
       String fieldName =
-          selectedOption == 'capital' ? 'capital souhaitÃ©' : 'prime Ã  verser';
+          selectedOption == 'capital' ? 'capital souhaité' : 'prime à verser';
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
@@ -498,7 +498,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
   // ignore: unused_element
   Future<Map<String, double>?> _getRetraiteTarifFromDb(
       int duration, String periodicity) async {
-    // Tente d'utiliser les tarifs stockÃ©s en base de donnÃ©es (si disponibles).
+    // Tente d'utiliser les tarifs stockés en base de données (si disponibles).
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS RETRAITE',
@@ -512,68 +512,62 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         final prime = tarifFromDB.prime as double?;
         if (capital != null && prime != null) {
           print(
-              '   âœ… Tarif RETRAITE trouvÃ© en base (source: ${result['isFromServer'] ? 'serveur' : 'cache local'})');
-          print('      - prime (rÃ©fÃ©rence): $prime');
+              '   ✅ Tarif RETRAITE trouvé en base (source: ${result['isFromServer'] ? 'serveur' : 'cache local'})');
+          print('      - prime (référence): $prime');
           print('      - capital (pour cette prime): $capital');
           return {'capital': capital, 'prime': prime};
         }
       }
     } catch (e) {
       print(
-          '   âš ï¸ Erreur lors de la rÃ©cupÃ©ration du tarif RETRAITE depuis la base: $e');
+          '   ⚠️ Erreur lors de la récupération du tarif RETRAITE depuis la base: $e');
     }
     return null;
   }
 
   Future<double> calculatePremium(
       int duration, String periodicity, double desiredCapital) async {
-    print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ§® [RETRAITE] CALCUL PRIME DÃ‰MARRÃ‰                           â•‘');
-    print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print('   ðŸ“Š ParamÃ¨tres:');
-    print('      - DurÃ©e: $duration ans');
-    print('      - PÃ©riodicitÃ©: $periodicity');
-    print(
-        '      - Capital souhaitÃ©: ${desiredCapital.toStringAsFixed(0)} FCFA');
-    print(
-        '   ðŸŒ Mode: ${_useLocalData ? "HORS LIGNE (donnÃ©es locales)" : "EN LIGNE"}');
+    print('\n================ [RETRAITE] CALCUL PRIME DEMARRE ================');
+    print('   Parametres:');
+    print('      - Duree: $duration ans');
+    print('      - Periodicite: $periodicity');
+    print('      - Capital souhaite: ${desiredCapital.toStringAsFixed(0)} FCFA');
+    print('   Mode: ${_useLocalData ? "HORS LIGNE (donnees locales)" : "EN LIGNE"}');
 
     if (duration < 5 || duration > 50) {
-      print('   âŒ ERREUR: DurÃ©e invalide ($duration ans)');
+      print('   ❌ ERREUR: Durée invalide ($duration ans)');
       showError(
-          "DurÃ©e comprise entre 5 et 50 ans selon les principes du contrat CORIS RETRAITE.");
+          "Durée comprise entre 5 et 50 ans selon les principes du contrat CORIS RETRAITE.");
       return -1;
     }
 
-    // Si hors ligne, utiliser les donnÃ©es locales directement
+    // Si hors ligne, utiliser les données locales directement
     if (_useLocalData) {
-      print('\n   ðŸ“ MODE HORS LIGNE: Utilisation des donnÃ©es locales...');
+      print('\n   MODE HORS LIGNE: utilisation des donnees locales...');
       final localPremium = LocalDataService.calculateRetraitePremium(
           duration, periodicity, desiredCapital);
 
       if (localPremium > 0) {
-        print('   âœ… Calcul rÃ©ussi avec donnÃ©es locales');
+        print('   ✅ Calcul réussi avec données locales');
         print('      Prime = ${localPremium.toStringAsFixed(2)} FCFA');
         return localPremium;
       } else {
-        print('   âŒ Erreur calcul avec donnÃ©es locales');
-        showError("ParamÃ¨tres invalides pour le calcul.");
+        print('   ❌ Erreur calcul avec données locales');
+        showError("Paramètres invalides pour le calcul.");
         return -1;
       }
     }
 
-    // NOTE: La souscription CORIS RETRAITE utilise des donnÃ©es locales stables
-    // (mÃªme table `capitalValues`) pour calculer les primes/capitaux.
-    // Nous faisons de mÃªme ici pour Ã©viter les Ã©carts lorsque la base ne contient
-    // pas tous les champs attendus (p.ex. capital absent, prime incohÃ©rente).
-    print('\n   ðŸ“ UTILISATION DES DONNÃ‰ES LOCALES (comme la souscription)');
+    // NOTE: La souscription CORIS RETRAITE utilise des donnees locales stables
+    // (meme table capitalValues) pour calculer les primes/capitaux.
+    // Nous faisons de meme ici pour eviter les ecarts lorsque la base ne contient
+    // pas tous les champs attendus (par ex. capital absent, prime incoherente).
+    print('\n   UTILISATION DES DONNEES LOCALES (comme la souscription)');
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print(
-        '\n   ðŸ“ Ã‰TAPE 2: Tentative utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ETAPE 2: tentative d\'utilisation du fallback (donnees hardcodees)...');
 
-    // VÃ©rifier si les donnÃ©es hardcodÃ©es sont disponibles
+    // Vérifier si les données hardcodées sont disponibles
     final hasHardcodedData = capitalValues.containsKey(duration) &&
         capitalValues[duration]!.containsKey(periodicity);
 
@@ -581,46 +575,36 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       double capitalPour10K = capitalValues[duration]![periodicity]!.toDouble();
       double primeReference = primeReferenceValues[periodicity]!;
 
-      print('   âœ… DonnÃ©es hardcodÃ©es disponibles');
+      print('   ✅ Données hardcodées disponibles');
       print(
           '      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
-      // NOUVELLE MÃ‰THODE: Prime = (Capital_Voulu Ã— Prime_Reference) / Capital_pour_Prime_Reference
+      // Nouvelle methode: Prime = (Capital_Voulu x Prime_Reference) / Capital_pour_Prime_Reference
       double primeCalculee = (desiredCapital * primeReference) / capitalPour10K;
 
-      print('   ðŸ’° CALCUL (nouvelle mÃ©thode):');
-      print(
-          '      Prime = (Capital_Voulu Ã— Prime_Reference) / Capital_pour_Prime_Reference');
-      print(
-          '      Prime = (${desiredCapital.toStringAsFixed(0)} Ã— ${primeReference.toStringAsFixed(0)}) / ${capitalPour10K.toStringAsFixed(2)}');
+      print('   CALCUL (nouvelle methode):');
+      print('      Prime = (Capital_Voulu x Prime_Reference) / Capital_pour_Prime_Reference');
+      print('      Prime = (${desiredCapital.toStringAsFixed(0)} x ${primeReference.toStringAsFixed(0)}) / ${capitalPour10K.toStringAsFixed(2)}');
       print('      Prime = ${primeCalculee.toStringAsFixed(2)} FCFA');
 
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âš ï¸  [RETRAITE] CALCUL RÃ‰USSI (FALLBACK - donnÃ©es hardcodÃ©es) â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+      print('\n================ [RETRAITE] CALCUL REUSSI (FALLBACK) ================');
 
       return primeCalculee;
     } else {
-      print('   âŒ DonnÃ©es hardcodÃ©es NON disponibles');
+      print('   ❌ Données hardcodées NON disponibles');
       print(
-          '      - capitalValues contient la durÃ©e $duration? ${capitalValues.containsKey(duration)}');
+          '      - capitalValues contient la durée $duration? ${capitalValues.containsKey(duration)}');
       if (capitalValues.containsKey(duration)) {
         print(
             '      - capitalValues[$duration] contient $periodicity? ${capitalValues[duration]!.containsKey(periodicity)}');
       }
-      print('   âš ï¸  IMPOSSIBLE DE CALCULER: Aucune donnÃ©e disponible');
-      print('      â†’ Ni base de donnÃ©es, ni donnÃ©es hardcodÃ©es');
+      print('   ⚠️  IMPOSSIBLE DE CALCULER: Aucune donnée disponible');
+      print('      → Ni base de données, ni données hardcodées');
 
       showError(
-          "DonnÃ©es non disponibles pour cette combinaison durÃ©e/pÃ©riodicitÃ©. Veuillez vÃ©rifier votre connexion Internet ou contacter le support.");
+          "Données non disponibles pour cette combinaison durée/périodicité. Veuillez vérifier votre connexion Internet ou contacter le support.");
 
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [RETRAITE] CALCUL Ã‰CHOUÃ‰                                   â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+      print('\n================ [RETRAITE] CALCUL ECHOUE =======================\n');
 
       return -1;
     }
@@ -628,61 +612,58 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
 
   Future<double> calculateCapital(
       int duration, String periodicity, double paidPremium) async {
+    print('\n================ [RETRAITE] CALCUL CAPITAL DEMARRE ================');
+    print('   Parametres:');
+    print('      - Durée: $duration ans');
+    print('      - Périodicité: $periodicity');
+    print('      - Prime payée: ${paidPremium.toStringAsFixed(0)} FCFA');
     print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ§® [RETRAITE] CALCUL CAPITAL DÃ‰MARRÃ‰                         â•‘');
-    print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print('   ðŸ“Š ParamÃ¨tres:');
-    print('      - DurÃ©e: $duration ans');
-    print('      - PÃ©riodicitÃ©: $periodicity');
-    print('      - Prime payÃ©e: ${paidPremium.toStringAsFixed(0)} FCFA');
-    print(
-        '   ðŸŒ Mode: ${_useLocalData ? "HORS LIGNE (donnÃ©es locales)" : "EN LIGNE"}');
+        '   Mode: ${_useLocalData ? "HORS LIGNE (donnees locales)" : "EN LIGNE"}');
 
     if (duration < 5 || duration > 50) {
-      print('   âŒ ERREUR: DurÃ©e invalide ($duration ans)');
+      print('   ❌ ERREUR: Durée invalide ($duration ans)');
       showError(
-          "DurÃ©e comprise entre 5 et 50 ans selon les principes du contrat CORIS RETRAITE.");
+          "Durée comprise entre 5 et 50 ans selon les principes du contrat CORIS RETRAITE.");
       return -1;
     }
 
     double minPremium = minPrimes[periodicity]!.toDouble();
     if (paidPremium < minPremium) {
-      print('   âŒ ERREUR: Prime infÃ©rieure au minimum');
+      print('   ❌ ERREUR: Prime inférieure au minimum');
       showError(
-          "Pour cette pÃ©riodicitÃ© ($periodicity), la prime minimale est ${_formatNumber(minPremium)} FCFA.");
+          "Pour cette périodicité ($periodicity), la prime minimale est ${_formatNumber(minPremium)} FCFA.");
       return -1;
     }
 
-    // Si hors ligne, utiliser les donnÃ©es locales directement
+    // Si hors ligne, utiliser les données locales directement
     if (_useLocalData) {
-      print('\n   ðŸ“ MODE HORS LIGNE: Utilisation des donnÃ©es locales...');
+      print('\n   MODE HORS LIGNE: utilisation des donnees locales...');
       final localCapital = LocalDataService.calculateRetraiteCapital(
           duration, periodicity, paidPremium);
 
       if (localCapital > 0) {
-        print('   âœ… Calcul rÃ©ussi avec donnÃ©es locales');
+        print('   ✅ Calcul réussi avec données locales');
         print('      Capital = ${localCapital.toStringAsFixed(2)} FCFA');
         return localCapital;
       } else {
-        print('   âŒ Erreur calcul avec donnÃ©es locales');
-        showError("ParamÃ¨tres invalides pour le calcul.");
+        print('   ❌ Erreur calcul avec données locales');
+        showError("Paramètres invalides pour le calcul.");
         return -1;
       }
     }
 
-    // NOTE: la souscription CORIS RETRAITE utilise des donnÃ©es locales stables
-    // pour le calcul des primes/capitaux (mÃªme table `capitalValues`).
-    // Pour Ã©viter les Ã©carts liÃ©s Ã  des tarifs DB incomplets ou incorrects,
+    // NOTE: la souscription CORIS RETRAITE utilise des données locales stables
+    // pour le calcul des primes/capitaux (même table `capitalValues`).
+    // Pour éviter les écarts liés à des tarifs DB incomplets ou incorrects,
     // on calcule directement avec ces valeurs locales.
     print(
-        '\n   ðŸ“ UTILISATION DES DONNÃ‰ES LOCALES (mÃªme logique que la souscription)');
+        '\n   UTILISATION DES DONNEES LOCALES (meme logique que la souscription)');
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
+    // Étape 2: Fallback - Utiliser les données codées en dur
     print(
-        '\n   ðŸ“ Ã‰TAPE 2: Tentative utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+        '\n   ETAPE 2: tentative d\'utilisation du FALLBACK (donnees hardcodees)...');
 
-    // VÃ©rifier si les donnÃ©es hardcodÃ©es sont disponibles
+    // Vérifier si les données hardcodées sont disponibles
     final hasHardcodedData = capitalValues.containsKey(duration) &&
         capitalValues[duration]!.containsKey(periodicity);
 
@@ -690,46 +671,38 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       double capitalPour10K = capitalValues[duration]![periodicity]!.toDouble();
       double primeReference = primeReferenceValues[periodicity]!;
 
-      print('   âœ… DonnÃ©es hardcodÃ©es disponibles');
+      print('   ✅ Données hardcodées disponibles');
       print(
           '      Capital pour prime de ${primeReference.toStringAsFixed(0)} FCFA: ${capitalPour10K.toStringAsFixed(2)} FCFA');
 
-      // NOUVELLE MÃ‰THODE: Capital = (Prime_PayÃ©e Ã— Capital_pour_Prime_Reference) / Prime_Reference
+      // Nouvelle methode: Capital = (Prime_Payee x Capital_pour_Prime_Reference) / Prime_Reference
       double capitalCalcule = (paidPremium * capitalPour10K) / primeReference;
 
-      print('   ðŸ’° CALCUL (nouvelle mÃ©thode):');
+      print('   CALCUL (nouvelle methode):');
       print(
-          '      Capital = (Prime_PayÃ©e Ã— Capital_pour_Prime_Reference) / Prime_Reference');
+          '      Capital = (Prime_Payee x Capital_pour_Prime_Reference) / Prime_Reference');
       print(
-          '      Capital = (${paidPremium.toStringAsFixed(0)} Ã— ${capitalPour10K.toStringAsFixed(2)}) / ${primeReference.toStringAsFixed(0)}');
+          '      Capital = (${paidPremium.toStringAsFixed(0)} x ${capitalPour10K.toStringAsFixed(2)}) / ${primeReference.toStringAsFixed(0)}');
       print('      Capital = ${capitalCalcule.toStringAsFixed(2)} FCFA');
 
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âš ï¸  [RETRAITE] CALCUL RÃ‰USSI (FALLBACK - donnÃ©es hardcodÃ©es) â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+      print('\n================ [RETRAITE] CALCUL REUSSI (FALLBACK) ================\n');
 
       return capitalCalcule;
     } else {
-      print('   âŒ DonnÃ©es hardcodÃ©es NON disponibles');
+      print('   ❌ Données hardcodées NON disponibles');
       print(
-          '      - capitalValues contient la durÃ©e $duration? ${capitalValues.containsKey(duration)}');
+          '      - capitalValues contient la durée $duration? ${capitalValues.containsKey(duration)}');
       if (capitalValues.containsKey(duration)) {
         print(
             '      - capitalValues[$duration] contient $periodicity? ${capitalValues[duration]!.containsKey(periodicity)}');
       }
-      print('   âš ï¸  IMPOSSIBLE DE CALCULER: Aucune donnÃ©e disponible');
-      print('      â†’ Ni base de donnÃ©es, ni donnÃ©es hardcodÃ©es');
+      print('   ⚠️  IMPOSSIBLE DE CALCULER: Aucune donnée disponible');
+      print('      → Ni base de données, ni données hardcodées');
 
       showError(
-          "DonnÃ©es non disponibles pour cette combinaison durÃ©e/pÃ©riodicitÃ©. Veuillez vÃ©rifier votre connexion Internet ou contacter le support.");
+          "Données non disponibles pour cette combinaison durée/périodicité. Veuillez vérifier votre connexion Internet ou contacter le support.");
 
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [RETRAITE] CALCUL Ã‰CHOUÃ‰                                   â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+      print('\n================ [RETRAITE] CALCUL ECHOUE =======================\n');
 
       return -1;
     }
@@ -759,14 +732,14 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       }
 
       if (selectedOption == 'capital') {
-        // Utilisateur saisit le capital souhaitÃ©
+        // Utilisateur saisit le capital souhaité
         calculatedCapital = montant;
         double premium =
             await calculatePremium(duree, selectedPeriodicite, montant);
         if (premium != -1) {
           calculatedPrime = premium;
           result = premium;
-          resultLabel = "Prime $selectedPeriodicite Ã  verser";
+          resultLabel = "Prime $selectedPeriodicite à verser";
         }
       } else {
         // Utilisateur saisit la prime qu'il peut verser
@@ -776,12 +749,12 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
         if (capital != -1) {
           calculatedCapital = capital;
           result = capital;
-          resultLabel = "Capital estimÃ© au terme";
+          resultLabel = "Capital estimé au terme";
         }
       }
     } catch (e) {
       showError(
-          "Une erreur est survenue lors du calcul. Veuillez vÃ©rifier vos donnÃ©es.");
+          "Une erreur est survenue lors du calcul. Veuillez vérifier vos données.");
     }
 
     setState(() => isLoading = false);
@@ -888,7 +861,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
                                   ),
                                   SizedBox(width: context.r(12)),
                                   Text(
-                                    "ParamÃ¨tres de simulation",
+                                    "Paramètres de simulation",
                                     style: TextStyle(
                                       fontSize: context.sp(18),
                                       fontWeight: FontWeight.bold,
@@ -1027,7 +1000,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'PÃ©riodicitÃ©',
+            labelText: 'Périodicité',
           ),
           items: const [
             DropdownMenuItem(
@@ -1062,7 +1035,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'DurÃ©e du contrat',
+          'Durée du contrat',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -1103,7 +1076,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          selectedOption == 'capital' ? 'Capital souhaitÃ©' : 'Prime Ã  verser',
+          selectedOption == 'capital' ? 'Capital souhaité' : 'Prime à verser',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -1176,7 +1149,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
@@ -1213,7 +1186,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Prime pÃ©riodique
+                  // Prime périodique
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1267,7 +1240,7 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
               height: 48,
               child: ElevatedButton(
                 onPressed: () async {
-                  // PrÃ©parer les donnÃ©es de simulation
+                  // Préparer les données de simulation
                   final simulationData = {
                     'type': selectedOption,
                     'duree': int.parse(_dureeController.text),
@@ -1282,10 +1255,10 @@ class _CorisRetraiteScreenState extends State<CorisRetraiteScreen> {
                         : result!,
                   };
 
-                  // VÃ©rifier le rÃ´le et rediriger
+                  // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
-                    // Pour les commerciaux, rediriger vers la sÃ©lection de client
+                    // Pour les commerciaux, rediriger vers la sélection de client
                     Navigator.pushNamed(
                       context,
                       '/commercial/select_client',

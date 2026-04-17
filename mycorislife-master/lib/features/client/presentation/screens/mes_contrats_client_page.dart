@@ -44,7 +44,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   Future<void> _loadContrats() async {
-    print('ðŸ”„ _loadContrats appelÃ©');
+    print('🔄 _loadContrats appelé');
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -53,7 +53,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     try {
       print('ðŸ“ž Appel du service getContrats...');
       final result = await _service.getContrats();
-      print('âœ… Service retournÃ© ${result.length} contrat(s)');
+      print('✅ Service retourné ${result.length} contrat(s)');
 
       if (!mounted) return;
 
@@ -62,9 +62,9 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
         _filterContrats();
         isLoading = false;
       });
-      print('âœ… Ã‰tat mis Ã  jour avec ${contrats.length} contrat(s)');
+      print('✅ État mis à jour avec ${contrats.length} contrat(s)');
     } catch (e, stackTrace) {
-      print('âŒ Erreur dans _loadContrats: $e');
+      print('❌ Erreur dans _loadContrats: $e');
       print('ðŸ“ StackTrace: $stackTrace');
 
       if (!mounted) return;
@@ -153,17 +153,17 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
     switch (codeprod) {
       case '242':
-        return 'Ã‰PARGNE BONUS';
+        return 'ÉPARGNE BONUS';
       case '202':
-        return 'CORIS SÃ‰RÃ‰NITÃ‰';
+        return 'CORIS SÉRÉNITÉ';
       case '200':
         return 'CORIS FAMILIS';
       case '240':
         return 'CORIS RETRAITE';
       case '225':
-        return 'CORIS SOLIDARITÃ‰';
+        return 'CORIS SOLIDARITÉ';
       case '246':
-        return 'CORIS Ã‰TUDE';
+        return 'CORIS ÉTUDE';
       case '205':
         return 'CORIS FLEX EMPRUNTEUR';
       default:
@@ -204,17 +204,17 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     }
     final statut = contrat.etat!.toLowerCase().trim();
 
-    // VÃ©rifier l'Ã©galitÃ© exacte d'abord pour Ã©viter les faux positifs
+    // Vérifier l'égalité exacte d'abord pour éviter les faux positifs
     if (statut == 'actif' || statut == 'active') {
       return 'ACTIF';
     } else if (statut == 'inactif' || statut == 'inactive') {
       return 'INACTIF';
     } else if (statut == 'suspendu') {
       return 'SUSPENDU';
-    } else if (statut.contains('rÃ©sili') || statut.contains('resili')) {
-      return 'RÃ‰SILIÃ‰';
-    } else if (statut.contains('Ã©chu') || statut.contains('echu')) {
-      return 'Ã‰CHU';
+    } else if (statut.contains('résili') || statut.contains('resili')) {
+      return 'RÉSILIÉ';
+    } else if (statut.contains('échu') || statut.contains('echu')) {
+      return 'ÉCHU';
     }
 
     return statut.toUpperCase();
@@ -230,8 +230,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
         return Colors.grey;
       case 'SUSPENDU':
         return Colors.orange;
-      case 'RÃ‰SILIÃ‰':
-      case 'Ã‰CHU':
+      case 'RÉSILIÉ':
+      case 'ÉCHU':
         return Colors.red;
       default:
         return Colors.grey;
@@ -251,7 +251,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   // Contrat souscrit dans l'application mobile.
-  // On combine plusieurs critÃ¨res pour Ã©viter les faux positifs sur des contrats legacy.
+  // On combine plusieurs critères pour éviter les faux positifs sur des contrats legacy.
   bool _isAppSubscriptionContract(Contrat contrat) {
     final source = (contrat.source ?? '').toLowerCase().trim();
     final hasSubscriptionId = contrat.subscriptionId != null;
@@ -292,8 +292,8 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
   }
 
   bool _isAppPendingValidation(Contrat contrat) {
-    // Le bandeau "En attente de validation" doit apparaÃ®tre uniquement
-    // pour les contrats rÃ©ellement souscrits via l'application.
+    // Le bandeau "En attente de validation" doit apparaître uniquement
+    // pour les contrats réellement souscrits via l'application.
     return _isAppSubscriptionContract(contrat);
   }
 
@@ -309,11 +309,11 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     String message;
     if (paiementsEnRetard > 0 && paiementsProches > 0) {
       message =
-          '$paiementsEnRetard paiement(s) en retard et $paiementsProches Ã©chÃ©ance(s) proche(s)';
+          '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
     } else if (paiementsEnRetard > 0) {
       message = '$paiementsEnRetard paiement(s) en retard';
     } else {
-      message = '$paiementsProches paiement(s) Ã  effectuer dans les 5 jours';
+      message = '$paiementsProches paiement(s) à effectuer dans les 5 jours';
     }
 
     return Container(
@@ -334,7 +334,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isUrgent ? 'Paiement(s) en retard !' : 'Paiement(s) Ã  venir',
+                  isUrgent ? 'Paiement(s) en retard !' : 'Paiement(s) à venir',
                   style: TextStyle(
                     color: color,
                     fontSize: context.sp(14),
@@ -579,7 +579,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
               onPressed: _loadContrats,
               icon: Icon(Icons.refresh),
               label: Text(
-                'RÃ©essayer',
+                'Réessayer',
                 style: TextStyle(
                   fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
@@ -632,7 +632,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 48.0),
             child: Text(
-              "Vos contrats d'assurance\napparaÃ®tront ici",
+              "Vos contrats d'assurance\napparaîtront ici",
               style: TextStyle(
                 fontSize: context.sp(16),
                 color: Color(0xFF64748B),
@@ -665,7 +665,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
             ),
             SizedBox(height: context.r(16)),
             Text(
-              'Aucun contrat trouvÃ©',
+              'Aucun contrat trouvé',
               style: TextStyle(
                 fontSize: context.sp(18),
                 fontWeight: FontWeight.w500,
@@ -703,7 +703,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     final productColor = _getProductColor(contrat.codeprod);
     final productName = _getProductName(contrat.codeprod);
     final clientName = _formatClientName(contrat);
-    // Afficher le numÃ©ro de police complet avec codeinte
+    // Afficher le numéro de police complet avec codeinte
     final numpolice =
         '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
     final dateeffet = _formatDate(contrat.dateeffet);
@@ -726,9 +726,9 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          print('ðŸ”— [CLIENT CONTRATS] Navigation vers dÃ©tails');
-          print('ðŸ“„ [CLIENT CONTRATS] NumÃ©ro de police: ${contrat.numepoli}');
-          print('ðŸ“¦ [CLIENT CONTRATS] DonnÃ©es contrat: ${contrat.toJson()}');
+          print('ðŸ”— [CLIENT CONTRATS] Navigation vers détails');
+          print('ðŸ“„ [CLIENT CONTRATS] Numéro de police: ${contrat.numepoli}');
+          print('ðŸ“¦ [CLIENT CONTRATS] Données contrat: ${contrat.toJson()}');
           _openContractDetails(contrat);
         },
         child: Padding(
@@ -736,7 +736,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: IcÃ´ne + NumÃ©ro de police + Badge statut
+              // Header: Icône + Numéro de police + Badge statut
               Row(
                 children: [
                   Container(
@@ -801,7 +801,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                       ],
                     ),
                   ),
-                  // Badge statut Ã  droite
+                  // Badge statut à droite
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -854,7 +854,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                 ],
               ),
               SizedBox(height: context.r(12)),
-              // AssurÃ©
+              // Assuré
               Row(
                 children: [
                   Icon(
@@ -875,7 +875,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                 ],
               ),
               SizedBox(height: context.r(12)),
-              // Informations financiÃ¨res
+              // Informations financières
               Row(
                 children: [
                   Expanded(
@@ -969,7 +969,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                     ),
                     SizedBox(width: context.r(8)),
                     Text(
-                      'Ã‰chÃ©ance: $dateeche',
+                      'Échéance: $dateeche',
                       style: TextStyle(
                         fontSize: context.sp(13),
                         color: Color(0xFF64748B),
@@ -1023,7 +1023,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                     child: OutlinedButton.icon(
                       onPressed: () => _openContractDetails(contrat),
                       icon: Icon(Icons.info_outline, size: 18),
-                      label: Text('DÃ©tails'),
+                      label: Text('Détails'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF002B6B),
                         side: const BorderSide(color: Color(0xFF002B6B)),
@@ -1088,7 +1088,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                                   contrat.isPaymentLate
                                       ? 'Paiement en retard !'
                                       : contrat.isPaymentDueSoon
-                                          ? 'Ã‰chÃ©ance proche (${contrat.joursRestants} jours)'
+                                          ? 'Échéance proche (${contrat.joursRestants} jours)'
                                           : 'Prochain paiement',
                                   style: TextStyle(
                                     fontSize: context.sp(12),
@@ -1129,7 +1129,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                             ),
                             SizedBox(width: context.r(4)),
                             Text(
-                              'PÃ©riodicitÃ©: ${contrat.periodicite}',
+                              'Périodicité: ${contrat.periodicite}',
                               style: TextStyle(
                                 fontSize: context.sp(11),
                                 color: Color(0xFF64748B),

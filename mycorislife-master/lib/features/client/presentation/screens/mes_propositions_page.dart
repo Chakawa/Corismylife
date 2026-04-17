@@ -13,12 +13,12 @@ import 'package:mycorislife/services/wave_payment_handler.dart';
 /// ============================================
 /// Cette page affiche la liste de toutes les propositions d'assurance
 /// de l'utilisateur. Une proposition est une souscription en attente
-/// de paiement qui n'a pas encore Ã©tÃ© transformÃ©e en contrat.
+/// de paiement qui n'a pas encore été transformée en contrat.
 ///
-/// FonctionnalitÃ©s:
+/// Fonctionnalités:
 /// - Affichage de la liste des propositions
 /// - Filtrage par type de produit
-/// - Visualisation des dÃ©tails d'une proposition
+/// - Visualisation des détails d'une proposition
 /// - Paiement direct depuis la liste
 /// - Animations fluides lors du chargement
 class PropositionsPage extends StatefulWidget {
@@ -31,7 +31,7 @@ class PropositionsPage extends StatefulWidget {
 class _PropositionsPageState extends State<PropositionsPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   // ===================================
-  // SERVICES ET DONNÃ‰ES
+  // SERVICES ET DONNÉES
   // ===================================
   final SubscriptionService _service = SubscriptionService();
   List<Subscription> propositions = [];
@@ -82,7 +82,7 @@ class _PropositionsPageState extends State<PropositionsPage>
   }
 
   /// Charge la liste des propositions depuis l'API
-  /// RÃ©cupÃ¨re toutes les souscriptions avec le statut 'proposition'
+  /// Récupère toutes les souscriptions avec le statut 'proposition'
   Future<void> _loadPropositions() async {
     if (!mounted) return;
 
@@ -129,15 +129,15 @@ class _PropositionsPageState extends State<PropositionsPage>
 
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
-      return 'CORIS SOLIDARITÃ‰';
+      return 'CORIS SOLIDARITÉ';
     } else if (produit.toLowerCase().contains('emprunteur')) {
       return 'FLEX EMPRUNTEUR';
     } else if (produit.toLowerCase().contains('etude')) {
-      return 'CORIS Ã‰TUDE';
+      return 'CORIS ÉTUDE';
     } else if (produit.toLowerCase().contains('retraite')) {
       return 'CORIS RETRAITE';
     } else if (produit.toLowerCase().contains('serenite')) {
-      return 'CORIS SÃ‰RÃ‰NITÃ‰';
+      return 'CORIS SÉRÉNITÉ';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
     } else if (produit.toLowerCase().contains('assure') ||
@@ -148,7 +148,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       return 'MON BON PLAN CORIS';
     } else if (produit.toLowerCase().contains('epargne') ||
         produit.toLowerCase().contains('bonus')) {
-      return 'Ã‰PARGNE BONUS';
+      return 'ÉPARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
     }
@@ -162,7 +162,7 @@ class _PropositionsPageState extends State<PropositionsPage>
     } else if (produit.toLowerCase().contains('etude')) {
       return Icons.school_outlined;
     } else if (produit.toLowerCase().contains('retraite')) {
-      return Icons.elderly_outlined; // IcÃ´ne de personne Ã¢gÃ©e pour retraite
+      return Icons.elderly_outlined; // Icône de personne âgée pour retraite
     } else if (produit.toLowerCase().contains('serenite')) {
       return Icons.health_and_safety_outlined;
     } else if (produit.toLowerCase().contains('familis')) {
@@ -196,7 +196,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       return const Color(0xFFEC4899); // Rose
     } else if (produit.toLowerCase().contains('assure') ||
         produit.toLowerCase().contains('prestige')) {
-      return const Color(0xFF059669); // Vert Ã©meraude pour Prestige
+      return const Color(0xFF059669); // Vert émeraude pour Prestige
     } else if (produit.toLowerCase().contains('bon') &&
         produit.toLowerCase().contains('plan')) {
       return const Color(0xFF8B5CF6); // Violet pour Bon Plan
@@ -204,7 +204,7 @@ class _PropositionsPageState extends State<PropositionsPage>
         produit.toLowerCase().contains('bonus')) {
       return const Color(0xFF3B82F6); // Bleu
     } else {
-      return const Color(0xFF002B6B); // Bleu par dÃ©faut
+      return const Color(0xFF002B6B); // Bleu par défaut
     }
   }
 
@@ -285,7 +285,7 @@ class _PropositionsPageState extends State<PropositionsPage>
           icon: Icon(Icons.arrow_back_ios_new,
               color: Colors.white, size: 18),
           onPressed: () {
-            // Retour Ã  la page d'accueil client
+            // Retour à la page d'accueil client
             Navigator.pushNamedAndRemoveUntil(
                 context, '/client_home', (route) => false);
           },
@@ -411,7 +411,7 @@ class _PropositionsPageState extends State<PropositionsPage>
               ),
               SizedBox(height: context.r(12)),
               Text(
-                "Vos propositions d'assurance\napparaÃ®tront ici",
+                "Vos propositions d'assurance\napparaîtront ici",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: context.sp(16),
@@ -543,10 +543,10 @@ class _PropositionsPageState extends State<PropositionsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header avec icÃ´ne, numÃ©ro et badge statut
+                // Header avec icône, numéro et badge statut
                 Row(
                   children: [
-                    // IcÃ´ne avec effet glassmorphism et couleur selon produit
+                    // Icône avec effet glassmorphism et couleur selon produit
                     Container(
                       width: 56,
                       height: 56,
@@ -637,7 +637,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                             ],
                           ),
                           SizedBox(height: context.r(6)),
-                          // Badge produit redesignÃ©
+                          // Badge produit redesigné
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -674,7 +674,7 @@ class _PropositionsPageState extends State<PropositionsPage>
 
                 SizedBox(height: context.r(18)),
 
-                // Divider Ã©lÃ©gant
+                // Divider élégant
                 Container(
                   height: 1,
                   decoration: BoxDecoration(
@@ -693,7 +693,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                 // Section informations et actions
                 Row(
                   children: [
-                    // Date de crÃ©ation avec icÃ´ne
+                    // Date de création avec icône
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -728,7 +728,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'CrÃ©Ã©e le',
+                                    'Créée le',
                                     style: TextStyle(
                                       fontSize: context.sp(10),
                                       color: Color(0xFF64748B),
@@ -753,7 +753,7 @@ class _PropositionsPageState extends State<PropositionsPage>
 
                     SizedBox(width: context.r(12)),
 
-                    // Bouton PDF avec design Ã©lÃ©gant
+                    // Bouton PDF avec design élégant
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -790,7 +790,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                                   final excludeQ = prod.contains('etude') ||
                                       prod.contains('familis') ||
                                       prod.contains('serenite') ||
-                                      prod.contains('sÃ©rÃ©nitÃ©');
+                                      prod.contains('sérénité');
                                   return PdfViewerPage(
                                       subscriptionId: subscription.id,
                                       excludeQuestionnaire: excludeQ);
@@ -815,7 +815,7 @@ class _PropositionsPageState extends State<PropositionsPage>
 
                 SizedBox(height: context.r(14)),
 
-                // Bouton "Payer maintenant" redesignÃ© en vert
+                // Bouton "Payer maintenant" redesigné en vert
                 Container(
                   width: double.infinity,
                   height: 52,
@@ -915,7 +915,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Paiement confirmÃ©. La proposition a Ã©tÃ© retirÃ©e de la liste.'),
+              'Paiement confirmé. La proposition a été retirée de la liste.'),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -982,7 +982,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sÃ©curisÃ©',
+                'Paiement mobile sécurisé',
                 () => _processPayment(subscription, 'Wave'),
               ),
               // SizedBox(height: context.r(12)),
@@ -1102,7 +1102,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('âŒ Erreur chargement image: $imagePath - $error');
+                  print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },
@@ -1148,7 +1148,7 @@ class _PropositionsPageState extends State<PropositionsPage>
       final souscriptionData = subscription.souscriptionData;
       double montant = 0.0;
 
-      // Essayer de rÃ©cupÃ©rer le montant selon le produit
+      // Essayer de récupérer le montant selon le produit
       montant = (souscriptionData['prime_totale'] ??
               souscriptionData['montant_total'] ??
               souscriptionData['prime'] ??
@@ -1169,12 +1169,12 @@ class _PropositionsPageState extends State<PropositionsPage>
           description:
               'Paiement ${subscription.produitNom} #${subscription.id}',
           onPaymentSuccess: () {
-            // RafraÃ®chir la liste aprÃ¨s paiement rÃ©ussi
+            // Rafraîchir la liste après paiement réussi
             _loadPropositions();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content:
-                    Text('âœ… Votre proposition a Ã©tÃ© transformÃ©e en contrat !'),
+                    Text('Votre proposition a été transformée en contrat !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -1213,7 +1213,7 @@ class _PropositionsPageState extends State<PropositionsPage>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                  'Paiement Wave confirmÃ©. Votre contrat est maintenant actif.'),
+                  'Paiement Wave confirmé. Votre contrat est maintenant actif.'),
               backgroundColor: Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
             ),
@@ -1240,7 +1240,7 @@ class _PropositionsPageState extends State<PropositionsPage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '$paymentMethod bientÃ´t disponible',
+                        '$paymentMethod bientôt disponible',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -1274,15 +1274,15 @@ class _PropositionsPageState extends State<PropositionsPage>
   void _showFilterMenu() {
     final filters = [
       'Tous',
-      'CORIS SOLIDARITÃ‰',
+      'CORIS SOLIDARITÉ',
       'FLEX EMPRUNTEUR',
-      'CORIS Ã‰TUDE',
+      'CORIS ÉTUDE',
       'CORIS RETRAITE',
-      'CORIS SÃ‰RÃ‰NITÃ‰',
+      'CORIS SÉRÉNITÉ',
       'CORIS FAMILIS',
       'CORIS ASSURE PRESTIGE',
       'MON BON PLAN CORIS',
-      'Ã‰PARGNE BONUS'
+      'ÉPARGNE BONUS'
     ];
 
     showModalBottomSheet(

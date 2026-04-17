@@ -2,21 +2,21 @@
 /// PAGE - MES CONTRATS COMMERCIAL
 /// ===============================================
 /// 
-/// Cette page affiche la liste complÃ¨te des contrats d'un commercial.
+/// Cette page affiche la liste complète des contrats d'un commercial.
 /// 
-/// FONCTIONNALITÃ‰S :
+/// FONCTIONNALITÉS :
 /// - Affichage de statistiques (Total contrats, Contrats actifs)
 /// - Liste des contrats avec recherche et filtres
-/// - Navigation vers les dÃ©tails d'un contrat
+/// - Navigation vers les détails d'un contrat
 /// - Filtrage par statut (Tous, Actif, Inactif)
-/// - Recherche par numÃ©ro de police ou nom client
+/// - Recherche par numéro de police ou nom client
 /// 
-/// âš ï¸ UNIFORMISATION DES CHAMPS (IMPORTANT) :
+/// ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
 /// ==========================================
 /// Cette page utilise UNIQUEMENT le champ 'etat' depuis l'API backend :
-/// - AccÃ¨s via: contrat['etat']
+/// - Accès via: contrat['etat']
 /// - Valeurs possibles: 'Actif', 'Inactif', 'Suspendu'
-/// - Ne PAS utiliser contrat['statut'] (ancienne convention, maintenant dÃ©prÃ©ciÃ©e)
+/// - Ne PAS utiliser contrat['statut'] (ancienne convention, maintenant dépréciée)
 /// 
 /// DESIGN :
 /// - Couleur principale: CORIS Blue #002B6B
@@ -53,12 +53,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   final Map<String, Map<String, dynamic>> productConfig = {
     '242': {
-      'name': 'Ã‰PARGNE BONUS',
+      'name': 'ÉPARGNE BONUS',
       'color': Color(0xFF8B5CF6),
       'icon': Icons.savings
     },
     '202': {
-      'name': 'CORIS SÃ‰RÃ‰NITÃ‰',
+      'name': 'CORIS SÉRÉNITÉ',
       'color': Color(0xFF002B6B),
       'icon': Icons.health_and_safety
     },
@@ -73,12 +73,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       'icon': Icons.elderly
     },
     '225': {
-      'name': 'CORIS SOLIDARITÃ‰',
+      'name': 'CORIS SOLIDARITÉ',
       'color': Color(0xFF002B6B),
       'icon': Icons.volunteer_activism
     },
     '246': {
-      'name': 'CORIS Ã‰TUDE',
+      'name': 'CORIS ÉTUDE',
       'color': Color(0xFF8B5CF6),
       'icon': Icons.school
     },
@@ -107,16 +107,16 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
   }
 
   Future<void> _loadContrats() async {
-    print('ðŸ“¡ [COMMERCIAL CONTRATS] DÃ©but chargement...');
+    print('ðŸ“¡ [COMMERCIAL CONTRATS] Début chargement...');
     setState(() => isLoading = true);
 
     try {
       final token = await storage.read(key: 'token');
       print(
-          'ðŸ”‘ [COMMERCIAL CONTRATS] Token: ${token != null ? "âœ… OK" : "âŒ Manquant"}');
+          'ðŸ”‘ [COMMERCIAL CONTRATS] Token: ${token != null ? "✅ OK" : "❌ Manquant"}');
 
       if (token == null) {
-        throw Exception('Token non trouvÃ©');
+        throw Exception('Token non trouvé');
       }
 
       final url = '${AppConfig.baseUrl}/commercial/mes_contrats_commercial';
@@ -130,12 +130,12 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
         },
       );
 
-      print('ðŸ“Š [COMMERCIAL CONTRATS] Status: ${response.statusCode}');
+      print('📊 [COMMERCIAL CONTRATS] Status: ${response.statusCode}');
       print('ðŸ“¦ [COMMERCIAL CONTRATS] Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('âœ… [COMMERCIAL CONTRATS] DonnÃ©es dÃ©codÃ©es: ${data.keys}');
+        print('✅ [COMMERCIAL CONTRATS] Données décodées: ${data.keys}');
 
         setState(() {
           contrats = data['contrats'] ?? [];
@@ -143,13 +143,13 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
           isLoading = false;
         });
 
-        print('ðŸ“‹ [COMMERCIAL CONTRATS] ${contrats.length} contrats chargÃ©s');
+        print('📋 [COMMERCIAL CONTRATS] ${contrats.length} contrats chargés');
         _animationController.forward();
       } else {
         throw Exception('Erreur ${response.statusCode}');
       }
     } catch (e, stackTrace) {
-      print('âŒ [COMMERCIAL CONTRATS] Erreur: $e');
+      print('❌ [COMMERCIAL CONTRATS] Erreur: $e');
       print('ðŸ“ [COMMERCIAL CONTRATS] Stack: $stackTrace');
 
       setState(() => isLoading = false);
@@ -253,7 +253,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                 ),
               ),
         actions: [
-          // IcÃ´ne de recherche maintenant blanche pour Ãªtre visible
+          // Icône de recherche maintenant blanche pour être visible
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close : Icons.search,
@@ -270,7 +270,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
               });
             },
           ),
-          // IcÃ´ne de filtrage maintenant blanche pour Ãªtre visible
+          // Icône de filtrage maintenant blanche pour être visible
           IconButton(
             icon: const Icon(
               Icons.filter_list,
@@ -282,7 +282,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
       ),
       body: Column(
         children: [
-          // Statistiques dÃ©placÃ©es SOUS la navbar (plus dans la navbar)
+          // Statistiques déplacées SOUS la navbar (plus dans la navbar)
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -340,7 +340,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                             SizedBox(height: context.r(16)),
                             Text(
                               _searchQuery.isNotEmpty
-                                  ? 'Aucun contrat trouvÃ©'
+                                  ? 'Aucun contrat trouvé'
                                   : 'Aucun contrat disponible',
                               style: TextStyle(
                                   fontSize: context.sp(18), color: Colors.grey[600]),
@@ -429,7 +429,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
 
   Widget _buildContratCard(Map<String, dynamic> contrat, int index) {
     final config = _getProductConfig(contrat['codeprod']?.toString());
-    // Utilisation du champ 'etat' depuis la base de donnÃ©es (uniformisation)
+    // Utilisation du champ 'etat' depuis la base de données (uniformisation)
     final etat = contrat['etat']?.toString() ?? 'Inconnu';
     final liaisonpolice = "-";
     final numpolice = contrat['numepoli'] + liaisonpolice + contrat['codeinte'];
@@ -464,7 +464,7 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              print('ðŸ”— [NAVIGATION] Vers dÃ©tails: ${contrat['numepoli']}');
+              print('ðŸ”— [NAVIGATION] Vers détails: ${contrat['numepoli']}');
               Navigator.pushNamed(
                 context,
                 '/contrat_details',

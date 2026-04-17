@@ -17,7 +17,7 @@ class ContratDetailsAppPage extends StatelessWidget {
     if (subscriptionId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('DÃ©tails du contrat'),
+          title: Text('Détails du contrat'),
           backgroundColor: const Color(0xFF002B6B),
           foregroundColor: Colors.white,
         ),
@@ -30,7 +30,7 @@ class ContratDetailsAppPage extends StatelessWidget {
                 Icon(Icons.error_outline, size: 56, color: Color(0xFFEF4444)),
                 SizedBox(height: context.r(12)),
                 Text(
-                  'Impossible de charger les dÃ©tails de ce contrat.',
+                  'Impossible de charger les détails de ce contrat.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w600),
                 ),

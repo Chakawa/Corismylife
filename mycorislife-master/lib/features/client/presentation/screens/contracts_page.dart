@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/contract_service.dart';
 
-/// Ã‰cran d'affichage de tous les contrats de l'utilisateur
+/// écran d'affichage de tous les contrats de l'utilisateur
 class ContractsPage extends StatefulWidget {
   const ContractsPage({super.key});
 
@@ -77,7 +77,7 @@ class _ContractsPageState extends State<ContractsPage> {
             SizedBox(height: context.r(24)),
             ElevatedButton(
               onPressed: _loadContracts,
-              child: Text('RÃ©essayer'),
+              child: Text('Réessayer'),
             ),
           ],
         ),
@@ -100,7 +100,7 @@ class _ContractsPageState extends State<ContractsPage> {
             ),
             SizedBox(height: context.r(8)),
             Text(
-              'Vos contrats d\'assurance apparaÃ®tront ici aprÃ¨s validation de paiement.',
+              'Vos contrats d\'assurance apparaîtront ici après validation de paiement.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
             ),
@@ -141,7 +141,7 @@ class _ContractsPageState extends State<ContractsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tÃªte avec numÃ©ro de contrat
+              // En-tête avec numéro de contrat
               Row(
                 children: [
                   Expanded(
@@ -169,7 +169,7 @@ class _ContractsPageState extends State<ContractsPage> {
               ),
               SizedBox(height: context.r(8)),
               
-              // Montant et pÃ©riodicitÃ©
+              // Montant et périodicité
               Row(
                 children: [
                   const Icon(Icons.payments, size: 16, color: Colors.grey),
@@ -252,7 +252,7 @@ class _ContractsPageState extends State<ContractsPage> {
                       Icon(Icons.check_circle, size: 16, color: Color(0xFF4CAF50)),
                       SizedBox(width: context.r(8)),
                       Text(
-                        'Paiement unique effectuÃ©',
+                        'Paiement unique effectué',
                         style: TextStyle(
                           fontSize: context.sp(14),
                           fontWeight: FontWeight.w600,
@@ -268,18 +268,18 @@ class _ContractsPageState extends State<ContractsPage> {
               const Divider(),
               SizedBox(height: context.r(8)),
               
-              // Informations supplÃ©mentaires
+              // Informations supplémentaires
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildInfoItem(
                     icon: Icons.calendar_today,
-                    label: 'DÃ©but',
+                    label: 'Début',
                     value: _contractService.formatDate(contract['start_date']),
                   ),
                   _buildInfoItem(
                     icon: Icons.access_time,
-                    label: 'DurÃ©e',
+                    label: 'Durée',
                     value: '${contract['duration_years'] ?? 0} ans',
                   ),
                   if (contract['payments_remaining'] != null)
@@ -378,7 +378,7 @@ class _ContractsPageState extends State<ContractsPage> {
   }
 }
 
-/// Page de dÃ©tails d'un contrat spÃ©cifique
+/// Page de détails d'un contrat spécifique
 class ContractDetailPage extends StatefulWidget {
   final int contractId;
   
@@ -425,7 +425,7 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('DÃ©tails du Contrat'),
+        title: Text('Détails du contrat'),
         backgroundColor: const Color(0xFF1976D2),
       ),
       body: _isLoading
@@ -438,16 +438,16 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                   ),
                 )
               : _contract == null
-                  ? const Center(child: Text('Contrat non trouvÃ©'))
+                  ? const Center(child: Text('Contrat non trouvé'))
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSection(
-                            title: 'Informations GÃ©nÃ©rales',
+                            title: 'Informations générales',
                             children: [
-                              _buildDetailRow('NumÃ©ro de contrat', _contract!['contract_number']),
+                              _buildDetailRow('Numéro de contrat', _contract!['contract_number']),
                               _buildDetailRow('Produit', _contract!['product_name']),
                               _buildDetailRow('Statut', _contractService.formatStatus(_contract!['status'])),
                               _buildDetailRow('Mode de paiement', _contract!['payment_method']),
@@ -459,21 +459,21 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                             title: 'Paiements',
                             children: [
                               _buildDetailRow('Montant', _contractService.formatAmount(_contract!['amount'])),
-                              _buildDetailRow('PÃ©riodicitÃ©', _contractService.formatPeriodicite(_contract!['periodicite'])),
+                              _buildDetailRow('Périodicité', _contractService.formatPeriodicite(_contract!['periodicite'])),
                               if (_contract!['next_payment_date'] != null)
                                 _buildDetailRow('Prochain paiement', _contractService.formatDate(_contract!['next_payment_date'])),
-                              _buildDetailRow('Total payÃ©', _contractService.formatAmount(_contract!['total_paid'])),
+                              _buildDetailRow('Total payé', _contractService.formatAmount(_contract!['total_paid'])),
                             ],
                           ),
                           SizedBox(height: context.r(24)),
                           
                           _buildSection(
-                            title: 'DurÃ©e du Contrat',
+                            title: 'Durée du contrat',
                             children: [
-                              _buildDetailRow('Date de dÃ©but', _contractService.formatDate(_contract!['start_date'])),
+                              _buildDetailRow('Date de début', _contractService.formatDate(_contract!['start_date'])),
                               if (_contract!['end_date'] != null)
                                 _buildDetailRow('Date de fin', _contractService.formatDate(_contract!['end_date'])),
-                              _buildDetailRow('DurÃ©e', '${_contract!['duration_years'] ?? 0} ans'),
+                              _buildDetailRow('Durée', '${_contract!['duration_years'] ?? 0} ans'),
                             ],
                           ),
                           

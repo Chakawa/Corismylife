@@ -44,7 +44,7 @@ class _CommissionsPageState extends State<CommissionsPage>
   bool _isLoading = true;
   String? _errorMessage;
 
-  // DonnÃ©es simples
+  // Données simples
   List<Map<String, dynamic>> _commissions = [];
   double _totalCommission = 0.0;
 
@@ -66,17 +66,17 @@ class _CommissionsPageState extends State<CommissionsPage>
 
   Future<void> _initializeData() async {
     try {
-      // RÃ©cupÃ©rer le token
+      // Récupérer le token
       _token = await storage.read(key: 'token');
       if (_token == null) {
-        throw Exception('Token non trouvÃ©');
+        throw Exception('Token non trouvé');
       }
 
-      // RÃ©cupÃ©rer le code apporteur
+      // Récupérer le code apporteur
       _codeApporteur = widget.codeApporteur ??
           await storage.read(key: 'code_apporteur');
       if (_codeApporteur == null) {
-        throw Exception('Code apporteur non trouvÃ©');
+        throw Exception('Code apporteur non trouvé');
       }
 
       // Charger les commissions
@@ -84,7 +84,7 @@ class _CommissionsPageState extends State<CommissionsPage>
 
       _animationController.forward();
     } catch (e) {
-      print('âŒ Erreur initialisation: $e');
+      print('❌ Erreur initialisation: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -98,7 +98,7 @@ class _CommissionsPageState extends State<CommissionsPage>
     try {
       if (_codeApporteur == null || _token == null) return;
 
-      print('ðŸ”„ Chargement commissions pour: $_codeApporteur');
+      print('🔄 Chargement commissions pour: $_codeApporteur');
 
       final url =
           '${AppConfig.baseUrl}/commissions/commercial/$_codeApporteur';
@@ -122,12 +122,12 @@ class _CommissionsPageState extends State<CommissionsPage>
           });
         }
 
-        print('âœ… ${_commissions.length} commission(s) chargÃ©e(s)');
+        print('✅ ${_commissions.length} commission(s) chargée(s)');
       } else {
         throw Exception('Erreur serveur: ${response.statusCode}');
       }
     } catch (e) {
-      print('âŒ Erreur chargement: $e');
+      print('❌ Erreur chargement: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -209,7 +209,7 @@ class _CommissionsPageState extends State<CommissionsPage>
                   setState(() => _isLoading = true);
                   _initializeData();
                 },
-                child: const Text('RÃ©essayer'),
+                child: const Text('Réessayer'),
               ),
             ],
           ),
@@ -360,7 +360,7 @@ class _CommissionsPageState extends State<CommissionsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tÃªte avec ID et montant
+            // En-tête avec ID et montant
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -401,7 +401,7 @@ class _CommissionsPageState extends State<CommissionsPage>
               ],
             ),
             SizedBox(height: context.r(16)),
-            // SÃ©parateur
+            // Séparateur
             Container(
               height: 1,
               color: Colors.grey[200],

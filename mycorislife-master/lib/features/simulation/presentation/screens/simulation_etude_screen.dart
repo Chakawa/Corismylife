@@ -22,14 +22,14 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   String selectedOption = 'rente';
   String selectedPeriodicite = 'mensuel';
   double? result;
-  double calculatedPrime = 0.0;  // Prime calculÃ©e (toujours afficher)
-  double calculatedRente = 0.0;  // Rente calculÃ©e (toujours afficher)
+  double calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double calculatedRente = 0.0;  // Rente calculée (toujours afficher)
   String resultLabel = '';
   bool isLoading = false;
   int? ageParent;
   int? dureeContrat;
 
-  // Service pour synchroniser avec la base de donnÃ©es
+  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -911,7 +911,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
 
   void showError(String message) {
     _showProfessionalDialog(
-      title: 'ParamÃ¨tres invalides',
+      title: 'Paramètres invalides',
       message: message,
       icon: Icons.warning_rounded,
       iconColor: Colors.orange,
@@ -980,7 +980,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
     }
 
     if (ageParent == null || ageParent! < 18 || ageParent! > 60) {
-      showError("L'Ã¢ge du parent doit Ãªtre compris entre 18 et 60 ans.");
+      showError("L'âge du parent doit être compris entre 18 et 60 ans.");
       return false;
     }
 
@@ -988,7 +988,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner l\'Ã¢ge de l\'enfant pour continuer la simulation.',
+            'Veuillez renseigner l\'âge de l\'enfant pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -998,13 +998,13 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
 
     int? ageEnfant = int.tryParse(_ageEnfantController.text);
     if (ageEnfant == null || ageEnfant < 0 || ageEnfant > 17) {
-      showError("L'Ã¢ge de l'enfant doit Ãªtre compris entre 0 et 17 ans.");
+      showError("L'âge de l'enfant doit être compris entre 0 et 17 ans.");
       return false;
     }
 
     if (_valeurController.text.trim().isEmpty) {
       String fieldName =
-          selectedOption == 'rente' ? 'prime' : 'rente souhaitÃ©e';
+          selectedOption == 'rente' ? 'prime' : 'rente souhaitée';
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
@@ -1020,7 +1020,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   }
 
   String _formatNumber(double number) {
-    // Arrondir le nombre et formater sans dÃ©cimales
+    // Arrondir le nombre et formater sans décimales
     final rounded = number.round();
     return rounded.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -1088,11 +1088,11 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       }
 
       if (selectedOption == 'rente') {
-        // Utilisateur saisit la prime Ã  verser
+        // Utilisateur saisit la prime à verser
         double primeMensuelle = _convertToMensuel(valeur, selectedPeriodicite);
         double rente = await calculateRente(ageParentValue, dureeMois, primeMensuelle);
         if (rente == 0) {
-          showError("Aucune donnÃ©e disponible pour cet Ã¢ge ou cette durÃ©e.");
+          showError("Aucune donnée disponible pour cet âge ou cette durée.");
           setState(() => isLoading = false);
           return;
         }
@@ -1101,11 +1101,11 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
         result = rente;
         resultLabel = "Rente annuelle au terme";
       } else {
-        // Utilisateur saisit la rente souhaitÃ©e
+        // Utilisateur saisit la rente souhaitée
         double renteSouhaitee = valeur;
         double primeMensuelle = await calculatePrime(ageParentValue, dureeMois, renteSouhaitee);
         if (primeMensuelle == 0) {
-          showError("Aucune donnÃ©e disponible pour cet Ã¢ge ou cette durÃ©e.");
+          showError("Aucune donnée disponible pour cet âge ou cette durée.");
           setState(() => isLoading = false);
           return;
         }
@@ -1116,12 +1116,12 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       }
     } catch (e) {
       showError(
-          "Une erreur est survenue lors du calcul. Veuillez vÃ©rifier vos donnÃ©es.");
+          "Une erreur est survenue lors du calcul. Veuillez vérifier vos données.");
     }
 
     setState(() => isLoading = false);
 
-    // Sauvegarder la simulation en base de donnÃ©es
+    // Sauvegarder la simulation en base de données
     if (result != null && result! > 0) {
       int ageEnfant = int.parse(_ageEnfantController.text);
       int dureeMois = ((17 - ageEnfant) * 12).round();
@@ -1144,19 +1144,14 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   Future<double> calculateRente(
       int age, int dureeMois, double primeMensuelle) async {
     int dureeEffective = closestDuree(dureeMois);
-    print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ§® [Ã‰TUDE] CALCUL RENTE DÃ‰MARRÃ‰                              â•‘');
-    print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print(
-        '   ðŸ“Š ParamÃ¨tres: age=$age, duree=$dureeEffective mois, primeMensuelle=$primeMensuelle');
+    print('\n================ [ETUDE] CALCUL RENTE DEMARRE ===================');
+    print('   Parametres: age=$age, duree=$dureeEffective mois, primeMensuelle=$primeMensuelle');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
-    print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
+    print('\n   ETAPE 1: tentative de recuperation depuis la base de donnees (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
-        produitLibelle: 'CORIS Ã‰TUDE',
+        produitLibelle: 'CORIS ÉTUDE',
         age: age,
         dureeContrat: dureeEffective,
         periodicite: 'annuel',
@@ -1165,9 +1160,9 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         double primePour10000 = tarifFromDB.prime!;
-        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: $primePour10000');
+        print('   ✅ Tarif trouvé depuis le SERVEUR: $primePour10000');
 
-        // DÃ©tecter si les dÃ©cimales ont Ã©tÃ© perdues lors de la transmission
+        // Détecter si les décimales ont été perdues lors de la transmission
         bool hasLostDecimals =
             (primePour10000 == primePour10000.roundToDouble()) &&
                 (primePour10000 > 100);
@@ -1176,86 +1171,68 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
             tarifRenteFixe[age]!.containsKey(dureeEffective)) {
           double localPrimePour10000 =
               tarifRenteFixe[age]![dureeEffective]!.toDouble();
-          // VÃ©rifier si la valeur locale a plus de prÃ©cision
+          // Vérifier si la valeur locale a plus de précision
           if ((localPrimePour10000 - localPrimePour10000.roundToDouble())
                   .abs() >
               0.01) {
             print(
-                '   âš ï¸  ATTENTION: Les dÃ©cimales ont Ã©tÃ© perdues dans la DB!');
+                '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
             print('      Valeur DB: $primePour10000 (arrondie)');
-            print('      Valeur locale: $localPrimePour10000 (prÃ©cise)');
+            print('      Valeur locale: $localPrimePour10000 (précise)');
             print(
-                '      â†’ Utilisation des donnÃ©es locales pour plus de prÃ©cision');
+                '      → Utilisation des données locales pour plus de précision');
             primePour10000 = localPrimePour10000;
           }
         }
 
         double rente = (primeMensuelle * 10000) / primePour10000;
-        print(
-            '   ðŸ’° CALCUL: Rente = (primeMensuelle Ã— 10000) / primePour10000');
-        print('   ðŸ’° Rente = ($primeMensuelle Ã— 10000) / $primePour10000');
-        print('   ðŸ’° Rente = ${rente.toStringAsFixed(2)} FCFA');
-        print(
-            '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-        print(
-            'â•‘ âœ… [Ã‰TUDE] DonnÃ©es utilisÃ©es depuis SERVEUR                   â•‘');
-        print(
-            'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+        print('   CALCUL: Rente = (primeMensuelle x 10000) / primePour10000');
+        print('   Rente = ($primeMensuelle x 10000) / $primePour10000');
+        print('   Rente = ${rente.toStringAsFixed(2)} FCFA');
+        print('\n================ [ETUDE] DONNEES UTILISEES DEPUIS SERVEUR =================');
         return rente;
       } else {
         print(
-            '   âš ï¸  Tarif non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   Passage au fallback (donnees hardcodees)');
       }
     } catch (e) {
       print(
-          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ETAPE 2: utilisation du fallback (donnees hardcodees)...');
     if (!tarifRenteFixe.containsKey(age) ||
         !tarifRenteFixe[age]!.containsKey(dureeEffective)) {
-      print(
-          '   âŒ DonnÃ©es hardcodÃ©es non disponibles pour age=$age, duree=$dureeEffective');
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [Ã‰TUDE] ERREUR: Aucune donnÃ©e disponible                   â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+      print('   Donnees hardcodees non disponibles pour age=$age, duree=$dureeEffective');
+      print('\n================ [ETUDE] ERREUR: AUCUNE DONNEE DISPONIBLE =================\n');
       return 0;
     }
 
     double primeMensuelleBase = tarifRenteFixe[age]![dureeEffective]!;
-    print('   âœ… Tarif depuis FALLBACK: $primeMensuelleBase');
+    print('   Tarif depuis FALLBACK: $primeMensuelleBase');
     double rente = (primeMensuelle * 10000) / primeMensuelleBase;
-    print('   ðŸ’° CALCUL: Rente = (primeMensuelle Ã— 10000) / primeFallback');
-    print('   ðŸ’° Rente = ($primeMensuelle Ã— 10000) / $primeMensuelleBase');
-    print('   ðŸ’° Rente = ${rente.toStringAsFixed(2)} FCFA');
-    print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âš ï¸  [Ã‰TUDE] DonnÃ©es utilisÃ©es depuis FALLBACK                 â•‘');
-    print(
-        'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+    print('   CALCUL: Rente = (primeMensuelle x 10000) / primeFallback');
+    print('   Rente = ($primeMensuelle x 10000) / $primeMensuelleBase');
+    print('   Rente = ${rente.toStringAsFixed(2)} FCFA');
+    print('\n================ [ETUDE] DONNEES UTILISEES DEPUIS FALLBACK =================\n');
     return rente;
   }
 
   Future<double> calculatePrime(
       int age, int dureeMois, double renteSouhaitee) async {
     int dureeEffective = closestDuree(dureeMois);
+    print('\n================ [ETUDE] CALCUL PRIME DEMARRE ====================');
     print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ§® [Ã‰TUDE] CALCUL PRIME DÃ‰MARRÃ‰                              â•‘');
-    print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print(
-        '   ðŸ“Š ParamÃ¨tres: age=$age, duree=$dureeEffective mois, renteSouhaitee=$renteSouhaitee');
+        '   Parametres: age=$age, duree=$dureeEffective mois, renteSouhaitee=$renteSouhaitee');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '\n   ETAPE 1: tentative de recuperation depuis la base de donnees (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
-        produitLibelle: 'CORIS Ã‰TUDE',
+        produitLibelle: 'CORIS ÉTUDE',
         age: age,
         dureeContrat: dureeEffective,
         periodicite: 'annuel',
@@ -1264,9 +1241,9 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         double primePour10000 = tarifFromDB.prime!;
-        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: $primePour10000');
+        print('   ✅ Tarif trouvé depuis le SERVEUR: $primePour10000');
 
-        // DÃ©tecter si les dÃ©cimales ont Ã©tÃ© perdues lors de la transmission
+        // Détecter si les décimales ont été perdues lors de la transmission
         bool hasLostDecimals =
             (primePour10000 == primePour10000.roundToDouble()) &&
                 (primePour10000 > 100);
@@ -1275,67 +1252,54 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
             tarifRenteFixe[age]!.containsKey(dureeEffective)) {
           double localPrimePour10000 =
               tarifRenteFixe[age]![dureeEffective]!.toDouble();
-          // VÃ©rifier si la valeur locale a plus de prÃ©cision
+          // Vérifier si la valeur locale a plus de précision
           if ((localPrimePour10000 - localPrimePour10000.roundToDouble())
                   .abs() >
               0.01) {
             print(
-                '   âš ï¸  ATTENTION: Les dÃ©cimales ont Ã©tÃ© perdues dans la DB!');
+                '   ⚠️  ATTENTION: Les décimales ont été perdues dans la DB!');
             print('      Valeur DB: $primePour10000 (arrondie)');
-            print('      Valeur locale: $localPrimePour10000 (prÃ©cise)');
+            print('      Valeur locale: $localPrimePour10000 (précise)');
             print(
-                '      â†’ Utilisation des donnÃ©es locales pour plus de prÃ©cision');
+                '      → Utilisation des données locales pour plus de précision');
             primePour10000 = localPrimePour10000;
           }
         }
 
         double prime = (renteSouhaitee * primePour10000) / 10000;
         print(
-            '   ðŸ’° CALCUL: Prime = (renteSouhaitee Ã— primePour10000) / 10000');
-        print('   ðŸ’° Prime = ($renteSouhaitee Ã— $primePour10000) / 10000');
-        print('   ðŸ’° Prime = ${prime.toStringAsFixed(2)} FCFA');
-        print(
-            '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-        print(
-            'â•‘ âœ… [Ã‰TUDE] DonnÃ©es utilisÃ©es depuis SERVEUR                   â•‘');
-        print(
-            'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+            '   CALCUL: Prime = (renteSouhaitee x primePour10000) / 10000');
+        print('   Prime = ($renteSouhaitee x $primePour10000) / 10000');
+        print('   Prime = ${prime.toStringAsFixed(2)} FCFA');
+        print('\n================ [ETUDE] DONNEES UTILISEES DEPUIS SERVEUR =================\n');
         return prime;
       } else {
         print(
-            '   âš ï¸  Tarif non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   Passage au fallback (donnees hardcodees)');
       }
     } catch (e) {
       print(
-          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ETAPE 2: utilisation du FALLBACK (donnees hardcodees)...');
     if (!tarifRenteFixe.containsKey(age) ||
         !tarifRenteFixe[age]!.containsKey(dureeEffective)) {
       print(
-          '   âŒ DonnÃ©es hardcodÃ©es non disponibles pour age=$age, duree=$dureeEffective');
-      print(
-          '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [Ã‰TUDE] ERREUR: Aucune donnÃ©e disponible                   â•‘');
-      print(
-          'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+          '   ❌ Donnees hardcodees non disponibles pour age=$age, duree=$dureeEffective');
+      print('\n================ [ETUDE] ERREUR: AUCUNE DONNEE DISPONIBLE =================\n');
       return 0;
     }
 
     double primeMensuelleBase = tarifRenteFixe[age]![dureeEffective]!;
-    print('   âœ… Tarif depuis FALLBACK: $primeMensuelleBase');
+    print('   ✅ Tarif depuis FALLBACK: $primeMensuelleBase');
     double prime = (renteSouhaitee * primeMensuelleBase) / 10000;
-    print('   ðŸ’° CALCUL: Prime = (renteSouhaitee Ã— primeFallback) / 10000');
-    print('   ðŸ’° Prime = ($renteSouhaitee Ã— $primeMensuelleBase) / 10000');
-    print('   ðŸ’° Prime = ${prime.toStringAsFixed(2)} FCFA');
-    print(
-        '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âš ï¸  [Ã‰TUDE] DonnÃ©es utilisÃ©es depuis FALLBACK                 â•‘');
-    print(
-        'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
+    print('   CALCUL: Prime = (renteSouhaitee x primeFallback) / 10000');
+    print('   Prime = ($renteSouhaitee x $primeMensuelleBase) / 10000');
+    print('   Prime = ${prime.toStringAsFixed(2)} FCFA');
+    print('\n================ [ETUDE] DONNEES UTILISEES DEPUIS FALLBACK =================\n');
     return prime;
   }
 
@@ -1450,7 +1414,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
               SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
-                  "CORIS Ã‰TUDE",
+                  "CORIS ÉTUDE",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: context.sp(20),
@@ -1490,7 +1454,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                 SizedBox(width: context.r(10)),
                 Expanded(
                   child: Text(
-                    "ParamÃ¨tres de simulation",
+                    "Paramètres de simulation",
                     style: TextStyle(
                       fontSize: constraints.maxWidth * 0.045,
                       fontWeight: FontWeight.bold,
@@ -1620,7 +1584,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'PÃ©riodicitÃ©',
+            labelText: 'Périodicité',
           ),
           items: const [
             DropdownMenuItem(
@@ -1707,7 +1671,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'L\'Ã¢ge du parent doit Ãªtre compris entre 18 et 60 ans',
+              'L\'âge du parent doit être compris entre 18 et 60 ans',
               style: TextStyle(
                 color: Colors.orange,
                 fontSize: constraints.maxWidth * 0.03,
@@ -1723,7 +1687,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ã‚ge de l\'enfant',
+          'Âge de l\'enfant',
           style: TextStyle(
             fontSize: constraints.maxWidth * 0.035,
             fontWeight: FontWeight.w600,
@@ -1769,7 +1733,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'DurÃ©e du contrat: ${dureeContrat ?? 0} ans (${(dureeContrat ?? 0) * 12} mois)',
+              'Durée du contrat : ${dureeContrat ?? 0} ans (${(dureeContrat ?? 0) * 12} mois)',
               style: TextStyle(
                 color: bleuCoris,
                 fontSize: constraints.maxWidth * 0.03,
@@ -1790,8 +1754,8 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
       children: [
         Text(
           selectedOption == 'rente'
-              ? 'Prime $selectedPeriodicite souhaitÃ©e'
-              : 'Rente souhaitÃ©e',
+              ? 'Prime $selectedPeriodicite souhaitée'
+              : 'Rente souhaitée',
           style: TextStyle(
             fontSize: constraints.maxWidth * 0.035,
             fontWeight: FontWeight.w600,
@@ -1888,7 +1852,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: constraints.maxWidth * 0.04,
                           fontWeight: FontWeight.bold,
@@ -1925,7 +1889,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Prime pÃ©riodique
+                  // Prime périodique
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1979,7 +1943,7 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
               height: 48,
               child: ElevatedButton(
                 onPressed: () async {
-                  // PrÃ©parer les donnÃ©es de simulation
+                  // Préparer les données de simulation
                   final simulationData = {
                     'ageParent': ageParent,
                     'ageEnfant': int.parse(_ageEnfantController.text),
@@ -1994,10 +1958,10 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                     'periodicite': selectedPeriodicite,
                   };
 
-                  // VÃ©rifier le rÃ´le et rediriger
+                  // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
-                    // Pour les commerciaux, rediriger vers la sÃ©lection de client
+                    // Pour les commerciaux, rediriger vers la sélection de client
                     Navigator.pushNamed(
                       context,
                       '/commercial/select_client',

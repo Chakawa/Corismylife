@@ -24,7 +24,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   final _capitalPerteEmploiController = TextEditingController();
 
   String dureeType = 'mois';
-  String typePret = 'PrÃªt amortissable';
+  String typePret = 'Prêt amortissable';
   bool garantiePrevoyance = false;
   bool garantiePerteEmploi = false;
 
@@ -36,10 +36,10 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color grisClairBg = Color(0xFFF8FAFB);
 
-  // Service pour synchroniser avec la base de donnÃ©es
+  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
-  // DonnÃ©es hardcodÃ©es pour fallback (si la base de donnÃ©es n'est pas disponible)
+  // Données hardcodées pour fallback (si la base de données n'est pas disponible)
   final Map<String, double> tarifsPretAmortissable = {
     '18_12': 0.14979,
     '18_24': 0.29513,
@@ -1633,7 +1633,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner le montant du capital Ã  garantir pour continuer la simulation.',
+            'Veuillez renseigner le montant du capital à garantir pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -1645,7 +1645,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner la durÃ©e du contrat pour continuer la simulation.',
+            'Veuillez renseigner la durée du contrat pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -1657,7 +1657,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            "Veuillez renseigner la date de naissance de l'assurÃ© pour continuer la simulation.",
+            "Veuillez renseigner la date de naissance de l'assuré pour continuer la simulation.",
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -1668,8 +1668,8 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
     final age = _calculateAge(_dateNaissanceController.text);
     if (age < 18 || age > 65) {
       _showProfessionalDialog(
-        title: 'Ã‚ge non admissible',
-        message: "L'Ã¢ge doit Ãªtre compris entre 18 et 65 ans inclus.",
+        title: 'é‚ge non admissible',
+        message: "L'âge doit être compris entre 18 et 65 ans inclus.",
         icon: Icons.warning_amber_rounded,
         iconColor: Colors.red,
         backgroundColor: Colors.red,
@@ -1681,7 +1681,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         _capitalPrevoyanceController.text.trim().isEmpty) {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
-        message: 'Veuillez renseigner le capital pour la garantie PrÃ©voyance.',
+        message: 'Veuillez renseigner le capital pour la garantie Prévoyance.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -1694,7 +1694,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         _showProfessionalDialog(
           title: 'Champ obligatoire',
           message:
-              "Veuillez renseigner le montant assurÃ© pour la garantie Perte d'emploi.",
+              "Veuillez renseigner le montant assuré pour la garantie Perte d'emploi.",
           icon: Icons.edit_outlined,
           iconColor: Colors.orange,
           backgroundColor: Colors.orange,
@@ -1707,15 +1707,15 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   }
 
   /// ==========================================
-  /// RÃ‰CUPÃ‰RER UN TAUX DEPUIS LA BASE DE DONNÃ‰ES OU FALLBACK
+  /// RÉCUPÉRER UN TAUX DEPUIS LA BASE DE DONNÉES OU FALLBACK
   /// ==========================================
-  /// RÃ©cupÃ¨re le taux pour un type de prÃªt donnÃ© (amortissable ou dÃ©couvert)
-  /// depuis la base de donnÃ©es. Si non disponible, utilise le fallback (donnÃ©es hardcodÃ©es).
+  /// Récupère le taux pour un type de prêt donné (amortissable ou découvert)
+  /// depuis la base de données. Si non disponible, utilise le fallback (données hardcodées).
   ///
-  /// @param age: L'Ã¢ge de l'emprunteur
-  /// @param dureeMois: La durÃ©e du prÃªt en mois
-  /// @param categorie: La catÃ©gorie de prÃªt ('amortissable' ou 'decouvert')
-  /// @param tableFallback: Les donnÃ©es hardcodÃ©es Ã  utiliser en cas d'Ã©chec
+  /// @param age: L'âge de l'emprunteur
+  /// @param dureeMois: La durée du prêt en mois
+  /// @param categorie: La catégorie de prêt ('amortissable' ou 'decouvert')
+  /// @param tableFallback: Les données hardcodées à utiliser en cas d'échec
   ///
   /// @returns Le taux en pourcentage (ex: 0.150 = 0.15%)
   Future<double> _getRateFromDbOrFallback({
@@ -1726,14 +1726,14 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   }) async {
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ” [FLEX EMPRUNTEUR] Recherche taux                          â•‘');
+    print('â•‘ 🔍 [FLEX EMPRUNTEUR] Recherche taux                          â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print(
-        '   ðŸ“Š ParamÃ¨tres: age=$age, duree=$dureeMois mois, categorie=$categorie');
+        '   📊 Paramètres: age=$age, duree=$dureeMois mois, categorie=$categorie');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS FLEX EMPRUNTEUR',
@@ -1741,51 +1741,51 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         dureeContrat: dureeMois,
         periodicite: 'unique',
         categorie:
-            categorie, // Filtrer par catÃ©gorie (amortissable ou decouvert)
+            categorie, // Filtrer par catégorie (amortissable ou decouvert)
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
 
-      // VÃ©rifier que le tarif correspond Ã  la catÃ©gorie demandÃ©e (si spÃ©cifiÃ©e)
+      // Vérifier que le tarif correspond à la catégorie demandée (si spécifiée)
       if (tarifFromDB != null && tarifFromDB.prime != null) {
-        // VÃ©rifier que la catÃ©gorie correspond
+        // Vérifier que la catégorie correspond
         if (tarifFromDB.categorie != categorie) {
           print(
-              '   âš ï¸  Tarif trouvÃ© mais catÃ©gorie diffÃ©rente (DB: ${tarifFromDB.categorie}, attendu: $categorie)');
-          print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+              '   ⚠️  Tarif trouvé mais catégorie différente (DB: ${tarifFromDB.categorie}, attendu: $categorie)');
+          print('   ðŸ’¡ Passage au fallback (données hardcodées)');
         } else {
-          print('   âœ… Taux trouvÃ© depuis le SERVEUR: ${tarifFromDB.prime}%');
+          print('   ✅ Taux trouvé depuis le SERVEUR: ${tarifFromDB.prime}%');
           if (tarifFromDB.categorie != null) {
-            print('   ðŸ“‹ CatÃ©gorie: ${tarifFromDB.categorie}');
+            print('   📋 Catégorie: ${tarifFromDB.categorie}');
           }
-          print('   ðŸ’¡ Cache local IGNORÃ‰ - DonnÃ©es du serveur uniquement');
+          print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
           print(
               '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
           print(
-              'â•‘ âœ… [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis SERVEUR        â•‘');
+              'â•‘ ✅ [FLEX EMPRUNTEUR] Données utilisées depuis SERVEUR        â•‘');
           print(
               'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
           return tarifFromDB.prime!;
         }
       } else {
         print(
-            '   âš ï¸  Taux non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Taux non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   ðŸ’¡ Passage au fallback (données hardcodées)');
       }
     } catch (e) {
-      print('   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e');
-      print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+      print('   ❌ ERREUR lors de la récupération DB: $e');
+      print('   ðŸ’¡ Passage au fallback (données hardcodées)');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
     final exactKey = '${age}_$dureeMois';
     if (tableFallback.containsKey(exactKey)) {
       final taux = tableFallback[exactKey]!;
-      print('   âœ… Taux depuis FALLBACK (donnÃ©es hardcodÃ©es): $taux%');
+      print('   ✅ Taux depuis FALLBACK (données hardcodées): $taux%');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
       print(
-          'â•‘ âš ï¸  [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis FALLBACK       â•‘');
+          'â•‘ ⚠️  [FLEX EMPRUNTEUR] Données utilisées depuis FALLBACK       â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return taux;
@@ -1801,11 +1801,11 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         return (dureeA - dureeMois).abs().compareTo((dureeB - dureeMois).abs());
       });
       final taux = tableFallback[possibleKeys.first]!;
-      print('   âœ… Taux depuis FALLBACK (approximatif): $taux%');
+      print('   ✅ Taux depuis FALLBACK (approximatif): $taux%');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
       print(
-          'â•‘ âš ï¸  [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis FALLBACK       â•‘');
+          'â•‘ ⚠️  [FLEX EMPRUNTEUR] Données utilisées depuis FALLBACK       â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return taux;
@@ -1831,34 +1831,34 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               .compareTo((dureeB - dureeMois).abs());
         });
         final taux = tableFallback[closestAgeKeys.first]!;
-        print('   âœ… Taux depuis FALLBACK (approximatif): $taux%');
+        print('   ✅ Taux depuis FALLBACK (approximatif): $taux%');
         print(
             '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            'â•‘ âš ï¸  [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis FALLBACK       â•‘');
+            'â•‘ ⚠️  [FLEX EMPRUNTEUR] Données utilisées depuis FALLBACK       â•‘');
         print(
             'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return taux;
       }
     }
 
-    print('   âŒ Aucun taux disponible (ni DB, ni fallback)');
+    print('   ❌ Aucun taux disponible (ni DB, ni fallback)');
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âŒ [FLEX EMPRUNTEUR] ERREUR: Aucune donnÃ©e disponible        â•‘');
+    print('â•‘ ❌ [FLEX EMPRUNTEUR] ERREUR: Aucune donnée disponible        â•‘');
     print(
         'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     return 0.0;
   }
 
   /// ==========================================
-  /// RÃ‰CUPÃ‰RER LE TAUX PERte D'EMPLOI DEPUIS LA BASE DE DONNÃ‰ES OU FALLBACK
+  /// RÉCUPÉRER LE TAUX PERte D'EMPLOI DEPUIS LA BASE DE DONNÉES OU FALLBACK
   /// ==========================================
-  /// RÃ©cupÃ¨re le taux pour la garantie perte d'emploi depuis la base de donnÃ©es.
-  /// Si non disponible, utilise le fallback (donnÃ©es hardcodÃ©es).
+  /// Récupère le taux pour la garantie perte d'emploi depuis la base de données.
+  /// Si non disponible, utilise le fallback (données hardcodées).
   ///
-  /// @param dureeAnnees: La durÃ©e du prÃªt en annÃ©es (max 6 ans)
-  /// @param tableFallback: Les donnÃ©es hardcodÃ©es Ã  utiliser en cas d'Ã©chec
+  /// @param dureeAnnees: La durée du prêt en années (max 6 ans)
+  /// @param tableFallback: Les données hardcodées à utiliser en cas d'échec
   ///
   /// @returns Le montant fixe (ex: 19.20)
   Future<double> _getRatePerteEmploiFromDbOrFallback({
@@ -1867,67 +1867,67 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   }) async {
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ” [FLEX EMPRUNTEUR] Recherche taux Perte d\'Emploi           â•‘');
+    print('â•‘ 🔍 [FLEX EMPRUNTEUR] Recherche taux Perte d\'Emploi           â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print('   ðŸ“Š ParamÃ¨tres: duree=$dureeAnnees annÃ©es');
+    print('   📊 Paramètres: duree=$dureeAnnees années');
 
     int dureeEffective = dureeAnnees > 6 ? 6 : dureeAnnees;
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS FLEX EMPRUNTEUR',
-        age: null, // Perte emploi n'utilise pas l'Ã¢ge
-        dureeContrat: dureeEffective, // En annÃ©es pour perte emploi
+        age: null, // Perte emploi n'utilise pas l'âge
+        dureeContrat: dureeEffective, // En années pour perte emploi
         periodicite: 'unique',
-        categorie: 'perte_emploi', // Filtrer par catÃ©gorie perte_emploi
+        categorie: 'perte_emploi', // Filtrer par catégorie perte_emploi
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
 
-      // VÃ©rifier que le tarif correspond Ã  la catÃ©gorie perte_emploi
+      // Vérifier que le tarif correspond à la catégorie perte_emploi
       if (tarifFromDB != null &&
           tarifFromDB.prime != null &&
           tarifFromDB.categorie == 'perte_emploi') {
-        print('   âœ… Taux trouvÃ© depuis le SERVEUR: ${tarifFromDB.prime}');
-        print('   ðŸ’¡ Cache local IGNORÃ‰ - DonnÃ©es du serveur uniquement');
+        print('   ✅ Taux trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
+        print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
         print(
             '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            'â•‘ âœ… [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis SERVEUR        â•‘');
+            'â•‘ ✅ [FLEX EMPRUNTEUR] Données utilisées depuis SERVEUR        â•‘');
         print(
             'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return tarifFromDB.prime!;
       } else {
         print(
-            '   âš ï¸  Taux non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Taux non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   ðŸ’¡ Passage au fallback (données hardcodées)');
       }
     } catch (e) {
-      print('   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e');
-      print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+      print('   ❌ ERREUR lors de la récupération DB: $e');
+      print('   ðŸ’¡ Passage au fallback (données hardcodées)');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
     String cle = dureeEffective.toString();
     if (tableFallback.containsKey(cle)) {
       final montant = tableFallback[cle]!;
-      print('   âœ… Taux depuis FALLBACK (donnÃ©es hardcodÃ©es): $montant');
+      print('   ✅ Taux depuis FALLBACK (données hardcodées): $montant');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
       print(
-          'â•‘ âš ï¸  [FLEX EMPRUNTEUR] DonnÃ©es utilisÃ©es depuis FALLBACK       â•‘');
+          'â•‘ ⚠️  [FLEX EMPRUNTEUR] Données utilisées depuis FALLBACK       â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return montant;
     }
 
-    print('   âŒ Aucun taux disponible (ni DB, ni fallback)');
+    print('   ❌ Aucun taux disponible (ni DB, ni fallback)');
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âŒ [FLEX EMPRUNTEUR] ERREUR: Aucune donnÃ©e disponible        â•‘');
+    print('â•‘ ❌ [FLEX EMPRUNTEUR] ERREUR: Aucune donnée disponible        â•‘');
     print(
         'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     return 0.0;
@@ -1946,12 +1946,12 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
     try {
       double capital = _parseDouble(_capitalController.text);
 
-      // VÃ©rification du montant maximum (30 000 000 FCFA)
+      // Vérification du montant maximum (30 000 000 FCFA)
       if (capital > 30000000) {
         _showProfessionalDialog(
-          title: 'Limite de capital dÃ©passÃ©e',
+          title: 'Limite de capital dépassée',
           message:
-              'Le montant maximum du prÃªt Ã  couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA. Le montant a Ã©tÃ© ajustÃ© automatiquement.',
+              'Le montant maximum du prêt à couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA. Le montant a été ajusté automatiquement.',
           icon: Icons.monetization_on_outlined,
           iconColor: Colors.orange,
           backgroundColor: Colors.orange,
@@ -1962,13 +1962,13 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
       final age = _calculateAge(_dateNaissanceController.text);
       int duree = _parseInt(_dureeController.text);
-      int dureeMois = dureeType == 'annÃ©es' ? duree * 12 : duree;
-      int dureeAnnees = dureeType == 'annÃ©es' ? duree : (dureeMois / 12).ceil();
+      int dureeMois = dureeType == 'années' ? duree * 12 : duree;
+      int dureeAnnees = dureeType == 'années' ? duree : (dureeMois / 12).ceil();
 
-      // Taux de base selon type de prÃªt
-      // Utiliser la base de donnÃ©es ou le fallback
+      // Taux de base selon type de prêt
+      // Utiliser la base de données ou le fallback
       double rateBase;
-      if (typePret == 'PrÃªt amortissable' || typePret == 'PrÃªt scolaire') {
+      if (typePret == 'Prêt amortissable' || typePret == 'Prêt scolaire') {
         rateBase = await _getRateFromDbOrFallback(
           age: age,
           dureeMois: dureeMois,
@@ -1976,7 +1976,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           tableFallback: tarifsPretAmortissable,
         );
       } else {
-        // PrÃªt dÃ©couvert
+        // Prêt découvert
         rateBase = await _getRateFromDbOrFallback(
           age: age,
           dureeMois: dureeMois,
@@ -1990,7 +1990,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
       // Garanties optionnelles
       double primePrevoyance = 0.0;
-      if (garantiePrevoyance && typePret != 'PrÃªt scolaire') {
+      if (garantiePrevoyance && typePret != 'Prêt scolaire') {
         final capitalPrev = _parseDouble(_capitalPrevoyanceController.text);
         final ratePrev = await _getRateFromDbOrFallback(
           age: age,
@@ -2005,7 +2005,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       }
 
       double primePerteEmploi = 0.0;
-      if (garantiePerteEmploi && typePret != 'PrÃªt scolaire') {
+      if (garantiePerteEmploi && typePret != 'Prêt scolaire') {
         final capitalPE = _parseDouble(_capitalPerteEmploiController.text);
         final ratePE = await _getRatePerteEmploiFromDbOrFallback(
           dureeAnnees: dureeAnnees,
@@ -2029,7 +2029,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         };
       });
 
-      // Sauvegarder la simulation en base de donnÃ©es
+      // Sauvegarder la simulation en base de données
       if (result != null && result!['primeTotal'] > 0) {
         final age = _calculateAge(_dateNaissanceController.text);
         SimulationService.saveSimulation(
@@ -2047,7 +2047,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       _showProfessionalDialog(
         title: 'Erreur de calcul',
         message:
-            'Une erreur est survenue lors du calcul. Veuillez vÃ©rifier vos donnÃ©es.\nDÃ©tail: $e',
+            'Une erreur est survenue lors du calcul. Veuillez vérifier vos données.\nDétail: $e',
         icon: Icons.error_outline,
         iconColor: rougeCoris,
         backgroundColor: rougeCoris,
@@ -2065,7 +2065,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       _capitalPrevoyanceController.clear();
       _capitalPerteEmploiController.clear();
       dureeType = 'mois';
-      typePret = 'PrÃªt amortissable';
+      typePret = 'Prêt amortissable';
       garantiePrevoyance = false;
       garantiePerteEmploi = false;
       result = null;
@@ -2163,7 +2163,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                       ),
                     ),
                     Text(
-                      "L'assurance qui couvre votre prÃªt",
+                      "L'assurance qui couvre votre prêt",
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: context.sp(14),
@@ -2203,7 +2203,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                 SizedBox(width: context.r(12)),
                 Expanded(
                   child: Text(
-                    "ParamÃ¨tres de simulation",
+                    "Paramètres de simulation",
                     style: TextStyle(
                       fontSize: MediaQuery.of(context).size.width * 0.05,
                       fontWeight: FontWeight.bold,
@@ -2215,13 +2215,13 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             ),
             SizedBox(height: context.r(32)),
 
-            // Nouveau design pour le type de prÃªt
+            // Nouveau design pour le type de prêt
             _buildTypePretDropdown(),
             SizedBox(height: context.r(24)),
 
             _buildModernTextField(
               controller: _capitalController,
-              label: 'Montant du prÃªt Ã  couvrir',
+              label: 'Montant du prêt à couvrir',
               hint: 'Saisissez le montant',
               icon: Icons.monetization_on,
               suffix: 'FCFA',
@@ -2232,12 +2232,12 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   if (numericValue.isNotEmpty) {
                     final number = double.tryParse(numericValue);
                     if (number != null) {
-                      // VÃ©rification du montant maximum (30 000 000 FCFA)
+                      // Vérification du montant maximum (30 000 000 FCFA)
                       if (number > 30000000) {
                         _showProfessionalDialog(
-                          title: 'Limite de capital dÃ©passÃ©e',
+                          title: 'Limite de capital dépassée',
                           message:
-                              'Le montant maximum du prÃªt Ã  couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA.',
+                              'Le montant maximum du prêt à couvrir pour FLEX EMPRUNTEUR est de 30 000 000 FCFA.',
                           icon: Icons.monetization_on_outlined,
                           iconColor: Colors.orange,
                           backgroundColor: Colors.orange,
@@ -2267,8 +2267,8 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   flex: 2,
                   child: _buildModernTextField(
                     controller: _dureeController,
-                    label: 'DurÃ©e du contrat',
-                    hint: 'DurÃ©e',
+                    label: 'Durée du contrat',
+                    hint: 'Durée',
                     icon: Icons.schedule,
                     onChanged: (value) {},
                   ),
@@ -2276,11 +2276,11 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                 SizedBox(width: context.r(16)),
                 Expanded(
                   child: _buildModernDropdown(
-                    label: 'UnitÃ©',
+                    label: 'Unité',
                     value: dureeType,
                     items: const {
                       'mois': 'mois',
-                      'annÃ©es': 'annÃ©es',
+                      'années': 'années',
                     },
                     icon: null,
                     onChanged: (val) => setState(() => dureeType = val!),
@@ -2290,7 +2290,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             ),
             SizedBox(height: context.r(24)),
 
-            // Champ date de naissance au lieu de l'Ã¢ge
+            // Champ date de naissance au lieu de l'âge
             _buildDateNaissanceField(),
             SizedBox(height: context.r(32)),
 
@@ -2377,26 +2377,26 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.account_balance, color: Color(0xFF002B6B)),
-            labelText: 'Type de prÃªt Ã  assurer',
+            labelText: 'Type de prêt à assurer',
           ),
           items: const [
             DropdownMenuItem(
-              value: 'PrÃªt amortissable',
-              child: Text('PrÃªt amortissable'),
+              value: 'Prêt amortissable',
+              child: Text('Prêt amortissable'),
             ),
             DropdownMenuItem(
-              value: 'PrÃªt dÃ©couvert',
-              child: Text('PrÃªt dÃ©couvert'),
+              value: 'Prêt découvert',
+              child: Text('Prêt découvert'),
             ),
             DropdownMenuItem(
-              value: 'PrÃªt scolaire',
-              child: Text('PrÃªt scolaire'),
+              value: 'Prêt scolaire',
+              child: Text('Prêt scolaire'),
             ),
           ],
           onChanged: (value) {
             setState(() {
               typePret = value!;
-              if (typePret == 'PrÃªt scolaire') {
+              if (typePret == 'Prêt scolaire') {
                 garantiePrevoyance = false;
                 garantiePerteEmploi = false;
               }
@@ -2414,7 +2414,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Date de naissance de l'assurÃ©",
+          "Date de naissance de l'assuré",
           style: TextStyle(
             fontSize: MediaQuery.of(context).size.width * 0.035,
             fontWeight: FontWeight.w600,
@@ -2464,7 +2464,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'L\'Ã¢ge doit Ãªtre compris entre 18 et 65 ans',
+              'L\'âge doit être compris entre 18 et 65 ans',
               style: TextStyle(
                 color: Colors.orange,
                 fontSize: MediaQuery.of(context).size.width * 0.03,
@@ -2476,7 +2476,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   }
 
   Widget _buildGarantiesSection() {
-    final disabled = typePret == 'PrÃªt scolaire';
+    final disabled = typePret == 'Prêt scolaire';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2503,10 +2503,10 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   ),
                   child: CheckboxListTile(
                     title: Text(
-                      'PrÃ©voyance',
+                      'Prévoyance',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    subtitle: Text('Garantie dÃ©cÃ¨s'),
+                    subtitle: Text('Garantie décès'),
                     value: garantiePrevoyance,
                     activeColor: rougeCoris,
                     onChanged: (val) {
@@ -2518,7 +2518,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   SizedBox(height: context.r(16)),
                   _buildModernTextField(
                     controller: _capitalPrevoyanceController,
-                    label: 'Capital PrÃ©voyance',
+                    label: 'Capital Prévoyance',
                     hint: 'Montant',
                     icon: Icons.security,
                     suffix: 'FCFA',
@@ -2566,7 +2566,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   SizedBox(height: context.r(16)),
                   _buildModernTextField(
                     controller: _capitalPerteEmploiController,
-                    label: "Montant de l'Ã©chÃ©ance",
+                    label: "Montant de l'échéance",
                     hint: 'Montant de la traite',
                     icon: Icons.savings,
                     suffix: 'FCFA',
@@ -2634,7 +2634,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: MediaQuery.of(context).size.width * 0.04,
                           fontWeight: FontWeight.bold,
@@ -2642,7 +2642,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                         ),
                       ),
                       Text(
-                        "DÃ©tail de votre prime",
+                        "Détail de votre prime",
                         style: TextStyle(
                           fontSize: MediaQuery.of(context).size.width * 0.035,
                           color: Colors.black54,
@@ -2662,7 +2662,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             _buildPrimeRow("Prime de base", result!['primeBase']),
             if (garantiePrevoyance &&
                 (result!['primePrevoyance'] as double) > 0)
-              _buildPrimeRow("Prime PrÃ©voyance", result!['primePrevoyance']),
+              _buildPrimeRow("Prime Prévoyance", result!['primePrevoyance']),
             if (garantiePerteEmploi &&
                 (result!['primePerteEmploi'] as double) > 0)
               _buildPrimeRow(
@@ -2728,7 +2728,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                   ),
                   SizedBox(height: context.r(8)),
                   Text(
-                    'Taux de base appliquÃ© : ${(result!['rateBase'] * 100).toStringAsFixed(2)} %',
+                    'Taux de base appliqué : ${(result!['rateBase'] * 100).toStringAsFixed(2)} %',
                     style: TextStyle(
                       fontSize: MediaQuery.of(context).size.width * 0.032,
                       color: Colors.black54,
@@ -2743,7 +2743,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               height: 48,
               child: ElevatedButton(
                 onPressed: () async {
-                  // PrÃ©parer les donnÃ©es de simulation
+                  // Préparer les données de simulation
                   final simulationData = {
                     'typePret': typePret,
                     'capital': _parseDouble(
@@ -2763,10 +2763,10 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                         : 0,
                   };
 
-                  // VÃ©rifier le rÃ´le et rediriger
+                  // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
-                    // Pour les commerciaux, rediriger vers la sÃ©lection de client
+                    // Pour les commerciaux, rediriger vers la sélection de client
                     Navigator.pushNamed(
                       context,
                       '/commercial/select_client',

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 
 /// ===============================================
-/// âŒâŒâŒ PRODUIT DÃ‰SACTIVÃ‰ - NE PAS UTILISER âŒâŒâŒ
+/// ❌❌❌ PRODUIT DÉSACTIVÉ - NE PAS UTILISER ❌❌❌
 /// ===============================================
-/// PAGE DE SOUSCRIPTION - PRÃŠTS SCOLAIRES
+/// PAGE DE SOUSCRIPTION - PRéŠTS SCOLAIRES
 /// ===============================================
-/// âš ï¸ CE PRODUIT A Ã‰TÃ‰ TEMPORAIREMENT DÃ‰SACTIVÃ‰ âš ï¸
+/// ⚠️ CE PRODUIT A ÉTÉ TEMPORAIREMENT DÉSACTIVÉ ⚠️
 
 class SouscriptionPretsScolairePage extends StatefulWidget {
   const SouscriptionPretsScolairePage({super.key});
@@ -28,7 +28,7 @@ class _SouscriptionPretsScolairePageState
       appBar: AppBar(
         backgroundColor: bleuCoris,
         title: const Text(
-          'PRÃŠTS SCOLAIRES',
+          'PRéŠTS SCOLAIRES',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,

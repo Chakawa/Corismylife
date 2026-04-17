@@ -11,14 +11,14 @@ import 'package:mycorislife/services/wave_payment_handler.dart';
 /// ============================================
 /// Cette page affiche la liste de tous les contrats actifs
 /// de l'utilisateur. Un contrat est une proposition qui a
-/// Ã©tÃ© payÃ©e et est maintenant active.
+/// été payée et est maintenant active.
 ///
-/// FonctionnalitÃ©s:
+/// Fonctionnalités:
 /// - Affichage de la liste des contrats
 /// - Filtrage par type de produit
-/// - Visualisation des dÃ©tails d'un contrat
+/// - Visualisation des détails d'un contrat
 /// - Paiement des primes (mensuelles, annuelles, etc.)
-/// - TÃ©lÃ©chargement du PDF du contrat
+/// - Téléchargement du PDF du contrat
 class MesContratsPage extends StatefulWidget {
   const MesContratsPage({super.key});
 
@@ -29,7 +29,7 @@ class MesContratsPage extends StatefulWidget {
 class _MesContratsPageState extends State<MesContratsPage>
     with TickerProviderStateMixin {
   // ===================================
-  // SERVICES ET DONNÃ‰ES
+  // SERVICES ET DONNÉES
   // ===================================
   final SubscriptionService _service = SubscriptionService();
   List<Contrat> contrats = [];
@@ -318,7 +318,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // En-tÃªte du contrat
+                // En-tête du contrat
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -418,11 +418,11 @@ class _MesContratsPageState extends State<MesContratsPage>
                 // Boutons d'action
                 Row(
                   children: [
-                    // Bouton DÃ©tails
+                    // Bouton Détails
                     Expanded(
                       child: ElevatedButton.icon(
                         icon: Icon(Icons.info_outline, size: 18),
-                        label: Text('DÃ©tails'),
+                        label: Text('Détails'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFF3F4F6),
                           foregroundColor: const Color(0xFF2563EB),
@@ -480,7 +480,7 @@ class _MesContratsPageState extends State<MesContratsPage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('MÃ©thode de paiement'),
+        title: Text('Méthode de paiement'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -535,11 +535,11 @@ class _MesContratsPageState extends State<MesContratsPage>
           montant: montant,
           description: 'Paiement prime ${contrat.nomProduit} #${contrat.id}',
           onPaymentSuccess: () {
-            // RafraÃ®chir la liste aprÃ¨s paiement rÃ©ussi
+            // Rafraîchir la liste après paiement réussi
             _loadContrats();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('âœ… Prime payÃ©e avec succÃ¨s !'),
+                content: Text('Prime payée avec succès !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -548,7 +548,7 @@ class _MesContratsPageState extends State<MesContratsPage>
         ),
       );
     } else if (paymentMethod == 'Wave') {
-      // DÃ©marrer le paiement Wave
+      // Démarrer le paiement Wave
       try {
         await WavePaymentHandler.startPayment(
           context,
@@ -559,7 +559,7 @@ class _MesContratsPageState extends State<MesContratsPage>
             _loadContrats();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('âœ… Paiement Wave rÃ©ussi !'),
+                content: Text('Paiement Wave réussi !'),
                 backgroundColor: Color(0xFF10B981),
                 duration: Duration(seconds: 3),
               ),
@@ -575,10 +575,10 @@ class _MesContratsPageState extends State<MesContratsPage>
         );
       }
     } else {
-      // Orange Money - Ã  implÃ©menter
+      // Orange Money - à implémenter
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$paymentMethod sera disponible bientÃ´t'),
+          content: Text('$paymentMethod sera disponible bientôt'),
           backgroundColor: Colors.orange,
         ),
       );

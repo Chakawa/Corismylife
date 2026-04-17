@@ -73,9 +73,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
     try {
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
 
-      developer.log('=== TOUTES LES CLÃ‰S DISPONIBLES CONTRAT ===');
+      developer.log('=== TOUTES LES CLÉS DISPONIBLES CONTRAT ===');
       if (data['subscription'] != null) {
-        developer.log('ClÃ©s dans subscription: ${data['subscription'].keys}');
+        developer.log('Clés dans subscription: ${data['subscription'].keys}');
         data['subscription'].forEach((key, value) {
           if (key != 'souscriptiondata') {
             developer.log('$key: $value (type: ${value.runtimeType})');
@@ -120,7 +120,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   String _formatDate(dynamic dateValue) {
     try {
-      if (dateValue == null) return 'Non dÃ©finie';
+      if (dateValue == null) return 'Non définie';
 
       DateTime date;
       if (dateValue is DateTime) {
@@ -242,10 +242,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
       'validated',
       'confirmed',
       'ok',
-      'validÃ©',
-      'validÃ©e',
-      'confirmÃ©',
-      'confirmÃ©e',
+      'validé',
+      'validée',
+      'confirmé',
+      'confirmée',
       'authorised',
       'authorized',
       'contrat',
@@ -281,25 +281,25 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   String _getBadgeText(String produit) {
     if (produit.toLowerCase().contains('solidarite')) {
-      return 'CORIS SOLIDARITÃ‰';
+      return 'CORIS SOLIDARITÉ';
     } else if (produit.toLowerCase().contains('emprunteur')) {
       return 'FLEX EMPRUNTEUR';
     } else if (produit.toLowerCase().contains('etude')) {
-      return 'CORIS Ã‰TUDE';
+      return 'CORIS ÉTUDE';
     } else if (produit.toLowerCase().contains('retraite')) {
       return 'CORIS RETRAITE';
     } else if (produit.toLowerCase().contains('serenite')) {
-      return 'CORIS SÃ‰RÃ‰NITÃ‰';
+      return 'CORIS SÉRÉNITÉ';
     } else if (produit.toLowerCase().contains('familis')) {
       return 'CORIS FAMILIS';
     } else if (produit.toLowerCase().contains('epargne')) {
-      return 'CORIS Ã‰PARGNE BONUS';
+      return 'CORIS ÉPARGNE BONUS';
     } else {
       return 'ASSURANCE VIE';
     }
   }
 
-  // MÃ‰THODE SUPPRIMÃ‰E : _getProductIcon n'est pas utilisÃ©e
+  // MÉTHODE SUPPRIMÉE : _getProductIcon n'est pas utilisée
   // IconData _getProductIcon(String produit) {
   //   ...
   // }
@@ -321,7 +321,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   /// Normalise une valeur document en nom de fichier serveur.
-  /// Accepte: URL complÃ¨te, chemin local, ou nom brut.
+  /// Accepte: URL complète, chemin local, ou nom brut.
   String? _extractServerFileName(dynamic rawValue) {
     if (rawValue == null) return null;
     final asString = rawValue.toString().trim();
@@ -340,9 +340,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
         final echeance = DateTime.parse(dateEcheance.toString());
         final now = DateTime.now();
         if (echeance.isBefore(now)) {
-          return 'Ã‰chu';
+          return 'échu';
         } else if (echeance.difference(now).inDays <= 30) {
-          return 'BientÃ´t Ã©chu';
+          return 'Bientôt échu';
         }
       } catch (e) {
         developer.log('Erreur calcul statut: $e', error: e);
@@ -355,9 +355,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
     switch (status) {
       case 'Actif':
         return const Color(0xFF10B981);
-      case 'BientÃ´t Ã©chu':
+      case 'Bientôt échu':
         return const Color(0xFFF59E0B);
-      case 'Ã‰chu':
+      case 'échu':
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF64748B);
@@ -384,7 +384,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           dateEffetDt.second,
         );
       } catch (e) {
-        developer.log('Erreur calcul date Ã©chÃ©ance: $e', error: e);
+        developer.log('Erreur calcul date échéance: $e', error: e);
       }
     }
 
@@ -692,18 +692,18 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildSolidariteSection(Map<String, dynamic> data) {
     final capital = data['capital'] ?? 0;
     final primeTotale = data['prime_totale'] ?? 0;
-    final periodicite = data['periodicite'] ?? 'Non dÃ©finie';
+    final periodicite = data['periodicite'] ?? 'Non définie';
     final conjoints = data['conjoints'] ?? [];
     final enfants = data['enfants'] ?? [];
     final ascendants = data['ascendants'] ?? [];
 
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.people_outline,
       const Color(0xFF10B981),
       [
         _buildCombinedRecapRow(
-            'Produit', 'CORIS SOLIDARITÃ‰', 'PÃ©riodicitÃ©', periodicite),
+            'Produit', 'CORIS SOLIDARITÉ', 'Périodicité', periodicite),
         _buildCombinedRecapRow('Capital garanti', _formatMontant(capital),
             'Prime totale', _formatMontant(primeTotale)),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
@@ -730,7 +730,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
               border: Border.all(color: const Color(0xFFFECDCA)),
             ),
             child: Text(
-              'Aucun membre assurÃ©',
+              'Aucun membre assuré',
               style: TextStyle(
                 color: Color(0xFFD92D20),
                 fontSize: context.sp(12),
@@ -742,7 +742,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
         _buildCombinedRecapRow(
           'Date d\'effet',
           _formatDate(data['date_effet']),
-          'Date d\'Ã©chÃ©ance',
+          'Date d\'échéance',
           _formatDate(data[
               'date_echeance']), // CORRECTION : suppression interpolation inutile
         ),
@@ -778,7 +778,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildMembreRecap(dynamic membre) {
     final nomPrenom = membre['nom_prenom'] ??
-        'Non renseignÃ©'; // CORRECTION : suppression duplication
+        'Non renseigné'; // CORRECTION : suppression duplication
     final dateNaissance = membre['date_naissance'] ??
         membre['birthDate'] ??
         membre['dateNaissance'];
@@ -787,7 +787,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     if (membre.containsKey('lien_parente')) {
       lienParente = membre['lien_parente'] ?? '';
     } else {
-      lienParente = 'Membre assurÃ©';
+      lienParente = 'Membre assuré';
     }
 
     return Container(
@@ -822,7 +822,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           if (dateNaissance != null) ...[
             SizedBox(height: context.r(4)),
             Text(
-              'NÃ©(e) le: ${_formatDate(dateNaissance)}',
+              'Né(e) le: ${_formatDate(dateNaissance)}',
               style: TextStyle(
                 fontSize: context.sp(12),
                 color: Color(0xFF64748B),
@@ -836,16 +836,16 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildEpargneSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.savings_outlined,
       const Color(0xFF10B981),
       [
-        _buildRecapRow('Produit', 'CORIS Ã‰PARGNE BONUS'),
+        _buildRecapRow('Produit', 'CORIS ÉPARGNE BONUS'),
         _buildRecapRow('Statut', _getContractStatus()),
         _buildRecapRow('Capital au terme', _formatMontant(data['capital'])),
         _buildRecapRow(
             'Prime mensuelle', _formatMontant(data['prime_mensuelle'])),
-        _buildRecapRow('DurÃ©e', '15 ans (180 mois)'),
+        _buildRecapRow('Durée', '15 ans (180 mois)'),
         _buildRecapRow('Date d\'effet', _formatDate(data['date_effet'])),
         _buildRecapRow('Date de fin', _formatDate(data['date_fin'])),
         _buildRecapRow('Bonus', _getBonusText(data)),
@@ -865,23 +865,23 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final mode = data['mode_souscription'] ?? 'Mode Prime';
     final prime = data['prime_calculee'] ?? data['prime'];
     final rente = data['rente_calculee'] ?? data['rente'];
-    final ageParent = data['age_parent'] ?? 'Non renseignÃ©';
+    final ageParent = data['age_parent'] ?? 'Non renseigné';
     final dateNaissanceParent = data['date_naissance_parent'];
 
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.school_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'CORIS Ã‰TUDE', 'Mode', mode),
+        _buildCombinedRecapRow('Produit', 'CORIS ÉTUDE', 'Mode', mode),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
-          'Ã‚ge du parent',
+          'Âge du parent',
           '$ageParent ans',
           'Date de naissance',
           dateNaissanceParent != null
               ? _formatDate(dateNaissanceParent)
-              : 'Non renseignÃ©e',
+              : 'Non renseignée',
         ),
         _buildCombinedRecapRow(
           'Prime ${data['periodicite']}',
@@ -890,78 +890,78 @@ class ContratDetailPageState extends State<ContratDetailPage>
           _formatMontant(rente),
         ),
         _buildCombinedRecapRow(
-            'DurÃ©e du contrat',
-            '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : (17 - (data['age_enfant'] ?? 0))} ans (jusqu\'Ã  17 ans)',
-            'PÃ©riodicitÃ©',
-            data['periodicite'] ?? 'Non dÃ©finie'),
+            'Durée du contrat',
+            '${data['duree_mois'] != null ? (data['duree_mois'] ~/ 12) : (17 - (data['age_enfant'] ?? 0))} ans (jusqu\'à 17 ans)',
+            'Périodicité',
+            data['periodicite'] ?? 'Non définie'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
+            'Date d\'échéance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildFamilisSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non dÃ©finie';
+    final duree = data['duree'] ?? 'Non définie';
     final capital = data['capital'] ?? 0;
     final prime = data['prime'] ?? data['prime_calculee'] ?? 0;
 
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.family_restroom_outlined,
       const Color(0xFF10B981),
       [
         _buildCombinedRecapRow(
-            'Produit', 'CORIS FAMILIS', 'DurÃ©e', '$duree annÃ©es'),
+            'Produit', 'CORIS FAMILIS', 'Durée', '$duree années'),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
             'Prime ${data['periodicite'] == 'unique' ? 'unique' : 'annuelle'}',
             _formatMontant(prime),
-            'Capital Ã  garantir',
+            'Capital à garantir',
             _formatMontant(capital)),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
+            'Date d\'échéance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildFlexEmprunteurSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.home_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR', 'Type de prÃªt',
-            data['type_pret'] ?? 'Non dÃ©fini'),
+        _buildCombinedRecapRow('Produit', 'FLEX EMPRUNTEUR', 'Type de prêt',
+            data['type_pret'] ?? 'Non défini'),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
-            'Capital Ã  garantir',
+            'Capital à garantir',
             _formatMontant(data['capital']),
-            'DurÃ©e',
+            'Durée',
             '${data['duree']} ${data['duree_type']}'),
         if (data['date_effet'] != null && data['date_echeance'] != null)
           _buildCombinedRecapRow(
               'Date d\'effet',
               _formatDate(data['date_effet']),
-              'Date d\'Ã©chÃ©ance',
+              'Date d\'échéance',
               _formatDate(data['date_echeance'])),
         if (data['date_effet'] != null && data['date_echeance'] == null)
           _buildCombinedRecapRow(
               'Date d\'effet', _formatDate(data['date_effet']), '', ''),
         if (data['date_effet'] == null && data['date_echeance'] != null)
           _buildCombinedRecapRow(
-              'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance']), '', ''),
-        _buildCombinedRecapRow('Prime annuelle estimÃ©e',
+              'Date d\'échéance', _formatDate(data['date_echeance']), '', ''),
+        _buildCombinedRecapRow('Prime annuelle estimée',
             _formatMontant(data['prime_annuelle']), '', ''),
         if (data['garantie_prevoyance'] == true &&
             data['garantie_perte_emploi'] == true)
           _buildCombinedRecapRow(
-              'Garantie PrÃ©voyance',
+              'Garantie Prévoyance',
               _formatMontant(data['capital_prevoyance']),
               'Garantie Perte d\'emploi',
               _formatMontant(data['capital_perte_emploi'])),
         if (data['garantie_prevoyance'] == true &&
             data['garantie_perte_emploi'] != true)
-          _buildCombinedRecapRow('Garantie PrÃ©voyance',
+          _buildCombinedRecapRow('Garantie Prévoyance',
               _formatMontant(data['capital_prevoyance']), '', ''),
         if (data['garantie_prevoyance'] != true &&
             data['garantie_perte_emploi'] == true)
@@ -972,10 +972,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   Widget _buildRetraiteSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non dÃ©finie';
+    final duree = data['duree'] ?? 'Non définie';
 
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.savings_outlined,
       const Color(0xFF10B981),
       [
@@ -985,46 +985,46 @@ class ContratDetailPageState extends State<ContratDetailPage>
         _buildCombinedRecapRow(
             'Capital au terme',
             _formatMontant(data['capital']),
-            'DurÃ©e du contrat',
-            '$duree ${data['duree_type'] == 'annÃ©es' ? 'ans' : 'mois'}'),
+            'Durée du contrat',
+            '$duree ${data['duree_type'] == 'années' ? 'ans' : 'mois'}'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
+            'Date d\'échéance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildSereniteSection(Map<String, dynamic> data) {
-    final duree = data['duree'] ?? 'Non dÃ©finie';
+    final duree = data['duree'] ?? 'Non définie';
 
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.health_and_safety_outlined,
       const Color(0xFF10B981),
       [
-        _buildCombinedRecapRow('Produit', 'CORIS SÃ‰RÃ‰NITÃ‰',
+        _buildCombinedRecapRow('Produit', 'CORIS SÉRÉNITÉ',
             'Prime ${data['periodicite']}', _formatMontant(data['prime'])),
         _buildCombinedRecapRow('Statut', _getContractStatus(), '', ''),
         _buildCombinedRecapRow(
             'Capital au terme',
             _formatMontant(data['capital']),
-            'DurÃ©e du contrat',
-            '$duree ${data['duree_type'] == 'annÃ©es' ? 'ans' : 'mois'}'),
+            'Durée du contrat',
+            '$duree ${data['duree_type'] == 'années' ? 'ans' : 'mois'}'),
         _buildCombinedRecapRow('Date d\'effet', _formatDate(data['date_effet']),
-            'Date d\'Ã©chÃ©ance', _formatDate(data['date_echeance'])),
+            'Date d\'échéance', _formatDate(data['date_echeance'])),
       ],
     );
   }
 
   Widget _buildDefaultProductSection(Map<String, dynamic> data) {
     return _buildRecapSection(
-      'DÃ©tails du Contrat',
+      'Détails du contrat',
       Icons.security_outlined,
       const Color(0xFF10B981),
       [
         _buildRecapRow('Produit', _getBadgeText(_getProductType())),
         _buildRecapRow('Statut', _getContractStatus()),
         _buildRecapRow(
-            'Date de crÃ©ation',
+            'Date de création',
             _formatDate(_subscriptionData?['date_creation'] ??
                 _subscriptionData?['created_at'])),
 
@@ -1036,7 +1036,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
         if (data['duree'] != null)
           _buildRecapRow(
-              'DurÃ©e',
+              'Durée',
               data['duree']
                   .toString()), // CORRECTION : suppression interpolation inutile
       ],
@@ -1138,7 +1138,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 backgroundColor: const Color(0xFF002B6B),
                 foregroundColor: Colors.white,
               ),
-              child: Text('RÃ©essayer'),
+              child: Text('Réessayer'),
             ),
           ],
         ),
@@ -1315,25 +1315,25 @@ class ContratDetailPageState extends State<ContratDetailPage>
             ),
             SizedBox(height: context.r(16)),
             _buildCombinedRecapRow(
-                'CivilitÃ©',
-                _userData?['civilite'] ?? 'Non renseignÃ©',
+                'Civilité',
+                _userData?['civilite'] ?? 'Non renseigné',
                 'Nom',
-                _userData?['nom'] ?? 'Non renseignÃ©'),
+                _userData?['nom'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
-                'PrÃ©nom',
-                _userData?['prenom'] ?? 'Non renseignÃ©',
+                'Prénom',
+                _userData?['prenom'] ?? 'Non renseigné',
                 'Email',
-                _userData?['email'] ?? 'Non renseignÃ©'),
+                _userData?['email'] ?? 'Non renseigné'),
             _buildCombinedRecapRow(
-                'TÃ©lÃ©phone',
-                _userData?['telephone'] ?? 'Non renseignÃ©',
+                'Téléphone',
+                _userData?['telephone'] ?? 'Non renseigné',
                 'Date de naissance',
                 _formatDate(_userData?['date_naissance'])),
             _buildCombinedRecapRow(
                 'Lieu de naissance',
-                _userData?['lieu_naissance'] ?? 'Non renseignÃ©',
+                _userData?['lieu_naissance'] ?? 'Non renseigné',
                 'Adresse',
-                _userData?['adresse'] ?? 'Non renseignÃ©'),
+                _userData?['adresse'] ?? 'Non renseigné'),
           ],
         ),
       ),
@@ -1502,7 +1502,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "BÃ©nÃ©ficiaires et Contacts",
+              "Bénéficiaires et contacts",
               style: TextStyle(
                 fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
@@ -1512,9 +1512,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
             SizedBox(height: context.r(16)),
             if (beneficiaire != null) ...[
               _buildContactItem(
-                "BÃ©nÃ©ficiaire",
-                beneficiaire['nom'] ?? 'Non spÃ©cifiÃ©',
-                beneficiaire['lien_parente'] ?? 'BÃ©nÃ©ficiaire',
+                "Bénéficiaire",
+                beneficiaire['nom'] ?? 'Non spécifié',
+                beneficiaire['lien_parente'] ?? 'Bénéficiaire',
                 beneficiaire['contact'],
                 beneficiaire['date_naissance'] ??
                     beneficiaire['dateNaissance'] ??
@@ -1526,7 +1526,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             if (contactUrgence != null) ...[
               _buildContactItem(
                 "Contact d'urgence",
-                contactUrgence['nom'] ?? 'Non spÃ©cifiÃ©',
+                contactUrgence['nom'] ?? 'Non spécifié',
                 contactUrgence['lien_parente'] ?? 'Contact',
                 contactUrgence['contact'],
                 contactUrgence['date_naissance'] ??
@@ -1537,7 +1537,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
             ],
             if (beneficiaire == null && contactUrgence == null) ...[
               Text(
-                "Aucun bÃ©nÃ©ficiaire ou contact spÃ©cifiÃ©",
+                "Aucun bénéficiaire ou contact spécifié",
                 style: TextStyle(
                   fontSize: context.sp(14),
                   color: Color(0xFF64748B),
@@ -1744,7 +1744,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
 
-    // RÃ©cupÃ©ration robuste des documents d'identitÃ© multiples
+    // Récupération robuste des documents d'identité multiples
     final identityDocs = <Map<String, dynamic>>[];
     final rawIdentityDocs = [
       subscriptionData['piece_identite_documents'],
@@ -1758,7 +1758,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       }
     }
 
-    // Ajouter piÃ¨ce d'identitÃ© unique si elle existe
+    // Ajouter pièce d'identité unique si elle existe
     final pieceIdentite = _extractServerFileName(
       subscriptionData['piece_identite'] ??
           subscriptionData['pieceIdentite'] ??
@@ -1788,12 +1788,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
       if (!alreadyExists) {
         docsList.insert(0, {
           'path': identityPath,
-          'label': pieceIdentiteLabel ?? 'PiÃ¨ce d\'identitÃ©',
+          'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
         });
       }
     }
 
-    // DÃ©duplication globale
+    // Déduplication globale
     final seenPaths = <String>{};
     final deduplicatedDocsList = docsList.where((doc) {
       final path = doc['path']?.toString().trim() ?? '';
@@ -1854,7 +1854,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       String label, String? documentName, String? displayLabel) {
     final hasDocument = documentName != null &&
         documentName.isNotEmpty &&
-        documentName != 'Non tÃ©lÃ©chargÃ©e';
+        documentName != 'Non téléchargée';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1896,7 +1896,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                 ),
                 SizedBox(height: context.r(4)),
                 Text(
-                  displayLabel ?? 'Non tÃ©lÃ©chargÃ©e',
+                  displayLabel ?? 'Non téléchargée',
                   style: TextStyle(
                     fontSize: context.sp(14),
                     fontWeight: FontWeight.w600,
@@ -1932,7 +1932,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   void _viewDocument(String? documentName, String? displayLabel) {
     if (documentName == null ||
         documentName.isEmpty ||
-        documentName == 'Non tÃ©lÃ©chargÃ©e') {
+        documentName == 'Non téléchargée') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -2072,7 +2072,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                         ),
                       ),
                       child: Text(
-                        'TÃ©lÃ©charger',
+                        'Télécharger',
                         style: TextStyle(
                           fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
@@ -2084,7 +2084,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: status == 'Ã‰chu' || status == 'BientÃ´t Ã©chu'
+                      onPressed: status == 'échu' || status == 'Bientôt échu'
                           ? _renewContract
                           : _contactSupport,
                       style: ElevatedButton.styleFrom(
@@ -2097,7 +2097,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
                         ),
                       ),
                       child: Text(
-                        status == 'Ã‰chu' || status == 'BientÃ´t Ã©chu'
+                        status == 'échu' || status == 'Bientôt échu'
                             ? 'Renouveler'
                             : 'Contacter le support',
                         style: TextStyle(
@@ -2123,7 +2123,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final excludeQuestionnaire = productType.contains('etude') ||
         productType.contains('familis') ||
         productType.contains('serenite') ||
-        productType.contains('sÃ©rÃ©nitÃ©');
+        productType.contains('sérénité');
 
     Navigator.push(
       context,
@@ -2141,19 +2141,19 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('PrÃ©paration du PDF Ã  partager...'),
+        content: Text('Préparation du PDF à partager...'),
         backgroundColor: _getBadgeColor(_getProductType()),
         behavior: SnackBarBehavior.floating,
       ),
     );
 
     try {
-      // RÃ©utilise le mÃªme endpoint PDF que le bouton TÃ©lÃ©charger pour garantir la cohÃ©rence.
+      // Réutilise le même endpoint PDF que le bouton Télécharger pour garantir la cohérence.
       final productType = _getProductType().toLowerCase();
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
-          productType.contains('sÃ©rÃ©nitÃ©');
+          productType.contains('sérénité');
 
       final tempFile = await PdfService.fetchToTemp(
         widget.subscriptionId,
@@ -2188,7 +2188,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('TÃ©lÃ©chargement du contrat en cours...'),
+        content: Text('Téléchargement du contrat en cours...'),
         backgroundColor: _getBadgeColor(_getProductType()),
         behavior: SnackBarBehavior.floating,
       ),
@@ -2205,7 +2205,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
-          productType.contains('sÃ©rÃ©nitÃ©');
+          productType.contains('sérénité');
 
       final downloadedFile = await PdfService.downloadToDownloadsWithProgress(
         widget.subscriptionId,
@@ -2258,7 +2258,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
               Icon(Icons.error_outline, color: Colors.white, size: 20),
               SizedBox(width: context.r(12)),
               Expanded(
-                child: Text('Erreur tÃ©lÃ©chargement contrat: $e'),
+                child: Text('Erreur téléchargement contrat : $e'),
               ),
             ],
           ),

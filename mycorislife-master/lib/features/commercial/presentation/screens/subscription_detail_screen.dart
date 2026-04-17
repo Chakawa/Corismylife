@@ -59,7 +59,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
            * CORRECTION DE L'ERREUR DE TYPE:
            * - Le backend peut retourner Map<dynamic, dynamic> au lieu de Map<String, dynamic>
            * - On utilise Map<String, dynamic>.from() pour convertir explicitement
-           * - Cela Ã©vite l'erreur "type '_Map<dynamic, dynamic>' is not a subtype of type 'Map<String, dynamic>?'"
+           * - Cela évite l'erreur "type '_Map<dynamic, dynamic>' is not a subtype of type 'Map<String, dynamic>?'"
            */
           _fullSubscriptionData = data['subscription'] != null
               ? Map<String, dynamic>.from(data['subscription'] as Map)
@@ -86,7 +86,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   }
 
   String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return 'Non renseignÃ©';
+    if (date == null || date.isEmpty) return 'Non renseigné';
     try {
       final d = DateTime.parse(date);
       return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -102,20 +102,20 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   }
 
   /// ============================================
-  /// MÃ‰THODE _formatProductName
+  /// MÉTHODE _formatProductName
   /// ============================================
   /// 
   /// Formate le nom du produit pour un affichage plus lisible.
   /// 
   /// TRANSFORMATION:
   /// - coris_retraite -> Coris Retraite
-  /// - coris_solidaritÃ© -> Coris SolidaritÃ©
+  /// - coris_solidarité -> Coris Solidarité
   /// - coris_etude -> Coris Etude
   /// 
   /// LOGIQUE:
-  /// 1. Divise le nom par le caractÃ¨re '_' (underscore)
+  /// 1. Divise le nom par le caractère '_' (underscore)
   /// 2. Pour chaque mot:
-  ///    - PremiÃ¨re lettre en majuscule
+  ///    - Première lettre en majuscule
   ///    - Reste en minuscules
   /// 3. Joint les mots avec un espace
   /// 
@@ -123,7 +123,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   /// Input: "coris_retraite"
   /// Output: "Coris Retraite"
   String _formatProductName(String productName) {
-    if (productName.isEmpty || productName == 'Non renseignÃ©') {
+    if (productName.isEmpty || productName == 'Non renseigné') {
       return productName;
     }
     // Diviser le nom par '_' et formater chaque mot
@@ -190,7 +190,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       setState(() => _isProcessingPayment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(createResult['message']?.toString() ?? 'Impossible de dÃ©marrer le paiement Wave.'),
+          content: Text(createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -207,7 +207,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       setState(() => _isProcessingPayment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('RÃ©ponse Wave incomplÃ¨te (URL/session). DÃ©tail: ${createResult['message'] ?? 'n/a'}'),
+          content: Text('Réponse Wave incomplète (URL/session). Détail : ${createResult['message'] ?? 'n/a'}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -252,7 +252,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Paiement Wave lancÃ©. VÃ©rification du statut en cours...'),
+          content: Text('Paiement Wave lancé. Vérification du statut en cours...'),
           backgroundColor: bleuCoris,
         ),
       );
@@ -280,7 +280,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('âœ… Paiement Wave confirmÃ© ! La proposition est devenue un contrat.'),
+              content: Text('Paiement Wave confirmé ! La proposition est devenue un contrat.'),
               backgroundColor: vertSucces,
             ),
           );
@@ -294,7 +294,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('âŒ Paiement Wave Ã©chouÃ© ou annulÃ©.'),
+              content: Text('Paiement Wave échoué ou annulé.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -306,7 +306,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     if (!handled && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Paiement initiÃ©. Confirmation en attente, vÃ©rifiez Ã  nouveau dans quelques instants.'),
+          content: Text('Paiement initié. Confirmation en attente, vérifiez à nouveau dans quelques instants.'),
           backgroundColor: orangeWarning,
         ),
       );
@@ -326,7 +326,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       final souscriptionData = _fullSubscriptionData?['souscriptiondata'] as Map<String, dynamic>? ?? {};
       double montant = 0.0;
 
-      // Essayer de rÃ©cupÃ©rer le montant selon le produit
+      // Essayer de récupérer le montant selon le produit
       montant = (souscriptionData['prime_totale'] ?? 
                  souscriptionData['montant_total'] ?? 
                  souscriptionData['prime'] ??
@@ -347,11 +347,11 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           montant: montant,
           description: 'Paiement $productType #$subscriptionId',
           onPaymentSuccess: () {
-            // RafraÃ®chir les donnÃ©es aprÃ¨s paiement rÃ©ussi
+            // Rafraîchir les données après paiement réussi
             _loadFullSubscriptionData();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('âœ… Paiement effectuÃ© ! La proposition est devenue un contrat.'),
+                content: Text('Paiement effectué ! La proposition est devenue un contrat.'),
                 backgroundColor: vertSucces,
                 duration: Duration(seconds: 3),
               ),
@@ -367,7 +367,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       return;
     }
 
-    // Placeholder pour les mÃ©thodes non encore branchÃ©es
+    // Placeholder pour les méthodes non encore branchées
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -375,7 +375,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             const Icon(Icons.construction, color: blanc, size: 20),
             SizedBox(width: context.r(12)),
             Expanded(
-              child: Text('$paymentMethod sera disponible bientÃ´t. Utilisez Wave ou CORIS Money.'),
+              child: Text('$paymentMethod sera disponible bientôt. Utilisez Wave ou CORIS Money.'),
             ),
           ],
         ),
@@ -386,7 +386,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   }
 
   void _viewDocument(String documentName, [String? displayLabel]) {
-    if (documentName.isEmpty || documentName == 'Non tÃ©lÃ©chargÃ©e') {
+    if (documentName.isEmpty || documentName == 'Non téléchargée') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Aucun document disponible'),
@@ -481,28 +481,28 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     final Map<String, dynamic>? clientData =
         clientInfo != null ? Map<String, dynamic>.from(clientInfo) : null;
 
-    // DÃ©terminer le type de produit pour la route
+    // Déterminer le type de produit pour la route
     String routeProductType = '';
     if (productType.contains('etude')) {
       routeProductType = 'etude';
     } else if (productType.contains('serenite') ||
-        productType.contains('sÃ©rÃ©nitÃ©')) {
+        productType.contains('sérénité')) {
       routeProductType = 'serenite';
     } else if (productType.contains('retraite')) {
       routeProductType = 'retraite';
     } else if (productType.contains('solidarite') ||
-        productType.contains('solidaritÃ©')) {
+        productType.contains('solidarité')) {
       routeProductType = 'solidarite';
     } else if (productType.contains('familis')) {
       routeProductType = 'familis';
     }
-    // âŒ PRODUIT DÃ‰SACTIVÃ‰ - FLEX EMPRUNTEUR
+    // ❌ PRODUIT DÉSACTIVÉ - FLEX EMPRUNTEUR
     // else if (productType.contains('flex') ||
     //     productType.contains('emprunteur')) {
     //   routeProductType = 'flex';
     // }
     else if (productType.contains('epargne') ||
-        productType.contains('Ã©pargne')) {
+        productType.contains('épargne')) {
       routeProductType = 'epargne';
     } else if (productType.contains('assure') ||
         productType.contains('prestige')) {
@@ -519,7 +519,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     }
 
     // En mode modification, naviguer DIRECTEMENT vers la page de souscription
-    // avec les donnÃ©es prÃ©-remplies (pas de sÃ©lection de client)
+    // avec les données pré-remplies (pas de sélection de client)
     Navigator.pushNamed(
       context,
       '/souscription_$routeProductType',
@@ -533,7 +533,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         'subscriptionId': subscriptionId,
       },
     ).then((_) {
-      // Recharger les donnÃ©es aprÃ¨s modification
+      // Recharger les données après modification
       _loadFullSubscriptionData();
     });
   }
@@ -562,26 +562,26 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   /// WIDGET _buildRecapSection
   /// ============================================
   /// 
-  /// CrÃ©e une section de rÃ©capitulatif avec un titre, une icÃ´ne et un contenu.
+  /// Crée une section de récapitulatif avec un titre, une icône et un contenu.
   /// 
-  /// MODIFICATIONS APPORTÃ‰ES:
-  /// - Avant: Utilisation de Color.fromRGBO(r, g, b, 25) qui rendait les icÃ´nes invisibles
-  /// - Maintenant: Utilisation de color.withValues(alpha: 0.1) pour une meilleure visibilitÃ©
-  /// - Augmentation de la taille des icÃ´nes de 18 Ã  20 pixels
-  /// - Augmentation du padding du conteneur d'icÃ´ne de 6 Ã  8 pixels
+  /// MODIFICATIONS APPORTÉES:
+  /// - Avant: Utilisation de Color.fromRGBO(r, g, b, 25) qui rendait les icônes invisibles
+  /// - Maintenant: Utilisation de color.withValues(alpha: 0.1) pour une meilleure visibilité
+  /// - Augmentation de la taille des icônes de 18 à 20 pixels
+  /// - Augmentation du padding du conteneur d'icône de 6 à 8 pixels
   /// 
-  /// PARAMÃˆTRES:
+  /// PARAMÉˆTRES:
   /// - title: Titre de la section (ex: "Informations Personnelles")
-  /// - icon: IcÃ´ne Ã  afficher (ex: Icons.person)
-  /// - color: Couleur de l'icÃ´ne et du titre (ex: bleuCoris, vertSucces)
-  /// - children: Liste des widgets Ã  afficher dans la section (lignes de rÃ©capitulatif)
+  /// - icon: Icône à afficher (ex: Icons.person)
+  /// - color: Couleur de l'icône et du titre (ex: bleuCoris, vertSucces)
+  /// - children: Liste des widgets à afficher dans la section (lignes de récapitulatif)
   /// 
   /// UTILISATION:
-  /// Cette mÃ©thode est utilisÃ©e pour crÃ©er les sections du rÃ©capitulatif:
-  /// - Informations Personnelles (icÃ´ne person, couleur bleue)
-  /// - Produit Souscrit (icÃ´ne description, couleur verte)
-  /// - BÃ©nÃ©ficiaire et Contact d'urgence (icÃ´ne contacts, couleur orange)
-  /// - Documents (icÃ´ne description, couleur bleue secondaire)
+  /// Cette méthode est utilisée pour créer les sections du récapitulatif:
+  /// - Informations Personnelles (icône person, couleur bleue)
+  /// - Produit Souscrit (icône description, couleur verte)
+  /// - Bénéficiaire et Contact d'urgence (icône contacts, couleur orange)
+  /// - Documents (icône description, couleur bleue secondaire)
   Widget _buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
     return Container(
@@ -603,18 +603,18 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         children: [
           Row(
             children: [
-              // Conteneur pour l'icÃ´ne avec fond colorÃ©
-              // CORRECTION: Utilisation de withValues(alpha: 0.1) au lieu de Color.fromRGBO pour meilleure visibilitÃ©
+              // Conteneur pour l'icône avec fond coloré
+              // CORRECTION: Utilisation de withValues(alpha: 0.1) au lieu de Color.fromRGBO pour meilleure visibilité
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withValues(
-                      alpha: 0.1), // Fond colorÃ© avec transparence
+                      alpha: 0.1), // Fond coloré avec transparence
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon,
                     color: color,
-                    size: 20), // IcÃ´ne visible avec la couleur spÃ©cifiÃ©e
+                    size: 20), // Icône visible avec la couleur spécifiée
               ),
               SizedBox(width: context.r(10)),
               Text(
@@ -628,7 +628,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ],
           ),
           SizedBox(height: context.r(12)),
-          ...children, // Afficher tous les enfants (lignes de rÃ©capitulatif)
+          ...children, // Afficher tous les enfants (lignes de récapitulatif)
         ],
       ),
     );
@@ -667,7 +667,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     );
   }
 
-  /// Construit la section du questionnaire mÃ©dical (alignÃ© avec l'expÃ©rience client)
+  /// Construit la section du questionnaire médical (aligné avec l'expérience client)
   Widget _buildQuestionnaireMedicalSection(Map<String, dynamic> souscriptionData) {
     final List<Map<String, dynamic>> reponses = _getQuestionnaireMedicalReponses(souscriptionData);
     if (reponses.isEmpty) return const SizedBox.shrink();
@@ -706,7 +706,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               }
             },
             icon: const Icon(Icons.download_outlined, size: 18),
-            label: const Text('TÃ©lÃ©charger le formulaire mÃ©dical'),
+            label: const Text('Télécharger le formulaire médical'),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF002B6B),
               side: const BorderSide(color: Color(0xFF002B6B)),
@@ -721,7 +721,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   List<Map<String, dynamic>> _getQuestionnaireMedicalReponses(Map<String, dynamic> souscriptionData) {
     final reponses = _fullSubscriptionData?['questionnaire_reponses'];
 
-    // 1) RÃ©ponses dÃ©jÃ  au niveau racine (format liste ou map)
+    // 1) Réponses déjà au niveau racine (format liste ou map)
     if (reponses != null) {
       if (reponses is List) {
         return List<Map<String, dynamic>>.from(
@@ -736,7 +736,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       }
     }
 
-    // 2) Fallback: dans les donnÃ©es de souscription (questionnaire_medical_reponses / questionnaire_reponses)
+    // 2) Fallback: dans les données de souscription (questionnaire_medical_reponses / questionnaire_reponses)
     final fallback = souscriptionData['questionnaire_medical_reponses'] ??
         souscriptionData['questionnaire_reponses'];
     if (fallback is List) {
@@ -769,7 +769,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
   /// WIDGET _buildProductSection
   /// ============================================
   /// 
-  /// Construit la section produit avec les dÃ©tails spÃ©cifiques selon le type
+  /// Construit la section produit avec les détails spécifiques selon le type
   Widget _buildProductSection(Map<String, dynamic> subscription,
       Map<String, dynamic> souscriptionData, bool isPaid) {
     final productType =
@@ -786,7 +786,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       final primeDecesAnnuelle = souscriptionData['prime_deces_annuelle'] ?? 0;
       final duree = souscriptionData['duree'] ??
           souscriptionData['duree_contrat'] ??
-          'Non dÃ©finie';
+          'Non définie';
       final uniteDuree = souscriptionData['duree_type'] ??
           souscriptionData['unite_duree'] ??
           'ans';
@@ -794,30 +794,30 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       final dateEcheance = souscriptionData['date_echeance'];
 
       return _buildRecapSection(
-        'DÃ©tails du Contrat - CORIS ASSURE PRESTIGE',
+        'Détails du contrat - CORIS ASSURE PRESTIGE',
         Icons.verified_user,
         vertSucces,
         [
           _buildCombinedRecapRow(
             'Produit',
             'CORIS ASSURE PRESTIGE',
-            'NÂ° Police',
+            'N° Police',
             subscription['numero_police'] ?? 'N/A',
           ),
           _buildCombinedRecapRow(
             'Montant du versement initial',
             _formatMontant(versementInitial),
-            'DurÃ©e du contrat',
+            'Durée du contrat',
             '$duree $uniteDuree',
           ),
           _buildCombinedRecapRow(
-            'Capital dÃ©cÃ¨s',
+            'Capital décès',
             _formatMontant(capitalDeces),
-            'Prime dÃ©cÃ¨s annuelle',
+            'Prime décès annuelle',
             _formatMontant(primeDecesAnnuelle),
           ),
           _buildCombinedRecapRow(
-            'PÃ©riodicitÃ©',
+            'Périodicité',
             souscriptionData['periodicite'] ?? 'Annuel',
             '',
             '',
@@ -825,11 +825,11 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           _buildCombinedRecapRow(
             'Date d\'effet',
             _formatDate(dateEffet?.toString()),
-            'Date d\'Ã©chÃ©ance',
+            'Date d\'échéance',
             _formatDate(dateEcheance?.toString()),
           ),
           _buildCombinedRecapRow(
-            'Date de crÃ©ation',
+            'Date de création',
             _formatDate(subscription['date_creation']?.toString()),
             'Statut',
             isPaid ? 'Contrat' : 'Proposition',
@@ -838,33 +838,33 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       );
     }
 
-    // Pour CORIS SOLIDARITÃ‰
-    if (productType.contains('solidarite')) {
+    // Pour CORIS SOLIDARITÉ
+    if (productType.contains('solidarite') || productType.contains('solidarité')) {
       final capital = souscriptionData['capital'] ?? 0;
       final periodicite = souscriptionData['periodicite'] ?? 'mensuel';
       final primeTotale = souscriptionData['prime_totale'] ?? souscriptionData['prime'] ?? 0;
       final dateEffet = souscriptionData['date_effet'];
       
-      // RÃ©cupÃ©rer le nombre de membres
+      // Récupérer le nombre de membres
       final conjoints = souscriptionData['conjoints'] as List? ?? [];
       final enfants = souscriptionData['enfants'] as List? ?? [];
       final ascendants = souscriptionData['ascendants'] as List? ?? [];
 
       return _buildRecapSection(
-        'Produit Souscrit - CORIS SOLIDARITÃ‰',
+        'Produit souscrit - CORIS SOLIDARITÉ',
         Icons.emoji_people_outlined,
         vertSucces,
         [
           _buildCombinedRecapRow(
             'Produit',
-            'CORIS SOLIDARITÃ‰',
-            'NÂ° Police',
+            'CORIS SOLIDARITÉ',
+            'N° Police',
             subscription['numero_police'] ?? 'N/A',
           ),
           _buildCombinedRecapRow(
             'Capital garanti',
             _formatMontant(capital),
-            'PÃ©riodicitÃ©',
+            'Périodicité',
             periodicite.toUpperCase(),
           ),
           _buildCombinedRecapRow(
@@ -884,7 +884,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             ascendants.length.toString(),
           ),
           _buildCombinedRecapRow(
-            'Date de crÃ©ation',
+            'Date de création',
             _formatDate(subscription['date_creation']?.toString()),
             'Statut',
             isPaid ? 'Contrat' : 'Proposition',
@@ -893,7 +893,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       );
     }
 
-    // Section gÃ©nÃ©rique pour les autres produits
+    // Section générique pour les autres produits
     return _buildRecapSection(
       'Produit Souscrit',
       Icons.description,
@@ -901,8 +901,8 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       [
         _buildCombinedRecapRow(
           'Produit',
-          _formatProductName(subscription['produit_nom'] ?? 'Non renseignÃ©'),
-          'NÂ° Police',
+          _formatProductName(subscription['produit_nom'] ?? 'Non renseigné'),
+          'N° Police',
           subscription['numero_police'] ?? 'N/A',
         ),
         if (souscriptionData['capital'] != null)
@@ -914,13 +914,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           ),
         if (souscriptionData['duree'] != null)
           _buildCombinedRecapRow(
-            'DurÃ©e',
+            'Durée',
             '${souscriptionData['duree']} ${souscriptionData['duree_type'] ?? ''}',
-            'PÃ©riodicitÃ©',
-            souscriptionData['periodicite'] ?? 'Non renseignÃ©',
+            'Périodicité',
+            souscriptionData['periodicite'] ?? 'Non renseigné',
           ),
         _buildCombinedRecapRow(
-          'Date de crÃ©ation',
+          'Date de création',
           _formatDate(subscription['date_creation']?.toString()),
           'Statut',
           isPaid ? 'Contrat' : 'Proposition',
@@ -994,9 +994,9 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
     final user = _userData ?? {};
 
     /**
-     * EXTRACTION DES DONNÃ‰ES DE SOUSCRIPTION
-     * - souscriptionData : DonnÃ©es JSONB de la souscription (capital, prime, bÃ©nÃ©ficiaire, etc.)
-     * - clientInfo : Informations du client stockÃ©es dans souscriptiondata.client_info (pour souscriptions crÃ©Ã©es par commercial)
+     * EXTRACTION DES DONNÉES DE SOUSCRIPTION
+     * - souscriptionData : Données JSONB de la souscription (capital, prime, bénéficiaire, etc.)
+     * - clientInfo : Informations du client stockées dans souscriptiondata.client_info (pour souscriptions créées par commercial)
      */
     final souscriptionData = subscription['souscriptiondata'] != null
         ? Map<String, dynamic>.from(subscription['souscriptiondata'] as Map)
@@ -1017,10 +1017,10 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 
     /**
      * PRIORISATION DES INFORMATIONS CLIENT:
-     * - Si clientInfo existe et n'est pas vide : Utiliser les infos depuis client_info (souscription crÃ©Ã©e par commercial)
-     * - Sinon : Utiliser les infos depuis user (souscription crÃ©Ã©e directement par le client)
+     * - Si clientInfo existe et n'est pas vide : Utiliser les infos depuis client_info (souscription créée par commercial)
+     * - Sinon : Utiliser les infos depuis user (souscription créée directement par le client)
      * 
-     * IMPORTANT: Pour les souscriptions crÃ©Ã©es par un commercial, on DOIT toujours afficher
+     * IMPORTANT: Pour les souscriptions créées par un commercial, on DOIT toujours afficher
      * les informations du client (depuis client_info) et non celles du commercial.
      */
     final displayUser = (clientInfo.isNotEmpty &&
@@ -1040,46 +1040,46 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           bleuCoris,
           [
             _buildCombinedRecapRow(
-              'CivilitÃ©',
-              displayUser['civilite'] ?? 'Non renseignÃ©',
+              'Civilité',
+              displayUser['civilite'] ?? 'Non renseigné',
               'Nom',
-              displayUser['nom'] ?? 'Non renseignÃ©',
+              displayUser['nom'] ?? 'Non renseigné',
             ),
             _buildCombinedRecapRow(
-              'PrÃ©nom',
-              displayUser['prenom'] ?? 'Non renseignÃ©',
+              'Prénom',
+              displayUser['prenom'] ?? 'Non renseigné',
               'Email',
-              displayUser['email'] ?? 'Non renseignÃ©',
+              displayUser['email'] ?? 'Non renseigné',
             ),
             _buildCombinedRecapRow(
-              'TÃ©lÃ©phone',
-              displayUser['telephone'] ?? 'Non renseignÃ©',
+              'Téléphone',
+              displayUser['telephone'] ?? 'Non renseigné',
               'Date de naissance',
               _formatDate(displayUser['date_naissance']?.toString()),
             ),
             _buildCombinedRecapRow(
               'Lieu de naissance',
-              displayUser['lieu_naissance'] ?? 'Non renseignÃ©',
+              displayUser['lieu_naissance'] ?? 'Non renseigné',
               'Adresse',
-              displayUser['adresse'] ?? 'Non renseignÃ©',
+              displayUser['adresse'] ?? 'Non renseigné',
             ),
           ],
         ),
 
-        // Produit souscrit - Section adaptÃ©e selon le type de produit
+        // Produit souscrit - Section adaptée selon le type de produit
         _buildProductSection(subscription, souscriptionData, isPaid),
 
-        // BÃ©nÃ©ficiaire et Contact d'urgence (si disponibles)
+        // Bénéficiaire et Contact d'urgence (si disponibles)
         if (souscriptionData['beneficiaire'] != null ||
             souscriptionData['contact_urgence'] != null)
           _buildRecapSection(
-            'BÃ©nÃ©ficiaire et Contact d\'urgence',
+            'Bénéficiaire et contact d\'urgence',
             Icons.contacts,
             orangeWarning,
             [
               if (souscriptionData['beneficiaire'] != null) ...[
                 Text(
-                  'BÃ©nÃ©ficiaire',
+                  'Bénéficiaire',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: bleuCoris,
@@ -1089,17 +1089,17 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                 SizedBox(height: context.r(8)),
                 _buildRecapRow(
                   'Nom complet',
-                  souscriptionData['beneficiaire']['nom'] ?? 'Non renseignÃ©',
+                  souscriptionData['beneficiaire']['nom'] ?? 'Non renseigné',
                 ),
                 _buildRecapRow(
                   'Contact',
                   souscriptionData['beneficiaire']['contact'] ??
-                      'Non renseignÃ©',
+                      'Non renseigné',
                 ),
                 _buildRecapRow(
-                  'Lien de parentÃ©',
+                  'Lien de parenté',
                   souscriptionData['beneficiaire']['lien_parente'] ??
-                      'Non renseignÃ©',
+                      'Non renseigné',
                 ),
                 if (souscriptionData['beneficiaire'] != null &&
                     (souscriptionData['beneficiaire']['date_naissance'] != null ||
@@ -1125,18 +1125,18 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                 SizedBox(height: context.r(8)),
                 _buildRecapRow(
                   'Nom complet',
-                  souscriptionData['contact_urgence']['nom'] ?? 'Non renseignÃ©',
+                  souscriptionData['contact_urgence']['nom'] ?? 'Non renseigné',
                 ),
                 _buildRecapRow(
                   'Contact',
                   souscriptionData['contact_urgence']['contact'] ??
-                      'Non renseignÃ©',
+                      'Non renseigné',
                 ),
                 _buildRecapRow(
-                  'Lien de parentÃ©',
+                  'Lien de parenté',
                   souscriptionData['contact_urgence']['lien_parente'] ??
-                      'Non renseignÃ©',
-                ),
+                      'Non renseigné',
+                )
               ],
             ],
           ),
@@ -1168,16 +1168,16 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           );
         }(),
 
-        // ðŸ’³ Mode de Paiement - Version amÃ©liorÃ©e avec icÃ´nes
+        // 💳 Mode de Paiement - Version améliorée avec icônes
         if (souscriptionData['mode_paiement'] != null &&
             souscriptionData['mode_paiement'].toString().isNotEmpty)
           SubscriptionRecapWidgets.buildPaymentModeSection(souscriptionData),
 
-        // RÃ‰CAP: Questionnaire mÃ©dical (questions + rÃ©ponses)
-        // N'afficher que pour Ã‰TUDE, FAMILIS et SÃ‰RÃ‰NITÃ‰
+        // RÉCAP: Questionnaire médical (questions + réponses)
+        // N'afficher que pour ÉTUDE, FAMILIS et SÉRÉNITÉ
         () {
           final prod = (souscriptionData['produit_nom'] ?? souscriptionData['product_type'] ?? widget.subscription['product_type'] ?? widget.subscription['produit_nom'] ?? '').toString().toLowerCase();
-          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sÃ©rÃ©nitÃ©')) {
+          if (prod.contains('etude') || prod.contains('familis') || prod.contains('serenite') || prod.contains('sérénité')) {
             return _buildQuestionnaireMedicalSection(souscriptionData);
           }
           return const SizedBox.shrink();
@@ -1219,17 +1219,17 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             }
           }
 
-          // Collecte tous les documents depuis les diffÃ©rentes sources
+          // Collecte tous les documents depuis les différentes sources
           addFrom(souscriptionData['documents']);
           addFrom(_fullSubscriptionData?['documents']);
           addFrom(souscriptionData['souscription_documents']);
           addFrom(_fullSubscriptionData?['souscription_documents']);
 
-          // Ajoute les documents de piÃ¨ce d'identitÃ© seulement s'ils ne sont pas dÃ©jÃ  inclus
+          // Ajoute les documents de pièce d'identité seulement s'ils ne sont pas déjà inclus
           addFrom(souscriptionData['piece_identite_documents']);
           addFrom(_fullSubscriptionData?['piece_identite_documents']);
 
-          // VÃ©rifie si pieceIdentite est dÃ©jÃ  dans la liste avant de l'ajouter
+          // Vérifie si pieceIdentite est déjà dans la liste avant de l'ajouter
           bool pieceIdentiteAlreadyIncluded = false;
           if (pieceIdentite != null && pieceIdentite.isNotEmpty) {
             pieceIdentiteAlreadyIncluded = docsList.any((d) {
@@ -1240,11 +1240,11 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             });
           }
 
-          // Ajoute pieceIdentite seulement si elle n'est pas dÃ©jÃ  incluse
+          // Ajoute pieceIdentite seulement si elle n'est pas déjà incluse
           if (pieceIdentite != null && pieceIdentite.isNotEmpty && !pieceIdentiteAlreadyIncluded) {
             docsList.insert(0, {
               'path': pieceIdentite,
-              'label': pieceIdentiteLabel ?? 'PiÃ¨ce d\'identitÃ©',
+              'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
             });
           }
 
@@ -1256,14 +1256,14 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             documentCount: totalDocuments,
             onDocumentTap: pieceIdentite != null &&
                     pieceIdentite.isNotEmpty &&
-                    pieceIdentite != 'Non tÃ©lÃ©chargÃ©e'
+                    pieceIdentite != 'Non téléchargée'
               ? () => _viewDocument(pieceIdentite, pieceIdentiteLabel)
                 : null,
             onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
           );
         }(),
 
-        // Message de vÃ©rification
+        // Message de vérification
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1276,7 +1276,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               Icon(Icons.info_outline, color: orangeWarning, size: 28),
               SizedBox(height: context.r(10)),
               Text(
-                'VÃ©rification Importante',
+                'Vérification importante',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: orangeWarning,
@@ -1286,7 +1286,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
               ),
               SizedBox(height: context.r(8)),
               Text(
-                'VÃ©rifiez attentivement toutes les informations ci-dessus. Une fois la souscription validÃ©e, certaines modifications ne seront plus possibles.',
+                'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: grisTexte,
@@ -1314,7 +1314,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
         backgroundColor: bleuCoris,
         elevation: 0,
         title: const Text(
-          'DÃ©tails de la Proposition',
+          'Détails de la proposition',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -1325,12 +1325,12 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: () {
-              // DÃ©terminer le type de produit pour exclure ou non le questionnaire
+              // Déterminer le type de produit pour exclure ou non le questionnaire
               final productName = subscription['nom_produit']?.toString().toLowerCase() ?? '';
               final excludeQ = productName.contains('etude') ||
                   productName.contains('familis') ||
                   productName.contains('serenite') ||
-                  productName.contains('sÃ©rÃ©nitÃ©');
+                  productName.contains('sérénité');
               
               Navigator.push(
                 context,
@@ -1360,13 +1360,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                  * ============================================
                  * 
                  * AFFICHAGE CONDITIONNEL:
-                 * - Le bouton "Finaliser la souscription" n'apparaÃ®t QUE si:
+                 * - Le bouton "Finaliser la souscription" n'apparaît QUE si:
                  *   1. isProposition = true (statut == 'proposition')
                  *   2. _isProcessingPayment = false (pas de paiement en cours)
                  * 
                  * FONCTIONNEMENT:
-                 * - Si la souscription est dÃ©jÃ  un contrat (paiement effectuÃ©) : Affiche un message de confirmation
-                 * - Si la souscription est une proposition (non payÃ©e) : Affiche le bouton de paiement
+                 * - Si la souscription est déjà un contrat (paiement effectué) : Affiche un message de confirmation
+                 * - Si la souscription est une proposition (non payée) : Affiche le bouton de paiement
                  * - Si un paiement est en cours : Affiche un indicateur de chargement
                  * 
                  * ACTIONS:
@@ -1491,7 +1491,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
                           Icon(Icons.check_circle, color: vertSucces),
                           SizedBox(width: context.r(8)),
                           Text(
-                            'Contrat activÃ© - Paiement effectuÃ©',
+                            'Contrat activé - Paiement effectué',
                             style: TextStyle(
                               color: vertSucces,
                               fontWeight: FontWeight.w600,
@@ -1514,31 +1514,31 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
 /// 
 /// Bottom sheet (panneau qui s'ouvre depuis le bas) pour choisir le moyen de paiement.
 /// 
-/// DESIGN IDENTIQUE Ã€ LA VERSION CLIENT:
-/// - MÃªme structure et disposition que le bottom sheet dans proposition_detail_page.dart
-/// - MÃªmes couleurs et styles
-/// - MÃªmes options de paiement (Wave, Orange Money et CORIS Money uniquement)
-/// - MÃªme bouton "Payer plus tard"
+/// DESIGN IDENTIQUE É€ LA VERSION CLIENT:
+/// - Même structure et disposition que le bottom sheet dans proposition_detail_page.dart
+/// - Mêmes couleurs et styles
+/// - Mêmes options de paiement (Wave, Orange Money et CORIS Money uniquement)
+/// - Même bouton "Payer plus tard"
 /// 
 /// OPTIONS DE PAIEMENT:
-/// - Wave : Paiement mobile sÃ©curisÃ© (icÃ´ne Icons.waves, couleur bleue)
-/// - Orange Money : Paiement mobile Orange (icÃ´ne Icons.phone_android, couleur orange)
+/// - Wave : Paiement mobile sécurisé (icône Icons.waves, couleur bleue)
+/// - Orange Money : Paiement mobile Orange (icône Icons.phone_android, couleur orange)
 /// 
 /// FONCTIONNEMENT:
 /// 1. L'utilisateur clique sur "Payer maintenant la souscription"
 /// 2. Ce bottom sheet s'ouvre avec les options de paiement
 /// 3. L'utilisateur choisit un moyen de paiement ou "Payer plus tard"
-/// 4. onPayNow est appelÃ© avec le moyen de paiement choisi
-/// 5. onPayLater est appelÃ© si l'utilisateur choisit de payer plus tard
+/// 4. onPayNow est appelé avec le moyen de paiement choisi
+/// 5. onPayLater est appelé si l'utilisateur choisit de payer plus tard
 /// 
-/// BIBLIOTHÃˆQUES UTILISÃ‰ES:
+/// BIBLIOTHÉˆQUES UTILISÉES:
 /// - Flutter Material : Pour les widgets UI (Container, Row, Column, etc.)
-/// - SafeArea : Pour Ã©viter que le contenu soit masquÃ© par les encoches de l'Ã©cran
+/// - SafeArea : Pour éviter que le contenu soit masqué par les encoches de l'écran
 class _PaymentBottomSheet extends StatelessWidget {
   final Function(String)
-      onPayNow; // Callback appelÃ© quand un moyen de paiement est sÃ©lectionnÃ©
+      onPayNow; // Callback appelé quand un moyen de paiement est sélectionné
   final VoidCallback
-      onPayLater; // Callback appelÃ© quand l'utilisateur choisit "Payer plus tard"
+      onPayLater; // Callback appelé quand l'utilisateur choisit "Payer plus tard"
   static const bleuCoris = Color(0xFF002B6B); // Couleur bleue CORIS
 
   const _PaymentBottomSheet({
@@ -1595,7 +1595,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sÃ©curisÃ©',
+                'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
               // _buildPaymentOptionWithImage(
@@ -1679,28 +1679,28 @@ class _PaymentBottomSheet extends StatelessWidget {
   /// WIDGET _buildPaymentOption
   /// ============================================
   /// 
-  /// CrÃ©e une option de paiement dans le bottom sheet.
+  /// Crée une option de paiement dans le bottom sheet.
   /// 
   /// MODIFICATIONS POUR CORRESPONDRE AU STYLE CLIENT:
-  /// - Avant: Utilisation de couleurs dynamiques Color.fromRGBO qui cachaient les icÃ´nes
+  /// - Avant: Utilisation de couleurs dynamiques Color.fromRGBO qui cachaient les icônes
   /// - Maintenant: Utilisation de fondCarte (Color(0xFFF8FAFC)) comme dans la version client
-  /// - Utilisation de color.withValues(alpha: 0.1) pour les icÃ´nes au lieu de Color.fromRGBO
+  /// - Utilisation de color.withValues(alpha: 0.1) pour les icônes au lieu de Color.fromRGBO
   /// - Ajout de borderRadius: BorderRadius.circular(16) et border pour correspondre au style client
   /// - Utilisation de Icons.arrow_forward_ios au lieu de Icons.chevron_right
   /// 
-  /// PARAMÃˆTRES:
+  /// PARAMÉˆTRES:
   /// - context: Contexte Flutter pour la navigation
   /// - title: Nom de l'option de paiement (ex: "Wave", "Orange Money")
-  /// - icon: IcÃ´ne Ã  afficher (ex: Icons.waves, Icons.phone_android)
-  /// - color: Couleur de l'icÃ´ne (ex: Colors.blue pour Wave, Colors.orange pour Orange Money)
-  /// - subtitle: Description de l'option (ex: "Paiement mobile sÃ©curisÃ©")
-  /// - onTap: Callback appelÃ© quand l'option est sÃ©lectionnÃ©e
+  /// - icon: Icône à afficher (ex: Icons.waves, Icons.phone_android)
+  /// - color: Couleur de l'icône (ex: Colors.blue pour Wave, Colors.orange pour Orange Money)
+  /// - subtitle: Description de l'option (ex: "Paiement mobile sécurisé")
+  /// - onTap: Callback appelé quand l'option est sélectionnée
   /// 
   /// DESIGN:
   /// - Fond gris clair (fondCarte) pour correspondre au style client
-  /// - IcÃ´ne dans un conteneur avec fond colorÃ© transparent
+  /// - Icône dans un conteneur avec fond coloré transparent
   /// - Titre en gras, sous-titre en gris
-  /// - FlÃ¨che Ã  droite pour indiquer que c'est cliquable
+  /// - Flèche à droite pour indiquer que c'est cliquable
   Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath,
       Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
@@ -1720,7 +1720,7 @@ class _PaymentBottomSheet extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Conteneur pour l'image avec fond colorÃ© transparent
+            // Conteneur pour l'image avec fond coloré transparent
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1734,7 +1734,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('âŒ Erreur chargement image: $imagePath - $error');
+                  print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported, size: 32, color: Colors.grey);
                 },
               ),
@@ -1763,7 +1763,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                 ],
               ),
             ),
-            // FlÃ¨che Ã  droite - identique au style client
+            // Flèche à droite - identique au style client
             const Icon(Icons.arrow_forward_ios,
                 color: Color(0xFF64748B), size: 16),
           ],

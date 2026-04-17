@@ -25,7 +25,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
   Map<String, dynamic>? result;
   int? age;
 
-  // Service pour synchroniser avec la base de donnÃ©es
+  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -2321,7 +2321,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner le montant du capital Ã  garantir pour continuer la simulation.',
+            'Veuillez renseigner le montant du capital à garantir pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2333,7 +2333,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            'Veuillez renseigner la durÃ©e du contrat pour continuer la simulation.',
+            'Veuillez renseigner la durée du contrat pour continuer la simulation.',
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2345,7 +2345,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Champ obligatoire',
         message:
-            "Veuillez renseigner la date de naissance de l'assurÃ© pour continuer la simulation.",
+            "Veuillez renseigner la date de naissance de l'assuré pour continuer la simulation.",
         icon: Icons.edit_outlined,
         iconColor: Colors.orange,
         backgroundColor: Colors.orange,
@@ -2355,8 +2355,8 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     if (age == null || age! < 18 || age! > 65) {
       _showProfessionalDialog(
-        title: 'Ã‚ge non admissible',
-        message: "L'Ã¢ge doit Ãªtre compris entre 18 et 65 ans inclus.",
+        title: 'é‚ge non admissible',
+        message: "L'âge doit être compris entre 18 et 65 ans inclus.",
         icon: Icons.warning_amber_rounded,
         iconColor: Colors.red,
         backgroundColor: Colors.red,
@@ -2373,14 +2373,14 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
   }) async {
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ” [FAMILIS] Recherche tarif                                â•‘');
+    print('â•‘ 🔍 [FAMILIS] Recherche tarif                                â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print(
-        '   ðŸ“Š ParamÃ¨tres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
+        '   📊 Paramètres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
         produitLibelle: 'CORIS FAMILIS',
@@ -2391,26 +2391,26 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       final tarifFromDB = result['tarif'] as TarifProduit?;
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
-        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: ${tarifFromDB.prime}');
+        print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
         print(
             '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            'â•‘ âœ… [FAMILIS] DonnÃ©es utilisÃ©es depuis SERVEUR                 â•‘');
+            'â•‘ ✅ [FAMILIS] Données utilisées depuis SERVEUR                 â•‘');
         print(
             'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return tarifFromDB.prime!;
       } else {
-        print('   âš ï¸  Tarif non trouvÃ© dans la DB, utilisation du fallback');
+        print('   ⚠️  Tarif non trouvé dans la DB, utilisation du fallback');
       }
     } catch (e) {
       print(
-          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
+    // Étape 2: Fallback - Utiliser les données codées en dur
     final Map<int, Map<int, double>> selectedTable =
         periodicite == 'unique' ? tauxUnique : tauxAnnuel;
 
@@ -2441,10 +2441,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     }
 
     final rate = selectedTable[age]![dureeAnnees]!;
-    print('   âœ… Tarif depuis FALLBACK (donnÃ©es hardcodÃ©es): $rate');
+    print('   ✅ Tarif depuis FALLBACK (données hardcodées): $rate');
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âš ï¸  [FAMILIS] DonnÃ©es utilisÃ©es depuis FALLBACK               â•‘');
+    print('â•‘ ⚠️  [FAMILIS] Données utilisées depuis FALLBACK               â•‘');
     print(
         'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     return rate;
@@ -2477,7 +2477,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       _showProfessionalDialog(
         title: 'Erreur de calcul',
         message:
-            'Une erreur est survenue lors du calcul. Veuillez vÃ©rifier vos donnÃ©es.\nDÃ©tail: $e',
+            'Une erreur est survenue lors du calcul. Veuillez vérifier vos données.\nDétail: $e',
         icon: Icons.error_outline,
         iconColor: rougeCoris,
         backgroundColor: rougeCoris,
@@ -2486,7 +2486,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     setState(() => isLoading = false);
 
-    // Sauvegarder la simulation en base de donnÃ©es
+    // Sauvegarder la simulation en base de données
     if (result != null && result!['primeTotal'] != null && result!['primeTotal'] > 0) {
       final capital = _parseDouble(_capitalController.text);
       int dureeAnnees = _parseInt(_dureeController.text);
@@ -2598,7 +2598,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                               ),
                               SizedBox(width: context.r(12)),
                               Text(
-                                "ParamÃ¨tres de simulation",
+                                "Paramètres de simulation",
                                 style: TextStyle(
                                   fontSize: context.sp(18),
                                   fontWeight: FontWeight.bold,
@@ -2693,7 +2693,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'PÃ©riodicitÃ©',
+            labelText: 'Périodicité',
           ),
           items: const [
             DropdownMenuItem(
@@ -2718,7 +2718,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Capital Ã  garantir',
+          'Capital à garantir',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -2760,7 +2760,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'DurÃ©e du contrat',
+          'Durée du contrat',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -2775,7 +2775,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            hintText: 'DurÃ©e en annÃ©es',
+            hintText: 'Durée en années',
             hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.calendar_month,
                 size: 20, color: bleuCoris.withAlpha(178)),
@@ -2853,7 +2853,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'L\'Ã¢ge doit Ãªtre compris entre 18 et 65 ans',
+              'L\'âge doit être compris entre 18 et 65 ans',
               style: TextStyle(
                 color: Colors.orange,
                 fontSize: context.sp(12),
@@ -2900,7 +2900,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
@@ -2963,7 +2963,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                   SizedBox(height: context.r(8)),
                   Divider(color: Colors.grey.shade300),
                   SizedBox(height: context.r(8)),
-                  // Prime calculÃ©e
+                  // Prime calculée
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -2993,7 +2993,7 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
               height: 48,
               child: ElevatedButton(
                 onPressed: () async {
-                  // PrÃ©parer les donnÃ©es de simulation
+                  // Préparer les données de simulation
                   final simulationData = {
                     'capital': double.parse(
                         _capitalController.text.replaceAll(' ', '')),
@@ -3001,10 +3001,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     'periodicite': periodicite,
                   };
 
-                  // VÃ©rifier le rÃ´le et rediriger
+                  // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {
-                    // Pour les commerciaux, rediriger vers la sÃ©lection de client
+                    // Pour les commerciaux, rediriger vers la sélection de client
                     Navigator.pushNamed(
                       context,
                       '/commercial/select_client',

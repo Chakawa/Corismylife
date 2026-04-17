@@ -25,9 +25,9 @@ class CommissionDetailsPage extends StatelessWidget {
     final Color orangeCoris = const Color(0xFFFF9500);
     final Color rougeErreur = const Color(0xFFEF4444);
 
-    final statutColor = statut == 'ReÃ§ue' 
+    final statutColor = statut == 'Reçue' 
         ? vertSucces 
-        : statut == 'RejetÃ©e' 
+        : statut == 'Rejetée' 
         ? rougeErreur 
         : orangeCoris;
 
@@ -39,7 +39,7 @@ class CommissionDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('DÃ©tails de la Commission'),
+        title: const Text('Détails de la commission'),
         backgroundColor: bleuCoris,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -97,7 +97,7 @@ class CommissionDetailsPage extends StatelessWidget {
                   ),
                   SizedBox(height: context.r(4)),
                   Text(
-                    'Soit $tauxCommission% du montant encaissÃ©',
+                    'Soit $tauxCommission% du montant encaissé',
                     style: TextStyle(
                       fontSize: context.sp(13),
                       color: Colors.white70,
@@ -107,7 +107,7 @@ class CommissionDetailsPage extends StatelessWidget {
               ),
             ),
 
-            // DÃ©tails
+            // Détails
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -118,9 +118,9 @@ class CommissionDetailsPage extends StatelessWidget {
                     icon: Icons.description_outlined,
                     color: bleuCoris,
                     children: [
-                      _buildInfoRow(context, 'NumÃ©ro de Police', numeroPolice),
-                      _buildInfoRow(context, 'Code Apporteur', codeApporteur),
-                      _buildInfoRow(context, 'Montant EncaissÃ©', '$montantEncaisse FCFA'),
+                      _buildInfoRow(context, 'Numéro de police', numeroPolice),
+                      _buildInfoRow(context, 'Code apporteur', codeApporteur),
+                      _buildInfoRow(context, 'Montant encaissé', '$montantEncaisse FCFA'),
                       _buildInfoRow(context, 'Taux de Commission', '$tauxCommission%'),
                     ],
                   ),
@@ -133,13 +133,13 @@ class CommissionDetailsPage extends StatelessWidget {
                     children: [
                       _buildInfoRow(context, 'Date de Calcul', _formatDate(dateCalcul)),
                       if (dateReception != null)
-                        _buildInfoRow(context, 'Date de RÃ©ception', _formatDate(dateReception)),
+                        _buildInfoRow(context, 'Date de réception', _formatDate(dateReception)),
                     ],
                   ),
                   SizedBox(height: context.r(16)),
                   _buildCard(
                     context: context,
-                    title: 'Statut de RÃ©ception',
+                    title: 'Statut de réception',
                     icon: Icons.info_outline,
                     color: statutColor,
                     children: [
@@ -168,12 +168,12 @@ class CommissionDetailsPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCalculRow('Montant EncaissÃ©', '$montantEncaisse FCFA'),
+                            _buildCalculRow('Montant encaissé', '$montantEncaisse FCFA'),
                             SizedBox(height: context.r(8)),
                             _buildCalculRow('Taux de Commission', '5%'),
                             const Divider(height: 24),
                             _buildCalculRow(
-                              'Commission = $montantEncaisse Ã— 5%',
+                              'Commission = $montantEncaisse é— 5%',
                               '$montantCommission FCFA',
                               isBold: true,
                             ),

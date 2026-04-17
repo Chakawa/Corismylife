@@ -5,7 +5,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:mycorislife/services/contrat_pdf_service.dart';
 
 /// Page pour visualiser le PDF d'un contrat
-/// Permet de voir, tÃ©lÃ©charger et partager le PDF
+/// Permet de voir, télécharger et partager le PDF
 class ContratPdfViewerPage extends StatefulWidget {
   final String numepoli;
   final String? clientName;
@@ -85,7 +85,7 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
               SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
-                  'PDF tÃ©lÃ©chargÃ© avec succÃ¨s!\n${savedFile.path}',
+                  'PDF téléchargé avec succès!\n${savedFile.path}',
                   style: TextStyle(fontSize: context.sp(13)),
                 ),
               ),
@@ -172,7 +172,7 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
             IconButton(
               onPressed: _downloadPdf,
               icon: Icon(Icons.download, color: blanc),
-              tooltip: 'TÃ©lÃ©charger',
+              tooltip: 'Télécharger',
             ),
           ],
         ],
@@ -224,7 +224,7 @@ class _ContratPdfViewerPageState extends State<ContratPdfViewerPage> {
                         ElevatedButton.icon(
                           onPressed: _loadPdf,
                           icon: Icon(Icons.refresh),
-                          label: Text('RÃ©essayer'),
+                          label: Text('Réessayer'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: bleuCoris,
                             foregroundColor: blanc,

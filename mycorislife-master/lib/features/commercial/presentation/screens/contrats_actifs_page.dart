@@ -21,16 +21,16 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
 
   // Mapping des codes produits vers les noms de produits
   final Map<String, String> productNames = {
-    '242': 'Ã‰PARGNE BONUS',
-    '202': 'CORIS SÃ‰RÃ‰NITÃ‰',
+    '242': 'ÉPARGNE BONUS',
+    '202': 'CORIS SÉRÉNITÉ',
     '200': 'CORIS FAMILIS',
     '240': 'CORIS RETRAITE',
-    '225': 'CORIS SOLIDARITÃ‰',
-    '246': 'CORIS Ã‰TUDE',
+    '225': 'CORIS SOLIDARITÉ',
+    '246': 'CORIS ÉTUDE',
     '205': 'CORIS FLEX EMPRUNTEUR',
   };
 
-  // Mapping des icÃ´nes par produit
+  // Mapping des icônes par produit
   final Map<String, IconData> productIcons = {
     '242': Icons.savings,
     '202': Icons.health_and_safety,
@@ -67,15 +67,15 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
   }
 
   Future<void> _loadContratsActifs() async {
-    print('ðŸ“‹ [CONTRATS ACTIFS] DÃ©but chargement...');
+    print('📋 [CONTRATS ACTIFS] Début chargement...');
     setState(() => isLoading = true);
     try {
       final token = await storage.read(key: 'token');
       if (token == null) {
-        throw Exception('Token non trouvÃ©');
+        throw Exception('Token non trouvé');
       }
 
-      print('ðŸ”‘ [CONTRATS ACTIFS] Token rÃ©cupÃ©rÃ©');
+      print('ðŸ”‘ [CONTRATS ACTIFS] Token récupéré');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/commercial/mes_contrats_commercial'),
         headers: {
@@ -88,17 +88,17 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('âœ… [CONTRATS ACTIFS] ${(data['contrats'] ?? []).length} contrats reÃ§us');
+        print('✅ [CONTRATS ACTIFS] ${(data['contrats'] ?? []).length} contrats reé§us');
         setState(() {
           allContrats = data['contrats'] ?? [];
           isLoading = false;
         });
-        print('âœ… [CONTRATS ACTIFS] ${contratsActifs.length} contrats actifs filtrÃ©s');
+        print('✅ [CONTRATS ACTIFS] ${contratsActifs.length} contrats actifs filtrés');
       } else {
         throw Exception('Erreur HTTP ${response.statusCode}');
       }
     } catch (e) {
-      print('âŒ [CONTRATS ACTIFS] Erreur: $e');
+      print('❌ [CONTRATS ACTIFS] Erreur: $e');
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,7 +123,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
   }
 
   String _formatClientName(dynamic contrat) {
-    // Essayer d'abord avec prÃ©nom et nom sÃ©parÃ©s
+    // Essayer d'abord avec prénom et nom séparés
     if (contrat['prenom'] != null && contrat['nom'] != null) {
       final prenom = contrat['prenom'].toString().trim();
       final nom = contrat['nom'].toString().trim();
@@ -253,7 +253,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                               Text(
                                 _searchController.text.isEmpty
                                     ? 'Aucun contrat actif'
-                                    : 'Aucun rÃ©sultat',
+                                    : 'Aucun résultat',
                                 style: TextStyle(
                                   fontSize: context.sp(16),
                                   color: Colors.grey,
@@ -282,7 +282,7 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () {
-                                    print('ðŸ” [CONTRATS ACTIFS] Navigation vers dÃ©tails: ${contrat['numepoli']}');
+                                    print('🔍 [CONTRATS ACTIFS] Navigation vers détails: ${contrat['numepoli']}');
                                     Navigator.pushNamed(
                                       context,
                                       '/contrat_details',

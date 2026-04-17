@@ -20,10 +20,10 @@ import 'dart:typed_data';
 class SouscriptionPrestigePage extends StatefulWidget {
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
-      clientData; // DonnÃ©es du client si souscription par commercial
+      clientData; // Données du client si souscription par commercial
   final int?
-      subscriptionId; // ID de la souscription Ã  modifier (si mode Ã©dition)
-  final Map<String, dynamic>? existingData; // DonnÃ©es existantes Ã  prÃ©remplir
+      subscriptionId; // ID de la souscription à modifier (si mode édition)
+  final Map<String, dynamic>? existingData; // Données existantes à préremplir
 
   const SouscriptionPrestigePage({
     super.key,
@@ -40,7 +40,7 @@ class SouscriptionPrestigePage extends StatefulWidget {
 
 class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     with TickerProviderStateMixin {
-  // Charte graphique CORIS amÃ©liorÃ©e
+  // Charte graphique CORIS améliorée
   static const Color bleuCoris = Color(0xFF002B6B);
   static const Color rougeCoris = Color(0xFFE30613);
   static const Color bleuSecondaire = Color(0xFF1E4A8C);
@@ -59,7 +59,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   late Animation<double> _slideAnimation;
   int _currentStep = 0;
 
-  // DonnÃ©es utilisateur (pour les clients)
+  // Données utilisateur (pour les clients)
   Map<String, dynamic> _userData = {};
 
   // Form controllers
@@ -67,20 +67,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final _formKeyStep1 = GlobalKey<FormState>();
   final _formKeyStep2 = GlobalKey<FormState>();
 
-  // ðŸŸ¦ 1. PREMIÃˆRE PARTIE DU FORMULAIRE
+  // ðŸŸ¦ 1. PREMIéˆRE PARTIE DU FORMULAIRE
   // Step 1 controllers
   final _montantVersementController = TextEditingController();
   final _dureeContratController = TextEditingController();
   final _dateEffetController = TextEditingController();
 
-  // Variables pour la durÃ©e
-  String _selectedUniteDuree = 'Mois'; // 'Mois' ou 'AnnÃ©es'
-  final List<String> _uniteDureeOptions = ['Mois', 'AnnÃ©es'];
+  // Variables pour la durée
+  String _selectedUniteDuree = 'Mois'; // 'Mois' ou 'Années'
+  final List<String> _uniteDureeOptions = ['Mois', 'Années'];
 
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
 
-  // Variables pour les calculs spÃ©cifiques Ã  Coris Assure Prestige
+  // Variables pour les calculs spécifiques à Coris Assure Prestige
   double _capitalDeces = 0.0;
   double _primeDecesAnnuelle = 0.0;
 
@@ -89,12 +89,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   static const double multiplicateurCapital = 1.5;
   static const double tauxPrimeAnnuel = 0.006685; // 0.6685%
 
-  // ðŸŸ¦ 2. DEUXIÃˆME PARTIE DU FORMULAIRE
+  // ðŸŸ¦ 2. DEUXIéˆME PARTIE DU FORMULAIRE
   // Step 2 controllers
-  String _selectedBeneficiaireIndicatif = '+225'; // CÃ´te d'Ivoire par dÃ©faut
-  String _selectedContactIndicatif = '+225'; // CÃ´te d'Ivoire par dÃ©faut
+  String _selectedBeneficiaireIndicatif = '+225'; // Côte d'Ivoire par défaut
+  String _selectedContactIndicatif = '+225'; // Côte d'Ivoire par défaut
   final List<Map<String, String>> _indicatifOptions = [
-    {'code': '+225', 'pays': 'CÃ´te d\'Ivoire'},
+    {'code': '+225', 'pays': 'Côte d\'Ivoire'},
     {'code': '+226', 'pays': 'Burkina Faso'},
   ];
 
@@ -110,12 +110,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final _commercialNomPrenomController = TextEditingController();
   final _commercialCodeApporteurController = TextEditingController();
 
-  // Options de lien de parentÃ©
+  // Options de lien de parenté
   final List<String> _lienParenteOptions = [
     'Conjoint',
     'Enfant',
     'Parent',
-    'FrÃ¨re/SÅ“ur',
+    'Frère/Sœur',
     'Ami',
     'Autre'
   ];
@@ -128,25 +128,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // Signature du client
   Uint8List? _clientSignature;
 
-  // ðŸŸ¦ 3. TROISIÃˆME PARTIE
-  // ðŸ’³ VARIABLES MODE DE PAIEMENT
+  // ðŸŸ¦ 3. TROISIéˆME PARTIE
+  // 💳 VARIABLES MODE DE PAIEMENT
   String? _selectedModePaiement; // 'Virement', 'Wave', 'Orange Money'
   String? _selectedBanque;
   final _banqueController = TextEditingController();
   final _ribUnifiedController =
-      TextEditingController(); // RIB unifiÃ©: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
+      TextEditingController(); // RIB unifié: XXXXX (5 chiffres) / XXXXXXXXXXX / XX
   final _numeroMobileMoneyController = TextEditingController();
   final _nomStructureController =
-      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
+      TextEditingController(); // Pour Prélèvement à la source
   final _numeroMatriculeController =
-      TextEditingController(); // Pour PrÃ©lÃ¨vement Ã  la source
+      TextEditingController(); // Pour Prélèvement à la source
   final _corisMoneyPhoneController =
       TextEditingController(); // Pour CORIS Money
   final List<String> _modePaiementOptions = [
     'Virement',
     'Wave',
     // 'Orange Money',
-    'PrÃ©lÃ¨vement Ã  la source',
+    'Prélèvement à la source',
     // 'CORIS Money',
   ];
   final List<String> _banques = [
@@ -156,7 +156,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     'Ecobank',
     'BOA',
     'UBA',
-    'SociÃ©tÃ© GÃ©nÃ©rale',
+    'Société Générale',
     'BNI',
     'Banque Atlantique',
     'Autre',
@@ -165,7 +165,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // Variables pour commercial (souscription pour un client)
   bool _isCommercial = false;
 
-  // ContrÃ´leurs pour les informations client (si commercial)
+  // Contrôleurs pour les informations client (si commercial)
   final TextEditingController _clientNomController = TextEditingController();
   final TextEditingController _clientPrenomController = TextEditingController();
   DateTime? _clientDateNaissance;
@@ -191,24 +191,24 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   void initState() {
     super.initState();
 
-    // Si on modifie une proposition existante, prÃ©remplir avec les donnÃ©es
+    // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
       _prefillFromExistingData();
     } else {
-      // Chargez les donnÃ©es utilisateur dÃ¨s l'initialisation
+      // Chargez les données utilisateur dès l'initialisation
       _loadUserData().then((data) {
         if (mounted) {
-          setState(() {}); // RafraÃ®chir l'UI
+          setState(() {}); // Rafraîchir l'UI
         }
       }).catchError((e) {
         if (mounted) {
           _showErrorSnackBar(
-              'Erreur lors du chargement des donnÃ©es utilisateur: $e');
+              'Erreur lors du chargement des données utilisateur: $e');
         }
       });
     }
 
-    // Date d'effet par dÃ©faut (aujourd'hui)
+    // Date d'effet par défaut (aujourd'hui)
     _dateEffetContrat = DateTime.now();
     _dateEffetController.text =
         DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
@@ -217,7 +217,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // VÃ©rifier si c'est un commercial qui fait la souscription
+    // Vérifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final bool isCommercialArg = args != null && args['isCommercial'] == true;
@@ -241,11 +241,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
 
     if (isCommercialArg) {
-      // Si on est en mode modification (avec existingData), prÃ©-remplir tout
+      // Si on est en mode modification (avec existingData), pré-remplir tout
       if (args['existingData'] != null) {
-        // Le prÃ©-remplissage complet est dÃ©jÃ  gÃ©rÃ© dans initState via _prefillFromExistingData
+        // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
       }
-      // Sinon, prÃ©-remplir uniquement les champs client (nouvelle souscription)
+      // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
@@ -262,7 +262,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
-        // Extraire l'indicatif du tÃ©lÃ©phone si prÃ©sent
+        // Extraire l'indicatif du téléphone si présent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
           final parts = telephone.split(' ');
@@ -292,30 +292,30 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
     _animationController.forward();
 
-    // Ajouter un dÃ©lai pour s'assurer que tout est initialisÃ© avant le calcul
+    // Ajouter un délai pour s'assurer que tout est initialisé avant le calcul
     Future.delayed(Duration(milliseconds: 100), () {
       _recalculerValeurs();
       if (mounted) {
-        setState(() {}); // Forcer le rafraÃ®chissement de l'interface
+        setState(() {}); // Forcer le rafraîchissement de l'interface
       }
     });
   }
 
   Future<Map<String, dynamic>> _loadUserData() async {
     try {
-      // Si les donnÃ©es sont dÃ©jÃ  chargÃ©es, les retourner
+      // Si les données sont déjà chargées, les retourner
       if (_userData.isNotEmpty) {
-        debugPrint('âœ… Utilisation des donnÃ©es utilisateur dÃ©jÃ  chargÃ©es');
+        debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-        debugPrint('âŒ Token non trouvÃ©');
+        debugPrint('❌ Token non trouvé');
         return {};
       }
 
-      debugPrint('ðŸ”„ Chargement des donnÃ©es utilisateur depuis l\'API...');
+      debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
@@ -348,7 +348,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
           if (userData != null && userData.isNotEmpty) {
             debugPrint(
-                'âœ… DonnÃ©es utilisateur chargÃ©es: ${userData['nom']} ${userData['prenom']}');
+                '✅ Données utilisateur chargées: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
               setState(() {
                 _userData = userData!;
@@ -357,13 +357,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             return userData;
           }
         }
-        debugPrint('âš ï¸ RÃ©ponse API vide ou mal formatÃ©e');
+        debugPrint('⚠️ Réponse API vide ou mal formatée');
         return {};
       }
-      debugPrint('âŒ Erreur serveur: ${response.statusCode}');
+      debugPrint('❌ Erreur serveur: ${response.statusCode}');
       return {};
     } catch (e) {
-      debugPrint('âŒ Erreur lors du chargement du profil: $e');
+      debugPrint('❌ Erreur lors du chargement du profil: $e');
       return {};
     }
   }
@@ -373,12 +373,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     final data = widget.existingData!;
 
-    // DÃ©tecter si c'est une souscription par commercial (prÃ©sence de client_info)
+    // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
 
-      // PrÃ©-remplir les champs client
+      // Pré-remplir les champs client
       _clientNomController.text = clientInfo['nom'] ?? '';
       _clientPrenomController.text = clientInfo['prenom'] ?? '';
       _clientEmailController.text = clientInfo['email'] ?? '';
@@ -392,7 +392,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
-      // Extraire l'indicatif du tÃ©lÃ©phone si prÃ©sent
+      // Extraire l'indicatif du téléphone si présent
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
         final parts = telephone.split(' ');
@@ -413,12 +413,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       _montantVersementController.text = _formatNumber(montant);
     }
 
-    // DurÃ©e du contrat
+    // Durée du contrat
     if (data['duree_contrat'] != null) {
       _dureeContratController.text = data['duree_contrat'].toString();
     }
 
-    // UnitÃ© de durÃ©e (ans ou mois)
+    // Unité de durée (ans ou mois)
     if (data['unite_duree'] != null) {
       _selectedUniteDuree = data['unite_duree'];
     }
@@ -434,13 +434,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       }
     }
 
-    // BÃ©nÃ©ficiaire
+    // Bénéficiaire
     if (data['beneficiaire'] != null) {
       final benef = data['beneficiaire'];
       _beneficiaireNomController.text = benef['nom'] ?? '';
       if (benef['contact'] != null) {
         final contact = benef['contact'].toString();
-        // Extraire l'indicatif et le numÃ©ro
+        // Extraire l'indicatif et le numéro
         if (contact.startsWith('+')) {
           final parts = contact.split(' ');
           if (parts.length >= 2) {
@@ -492,7 +492,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           assistance['commercial_code_apporteur']?.toString() ?? '';
     }
 
-    // ðŸ’³ MODE DE PAIEMENT - PrÃ©-remplissage
+    // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
       _selectedModePaiement = data['mode_paiement'];
 
@@ -500,7 +500,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
           _banqueController.text = infos['banque'] ?? '';
-          // Construire le RIB unifiÃ© Ã  partir des 3 champs
+          // Construire le RIB unifié à partir des 3 champs
           final codeGuichet = infos['code_guichet'] ?? '';
           final numeroCompte = infos['numero_compte'] ?? '';
           final cleRib = infos['cle_rib'] ?? '';
@@ -540,7 +540,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     _personneContactNomController.dispose();
     _personneContactTelController.dispose();
 
-    // Dispose des contrÃ´leurs client
+    // Dispose des contrôleurs client
     _clientNomController.dispose();
     _clientPrenomController.dispose();
     _clientDateNaissanceController.dispose();
@@ -552,7 +552,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     _clientSecteurActiviteController.dispose();
     _clientNumeroPieceController.dispose();
 
-    // Dispose des contrÃ´leurs de paiement
+    // Dispose des contrôleurs de paiement
     _banqueController.dispose();
     _ribUnifiedController.dispose();
     _numeroMobileMoneyController.dispose();
@@ -588,7 +588,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
   }
 
-  /// Parse le RIB unifiÃ© au format: XXXX / XXXXXXXXXXX / XX
+  /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
   /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
   Map<String, String> _parseRibUnified(String rib) {
     final parts = rib.split('/').map((p) => p.trim()).toList();
@@ -599,7 +599,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     };
   }
 
-  /// Valide le format du RIB unifiÃ©
+  /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
@@ -614,7 +614,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         RegExp(r'^\d{2}$').hasMatch(cleRib);
   }
 
-  /// Formate l'entrÃ©e RIB en temps rÃ©el
+  /// Formate l'entrée RIB en temps réel
   void _formatRibInput() {
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -666,13 +666,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
       if (mounted) {
         _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
-            ? '${_pieceIdentiteFiles.length} documents ont Ã©tÃ© tÃ©lÃ©chargÃ©s avec succÃ¨s.'
-            : 'Votre piÃ¨ce d\'identitÃ© a Ã©tÃ© tÃ©lÃ©chargÃ©e avec succÃ¨s.');
+            ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
+            : 'Votre pièce d\'identité a été téléchargée avec succès.');
       }
     } catch (e) {
       if (mounted) {
         _showErrorSnackBar(
-            'Une erreur s\'est produite lors de la sÃ©lection du fichier. Veuillez rÃ©essayer.');
+            'Une erreur s\'est produite lors de la sélection du fichier. Veuillez réessayer.');
       }
     }
   }
@@ -743,7 +743,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SuccÃ¨s',
+                      'Succès',
                       style: TextStyle(
                         color: blanc,
                         fontWeight: FontWeight.w700,
@@ -781,7 +781,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     if (signature == null) {
-      return; // L'utilisateur a annulÃ©
+      return; // L'utilisateur a annulé
     }
 
     setState(() {
@@ -790,7 +790,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     if (!mounted) return;
 
-    // AprÃ¨s la signature, afficher les options de paiement
+    // Après la signature, afficher les options de paiement
     _showPaymentOptions();
   }
 
@@ -812,12 +812,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
-  /// Sauvegarde les donnÃ©es de souscription pour Coris Assure Prestige
+  /// Sauvegarde les données de souscription pour Coris Assure Prestige
   Future<int> _saveSubscriptionData() async {
     try {
       final subscriptionService = SubscriptionService();
 
-      // PrÃ©parer les donnÃ©es de souscription spÃ©cifiques Ã  Coris Assure Prestige
+      // Préparer les données de souscription spécifiques à Coris Assure Prestige
       final subscriptionData = {
         'product_type': 'coris_assure_prestige',
         'montant':
@@ -856,7 +856,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
         'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
-        // ðŸ’³ MODE DE PAIEMENT
+        // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
@@ -869,7 +869,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-                : _selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source'
+                : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
@@ -906,7 +906,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         };
       }
 
-      // Si on modifie une proposition existante, mettre Ã  jour au lieu de crÃ©er
+      // Si on modifie une proposition existante, mettre à jour au lieu de créer
       final http.Response response;
       if (widget.subscriptionId != null) {
         response = await subscriptionService.updateSubscription(
@@ -927,7 +927,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNEZ l'ID de la souscription (crÃ©Ã©e ou mise Ã  jour)
+      // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
       rethrow;
@@ -948,23 +948,23 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
       if (response.statusCode != 200 || !responseData['success']) {
         throw Exception(responseData['message'] ??
-            'Erreur lors de la mise Ã  jour du statut');
+            'Erreur lors de la mise à jour du statut');
       }
 
       debugPrint(
-          'Statut mis Ã  jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
+          'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-      debugPrint('Erreur mise Ã  jour statut: $e');
+      debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-    // Simulation d'un dÃ©lai de paiement
+    // Simulation d'un délai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
-    // Pour la dÃ©mo, retournez true pour succÃ¨s, false pour Ã©chec
-    return true; // Changez en false pour tester l'Ã©chec
+    // Pour la démo, retournez true pour succès, false pour échec
+    return true; // Changez en false pour tester l'échec
   }
 
   void _processPayment(String paymentMethod) async {
@@ -974,19 +974,19 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       _isProcessing = true;
     });
 
-    // Si CORIS Money est sÃ©lectionnÃ©, utiliser le modal de paiement
+    // Si CORIS Money est sélectionné, utiliser le modal de paiement
     if (paymentMethod == 'CORIS Money') {
       try {
-        // Ã‰TAPE 1: Sauvegarder la souscription
+        // ÉTAPE 1: Sauvegarder la souscription
         final subscriptionId = await _saveSubscriptionData();
 
-        // Ã‰TAPE 1.5: Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
+        // ÉTAPE 1.5: Upload du document pièce d'identité si présent
         if (_pieceIdentite != null) {
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
             debugPrint(
-                'âš ï¸ Erreur upload document (non bloquant): $uploadError');
+                '⚠️ Erreur upload document (non bloquant): $uploadError');
           }
         }
 
@@ -1009,7 +1009,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           );
         }
       } catch (e) {
-        debugPrint('âŒ Erreur lors du processus: $e');
+        debugPrint('❌ Erreur lors du processus: $e');
         if (mounted) {
           _showErrorSnackBar('Erreur lors du traitement: $e');
         }
@@ -1030,15 +1030,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     try {
-      // Ã‰TAPE 1: Sauvegarder la souscription
+      // ÉTAPE 1: Sauvegarder la souscription
       final subscriptionId = await _saveSubscriptionData();
 
-      // Ã‰TAPE 1.5: Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
+      // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
         }
       }
 
@@ -1057,10 +1057,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         return;
       }
 
-      // Ã‰TAPE 2: Simuler le paiement
+      // ÉTAPE 2: Simuler le paiement
       final paymentSuccess = await _simulatePayment(paymentMethod);
 
-      // Ã‰TAPE 3: Mettre Ã  jour le statut selon le rÃ©sultat du paiement
+      // ÉTAPE 3: Mettre à jour le statut selon le résultat du paiement
       await _updatePaymentStatus(subscriptionId, paymentSuccess,
           paymentMethod: paymentMethod);
 
@@ -1072,7 +1072,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _showSuccessDialog(true);
       } else {
         _showErrorSnackBar(
-            'Paiement Ã©chouÃ©. Votre proposition a Ã©tÃ© sauvegardÃ©e.');
+            'Paiement échoué. Votre proposition a été sauvegardée.');
       }
     } catch (e) {
       if (mounted) {
@@ -1090,15 +1090,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   void _saveAsProposition() async {
     try {
-      // Sauvegarde avec statut 'proposition' par dÃ©faut
+      // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
-      // Upload du document piÃ¨ce d'identitÃ© si prÃ©sent
+      // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('âš ï¸ Erreur upload document (non bloquant): $uploadError');
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
         }
       }
 
@@ -1108,10 +1108,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
   }
 
-  /// Upload le document piÃ¨ce d'identitÃ© vers le serveur
+  /// Upload le document pièce d'identité vers le serveur
   Future<void> _uploadDocument(int subscriptionId) async {
     try {
-      debugPrint('ðŸ“¤ Upload document pour souscription $subscriptionId');
+      debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
           ? _pieceIdentiteFiles.map((f) => f.path).toList()
@@ -1131,13 +1131,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         responseData = localData;
 
         if (response.statusCode != 200 || !localData['success']) {
-          debugPrint('âŒ Erreur upload: ${localData['message']}');
+          debugPrint('❌ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
       }
 
-      // RÃ©cupÃ©rer le label original si prÃ©sent dans la rÃ©ponse
+      // Récupérer le label original si présent dans la réponse
       try {
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
@@ -1155,12 +1155,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         }
       } catch (e) {
         debugPrint(
-            'âš ï¸ Impossible de lire piece_identite_label depuis la rÃ©ponse: $e');
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
-      debugPrint('âœ… Document uploadÃ© avec succÃ¨s');
+      debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-      debugPrint('âŒ Exception upload document: $e');
+      debugPrint('❌ Exception upload document: $e');
     }
   }
 
@@ -1213,7 +1213,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   void _updateEcheanceDate() {
     if (_dureeContratController.text.isNotEmpty && _dateEffetContrat != null) {
       final duree = int.tryParse(_dureeContratController.text) ?? 0;
-      final dureeMois = _selectedUniteDuree == 'AnnÃ©es' ? duree * 12 : duree;
+      final dureeMois = _selectedUniteDuree == 'Années' ? duree * 12 : duree;
 
       setState(() {
         _dateEcheanceContrat = DateTime(
@@ -1226,16 +1226,16 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _recalculerValeurs() {
-    // Calculer le capital dÃ©cÃ¨s et la prime dÃ©cÃ¨s annuelle
+    // Calculer le capital décès et la prime décès annuelle
     try {
       final montantText = _montantVersementController.text.replaceAll(' ', '');
       final montant = double.tryParse(montantText) ?? 0;
 
       if (montant > 0) {
-        // Capital dÃ©cÃ¨s = 1,5 Ã— Versement initial
+        // Capital décès = 1,5 é— Versement initial
         _capitalDeces = montant * multiplicateurCapital;
 
-        // Prime annuelle = 0,6685% Ã— Capital dÃ©cÃ¨s
+        // Prime annuelle = 0,6685% é— Capital décès
         _primeDecesAnnuelle = _capitalDeces * tauxPrimeAnnuel;
       } else {
         _capitalDeces = 0;
@@ -1255,7 +1255,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   // =================================================================
-  // MÃ‰THODES DE VALIDATION
+  // MÉTHODES DE VALIDATION
   // =================================================================
 
   void _nextStep() {
@@ -1314,7 +1314,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       return false;
     }
     if (_clientPrenomController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le prÃ©nom du client');
+      _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
     if (_clientDateNaissance == null) {
@@ -1323,19 +1323,19 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     }
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir le tÃ©lÃ©phone du client');
+      _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
     return true;
   }
 
   bool _validateStep1() {
-    // ðŸŸ¦ VALIDATION SPÃ‰CIFIQUE Ã€ CORIS ASSURE PRESTIGE
+    // ðŸŸ¦ VALIDATION SPÉCIFIQUE é€ CORIS ASSURE PRESTIGE
     if (_montantVersementController.text.trim().isEmpty ||
         _dureeContratController.text.trim().isEmpty ||
         _dateEffetContrat == null) {
       _showErrorSnackBar(
-          'Veuillez complÃ©ter tous les champs obligatoires avant de continuer.');
+          'Veuillez compléter tous les champs obligatoires avant de continuer.');
       return false;
     }
 
@@ -1348,7 +1348,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       return false;
     }
 
-    // ðŸŸ¦ VÃ‰RIFICATION DU MONTANT MINIMAL DE 250 000 F
+    // ðŸŸ¦ VÉRIFICATION DU MONTANT MINIMAL DE 250 000 F
     if (montant < montantMinimalVersement) {
       _showErrorSnackBar(
           'Le montant minimal du versement initial est de ${_formatMontant(montantMinimalVersement)}.');
@@ -1357,7 +1357,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     final duree = int.tryParse(_dureeContratController.text);
     if (duree == null || duree <= 0) {
-      _showErrorSnackBar('La durÃ©e du contrat est invalide.');
+      _showErrorSnackBar('La durée du contrat est invalide.');
       return false;
     }
 
@@ -1368,7 +1368,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     if (_isAideParCommercial) {
       if (_commercialNomPrenomController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez renseigner le nom et prÃ©nom du commercial.');
+            'Veuillez renseigner le nom et prénom du commercial.');
         return false;
       }
 
@@ -1385,39 +1385,39 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
       _showErrorSnackBar(
-          'Veuillez renseigner tous les contacts et informations de bÃ©nÃ©ficiaire.');
+          'Veuillez renseigner tous les contacts et informations de bénéficiaire.');
       return false;
     }
 
-    // La piÃ¨ce d'identitÃ© n'est obligatoire QUE pour une nouvelle souscription
+    // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     if (_pieceIdentite == null && widget.subscriptionId == null) {
       _showErrorSnackBar(
-          'Le tÃ©lÃ©chargement d\'une piÃ¨ce d\'identitÃ© est obligatoire pour continuer.');
+          'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
     }
 
-    // Validation des numÃ©ros de tÃ©lÃ©phone
+    // Validation des numéros de téléphone
     if (!RegExp(r'^[0-9]{8,15}$')
         .hasMatch(_beneficiaireContactController.text)) {
       _showErrorSnackBar(
-          'Le numÃ©ro du bÃ©nÃ©ficiaire semble invalide. Veuillez vÃ©rifier.');
+          'Le numéro du bénéficiaire semble invalide. Veuillez vérifier.');
       return false;
     }
 
     if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
       _showErrorSnackBar(
-          'Le numÃ©ro de contact d\'urgence semble invalide. Veuillez vÃ©rifier.');
+          'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
       return false;
     }
 
     return true;
   }
 
-  /// ðŸ’³ VALIDATION MODE DE PAIEMENT
+  /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
     if (_selectedModePaiement == null) {
-      _showErrorSnackBar('Veuillez sÃ©lectionner un mode de paiement.');
+      _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;
     }
 
@@ -1439,40 +1439,40 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _selectedModePaiement == 'Orange Money') {
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
         _showErrorSnackBar(
-            'Veuillez entrer votre numÃ©ro de tÃ©lÃ©phone $_selectedModePaiement.');
+            'Veuillez entrer votre numéro de téléphone $_selectedModePaiement.');
         return false;
       }
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
         _showErrorSnackBar(
-            'Le numÃ©ro de tÃ©lÃ©phone semble invalide (8 Ã  10 chiffres attendus).');
+            'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
       }
-      // Validation spÃ©cifique pour Orange Money : doit commencer par 07
+      // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-          _showErrorSnackBar('Le numÃ©ro Orange Money doit commencer par 07.');
+          _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
       }
-    } else if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') {
+    } else if (_selectedModePaiement == 'Prélèvement à la source') {
       if (_nomStructureController.text.trim().isEmpty) {
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
       if (_numeroMatriculeController.text.trim().isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner votre numÃ©ro de matricule');
+        _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
         return false;
       }
     } else if (_selectedModePaiement == 'CORIS Money') {
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-        _showErrorSnackBar('Veuillez renseigner le numÃ©ro de tÃ©lÃ©phone');
+        _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
       if (phone.length < 8) {
         _showErrorSnackBar(
-            'Le numÃ©ro de tÃ©lÃ©phone doit contenir au moins 8 chiffres');
+            'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
     }
@@ -1531,7 +1531,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           ),
                           SizedBox(height: context.r(8)),
                           Text(
-                            'Protection dÃ©cÃ¨s avec Ã©pargne',
+                            'Protection décès avec épargne',
                             style: TextStyle(
                               color: blanc.withAlpha(230),
                               fontSize: context.sp(14),
@@ -1568,16 +1568,16 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   children: _isCommercial
                       ? [
                           _buildStepClientInfo(), // Page 0: Informations client
-                          _buildStep1(), // Page 1: ParamÃ¨tres de souscription
-                          _buildStep2(), // Page 2: BÃ©nÃ©ficiaire/Contact
+                          _buildStep1(), // Page 1: Paramètres de souscription
+                          _buildStep2(), // Page 2: Bénéficiaire/Contact
                           _buildStepModePaiement(), // Page 3: Mode de paiement
-                          _buildStep3(), // Page 4: RÃ©capitulatif
+                          _buildStep3(), // Page 4: Récapitulatif
                         ]
                       : [
-                          _buildStep1(), // Page 0: ParamÃ¨tres de souscription
-                          _buildStep2(), // Page 1: BÃ©nÃ©ficiaire/Contact
+                          _buildStep1(), // Page 0: Paramètres de souscription
+                          _buildStep2(), // Page 1: Bénéficiaire/Contact
                           _buildStepModePaiement(), // Page 2: Mode de paiement
-                          _buildStep3(), // Page 3: RÃ©capitulatif
+                          _buildStep3(), // Page 3: Récapitulatif
                         ],
                 ),
               ),
@@ -1701,7 +1701,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
-  /// Page sÃ©parÃ©e pour les informations client (uniquement pour les commerciaux)
+  /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -1722,7 +1722,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       [
                         _buildDropdownField(
                           value: _selectedClientCivilite,
-                          label: 'CivilitÃ©',
+                          label: 'Civilité',
                           icon: Icons.person_outline,
                           items: ['Monsieur', 'Madame', 'Mademoiselle'],
                           onChanged: (value) {
@@ -1740,7 +1740,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientPrenomController,
-                          label: 'PrÃ©nom du client',
+                          label: 'Prénom du client',
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: context.r(16)),
@@ -1766,7 +1766,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _clientTelephoneController,
-                          label: 'TÃ©lÃ©phone du client',
+                          label: 'Téléphone du client',
                           selectedIndicatif: _selectedClientIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -1796,13 +1796,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientSecteurActiviteController,
-                          label: "Secteur d'activitÃ©",
+                          label: "Secteur d'activité",
                           icon: Icons.business,
                         ),
                         SizedBox(height: context.r(16)),
                         _buildModernTextField(
                           controller: _clientNumeroPieceController,
-                          label: 'NumÃ©ro de piÃ¨ce d\'identitÃ©',
+                          label: 'Numéro de pièce d\'identité',
                           icon: Icons.badge,
                         ),
                       ],
@@ -1852,7 +1852,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               SizedBox(width: context.r(10)),
                               Expanded(
                                 child: Text(
-                                  "Souscrire Ã  CORIS ASSURE PRESTIGE",
+                                  "Souscrire à CORIS ASSURE PRESTIGE",
                                   style: TextStyle(
                                     fontSize: context.sp(16),
                                     fontWeight: FontWeight.bold,
@@ -1868,7 +1868,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           _buildMontantVersementField(),
                           SizedBox(height: context.r(16)),
 
-                          // ðŸŸ¦ 2. DURÃ‰E DU CONTRAT AVEC UNITÃ‰
+                          // ðŸŸ¦ 2. DURÉE DU CONTRAT AVEC UNITÉ
                           _buildDureeContratField(),
                           SizedBox(height: context.r(16)),
 
@@ -1888,15 +1888,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('RÃ©sultats CalculÃ©s :',
+                                  Text('Résultats calculés :',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: vertSucces)),
                                   SizedBox(height: context.r(8)),
                                   Text(
-                                      'Capital DÃ©cÃ¨s : ${_formatMontant(_capitalDeces)}'),
+                                      'Capital décès : ${_formatMontant(_capitalDeces)}'),
                                   Text(
-                                      'Prime DÃ©cÃ¨s Annuelle : ${_formatMontant(_primeDecesAnnuelle)}'),
+                                      'Prime décès annuelle : ${_formatMontant(_primeDecesAnnuelle)}'),
                                 ],
                               ),
                             ),
@@ -1978,7 +1978,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'DurÃ©e du contrat *',
+          'Durée du contrat *',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -1999,7 +1999,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   isDense: true,
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  hintText: 'DurÃ©e',
+                  hintText: 'Durée',
                   prefixIcon: Icon(Icons.timer,
                       size: 20, color: bleuCoris.withAlpha(179)),
                   filled: true,
@@ -2016,11 +2016,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'La durÃ©e est obligatoire';
+                    return 'La durée est obligatoire';
                   }
                   final duree = int.tryParse(value);
                   if (duree == null || duree <= 0) {
-                    return 'DurÃ©e invalide';
+                    return 'Durée invalide';
                   }
                   return null;
                 },
@@ -2139,18 +2139,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     if (!_isCommercial) _buildAssistanceCommercialeSection(),
                     SizedBox(height: context.r(20)),
                     _buildFormSection(
-                      'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s',
+                      'Bénéficiaire en cas de décès',
                       Icons.family_restroom,
                       [
                         _buildModernTextField(
                           controller: _beneficiaireNomController,
-                          label: 'Nom complet du bÃ©nÃ©ficiaire *',
+                          label: 'Nom complet du bénéficiaire *',
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _beneficiaireContactController,
-                          label: 'Contact du bÃ©nÃ©ficiaire *',
+                          label: 'Contact du bénéficiaire *',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -2163,7 +2163,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           controller: _beneficiaireDateNaissanceController,
                           readOnly: true,
                           decoration: InputDecoration(
-                            labelText: 'Date de naissance du bÃ©nÃ©ficiaire *',
+                            labelText: 'Date de naissance du bénéficiaire *',
                             prefixIcon:
                                 Icon(Icons.calendar_today, color: bleuCoris),
                             border: OutlineInputBorder(
@@ -2187,7 +2187,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez sÃ©lectionner la date de naissance';
+                              return 'Veuillez sélectionner la date de naissance';
                             }
                             return null;
                           },
@@ -2195,7 +2195,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParente,
-                          label: 'Lien de parentÃ© *',
+                          label: 'Lien de parenté *',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2219,7 +2219,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildPhoneFieldWithIndicatif(
                           controller: _personneContactTelController,
-                          label: 'Contact tÃ©lÃ©phonique *',
+                          label: 'Contact téléphonique *',
                           selectedIndicatif: _selectedContactIndicatif,
                           onIndicatifChanged: (value) {
                             setState(() {
@@ -2230,7 +2230,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(height: context.r(16)),
                         _buildDropdownField(
                           value: _selectedLienParenteUrgence,
-                          label: 'Lien de parentÃ© *',
+                          label: 'Lien de parenté *',
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
@@ -2259,7 +2259,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       Icons.support_agent,
       [
         Text(
-          'Avez-vous Ã©tÃ© aidÃ© par un commercial pour cette souscription ?',
+          'Avez-vous été aidé par un commercial pour cette souscription ?',
           style: TextStyle(
             fontSize: context.sp(15),
             fontWeight: FontWeight.w600,
@@ -2299,7 +2299,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           SizedBox(height: context.r(12)),
           _buildModernTextField(
             controller: _commercialNomPrenomController,
-            label: 'Nom et prÃ©nom du commercial *',
+            label: 'Nom et prénom du commercial *',
             icon: Icons.badge_outlined,
           ),
           SizedBox(height: context.r(16)),
@@ -2314,7 +2314,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   // =================================================================
-  // WIDGETS PARTAGÃ‰S (identique Ã  la page Ã‰tude)
+  // WIDGETS PARTAGÉS (identique à la page Étude)
   // =================================================================
 
   Widget _buildPhoneFieldWithIndicatif({
@@ -2375,7 +2375,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 controller: controller,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  hintText: 'NumÃ©ro de tÃ©lÃ©phone',
+                  hintText: 'Numéro de téléphone',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: grisLeger),
@@ -2395,10 +2395,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Le numÃ©ro de tÃ©lÃ©phone est obligatoire';
+                    return 'Le numéro de téléphone est obligatoire';
                   }
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-                    return 'NumÃ©ro de tÃ©lÃ©phone invalide';
+                    return 'Numéro de téléphone invalide';
                   }
                   return null;
                 },
@@ -2606,7 +2606,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               Icon(Icons.document_scanner, color: bleuCoris, size: 20),
               SizedBox(width: context.r(12)),
               Text(
-                'PiÃ¨ce d\'identitÃ© *',
+                'Pièce d\'identité *',
                 style: TextStyle(
                   fontSize: context.sp(16),
                   fontWeight: FontWeight.w600,
@@ -2650,8 +2650,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   SizedBox(height: context.r(10)),
                   Text(
                     _pieceIdentite != null
-                        ? 'Document ajoutÃ© avec succÃ¨s'
-                        : 'TÃ©lÃ©charger votre piÃ¨ce d\'identitÃ©',
+                        ? 'Document ajouté avec succès'
+                        : 'Télécharger votre pièce d\'identité',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: context.sp(14),
@@ -2663,7 +2663,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   Text(
                     _pieceIdentite != null
                         ? _pieceIdentite!.path.split('/').last
-                        : 'Formats acceptÃ©s: PDF, JPG, PNG (Max: 5MB)',
+                        : 'Formats acceptés: PDF, JPG, PNG (Max: 5MB)',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: context.sp(11),
@@ -2679,7 +2679,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
-  /// ðŸ’³ Ã‰TAPE MODE DE PAIEMENT (identique Ã  la page Ã‰tude)
+  /// 💳 ÉTAPE MODE DE PAIEMENT (identique à la page Étude)
   Widget _buildStepModePaiement() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -2693,7 +2693,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // En-tÃªte avec gradient
+                  // En-tête avec gradient
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -2744,7 +2744,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   ),
                   SizedBox(height: context.r(30)),
 
-                  // SÃ©lection du mode de paiement
+                  // Sélection du mode de paiement
                   Text(
                     'Mode de paiement *',
                     style: TextStyle(
@@ -2800,7 +2800,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               },
                             );
                             break;
-                          case 'PrÃ©lÃ¨vement Ã  la source':
+                          case 'Prélèvement à la source':
                             icon = Icons.business;
                             iconColor = Colors.green;
                             break;
@@ -2827,7 +2827,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           onTap: () {
                             setState(() {
                               _selectedModePaiement = mode;
-                              // RÃ©initialiser les champs
+                              // Réinitialiser les champs
                               _banqueController.clear();
                               _ribUnifiedController.clear();
                               _numeroMobileMoneyController.clear();
@@ -2890,7 +2890,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                   ),
 
-                  // Champs conditionnels selon le mode sÃ©lectionnÃ©
+                  // Champs conditionnels selon le mode sélectionné
                   if (_selectedModePaiement != null) ...[
                     SizedBox(height: context.r(30)),
 
@@ -2937,7 +2937,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         },
                       ),
                       SizedBox(height: context.r(16)),
-                      // Champ texte personnalisÃ© si "Autre" est sÃ©lectionnÃ©
+                      // Champ texte personnalisé si "Autre" est sélectionné
                       if (_selectedBanque == 'Autre') ...[
                         TextField(
                           controller: _banqueController,
@@ -2966,15 +2966,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       ),
                       SizedBox(height: context.r(12)),
 
-                      // RIB unifiÃ©: XXXX / XXXXXXXXXXX / XX
+                      // RIB unifié: XXXX / XXXXXXXXXXX / XX
                       TextField(
                         controller: _ribUnifiedController,
                         onChanged: (_) => _formatRibInput(),
                         decoration: InputDecoration(
-                          labelText: 'NumÃ©ro RIB complet *',
+                          labelText: 'Numéro RIB complet *',
                           hintText: '55555 / 11111111111 / 22',
                           helperText:
-                              'Code guichet (5) / NumÃ©ro compte (11) / ClÃ© RIB (2)',
+                              'Code guichet (5) / Numéro compte (11) / Clé RIB (2)',
                           prefixIcon:
                               Icon(Icons.account_balance, color: bleuCoris),
                           border: OutlineInputBorder(
@@ -2986,7 +2986,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         ),
                         keyboardType: TextInputType.number,
                         maxLength:
-                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractÃ¨res avec les sÃ©parateurs
+                            24, // 5 + 3 + 11 + 3 + 2 = 24 caractères avec les séparateurs
                       ),
                     ],
 
@@ -2994,7 +2994,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     if (_selectedModePaiement == 'Wave' ||
                         _selectedModePaiement == 'Orange Money') ...[
                       Text(
-                        'NumÃ©ro $_selectedModePaiement',
+                        'Numéro $_selectedModePaiement',
                         style: TextStyle(
                           fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
@@ -3005,7 +3005,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       TextField(
                         controller: _numeroMobileMoneyController,
                         decoration: InputDecoration(
-                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
+                          labelText: 'Numéro de téléphone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Padding(
                             padding: const EdgeInsets.all(12.0),
@@ -3036,10 +3036,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       ),
                     ],
 
-                    // PRÃ‰LÃˆVEMENT Ã€ LA SOURCE
-                    if (_selectedModePaiement == 'PrÃ©lÃ¨vement Ã  la source') ...[
+                    // PRÉLéˆVEMENT é€ LA SOURCE
+                    if (_selectedModePaiement == 'Prélèvement à la source') ...[
                       Text(
-                        'Informations PrÃ©lÃ¨vement',
+                        'Informations Prélèvement',
                         style: TextStyle(
                           fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
@@ -3064,7 +3064,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       TextField(
                         controller: _numeroMatriculeController,
                         decoration: InputDecoration(
-                          labelText: 'NumÃ©ro de matricule *',
+                          labelText: 'Numéro de matricule *',
                           hintText: 'Votre matricule',
                           prefixIcon: Icon(Icons.badge, color: Colors.green),
                           border: OutlineInputBorder(
@@ -3079,7 +3079,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     // CORIS MONEY
                     if (_selectedModePaiement == 'CORIS Money') ...[
                       Text(
-                        'NumÃ©ro CORIS Money',
+                        'Numéro CORIS Money',
                         style: TextStyle(
                           fontSize: context.sp(16),
                           fontWeight: FontWeight.w600,
@@ -3090,7 +3090,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       TextField(
                         controller: _corisMoneyPhoneController,
                         decoration: InputDecoration(
-                          labelText: 'NumÃ©ro de tÃ©lÃ©phone *',
+                          labelText: 'Numéro de téléphone *',
                           hintText: 'Ex: 0707070707',
                           prefixIcon: Icon(
                             Icons.account_balance_wallet,
@@ -3124,7 +3124,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Ces informations seront utilisÃ©es pour le prÃ©lÃ¨vement automatique de vos primes.',
+                            'Ces informations seront utilisées pour le prélèvement automatique de vos primes.',
                             style: TextStyle(
                               fontSize: context.sp(14),
                               color: Colors.blue[900],
@@ -3143,7 +3143,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
-  /// ðŸŸ¦ 4. PAGE DE RÃ‰CAPITULATIF (avec informations spÃ©cifiques Ã  Coris Assure Prestige)
+  /// ðŸŸ¦ 4. PAGE DE RÉCAPITULATIF (avec informations spécifiques à Coris Assure Prestige)
   Widget _buildStep3() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3171,7 +3171,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
                             if (snapshot.hasError) {
                               debugPrint(
-                                  'âŒ Erreur FutureBuilder: ${snapshot.error}');
+                                  '❌ Erreur FutureBuilder: ${snapshot.error}');
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -3180,7 +3180,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                         size: 48, color: rougeCoris),
                                     SizedBox(height: context.r(16)),
                                     Text(
-                                        'Erreur lors du chargement des donnÃ©es'),
+                                        'Erreur lors du chargement des données'),
                                     SizedBox(height: context.r(8)),
                                     Text(
                                       '${snapshot.error}',
@@ -3193,7 +3193,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                       onPressed: () => setState(() {
                                         _userData = {};
                                       }),
-                                      child: Text('RÃ©essayer'),
+                                      child: Text('Réessayer'),
                                     ),
                                   ],
                                 ),
@@ -3205,8 +3205,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             // Si toujours vide, afficher un message et permettre de continuer
                             if (userData.isEmpty) {
                               debugPrint(
-                                  'âš ï¸ DonnÃ©es utilisateur vides, affichage avec donnÃ©es minimales');
-                              // Utiliser des donnÃ©es minimales pour permettre l'affichage
+                                  '⚠️ Données utilisateur vides, affichage avec données minimales');
+                              // Utiliser des données minimales pour permettre l'affichage
                               return _buildRecapContent(userData: {
                                 'nom': 'Non disponible',
                                 'prenom': '',
@@ -3226,7 +3226,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-    // S'assurer que les calculs sont effectuÃ©s avant d'afficher
+    // S'assurer que les calculs sont effectués avant d'afficher
     if (_capitalDeces == 0 || _primeDecesAnnuelle == 0) {
       _recalculerValeurs();
     }
@@ -3252,7 +3252,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
         SizedBox(height: context.r(20)),
 
-        // ðŸŸ¦ SECTION SPÃ‰CIFIQUE Ã€ CORIS ASSURE PRESTIGE
+        // ðŸŸ¦ SECTION SPÉCIFIQUE é€ CORIS ASSURE PRESTIGE
         SubscriptionRecapWidgets.buildRecapSection(
           'Produit Souscrit',
           Icons.verified_user,
@@ -3264,53 +3264,53 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 'Montant du versement initial',
                 _formatMontant(double.parse(
                     _montantVersementController.text.replaceAll(' ', ''))),
-                'DurÃ©e du contrat',
+                'Durée du contrat',
                 '${_dureeContratController.text} $_selectedUniteDuree'),
-            // ðŸŸ¦ CAPITAL DÃ‰CÃˆS = 1,5 Ã— Versement initial
+            // ðŸŸ¦ CAPITAL DÉCéˆS = 1,5 é— Versement initial
             SubscriptionRecapWidgets.buildRecapRow(
-                'Capital dÃ©cÃ¨s', _formatMontant(_capitalDeces)),
-            // ðŸŸ¦ PRIME ANNUELLE = 0,6685% Ã— Capital dÃ©cÃ¨s
+                'Capital décès', _formatMontant(_capitalDeces)),
+            // ðŸŸ¦ PRIME ANNUELLE = 0,6685% é— Capital décès
             SubscriptionRecapWidgets.buildCombinedRecapRow(
-                'Prime dÃ©cÃ¨s annuelle',
+                'Prime décès annuelle',
                 _formatMontant(_primeDecesAnnuelle),
-                'PÃ©riodicitÃ©',
+                'Périodicité',
                 'Annuel'),
             SubscriptionRecapWidgets.buildCombinedRecapRow(
                 'Date d\'effet',
                 _dateEffetContrat != null
                     ? '${_dateEffetContrat!.day}/${_dateEffetContrat!.month}/${_dateEffetContrat!.year}'
-                    : 'Non dÃ©finie',
-                'Date d\'Ã©chÃ©ance',
+                    : 'Non définie',
+                'Date d\'échéance',
                 _dateEcheanceContrat != null
                     ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
-                    : 'Non dÃ©finie'),
+                    : 'Non définie'),
           ],
         ),
 
         SizedBox(height: context.r(20)),
 
-        // SECTION BÃ‰NÃ‰FICIAIRE ET CONTACT D'URGENCE
-// SECTION BÃ‰NÃ‰FICIAIRE ET CONTACT D'URGENCE
+        // SECTION BÉNÉFICIAIRE ET CONTACT D'URGENCE
+// SECTION BÉNÉFICIAIRE ET CONTACT D'URGENCE
         SubscriptionRecapWidgets.buildRecapSection(
-          'BÃ©nÃ©ficiaire et Contact d\'urgence',
+          'Bénéficiaire et Contact d\'urgence',
           Icons.contacts,
           Colors.amber,
           [
-            // ðŸ”¹ BÃ©nÃ©ficiaire
+            // ðŸ”¹ Bénéficiaire
             SubscriptionRecapWidgets.buildSubsectionTitle(
-                'BÃ©nÃ©ficiaire en cas de dÃ©cÃ¨s'),
+                'Bénéficiaire en cas de décès'),
             SizedBox(height: context.r(8)),
 
-            // Nom complet + Lien de parentÃ©
+            // Nom complet + Lien de parenté
             SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Nom complet',
               _beneficiaireNomController.text.isNotEmpty
                   ? _beneficiaireNomController.text
-                  : 'Non renseignÃ©',
-              'Lien de parentÃ©',
+                  : 'Non renseigné',
+              'Lien de parenté',
               _selectedLienParente.isNotEmpty
                   ? _selectedLienParente
-                  : 'Non renseignÃ©',
+                  : 'Non renseigné',
             ),
 
             // Date de naissance
@@ -3319,15 +3319,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               _beneficiaireDateNaissanceController.text.isNotEmpty
                   ? SubscriptionRecapWidgets.formatDate(
                       _beneficiaireDateNaissanceController.text)
-                  : 'Non renseignÃ©',
+                  : 'Non renseigné',
             ),
 
-            // TÃ©lÃ©phone
+            // Téléphone
             SubscriptionRecapWidgets.buildRecapRow(
-              'TÃ©lÃ©phone',
+              'Téléphone',
               _beneficiaireContactController.text.isNotEmpty
                   ? '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text}'
-                  : 'Non renseignÃ©',
+                  : 'Non renseigné',
             ),
 
             SizedBox(height: context.r(16)),
@@ -3336,30 +3336,30 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             SubscriptionRecapWidgets.buildSubsectionTitle('Contact d\'urgence'),
             SizedBox(height: context.r(8)),
 
-            // Nom complet + Lien de parentÃ©
+            // Nom complet + Lien de parenté
             SubscriptionRecapWidgets.buildCombinedRecapRow(
               'Nom complet',
               _personneContactNomController.text.isNotEmpty
                   ? _personneContactNomController.text
-                  : 'Non renseignÃ©',
-              'Lien de parentÃ©',
+                  : 'Non renseigné',
+              'Lien de parenté',
               _selectedLienParenteUrgence.isNotEmpty
                   ? _selectedLienParenteUrgence
-                  : 'Non renseignÃ©',
+                  : 'Non renseigné',
             ),
 
-            // TÃ©lÃ©phone
+            // Téléphone
             SubscriptionRecapWidgets.buildRecapRow(
-              'TÃ©lÃ©phone',
+              'Téléphone',
               _personneContactTelController.text.isNotEmpty
                   ? _personneContactTelController.text
-                  : 'Non renseignÃ©',
+                  : 'Non renseigné',
             ),
           ],
         ),
         SizedBox(height: context.r(20)),
 
-        // ðŸ’³ SECTION MODE DE PAIEMENT
+        // 💳 SECTION MODE DE PAIEMENT
         if (_selectedModePaiement != null)
           SubscriptionRecapWidgets.buildRecapSection(
             'Mode de Paiement',
@@ -3380,21 +3380,21 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   'Banque',
                   _banqueController.text.isNotEmpty
                       ? _banqueController.text
-                      : 'Non renseignÃ©',
+                      : 'Non renseigné',
                 ),
                 SubscriptionRecapWidgets.buildRecapRow(
-                  'NumÃ©ro RIB',
+                  'Numéro RIB',
                   _ribUnifiedController.text.isNotEmpty
                       ? _ribUnifiedController.text
-                      : 'Non renseignÃ©',
+                      : 'Non renseigné',
                 ),
               ] else if (_selectedModePaiement == 'Wave' ||
                   _selectedModePaiement == 'Orange Money') ...[
                 SubscriptionRecapWidgets.buildRecapRow(
-                  'NumÃ©ro $_selectedModePaiement',
+                  'Numéro $_selectedModePaiement',
                   _numeroMobileMoneyController.text.isNotEmpty
                       ? _numeroMobileMoneyController.text
-                      : 'Non renseignÃ©',
+                      : 'Non renseigné',
                 ),
               ],
             ],
@@ -3509,7 +3509,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       Icon(Icons.arrow_back, color: bleuCoris, size: 20),
                       SizedBox(width: context.r(8)),
                       Text(
-                        'PrÃ©cÃ©dent',
+                        'Précédent',
                         style: TextStyle(
                           color: bleuCoris,
                           fontWeight: FontWeight.w600,
@@ -3566,7 +3566,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
   }
 
-  /// Page Ã©tape 4: Paiement (identique Ã  la page Ã‰tude)
+  /// Page étape 4: Paiement (identique à la page Étude)
   Widget _buildStep4() {
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -3579,7 +3579,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: ListView(
                 children: [
-                  // En-tÃªte de finalisation
+                  // En-tête de finalisation
                   Container(
                     padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -3602,7 +3602,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         Icon(Icons.check_circle, color: blanc, size: 56),
                         SizedBox(height: context.r(16)),
                         Text(
-                          'Souscription PrÃªte !',
+                          'Souscription Prête !',
                           style: TextStyle(
                             color: blanc,
                             fontSize: context.sp(24),
@@ -3612,7 +3612,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         ),
                         SizedBox(height: context.r(8)),
                         Text(
-                          'Toutes vos informations ont Ã©tÃ© enregistrÃ©es',
+                          'Toutes vos informations ont été enregistrées',
                           style: TextStyle(
                             color: blanc.withOpacity(0.9),
                             fontSize: context.sp(14),
@@ -3624,7 +3624,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   ),
                   SizedBox(height: context.r(24)),
 
-                  // Montant Ã  payer (Prime dÃ©cÃ¨s annuelle)
+                  // Montant à payer (Prime décès annuelle)
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -3646,7 +3646,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Prime dÃ©cÃ¨s annuelle Ã  payer',
+                          'Prime décès annuelle à payer',
                           style: TextStyle(
                             color: grisTexte,
                             fontSize: context.sp(14),
@@ -3719,7 +3719,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                 ),
                                 SizedBox(height: context.r(4)),
                                 Text(
-                                  'Finalisez votre souscription avec un paiement immÃ©diat',
+                                  'Finalisez votre souscription avec un paiement immédiat',
                                   style: TextStyle(
                                     fontSize: context.sp(13),
                                     color: blanc.withOpacity(0.9),
@@ -3779,7 +3779,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                 ),
                                 SizedBox(height: context.r(4)),
                                 Text(
-                                  'Enregistrez votre proposition et payez ultÃ©rieurement',
+                                  'Enregistrez votre proposition et payez ultérieurement',
                                   style: TextStyle(
                                     fontSize: context.sp(13),
                                     color: grisTexte,
@@ -3824,7 +3824,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               ),
                               SizedBox(height: context.r(4)),
                               Text(
-                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrÃ©e comme proposition et vous pourrez la finaliser ultÃ©rieurement.',
+                                'Si vous choisissez de payer plus tard, votre souscription sera enregistrée comme proposition et vous pourrez la finaliser ultérieurement.',
                                 style: TextStyle(
                                   fontSize: context.sp(12),
                                   color: Colors.blue[900],
@@ -3838,7 +3838,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   ),
                   SizedBox(height: context.r(24)),
 
-                  // Avertissement de sÃ©curitÃ©
+                  // Avertissement de sécurité
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -3852,7 +3852,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                         SizedBox(width: context.r(12)),
                         Expanded(
                           child: Text(
-                            'Vos informations de paiement sont sÃ©curisÃ©es et chiffrÃ©es.',
+                            'Vos informations de paiement sont sécurisées et chiffrées.',
                             style: TextStyle(
                               fontSize: context.sp(12),
                               color: grisTexte,
@@ -3875,7 +3875,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 }
 
 // =================================================================
-// CLASSES AUXILIAIRES (identiques Ã  la page Ã‰tude)
+// CLASSES AUXILIAIRES (identiques à la page Étude)
 // =================================================================
 
 class _LoadingDialog extends StatelessWidget {
@@ -3974,7 +3974,7 @@ class _SuccessDialog extends StatelessWidget {
             ),
             SizedBox(height: context.r(20)),
             Text(
-              isPaid ? 'Souscription RÃ©ussie!' : 'Proposition EnregistrÃ©e!',
+              isPaid ? 'Souscription Réussie!' : 'Proposition Enregistrée!',
               style: TextStyle(
                 fontSize: context.sp(20),
                 fontWeight: FontWeight.w700,
@@ -3984,8 +3984,8 @@ class _SuccessDialog extends StatelessWidget {
             SizedBox(height: context.r(12)),
             Text(
               isPaid
-                  ? 'FÃ©licitations! Votre contrat CORIS ASSURE PRESTIGE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
-                  : 'Votre proposition a Ã©tÃ© enregistrÃ©e avec succÃ¨s. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
+                  ? 'Félicitations! Votre contrat CORIS ASSURE PRESTIGE est maintenant actif. Vous recevrez un message de confirmation sous peu.'
+                  : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF64748B),
@@ -4009,7 +4009,7 @@ class _SuccessDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Retour Ã  l\'accueil',
+                  'Retour à l\'accueil',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -4080,7 +4080,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                 'Wave',
                 'assets/images/icone_wave.jpeg',
                 Colors.blue,
-                'Paiement mobile sÃ©curisÃ©',
+                'Paiement mobile sécurisé',
                 () => onPayNow('Wave'),
               ),
               // _buildPaymentOptionWithImage(
@@ -4235,7 +4235,7 @@ class _PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  print('âŒ Erreur chargement image: $imagePath - $error');
+                  print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
                 },

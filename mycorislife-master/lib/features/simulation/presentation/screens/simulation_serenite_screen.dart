@@ -21,30 +21,30 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   static const Color backgroundGrey = Color(0xFFF8FAFB);
   static const Color bleuClair = Color(0xFFE8F4FD);
 
-  // Service pour synchroniser avec la base de donnÃ©es
+  // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
-  // ContrÃ´leurs pour les champs de saisie
+  // Contrôleurs pour les champs de saisie
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
   final TextEditingController _dateNaissanceController =
       TextEditingController();
 
-  // Variables d'Ã©tat
+  // Variables d'état
   DateTime? _dateNaissance;
   int _dureeEnMois = 12;
   String _selectedUnite = 'mois';
   Periode _selectedPeriode = Periode.annuel;
   SimulationType _currentSimulation = SimulationType.parCapital;
   double _resultatCalcul = 0.0;
-  double _calculatedPrime = 0.0;  // Prime calculÃ©e (toujours afficher)
-  double _calculatedCapital = 0.0; // Capital calculÃ© (toujours afficher)
+  double _calculatedPrime = 0.0;  // Prime calculée (toujours afficher)
+  double _calculatedCapital = 0.0; // Capital calculé (toujours afficher)
   bool _calculEffectue = false;
   bool _isLoading = false;
   String _selectedSimulationType = 'Par Capital';
 
-  // Tableau tarifaire (fallback si base de donnÃ©es non disponible)
+  // Tableau tarifaire (fallback si base de données non disponible)
   final Map<int, Map<int, double>> _tarifaire = {
     18: {
       12: 211.06800,
@@ -1004,16 +1004,16 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ ðŸ” [SÃ‰RÃ‰NITÃ‰] Recherche tarif                                â•‘');
+    print('â•‘ 🔍 [SÉRÉNITÉ] Recherche tarif                                â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-    print('   ðŸ“Š ParamÃ¨tres: age=$age, duree=$duree mois');
+    print('   📊 Paramètres: age=$age, duree=$duree mois');
 
-    // Ã‰tape 1: Essayer de rÃ©cupÃ©rer depuis la base de donnÃ©es (serveur uniquement)
+    // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
-        '\n   ðŸ“ Ã‰TAPE 1: Tentative rÃ©cupÃ©ration depuis BASE DE DONNÃ‰ES (serveur uniquement)...');
+        '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
     try {
       final result = await _produitSyncService.getTarifWithSource(
-        produitLibelle: 'CORIS SÃ‰RÃ‰NITÃ‰',
+        produitLibelle: 'CORIS SÉRÉNITÉ',
         age: age,
         dureeContrat: duree,
         periodicite: 'annuel',
@@ -1021,32 +1021,32 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       final tarifFromDB = result['tarif'] as TarifProduit?;
 
       if (tarifFromDB != null && tarifFromDB.prime != null) {
-        print('   âœ… Tarif trouvÃ© depuis le SERVEUR: ${tarifFromDB.prime}');
-        print('   ðŸ’¡ Cache local IGNORÃ‰ - DonnÃ©es du serveur uniquement');
+        print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
+        print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
         print(
             '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
         print(
-            'â•‘ âœ… [SÃ‰RÃ‰NITÃ‰] DonnÃ©es utilisÃ©es depuis SERVEUR               â•‘');
+            'â•‘ ✅ [SÉRÉNITÉ] Données utilisées depuis SERVEUR               â•‘');
         print(
             'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
         return tarifFromDB.prime!;
       } else {
         print(
-            '   âš ï¸  Tarif non trouvÃ© dans la DB (serveur inaccessible ou donnÃ©es absentes)');
-        print('   ðŸ’¡ Passage au fallback (donnÃ©es hardcodÃ©es)');
+            '   ⚠️  Tarif non trouvé dans la DB (serveur inaccessible ou données absentes)');
+        print('   ðŸ’¡ Passage au fallback (données hardcodées)');
       }
     } catch (e) {
       print(
-          '   âŒ ERREUR lors de la rÃ©cupÃ©ration DB: $e, utilisation du fallback');
+          '   ❌ ERREUR lors de la récupération DB: $e, utilisation du fallback');
     }
 
-    // Ã‰tape 2: Fallback - Utiliser les donnÃ©es codÃ©es en dur
-    print('\n   ðŸ“ Ã‰TAPE 2: Utilisation FALLBACK (donnÃ©es hardcodÃ©es)...');
+    // Étape 2: Fallback - Utiliser les données codées en dur
+    print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
     if (_tarifaire.isEmpty) {
-      print('   âŒ Aucune donnÃ©e disponible (ni DB, ni fallback)');
+      print('   ❌ Aucune donnée disponible (ni DB, ni fallback)');
       print(
           '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-      print('â•‘ âŒ [SÃ‰RÃ‰NITÃ‰] ERREUR: Aucune donnÃ©e disponible                â•‘');
+      print('â•‘ ❌ [SÉRÉNITÉ] ERREUR: Aucune donnée disponible                â•‘');
       print(
           'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
       return 0.0;
@@ -1065,10 +1065,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     }
 
     final prime = _tarifaire[selectedAge]?[duree] ?? 0.0;
-    print('   âœ… Tarif depuis FALLBACK (donnÃ©es hardcodÃ©es): $prime');
+    print('   ✅ Tarif depuis FALLBACK (données hardcodées): $prime');
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
-    print('â•‘ âš ï¸  [SÃ‰RÃ‰NITÃ‰] DonnÃ©es utilisÃ©es depuis FALLBACK             â•‘');
+    print('â•‘ ⚠️  [SÉRÉNITÉ] Données utilisées depuis FALLBACK             â•‘');
     print(
         'â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
     return prime;
@@ -1103,7 +1103,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   }
 
   void _navigateToSubscription() async {
-    // PrÃ©parer les donnÃ©es de simulation
+    // Préparer les données de simulation
     final simulationData = {
       'capital': _currentSimulation == SimulationType.parCapital
           ? double.tryParse(_capitalController.text.replaceAll(' ', ''))
@@ -1120,10 +1120,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           : 'Par Prime',
     };
 
-    // VÃ©rifier le rÃ´le et rediriger
+    // Vérifier le rôle et rediriger
     final userRole = await AuthService.getUserRole();
     if (userRole == 'commercial') {
-      // Pour les commerciaux, rediriger vers la sÃ©lection de client
+      // Pour les commerciaux, rediriger vers la sélection de client
       Navigator.pushNamed(
         context,
         '/commercial/select_client',
@@ -1147,18 +1147,18 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   void _effectuerCalcul() async {
     if (_dateNaissance == null || !_isAgeValid()) {
       _showMessage(
-          "Veuillez saisir une date de naissance valide (Ã¢ge entre 18 et 69 ans)");
+          "Veuillez saisir une date de naissance valide (âge entre 18 et 69 ans)");
       return;
     }
 
-    // VÃ©rification de la durÃ©e maximale (15 ans = 180 mois)
+    // Vérification de la durée maximale (15 ans = 180 mois)
     if (_dureeController.text.isNotEmpty) {
       int duree = int.tryParse(_dureeController.text) ?? 0;
-      if (_selectedUnite == 'annÃ©es' && duree > 15) {
+      if (_selectedUnite == 'années' && duree > 15) {
         _showProfessionalDialog(
-          title: 'Limite de durÃ©e dÃ©passÃ©e',
+          title: 'Limite de durée dépassée',
           message:
-              'La durÃ©e maximale du contrat CORIS SÃ‰RÃ‰NITÃ‰ est de 15 ans. La durÃ©e a Ã©tÃ© ajustÃ©e automatiquement.',
+              'La durée maximale du contrat CORIS SÉRÉNITÉ est de 15 ans. La durée a été ajustée automatiquement.',
           icon: Icons.schedule_outlined,
           iconColor: Colors.orange,
           backgroundColor: Colors.orange,
@@ -1167,9 +1167,9 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         _dureeEnMois = 15 * 12;
       } else if (_selectedUnite == 'mois' && duree > 180) {
         _showProfessionalDialog(
-          title: 'Limite de durÃ©e dÃ©passÃ©e',
+          title: 'Limite de durée dépassée',
           message:
-              'La durÃ©e maximale du contrat CORIS SÃ‰RÃ‰NITÃ‰ est de 180 mois (15 ans). La durÃ©e a Ã©tÃ© ajustÃ©e automatiquement.',
+              'La durée maximale du contrat CORIS SÉRÉNITÉ est de 180 mois (15 ans). La durée a été ajustée automatiquement.',
           icon: Icons.schedule_outlined,
           iconColor: Colors.orange,
           backgroundColor: Colors.orange,
@@ -1183,7 +1183,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       _isLoading = true;
     });
 
-    // RÃ©cupÃ©rer le tarif (depuis DB ou fallback)
+    // Récupérer le tarif (depuis DB ou fallback)
     double primePour1000 = await _getPrimePour1000();
 
     if (primePour1000 == 0.0) {
@@ -1208,12 +1208,12 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           return;
         }
 
-        // VÃ©rification du capital maximum (40 000 000 FCFA)
+        // Vérification du capital maximum (40 000 000 FCFA)
         if (capital > 40000000) {
           _showProfessionalDialog(
-            title: 'Limite de capital dÃ©passÃ©e',
+            title: 'Limite de capital dépassée',
             message:
-                'Le capital maximum garanti pour CORIS SÃ‰RÃ‰NITÃ‰ est de 40 000 000 FCFA. Le montant a Ã©tÃ© ajustÃ© automatiquement.',
+                'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant a été ajusté automatiquement.',
             icon: Icons.monetization_on_outlined,
             iconColor: Colors.orange,
             backgroundColor: Colors.orange,
@@ -1234,7 +1234,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         _calculatedCapital = capital;
         _calculatedPrime = _resultatCalcul;
         
-        // Enregistrer la simulation dans la base de donnÃ©es
+        // Enregistrer la simulation dans la base de données
         _saveSimulation(
           typeSimulation: 'Par Capital',
           capital: capital,
@@ -1260,12 +1260,12 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
         _resultatCalcul = (prime / primePeriodiquePour1000) * 1000;
 
-        // VÃ©rification du capital maximum (40 000 000 FCFA)
+        // Vérification du capital maximum (40 000 000 FCFA)
         if (_resultatCalcul > 40000000) {
           _showProfessionalDialog(
-            title: 'Limite de capital dÃ©passÃ©e',
+            title: 'Limite de capital dépassée',
             message:
-                'Le capital maximum garanti pour CORIS SÃ‰RÃ‰NITÃ‰ est de 40 000 000 FCFA. Le montant et la prime ont Ã©tÃ© ajustÃ©s automatiquement.',
+                'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA. Le montant et la prime ont été ajustés automatiquement.',
             icon: Icons.monetization_on_outlined,
             iconColor: Colors.orange,
             backgroundColor: Colors.orange,
@@ -1285,7 +1285,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         _calculatedCapital = _resultatCalcul;
         _calculatedPrime = prime;
         
-        // Enregistrer la simulation dans la base de donnÃ©es
+        // Enregistrer la simulation dans la base de données
         _saveSimulation(
           typeSimulation: 'Par Prime',
           prime: prime,
@@ -1295,7 +1295,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     });
   }
 
-  // MÃ©thode pour enregistrer la simulation
+  // Méthode pour enregistrer la simulation
   void _saveSimulation({
     required String typeSimulation,
     double? capital,
@@ -1303,15 +1303,15 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     double? resultatPrime,
     double? resultatCapital,
   }) {
-    // Calculer l'Ã¢ge
+    // Calculer l'âge
     final age = _dateNaissance != null 
         ? DateTime.now().year - _dateNaissance!.year 
         : null;
     
-    // RÃ©cupÃ©rer la durÃ©e en mois
+    // Récupérer la durée en mois
     final dureeMois = _dureeEnMois;
     
-    // DÃ©terminer la pÃ©riodicitÃ©
+    // Déterminer la périodicité
     String periodicite;
     switch (_selectedPeriode) {
       case Periode.annuel:
@@ -1467,11 +1467,11 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           colors: [
             bleuCoris,
             Color(0xFF002B6B).withAlpha(204)
-          ], // .withOpacity(0.8) remplacÃ©
+          ], // .withOpacity(0.8) remplacé
         ),
         boxShadow: [
           BoxShadow(
-            color: bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+            color: bleuCoris.withAlpha(77), // .withOpacity(0.3) remplacé
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -1493,7 +1493,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
               SizedBox(width: context.r(12)),
               Expanded(
                 child: Text(
-                  "CORIS SÃ‰RÃ‰NITÃ‰ PLUS",
+                  "CORIS SÉRÉNITÉ PLUS",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: context.sp(20),
@@ -1532,7 +1532,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black
-                              .withAlpha(26), // .withOpacity(0.1) remplacÃ©
+                              .withAlpha(26), // .withOpacity(0.1) remplacé
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -1543,14 +1543,14 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // En-tÃªte avec icÃ´ne et titre
+                          // En-tête avec icône et titre
                           Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: bleuCoris.withAlpha(
-                                      26), // .withOpacity(0.1) remplacÃ©
+                                      26), // .withOpacity(0.1) remplacé
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(Icons.settings,
@@ -1558,7 +1558,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                               ),
                               SizedBox(width: context.r(12)),
                               Text(
-                                "ParamÃ¨tres de simulation",
+                                "Paramètres de simulation",
                                 style: TextStyle(
                                   fontSize: context.sp(18),
                                   fontWeight: FontWeight.bold,
@@ -1569,7 +1569,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                           ),
                           SizedBox(height: context.r(20)),
 
-                          // SÃ©lecteur de type de simulation
+                          // Sélecteur de type de simulation
                           _buildSimulationTypeDropdown(),
                           SizedBox(height: context.r(16)),
 
@@ -1581,11 +1581,11 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                           _buildDateNaissanceField(ageText),
                           SizedBox(height: context.r(16)),
 
-                          // Champ pour la durÃ©e
+                          // Champ pour la durée
                           _buildDureeField(),
                           SizedBox(height: context.r(16)),
 
-                          // SÃ©lecteur de pÃ©riodicitÃ©
+                          // Sélecteur de périodicité
                           _buildPeriodiciteDropdown(),
                           SizedBox(height: context.r(20)),
 
@@ -1639,7 +1639,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
                   SizedBox(height: context.r(20)),
 
-                  // Carte de rÃ©sultat
+                  // Carte de résultat
                   if (_calculEffectue) _buildResultCard(),
                 ],
               ),
@@ -1657,7 +1657,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1695,7 +1695,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            color: Colors.black.withAlpha(26), // .withOpacity(0.1) remplacé
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1708,7 +1708,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF002B6B)),
-            labelText: 'PÃ©riodicitÃ©',
+            labelText: 'Périodicité',
           ),
           items: [
             DropdownMenuItem(
@@ -1744,8 +1744,8 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       children: [
         Text(
           _currentSimulation == SimulationType.parCapital
-              ? 'Capital souhaitÃ©'
-              : 'Prime Ã  verser',
+              ? 'Capital souhaité'
+              : 'Prime à verser',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -1759,16 +1759,16 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
               : _primeController,
           keyboardType: TextInputType.number,
           onChanged: (value) {
-            // Validation en temps rÃ©el pour le capital
+            // Validation en temps réel pour le capital
             if (_currentSimulation == SimulationType.parCapital &&
                 value.isNotEmpty) {
               String cleanValue = value.replaceAll(' ', '');
               double? montant = double.tryParse(cleanValue);
               if (montant != null && montant > 40000000) {
                 _showProfessionalDialog(
-                  title: 'Limite de capital dÃ©passÃ©e',
+                  title: 'Limite de capital dépassée',
                   message:
-                      'Le capital maximum garanti pour CORIS SÃ‰RÃ‰NITÃ‰ est de 40 000 000 FCFA.',
+                      'Le capital maximum garanti pour CORIS SÉRÉNITÉ est de 40 000 000 FCFA.',
                   icon: Icons.monetization_on_outlined,
                   iconColor: Colors.orange,
                   backgroundColor: Colors.orange,
@@ -1788,10 +1788,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
             hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20,
-                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacÃ©
+                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacé
             suffixText: 'FCFA',
             filled: true,
-            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -1846,10 +1846,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
             hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.calendar_today,
                 size: 20,
-                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacÃ©
+                color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacé
             suffixText: ageText,
             filled: true,
-            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+            fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -1869,7 +1869,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'DurÃ©e',
+          'Durée',
           style: TextStyle(
             fontSize: context.sp(16),
             fontWeight: FontWeight.w600,
@@ -1888,15 +1888,15 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                   isDense: true,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  hintText: 'Saisir la durÃ©e',
+                  hintText: 'Saisir la durée',
                   hintStyle: TextStyle(fontSize: context.sp(14)),
                   prefixIcon: Icon(Icons.calendar_month,
                       size: 20,
                       color: bleuCoris
-                          .withAlpha(179)), // .withOpacity(0.7) remplacÃ©
+                          .withAlpha(179)), // .withOpacity(0.7) remplacé
                   filled: true,
                   fillColor:
-                      bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+                      bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
@@ -1907,12 +1907,12 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                   ),
                 ),
                 onChanged: (value) {
-                  // Validation en temps rÃ©el pour la durÃ©e
+                  // Validation en temps réel pour la durée
                   if (value.isNotEmpty) {
                     int duree = int.tryParse(value) ?? 0;
-                    if (_selectedUnite == 'annÃ©es' && duree > 15) {
+                    if (_selectedUnite == 'années' && duree > 15) {
                       _showMessage(
-                          'La durÃ©e du contrat ne peut pas dÃ©passer 15 ans');
+                          'La durée du contrat ne peut pas dépasser 15 ans');
                       _dureeController.text = '15';
                       _dureeController.selection = TextSelection.fromPosition(
                         TextPosition(offset: _dureeController.text.length),
@@ -1920,7 +1920,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       duree = 15;
                     } else if (_selectedUnite == 'mois' && duree > 180) {
                       _showMessage(
-                          'La durÃ©e du contrat ne peut pas dÃ©passer 180 mois (15 ans)');
+                          'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
                       _dureeController.text = '180';
                       _dureeController.selection = TextSelection.fromPosition(
                         TextPosition(offset: _dureeController.text.length),
@@ -1930,7 +1930,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
                     setState(() {
                       _dureeEnMois =
-                          _selectedUnite == 'annÃ©es' ? duree * 12 : duree;
+                          _selectedUnite == 'années' ? duree * 12 : duree;
                     });
                   }
                 },
@@ -1947,7 +1947,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   filled: true,
                   fillColor:
-                      bleuClair.withAlpha(77), // .withOpacity(0.3) remplacÃ©
+                      bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
@@ -1963,8 +1963,8 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     child: Text('Mois'),
                   ),
                   DropdownMenuItem(
-                    value: 'annÃ©es',
-                    child: Text('AnnÃ©es'),
+                    value: 'années',
+                    child: Text('Années'),
                   ),
                 ],
                 onChanged: (String? newValue) {
@@ -1973,21 +1973,21 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     if (_dureeController.text.isNotEmpty) {
                       int duree = int.tryParse(_dureeController.text) ?? 0;
 
-                      // VÃ©rification de la durÃ©e maximale (15 ans = 180 mois)
-                      if (_selectedUnite == 'annÃ©es' && duree > 15) {
+                      // Vérification de la durée maximale (15 ans = 180 mois)
+                      if (_selectedUnite == 'années' && duree > 15) {
                         _showMessage(
-                            'La durÃ©e du contrat ne peut pas dÃ©passer 15 ans');
+                            'La durée du contrat ne peut pas dépasser 15 ans');
                         _dureeController.text = '15';
                         duree = 15;
                       } else if (_selectedUnite == 'mois' && duree > 180) {
                         _showMessage(
-                            'La durÃ©e du contrat ne peut pas dÃ©passer 180 mois (15 ans)');
+                            'La durée du contrat ne peut pas dépasser 180 mois (15 ans)');
                         _dureeController.text = '180';
                         duree = 180;
                       }
 
                       _dureeEnMois =
-                          _selectedUnite == 'annÃ©es' ? duree * 12 : duree;
+                          _selectedUnite == 'années' ? duree * 12 : duree;
                     }
                   });
                 },
@@ -2007,14 +2007,14 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            vertCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+            vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
             Colors.white,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: vertCoris.withAlpha(51),
-            width: 1), // .withOpacity(0.2) remplacÃ©
+            width: 1), // .withOpacity(0.2) remplacé
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -2026,7 +2026,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color:
-                        vertCoris.withAlpha(26), // .withOpacity(0.1) remplacÃ©
+                        vertCoris.withAlpha(26), // .withOpacity(0.1) remplacé
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child:
@@ -2038,7 +2038,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "RÃ©sultat de la simulation",
+                        "Résultat de la simulation",
                         style: TextStyle(
                           fontSize: context.sp(18),
                           fontWeight: FontWeight.bold,
@@ -2047,7 +2047,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       ),
                       Text(
                         _currentSimulation == SimulationType.parCapital
-                            ? "Prime ${_getPeriodeText()} Ã  verser"
+                            ? "Prime ${_getPeriodeText()} à verser"
                             : "Capital garanti",
                         style: TextStyle(
                           fontSize: context.sp(14),
@@ -2074,12 +2074,12 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                     color:
-                        vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacÃ©
+                        vertCoris.withAlpha(26)), // .withOpacity(0.1) remplacé
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Prime pÃ©riodique
+                  // Prime périodique
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
