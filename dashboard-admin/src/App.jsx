@@ -23,6 +23,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const inactivityTimerRef = useRef(null)
+  const hiddenTimeoutRef = useRef(null)
+  const hiddenSinceRef = useRef(null)
   const logoutInProgressRef = useRef(false)
 
   useEffect(() => {
@@ -46,6 +48,10 @@ function App() {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current)
       }
+      if (hiddenTimeoutRef.current) {
+        clearTimeout(hiddenTimeoutRef.current)
+      }
+      hiddenSinceRef.current = null
       permissionsService.clearCache()
       setIsAuthenticated(false)
       logoutInProgressRef.current = false
@@ -69,17 +75,58 @@ function App() {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current)
       }
+      if (hiddenTimeoutRef.current) {
+        clearTimeout(hiddenTimeoutRef.current)
+      }
+      hiddenSinceRef.current = null
       return
     }
 
     const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenSinceRef.current = Date.now()
+
+        if (hiddenTimeoutRef.current) {
+          clearTimeout(hiddenTimeoutRef.current)
+        }
+
+        hiddenTimeoutRef.current = setTimeout(() => {
+          performLogout('system_timeout')
+        }, SESSION_TIMEOUT_MS)
+        return
+      }
+
+      if (hiddenTimeoutRef.current) {
+        clearTimeout(hiddenTimeoutRef.current)
+      }
+
+      const hiddenDuration = hiddenSinceRef.current
+        ? Date.now() - hiddenSinceRef.current
+        : 0
+
+      hiddenSinceRef.current = null
+
+      if (hiddenDuration >= SESSION_TIMEOUT_MS) {
+        performLogout('system_timeout')
+      } else {
+        resetInactivityTimer()
+      }
+    }
+
     activityEvents.forEach((eventName) => window.addEventListener(eventName, resetInactivityTimer, true))
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     resetInactivityTimer()
 
     return () => {
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetInactivityTimer, true))
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current)
+      }
+      if (hiddenTimeoutRef.current) {
+        clearTimeout(hiddenTimeoutRef.current)
       }
     }
   }, [isAuthenticated])
