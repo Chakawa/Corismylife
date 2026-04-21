@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs'); // Pour hasher les mots de passe
-// OTP stocké en base de données (table registration_otp)
+// OTP d'inscription stocké en base de données (table registration_otp)
+// OTP 2FA stocké en mémoire (usage interne uniquement)
+const otpStore = new Map(); // key: userId, value: { code, expiresAt }
 const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
@@ -213,6 +215,10 @@ router.post('/verify-otp', async (req, res) => {
   try {
     const { telephone, otpCode } = req.body;
     
+    console.log('\n📲 VÉRIFICATION OTP INSCRIPTION');
+    console.log('  - Téléphone reçu:', telephone);
+    console.log('  - OTP reçu:', otpCode, '| type:', typeof otpCode);
+    
     if (!telephone || !otpCode) {
       return res.status(400).json({ 
         success: false, 
@@ -226,6 +232,12 @@ router.post('/verify-otp', async (req, res) => {
       [telephone]
     );
     const storedOtp = otpResult.rows[0];
+    
+    console.log('  - Enregistrement DB trouvé:', !!storedOtp);
+    if (storedOtp) {
+      console.log('  - Code stocké en DB:', storedOtp.code);
+      console.log('  - Expiration:', storedOtp.expires_at);
+    }
     
     if (!storedOtp) {
       return res.status(400).json({ 
@@ -243,8 +255,12 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
     
-    // Vérifier si le code est correct (comparaison string)
-    if (storedOtp.code !== String(otpCode)) {
+    // Vérifier si le code est correct (comparaison string avec trim)
+    const codeRecu = String(otpCode).trim();
+    const codeStocke = String(storedOtp.code).trim();
+    console.log('🔍 Comparaison OTP - Reçu:', codeRecu, '| Stocké en DB:', codeStocke);
+    if (codeStocke !== codeRecu) {
+      console.error('❌ Code OTP incorrect pour téléphone:', telephone);
       return res.status(400).json({ 
         success: false, 
         message: 'Code OTP incorrect. Veuillez réessayer.' 
@@ -580,7 +596,7 @@ router.get('/me', verifyToken, async (req, res) => {
 });
 
 // =========================
-// 2FA (OTP) Endpoints
+// 2FA (OTP) Endpoints (interne - usage administration)
 // =========================
 router.post('/request-otp', async (req, res) => {
   try {
@@ -607,21 +623,7 @@ router.post('/request-otp', async (req, res) => {
   }
 });
 
-router.post('/verify-otp', async (req, res) => {
-  try {
-    const { userId, code } = req.body;
-    if (!userId || !code) return res.status(400).json({ success: false, message: 'userId et code requis' });
-    const item = otpStore.get(userId);
-    if (!item) return res.status(400).json({ success: false, message: 'OTP non demandé' });
-    if (Date.now() > item.expiresAt) return res.status(400).json({ success: false, message: 'OTP expiré' });
-    if (item.code !== code) return res.status(401).json({ success: false, message: 'OTP invalide' });
-    otpStore.delete(userId);
-    res.json({ success: true, message: 'OTP vérifié' });
-  } catch (e) {
-    console.error('verify-otp error', e);
-    res.status(500).json({ success: false, message: 'Erreur vérification OTP' });
-  }
-});
+// (route /verify-otp pour inscription gérée plus haut dans ce fichier)
 
 /**
  * ===============================================
