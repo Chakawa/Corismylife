@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 import 'package:mycorislife/services/auth_service.dart';
 
 /// ============================================
@@ -185,7 +186,7 @@ Avec CORIS FAMILIS, vous leur offrez bien plus qu'une assurance : vous leur gara
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: MarkdownBody(
+                  child: JustifiedMarkdownBody(
                     data: markdownContent,
                     styleSheet: MarkdownStyleSheet(
                       h3: TextStyle(

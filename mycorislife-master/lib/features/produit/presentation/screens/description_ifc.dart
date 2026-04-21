@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -327,7 +328,7 @@ La souscription se fait auprès de CORIS VIE CI avec :
 
                 padding: const EdgeInsets.all(16.0),
 
-                child: MarkdownBody(
+                child: JustifiedMarkdownBody(
 
                   data: markdownContent,
 

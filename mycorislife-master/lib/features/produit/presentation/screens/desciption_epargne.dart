@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 import 'package:mycorislife/services/auth_service.dart';
 
 class DescriptionEpargnePage extends StatelessWidget {
@@ -109,7 +110,7 @@ Le contrat **CORIS ÉPARGNE BONUS** est un contrat d'assurance-vie qui vous perm
                   color: Colors.white,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-                    child: MarkdownBody(
+                    child: JustifiedMarkdownBody(
                       data: markdownContent,
                       styleSheet: MarkdownStyleSheet(
                           h3: TextStyle(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -395,7 +396,7 @@ Avec FLEX EMPRUNTEUR, transformez votre emprunt en un acte responsable et protec
 
                 padding: const EdgeInsets.all(24.0),
 
-                child: MarkdownBody(
+                child: JustifiedMarkdownBody(
 
                   data: markdownContent,
 

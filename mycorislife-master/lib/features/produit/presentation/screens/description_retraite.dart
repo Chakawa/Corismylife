@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -201,7 +202,7 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
 
                 padding: const EdgeInsets.all(24.0),
 
-                child: MarkdownBody(
+                child: JustifiedMarkdownBody(
 
                   data: markdownContent,
 

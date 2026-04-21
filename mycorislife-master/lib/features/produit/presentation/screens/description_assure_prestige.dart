@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -237,7 +238,7 @@ Grâce au cadre juridique et fiscal de l'assurance-vie, le contrat CORIS ASSUR P
 
                 padding: const EdgeInsets.all(24.0),
 
-                child: MarkdownBody(
+                child: JustifiedMarkdownBody(
 
                   data: markdownContent,
 

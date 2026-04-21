@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -411,7 +412,7 @@ Avec notre solution, vous investissez dans l'avenir de vos enfants tout en b√©n√
 
                   padding: const EdgeInsets.all(24.0),
 
-                  child: MarkdownBody(
+                  child: JustifiedMarkdownBody(
 
                     data: markdownContent,
 

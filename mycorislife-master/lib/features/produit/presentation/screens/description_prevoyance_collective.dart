@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 
 
@@ -405,7 +406,7 @@ Les garanties optionnelles offertes, en plus du décès-PTIA, par le contrat son
 
                 padding: const EdgeInsets.all(16.0),
 
-                child: MarkdownBody(
+                child: JustifiedMarkdownBody(
 
                   data: markdownContent,
 
