@@ -271,6 +271,46 @@ router.post('/verify-otp', async (req, res) => {
     const userData = typeof storedOtp.user_data === 'string'
       ? JSON.parse(storedOtp.user_data)
       : storedOtp.user_data;
+
+    console.log('✅ OTP valide - Création du compte pour:', userData.telephone || telephone);
+    console.log('  - userData.nom:', userData.nom);
+    console.log('  - userData.prenom:', userData.prenom);
+    console.log('  - userData.email:', userData.email || '(non fourni)');
+    console.log('  - userData.password présent:', !!userData.password);
+
+    if (!authController) {
+      // Fallback direct sans authController
+      const bcryptLib = require('bcryptjs');
+      const validateFields = ['password', 'nom', 'prenom', 'telephone'];
+      for (const field of validateFields) {
+        if (!userData[field]) {
+          throw new Error(`Champ obligatoire manquant: ${field}`);
+        }
+      }
+      const passwordHash = await bcryptLib.hash(userData.password, 10);
+      const insertResult = await pool.query(
+        `INSERT INTO users (email, password_hash, role, nom, prenom, civilite, date_naissance, lieu_naissance, telephone, adresse, pays)
+         VALUES ($1, $2, 'client', $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id, email, nom, prenom, role`,
+        [
+          userData.email || null,
+          passwordHash,
+          userData.nom,
+          userData.prenom,
+          userData.civilite || 'Monsieur',
+          userData.date_naissance || null,
+          userData.lieu_naissance || null,
+          userData.telephone,
+          userData.adresse || null,
+          userData.pays || "Côte d'Ivoire"
+        ]
+      );
+      const user = insertResult.rows[0];
+      await pool.query('DELETE FROM registration_otp WHERE telephone = $1', [telephone]);
+      console.log('✅ Compte créé (fallback direct) pour:', user.email || telephone);
+      return res.status(201).json({ success: true, user });
+    }
+
     const user = await authController.registerClient(userData);
     
     // Supprimer l'OTP après utilisation
