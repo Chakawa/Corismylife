@@ -1,596 +1,596 @@
-import 'package:flutter/material.dart';
-import 'package:mycorislife/core/utils/responsive.dart';
-import 'package:mycorislife/services/subscription_service.dart';
-import 'package:mycorislife/models/contrat.dart';
-import 'package:mycorislife/features/client/presentation/screens/contrat_detail_page.dart';
-import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
-import 'package:mycorislife/services/wave_payment_handler.dart';
-
-/// ============================================
-/// PAGE DES CONTRATS
-/// ============================================
-/// Cette page affiche la liste de tous les contrats actifs
-/// de l'utilisateur. Un contrat est une proposition qui a
-/// été payée et est maintenant active.
-///
-/// Fonctionnalités:
-/// - Affichage de la liste des contrats
-/// - Filtrage par type de produit
-/// - Visualisation des détails d'un contrat
-/// - Paiement des primes (mensuelles, annuelles, etc.)
-/// - Téléchargement du PDF du contrat
-class MesContratsPage extends StatefulWidget {
-  const MesContratsPage({super.key});
-
-  @override
-  State<MesContratsPage> createState() => _MesContratsPageState();
-}
-
-class _MesContratsPageState extends State<MesContratsPage>
-    with TickerProviderStateMixin {
-  // ===================================
-  // SERVICES ET DONNÉES
-  // ===================================
-  final SubscriptionService _service = SubscriptionService();
-  List<Contrat> contrats = [];
-  bool isLoading = true;
-  String selectedFilter = 'Tous';
-
-  // ===================================
-  // ANIMATIONS
-  // ===================================
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  // ===================================
-  // INITIALISATION
-  // ===================================
-  @override
-  void initState() {
-    super.initState();
-    _setupAnimations();
-    _loadContrats();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _animationController.forward();
-  }
-
-  Future<void> _loadContrats() async {
-    setState(() => isLoading = true);
-    try {
-      final data = await _service.getContrats();
-      setState(() {
-        contrats = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  // ===================================
-  // FILTRES
-  // ===================================
-  List<String> get productFilters {
-    final types = {'Tous'};
-    for (var contrat in contrats) {
-      if (contrat.nomProduit != null && contrat.nomProduit!.isNotEmpty) {
-        types.add(contrat.nomProduit!);
-      } else {
-        types.add('Sans type');
-      }
-    }
-    return types.toList();
-  }
-
-  List<Contrat> get filteredContrats {
-    if (selectedFilter == 'Tous') return contrats;
-    return contrats.where((c) => c.nomProduit == selectedFilter).toList();
-  }
-
-  // ===================================
-  // BUILD
-  // ===================================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: _buildAppBar(),
-      body: isLoading
-          ? _buildLoadingState()
-          : contrats.isEmpty
-              ? _buildEmptyState()
-              : _buildContractsList(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: const Color(0xFF2563EB),
-      title: Text(
-        'Mes Contrats',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: context.sp(22),
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      automaticallyImplyLeading: true,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${filteredContrats.length} contrat${filteredContrats.length > 1 ? 's' : ''}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: context.sp(12),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
-          ),
-          SizedBox(height: context.r(16)),
-          Text(
-            'Chargement des contrats...',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: context.sp(14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.description_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          SizedBox(height: context.r(16)),
-          Text(
-            'Aucun contrat',
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: context.sp(18),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: context.r(8)),
-          Text(
-            'Vous n\'avez pas encore de contrats actifs',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: context.sp(14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContractsList() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: CustomScrollView(
-        slivers: [
-          // Filtres
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                children: [
-                  for (final filter in productFilters)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(filter),
-                        selected: selectedFilter == filter,
-                        onSelected: (selected) {
-                          setState(() => selectedFilter = filter);
-                        },
-                        backgroundColor: Colors.white,
-                        selectedColor: const Color(0xFF2563EB),
-                        labelStyle: TextStyle(
-                          color: selectedFilter == filter
-                              ? Colors.white
-                              : Colors.grey[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                            color: selectedFilter == filter
-                                ? const Color(0xFF2563EB)
-                                : Colors.grey[300]!,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-          // List de contrats
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final contrat = filteredContrats[index];
-                  return _buildContractCard(contrat);
-                },
-                childCount: filteredContrats.length,
-              ),
-            ),
-          ),
-
-          // Padding bottom
-          SliverToBoxAdapter(
-            child: SizedBox(height: context.r(30)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContractCard(Contrat contrat) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ContratDetailPage(
-                    subscriptionId: _resolveSubscriptionId(contrat),
-                    contractNumber: contrat.numepoli ?? contrat.id.toString(),
-                ),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // En-tête du contrat
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            contrat.nomProduit ?? 'Sans titre',
-                            style: TextStyle(
-                              fontSize: context.sp(16),
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: context.r(4)),
-                          Text(
-                            'Police: ${contrat.numepoli ?? contrat.id}',
-                            style: TextStyle(
-                              fontSize: context.sp(12),
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          SizedBox(height: context.r(6)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: (contrat.source ?? '').toLowerCase() == 'subscription'
-                                  ? const Color(0xFFDBEAFE)
-                                  : const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              (contrat.source ?? '').toLowerCase() == 'subscription'
-                                  ? 'Souscrit via app'
-                                  : 'Contrat historique',
-                              style: TextStyle(
-                                fontSize: context.sp(11),
-                                fontWeight: FontWeight.w600,
-                                color: (contrat.source ?? '').toLowerCase() == 'subscription'
-                                    ? const Color(0xFF1D4ED8)
-                                    : const Color(0xFF4B5563),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Actif',
-                        style: TextStyle(
-                          fontSize: context.sp(12),
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF10B981),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: context.r(12)),
-
-                // Montant principal
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Prime:',
-                      style: TextStyle(
-                        fontSize: context.sp(13),
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      '${_extractAmount(contrat).toStringAsFixed(0)} FCFA',
-                      style: TextStyle(
-                        fontSize: context.sp(14),
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: context.r(12)),
-
-                // Boutons d'action
-                Row(
-                  children: [
-                    // Bouton Détails
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.info_outline, size: 18),
-                        label: Text('Détails'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3F4F6),
-                          foregroundColor: const Color(0xFF2563EB),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ContratDetailPage(
-                                subscriptionId: _resolveSubscriptionId(contrat),
-                                contractNumber: contrat.numepoli ?? contrat.id.toString(),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(width: context.r(8)),
-
-                    // Bouton Payer Prime
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.payment, size: 18),
-                        label: Text('Payer Prime'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () =>
-                            _showPaymentMethodDialog(contrat),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===================================
-  // PAIEMENT
-  // ===================================
-  void _showPaymentMethodDialog(Contrat contrat) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Méthode de paiement'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ListTile(
-            //   leading: Image.asset(
-            //     'assets/images/corismoney_logo.png',
-            //     height: 24,
-            //   ),
-            //   title: Text('CORIS Money'),
-            //   onTap: () {
-            //     Navigator.pop(context);
-            //     _processPayment(contrat, 'CORIS Money');
-            //   },
-            // ),
-            ListTile(
-              leading: Image.asset(
-                'assets/images/icone_wave.jpeg',
-                height: 24,
-              ),
-              title: Text('Wave'),
-              onTap: () {
-                Navigator.pop(context);
-                _processPayment(contrat, 'Wave');
-              },
-            ),
-            // ListTile(
-            //   leading: Image.asset(
-            //     'assets/images/OrangeMoney.png',
-            //     height: 24,
-            //   ),
-            //   title: Text('Orange Money'),
-            //   onTap: () {
-            //     Navigator.pop(context);
-            //     _processPayment(contrat, 'Orange Money');
-            //   },
-            // ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _processPayment(Contrat contrat, String paymentMethod) async {
-    final montant = _extractAmount(contrat);
-
-    if (paymentMethod == 'CORIS Money') {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => CorisMoneyPaymentModal(
-          subscriptionId: contrat.id,
-          montant: montant,
-          description: 'Paiement prime ${contrat.nomProduit} #${contrat.id}',
-          onPaymentSuccess: () {
-            // Rafraîchir la liste après paiement réussi
-            _loadContrats();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Prime payée avec succès !'),
-                backgroundColor: Color(0xFF10B981),
-                duration: Duration(seconds: 3),
-              ),
-            );
-          },
-        ),
-      );
-    } else if (paymentMethod == 'Wave') {
-      // Démarrer le paiement Wave
-      try {
-        await WavePaymentHandler.startPayment(
-          context,
-          subscriptionId: _resolveSubscriptionId(contrat),
-          amount: montant,
-          description: 'Paiement prime ${contrat.nomProduit} #${contrat.numepoli ?? contrat.id}',
-          onSuccess: () {
-            _loadContrats();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Paiement Wave réussi !'),
-                backgroundColor: Color(0xFF10B981),
-                duration: Duration(seconds: 3),
-              ),
-            );
-          },
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur Wave: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } else {
-      // Orange Money - à implémenter
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$paymentMethod sera disponible bientôt'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
-  }
-
-  double _extractAmount(Contrat contrat) {
-    return contrat.prime ?? 0.0;
-  }
-
-  int _resolveSubscriptionId(Contrat contrat) {
-    return contrat.subscriptionId ?? contrat.id;
-  }
-}
-
+import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
+import 'package:mycorislife/services/subscription_service.dart';
+import 'package:mycorislife/models/contrat.dart';
+import 'package:mycorislife/features/client/presentation/screens/contrat_detail_page.dart';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+import 'package:mycorislife/services/wave_payment_handler.dart';
+
+/// ============================================
+/// PAGE DES CONTRATS
+/// ============================================
+/// Cette page affiche la liste de tous les contrats actifs
+/// de l'utilisateur. Un contrat est une proposition qui a
+/// été payée et est maintenant active.
+///
+/// Fonctionnalités:
+/// - Affichage de la liste des contrats
+/// - Filtrage par type de produit
+/// - Visualisation des détails d'un contrat
+/// - Paiement des primes (mensuelles, annuelles, etc.)
+/// - Téléchargement du PDF du contrat
+class MesContratsPage extends StatefulWidget {
+  const MesContratsPage({super.key});
+
+  @override
+  State<MesContratsPage> createState() => _MesContratsPageState();
+}
+
+class _MesContratsPageState extends State<MesContratsPage>
+    with TickerProviderStateMixin {
+  // ===================================
+  // SERVICES ET DONNÉES
+  // ===================================
+  final SubscriptionService _service = SubscriptionService();
+  List<Contrat> contrats = [];
+  bool isLoading = true;
+  String selectedFilter = 'Tous';
+
+  // ===================================
+  // ANIMATIONS
+  // ===================================
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  // ===================================
+  // INITIALISATION
+  // ===================================
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+    _loadContrats();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    _animationController.forward();
+  }
+
+  Future<void> _loadContrats() async {
+    setState(() => isLoading = true);
+    try {
+      final data = await _service.getContrats();
+      setState(() {
+        contrats = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // ===================================
+  // FILTRES
+  // ===================================
+  List<String> get productFilters {
+    final types = {'Tous'};
+    for (var contrat in contrats) {
+      if (contrat.nomProduit != null && contrat.nomProduit!.isNotEmpty) {
+        types.add(contrat.nomProduit!);
+      } else {
+        types.add('Sans type');
+      }
+    }
+    return types.toList();
+  }
+
+  List<Contrat> get filteredContrats {
+    if (selectedFilter == 'Tous') return contrats;
+    return contrats.where((c) => c.nomProduit == selectedFilter).toList();
+  }
+
+  // ===================================
+  // BUILD
+  // ===================================
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: _buildAppBar(),
+      body: isLoading
+          ? _buildLoadingState()
+          : contrats.isEmpty
+              ? _buildEmptyState()
+              : _buildContractsList(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: const Color(0xFF2563EB),
+      title: Text(
+        'Mes Contrats',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: context.sp(22),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      automaticallyImplyLeading: true,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${filteredContrats.length} contrat${filteredContrats.length > 1 ? 's' : ''}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: context.sp(12),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+          ),
+          SizedBox(height: context.r(16)),
+          Text(
+            'Chargement des contrats...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: context.sp(14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.description_outlined,
+            size: 80,
+            color: Colors.grey[300],
+          ),
+          SizedBox(height: context.r(16)),
+          Text(
+            'Aucun contrat',
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: context.sp(18),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: context.r(8)),
+          Text(
+            'Vous n\'avez pas encore de contrats actifs',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: context.sp(14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContractsList() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: CustomScrollView(
+        slivers: [
+          // Filtres
+          SliverToBoxAdapter(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  for (final filter in productFilters)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(filter),
+                        selected: selectedFilter == filter,
+                        onSelected: (selected) {
+                          setState(() => selectedFilter = filter);
+                        },
+                        backgroundColor: Colors.white,
+                        selectedColor: const Color(0xFF2563EB),
+                        labelStyle: TextStyle(
+                          color: selectedFilter == filter
+                              ? Colors.white
+                              : Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: selectedFilter == filter
+                                ? const Color(0xFF2563EB)
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // List de contrats
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final contrat = filteredContrats[index];
+                  return _buildContractCard(contrat);
+                },
+                childCount: filteredContrats.length,
+              ),
+            ),
+          ),
+
+          // Padding bottom
+          SliverToBoxAdapter(
+            child: SizedBox(height: context.r(30)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContractCard(Contrat contrat) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ContratDetailPage(
+                    subscriptionId: _resolveSubscriptionId(contrat),
+                    contractNumber: contrat.numepoli ?? contrat.id.toString(),
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // En-tête du contrat
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            contrat.nomProduit ?? 'Sans titre',
+                            style: TextStyle(
+                              fontSize: context.sp(16),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: context.r(4)),
+                          Text(
+                            'Police: ${contrat.numepoli ?? contrat.id}',
+                            style: TextStyle(
+                              fontSize: context.sp(12),
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(height: context.r(6)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (contrat.source ?? '').toLowerCase() == 'subscription'
+                                  ? const Color(0xFFDBEAFE)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              (contrat.source ?? '').toLowerCase() == 'subscription'
+                                  ? 'Souscrit via app'
+                                  : 'Contrat historique',
+                              style: TextStyle(
+                                fontSize: context.sp(11),
+                                fontWeight: FontWeight.w600,
+                                color: (contrat.source ?? '').toLowerCase() == 'subscription'
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF4B5563),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Actif',
+                        style: TextStyle(
+                          fontSize: context.sp(12),
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF10B981),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.r(12)),
+
+                // Montant principal
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Prime:',
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                      '${_extractAmount(contrat).toStringAsFixed(0)} FCFA',
+                      style: TextStyle(
+                        fontSize: context.sp(14),
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.r(12)),
+
+                // Boutons d'action
+                Row(
+                  children: [
+                    // Bouton Détails
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.info_outline, size: 18),
+                        label: Text('Détails'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          foregroundColor: const Color(0xFF2563EB),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ContratDetailPage(
+                                subscriptionId: _resolveSubscriptionId(contrat),
+                                contractNumber: contrat.numepoli ?? contrat.id.toString(),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(width: context.r(8)),
+
+                    // Bouton Payer Prime
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.payment, size: 18),
+                        label: Text('Payer Prime'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () =>
+                            _showPaymentMethodDialog(contrat),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ===================================
+  // PAIEMENT
+  // ===================================
+  void _showPaymentMethodDialog(Contrat contrat) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Méthode de paiement'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ListTile(
+            //   leading: Image.asset(
+            //     'assets/images/corismoney_logo.png',
+            //     height: 24,
+            //   ),
+            //   title: Text('CORIS Money'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _processPayment(contrat, 'CORIS Money');
+            //   },
+            // ),
+            ListTile(
+              leading: Image.asset(
+                'assets/images/icone_wave.jpeg',
+                height: 24,
+              ),
+              title: Text('Wave'),
+              onTap: () {
+                Navigator.pop(context);
+                _processPayment(contrat, 'Wave');
+              },
+            ),
+            // ListTile(
+            //   leading: Image.asset(
+            //     'assets/images/OrangeMoney.png',
+            //     height: 24,
+            //   ),
+            //   title: Text('Orange Money'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _processPayment(contrat, 'Orange Money');
+            //   },
+            // ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _processPayment(Contrat contrat, String paymentMethod) async {
+    final montant = _extractAmount(contrat);
+
+    if (paymentMethod == 'CORIS Money') {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => CorisMoneyPaymentModal(
+          subscriptionId: contrat.id,
+          montant: montant,
+          description: 'Paiement prime ${contrat.nomProduit} #${contrat.id}',
+          onPaymentSuccess: () {
+            // Rafraîchir la liste après paiement réussi
+            _loadContrats();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Prime payée avec succès !'),
+                backgroundColor: Color(0xFF10B981),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
+        ),
+      );
+    } else if (paymentMethod == 'Wave') {
+      // Démarrer le paiement Wave
+      try {
+        await WavePaymentHandler.startPayment(
+          context,
+          subscriptionId: _resolveSubscriptionId(contrat),
+          amount: montant,
+          description: 'Paiement prime ${contrat.nomProduit} #${contrat.numepoli ?? contrat.id}',
+          onSuccess: () {
+            _loadContrats();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Paiement Wave réussi !'),
+                backgroundColor: Color(0xFF10B981),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur Wave: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      // Orange Money - à implémenter
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$paymentMethod sera disponible bientôt'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  double _extractAmount(Contrat contrat) {
+    return contrat.prime ?? 0.0;
+  }
+
+  int _resolveSubscriptionId(Contrat contrat) {
+    return contrat.subscriptionId ?? contrat.id;
+  }
+}
+

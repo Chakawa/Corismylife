@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs'); // Pour hasher les mots de passe
-// Stockage OTP en mémoire (simple, à remplacer par Redis en prod)
-const otpStore = new Map(); // key: telephone, value: { code, expiresAt, userData }
+// OTP stocké en base de données (table registration_otp)
 const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
@@ -135,15 +134,16 @@ router.post('/send-otp', async (req, res) => {
     const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
     console.log('🔐 Code OTP généré:', otpCode);
     
-    // Stocker l'OTP avec expiration de 5 minutes
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
-    otpStore.set(telephone, { 
-      code: otpCode, 
-      expiresAt, 
-      userData // Stocker les données utilisateur pour l'inscription finale
-    });
+    // Stocker l'OTP en base de données avec expiration de 5 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    await pool.query(
+      `INSERT INTO registration_otp (telephone, code, expires_at, user_data)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (telephone) DO UPDATE SET code = $2, expires_at = $3, user_data = $4, created_at = NOW()`,
+      [telephone, otpCode, expiresAt, JSON.stringify(userData)]
+    );
     
-    console.log('💾 OTP stocké en mémoire');
+    console.log('💾 OTP stocké en base de données');
     console.log('⏰ Expiration:', new Date(expiresAt).toLocaleString());
     console.log('📝 Note: Si un OTP existait déjà pour ce numéro, il a été REMPLACÉ par le nouveau');
     
@@ -220,8 +220,12 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
     
-    // Récupérer l'OTP stocké
-    const storedOtp = otpStore.get(telephone);
+    // Récupérer l'OTP depuis la base de données
+    const otpResult = await pool.query(
+      'SELECT * FROM registration_otp WHERE telephone = $1',
+      [telephone]
+    );
+    const storedOtp = otpResult.rows[0];
     
     if (!storedOtp) {
       return res.status(400).json({ 
@@ -231,27 +235,30 @@ router.post('/verify-otp', async (req, res) => {
     }
     
     // Vérifier si l'OTP a expiré
-    if (Date.now() > storedOtp.expiresAt) {
-      otpStore.delete(telephone);
+    if (new Date() > new Date(storedOtp.expires_at)) {
+      await pool.query('DELETE FROM registration_otp WHERE telephone = $1', [telephone]);
       return res.status(400).json({ 
         success: false, 
         message: 'Le code OTP a expiré. Veuillez demander un nouveau code.' 
       });
     }
     
-    // Vérifier si le code est correct
-    if (storedOtp.code !== otpCode) {
+    // Vérifier si le code est correct (comparaison string)
+    if (storedOtp.code !== String(otpCode)) {
       return res.status(400).json({ 
         success: false, 
         message: 'Code OTP incorrect. Veuillez réessayer.' 
       });
     }
     
-    // Code OTP correct, créer le compte
-    const user = await authController.registerClient(storedOtp.userData);
+    // Code OTP correct, récupérer les données utilisateur et créer le compte
+    const userData = typeof storedOtp.user_data === 'string'
+      ? JSON.parse(storedOtp.user_data)
+      : storedOtp.user_data;
+    const user = await authController.registerClient(userData);
     
     // Supprimer l'OTP après utilisation
-    otpStore.delete(telephone);
+    await pool.query('DELETE FROM registration_otp WHERE telephone = $1', [telephone]);
     
     console.log('✅ Compte créé avec succès après vérification OTP:', user.email || telephone);
     

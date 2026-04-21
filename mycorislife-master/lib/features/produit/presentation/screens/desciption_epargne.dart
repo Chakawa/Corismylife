@@ -112,7 +112,7 @@ Le contrat **CORIS ÉPARGNE BONUS** est un contrat d'assurance-vie qui vous perm
                     child: MarkdownBody(
                       data: markdownContent,
                       styleSheet: MarkdownStyleSheet(
-                        h3: TextStyle(
+                          h3: TextStyle(
                           fontSize: context.sp(28.0),
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF002B6B),
