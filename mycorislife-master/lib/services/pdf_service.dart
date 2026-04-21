@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -43,26 +42,9 @@ class PdfService {
       url = '$url?exclude_questionnaire=1';
     }
 
-    // Demander les permissions si Android
-    if (Platform.isAndroid) {
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-        if (!status.isGranted) {
-          final manageStatus = await Permission.manageExternalStorage.request();
-          if (!manageStatus.isGranted) {
-            throw Exception('Permission de stockage refusée');
-          }
-        }
-      }
-    }
-
     Directory? downloads;
     if (Platform.isAndroid) {
-      downloads = Directory('/storage/emulated/0/Download');
-      if (!await downloads.exists()) {
-        downloads = await getExternalStorageDirectory();
-      }
+      downloads = await getExternalStorageDirectory();
     } else {
       downloads = await getApplicationDocumentsDirectory();
     }
@@ -113,29 +95,10 @@ class PdfService {
   }
 
   static Future<File> saveToDownloads(File tempFile) async {
-    // Demander les permissions si Android
-    if (Platform.isAndroid) {
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-        if (!status.isGranted) {
-          // Essayer avec manageExternalStorage pour Android 11+
-          final manageStatus = await Permission.manageExternalStorage.request();
-          if (!manageStatus.isGranted) {
-            throw Exception('Permission de stockage refusée');
-          }
-        }
-      }
-    }
-
-    // Obtenir le dossier Downloads
+    // Obtenir un dossier sûr sans permission spéciale.
     Directory? downloads;
     if (Platform.isAndroid) {
-      // Pour Android, utiliser le dossier Downloads public
-      downloads = Directory('/storage/emulated/0/Download');
-      if (!await downloads.exists()) {
-        downloads = await getExternalStorageDirectory();
-      }
+      downloads = await getExternalStorageDirectory();
     } else {
       // Pour iOS
       downloads = await getApplicationDocumentsDirectory();

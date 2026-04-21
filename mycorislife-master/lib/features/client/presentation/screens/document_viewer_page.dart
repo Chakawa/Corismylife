@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 const Color bleuCoris = Color(0xFF002B6B);
@@ -113,35 +112,10 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     if (_documentFile == null) return;
 
     try {
-      // Demander les permissions si Android
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-          if (!status.isGranted) {
-            // Essayer avec manageExternalStorage pour Android 11+
-            final manageStatus = await Permission.manageExternalStorage.request();
-            if (!manageStatus.isGranted) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Permission de stockage refusée'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              return;
-            }
-          }
-        }
-      }
-
-      // Obtenir le dossier Downloads
+      // Obtenir un dossier sûr sans permission spéciale.
       Directory? downloads;
       if (Platform.isAndroid) {
-        downloads = Directory('/storage/emulated/0/Download');
-        if (!await downloads.exists()) {
-          downloads = await getExternalStorageDirectory();
-        }
+        downloads = await getExternalStorageDirectory();
       } else {
         downloads = await getApplicationDocumentsDirectory();
       }
@@ -174,7 +148,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                     ),
                     SizedBox(height: context.r(4)),
                     Text(
-                      Platform.isAndroid ? 'Dossier: Téléchargements' : 'Dossier: Documents',
+                      Platform.isAndroid ? 'Dossier: stockage de l’application' : 'Dossier: Documents',
                       style: TextStyle(fontSize: context.sp(12)),
                     ),
                   ],

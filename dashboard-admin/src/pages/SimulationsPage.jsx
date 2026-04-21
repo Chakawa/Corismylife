@@ -3,16 +3,19 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
-import { Calculator, TrendingUp, DollarSign, Users, Filter, Download } from 'lucide-react'
+import { Calculator, TrendingUp, DollarSign, Users, Filter, Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import API_URL from '../config'
 
 const COLORS = ['#002B6B', '#E30613', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
 const API_BASE = API_URL
+const PAGE_SIZE = 30
 
 export default function SimulationsPage() {
   const [stats, setStats] = useState(null)
   const [simulations, setSimulations] = useState([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(0)
   const [filters, setFilters] = useState({
     produit: '',
     type_simulation: '',
@@ -23,6 +26,10 @@ export default function SimulationsPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [simulations])
 
   const loadData = async () => {
     setLoading(true)
@@ -41,7 +48,7 @@ export default function SimulationsPage() {
       }
 
       // Charger les simulations
-      const simsRes = await fetch(`${API_BASE}/simulations?limit=100`, { headers })
+      const simsRes = await fetch(`${API_BASE}/simulations?limit=500`, { headers })
       if (simsRes.ok) {
         const simsData = await simsRes.json()
         setSimulations(simsData.data || [])
@@ -70,7 +77,7 @@ export default function SimulationsPage() {
 
       const [statsRes, simsRes] = await Promise.all([
         fetch(`${API_BASE}/simulations/stats?${params}`, { headers }),
-        fetch(`${API_BASE}/simulations?${params}&limit=100`, { headers })
+        fetch(`${API_BASE}/simulations?${params}&limit=500`, { headers })
       ])
 
       if (statsRes.ok) {
@@ -96,8 +103,34 @@ export default function SimulationsPage() {
 
   const formatDate = (date) => {
     if (!date) return '-'
-    return new Date(date).toLocaleDateString('fr-FR')
+    return new Date(date).toLocaleString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
   }
+
+  const exportToExcel = () => {
+    const data = simulations.map((sim) => ({
+      'Date & Heure': formatDate(sim.created_at),
+      'Produit': sim.produit_nom || '-',
+      'Type': sim.type_simulation || '-',
+      'Capital (FCFA)': sim.capital ? Math.round(sim.capital) : 0,
+      'Prime (FCFA)': sim.prime ? Math.round(sim.prime) : 0,
+      'Durée (mois)': sim.duree_mois || '-',
+      'Client': sim.user_name || 'Anonyme',
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Simulations')
+    let periodLabel = ''
+    if (filters.date_debut && filters.date_fin) periodLabel = `_${filters.date_debut}_au_${filters.date_fin}`
+    else if (filters.date_debut) periodLabel = `_depuis_${filters.date_debut}`
+    else if (filters.date_fin) periodLabel = `_jusqu_${filters.date_fin}`
+    XLSX.writeFile(wb, `simulations${periodLabel}.xlsx`)
+  }
+
+  const totalPages = Math.ceil(simulations.length / PAGE_SIZE)
+  const pagedSimulations = simulations.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
 
   if (loading) {
     return (
@@ -174,6 +207,7 @@ export default function SimulationsPage() {
           <button
             onClick={() => {
               setFilters({ produit: '', type_simulation: '', date_debut: '', date_fin: '' })
+              setCurrentPage(0)
               loadData()
             }}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -308,8 +342,26 @@ export default function SimulationsPage() {
 
       {/* Liste des simulations */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">Liste des Simulations</h3>
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">Liste des Simulations</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {simulations.length} simulation{simulations.length !== 1 ? 's' : ''} au total
+              {(filters.date_debut || filters.date_fin) && (
+                <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  Filtrées par période
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={exportToExcel}
+            disabled={simulations.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            Exporter Excel
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -325,7 +377,7 @@ export default function SimulationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {simulations.map((sim) => (
+              {pagedSimulations.map((sim) => (
                 <tr key={sim.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(sim.created_at)}
@@ -359,6 +411,30 @@ export default function SimulationsPage() {
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Page {currentPage + 1} sur {totalPages} &mdash; simulations {currentPage * PAGE_SIZE + 1} à {Math.min((currentPage + 1) * PAGE_SIZE, simulations.length)}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+                className="flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" /> Précédent
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={currentPage === totalPages - 1}
+                className="flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Suivant <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
