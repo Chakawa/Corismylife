@@ -16,6 +16,7 @@ import SimulationsPage from './pages/SimulationsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import permissionsService from './services/permissions.service'
 import { authService } from './services/api.service'
+import PendingRegistrationsPage from './pages/PendingRegistrationsPage'
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000
 
@@ -212,6 +213,11 @@ function App() {
           <Route path="simulations" element={
             <ProtectedRoute requiredPage="stats">
               <SimulationsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="pending-registrations" element={
+            <ProtectedRoute requiredPage="users">
+              <PendingRegistrationsPage />
             </ProtectedRoute>
           } />
           <Route path="access-denied" element={<AccessDeniedPage />} />

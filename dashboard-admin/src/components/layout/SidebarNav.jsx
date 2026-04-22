@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   BarChart3, Users, FileText, ShoppingCart, Briefcase, Settings, 
-  Activity, Menu, X, ChevronDown, Lock, Crown, Shield, Calculator
+  Activity, Menu, X, ChevronDown, Lock, Crown, Shield, Calculator, Clock
 } from 'lucide-react'
 import permissionsService from '../../services/permissions.service'
 
@@ -28,6 +28,7 @@ export default function SidebarNav() {
   const allRoutes = [
     { path: '/dashboard', label: 'Tableau de Bord', icon: BarChart3, page: 'stats', requireSuperAdmin: false },
     { path: '/users', label: 'Utilisateurs', icon: Users, page: 'users', requireSuperAdmin: false },
+    { path: '/pending-registrations', label: 'Inscriptions en attente', icon: Clock, page: 'users', requireSuperAdmin: false },
     { path: '/contracts', label: 'Contrats', icon: FileText, page: 'contracts', requireSuperAdmin: false },
     { path: '/subscriptions', label: 'Souscriptions', icon: ShoppingCart, page: 'contracts', requireSuperAdmin: false },
     { path: '/commissions', label: 'Commissions', icon: Briefcase, page: 'contracts', requireSuperAdmin: false },

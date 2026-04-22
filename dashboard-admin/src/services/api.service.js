@@ -224,3 +224,20 @@ export const productsService = {
     return response.data
   }
 }
+
+export const pendingRegistrationsService = {
+  getAll: async () => {
+    const response = await api.get('/admin/pending-registrations')
+    return response.data
+  },
+
+  activate: async (id) => {
+    const response = await api.post(`/admin/pending-registrations/${id}/activate`)
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/admin/pending-registrations/${id}`)
+    return response.data
+  }
+}
