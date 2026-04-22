@@ -1381,17 +1381,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: (_currentPage == 2 &&
-                                      isPasswordValid &&
-                                      passwordController.text ==
-                                          confirmPasswordController.text) ||
-                                  (_currentPage == 3 &&
-                                      otpController.text.length == 5 &&
-                                      !_isOtpExpired)
+                          colors: _currentPage >= 2
                               ? [rougeCoris, const Color(0xFFE60000)]
-                              : _currentPage < 2
-                                  ? [bleuCoris, const Color(0xFF0041A3)]
-                                  : [Colors.grey[400]!, Colors.grey[500]!],
+                              : [bleuCoris, const Color(0xFF0041A3)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
@@ -1411,18 +1403,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: isLoading
                             ? null
                             : (_currentPage == 2
-                                ? (passwordController.text.isNotEmpty &&
-                                        confirmPasswordController
-                                            .text.isNotEmpty &&
-                                        passwordController.text ==
-                                            confirmPasswordController.text
-                                    ? _sendOtp
-                                    : null)
+                                ? _sendOtp
                                 : _currentPage == 3
-                                    ? (otpController.text.length == 5 &&
-                                            !_isOtpExpired
-                                        ? _verifyOtpAndRegister
-                                        : null)
+                                    ? _verifyOtpAndRegister
                                     : nextPage),
                         icon: isLoading
                             ? SizedBox(

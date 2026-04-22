@@ -147,6 +147,16 @@ router.post('/send-otp', async (req, res) => {
        ON CONFLICT (telephone) DO UPDATE SET code = $2, expires_at = $3, user_data = $4, created_at = NOW()`,
       [telephone, otpCode, expiresAt, JSON.stringify(userData)]
     );
+
+    // Sauvegarder les données dans pending_registrations (inscription incomplète)
+    // Permet de recontacter le client si le SMS échoue ou s'il n'a pas finalisé
+    await pool.query(
+      `INSERT INTO pending_registrations (telephone, user_data, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (telephone) DO UPDATE SET user_data = $2, updated_at = NOW()`,
+      [telephone, JSON.stringify(userData)]
+    );
+    console.log('💾 Données sauvegardées dans pending_registrations');
     
     console.log('💾 OTP stocké en base de données');
     console.log('⏰ Expiration:', new Date(expiresAt).toLocaleString());
@@ -305,14 +315,16 @@ router.post('/verify-otp', async (req, res) => {
       );
       const user = insertResult.rows[0];
       await pool.query('DELETE FROM registration_otp WHERE telephone = $1', [telephone]);
+      await pool.query('DELETE FROM pending_registrations WHERE telephone = $1', [telephone]);
       console.log('✅ Compte créé (fallback direct) pour:', user.email || telephone);
       return res.status(201).json({ success: true, user });
     }
 
     const user = await authController.registerClient(userData);
     
-    // Supprimer l'OTP après utilisation
+    // Supprimer l'OTP et l'inscription en attente après création réussie
     await pool.query('DELETE FROM registration_otp WHERE telephone = $1', [telephone]);
+    await pool.query('DELETE FROM pending_registrations WHERE telephone = $1', [telephone]);
     
     console.log('✅ Compte créé avec succès après vérification OTP:', user.email || telephone);
     
