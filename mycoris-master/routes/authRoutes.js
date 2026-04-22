@@ -7,10 +7,13 @@ const otpStore = new Map(); // key: userId, value: { code, expiresAt }
 const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
+// ⚠️ MODE DÉVELOPPEMENT : mettre à false en PRODUCTION
+const DEV_MODE = true; // true = OTP retourné dans la réponse + SMS non bloquant
+
 // Configuration API SMS
 const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send'; // URL de l'API SMS CI
 const SMS_API_TOKEN = 'a6fcc40d1c8c4cb64ab85c00b1053d6e'; // Token de production
-//const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c'; // Token de test
+// const SMS_API_TOKEN = '1ed5abe2ef38e1e0ce6e64e2648d005c'; // Token de test
 const SMS_SENDER = 'CORIS ASSUR'; // Max 11 caractères requis par l'API
 
 /**
@@ -154,37 +157,30 @@ router.post('/send-otp', async (req, res) => {
     console.log('📤 Tentative d\'envoi du SMS...');
     
     const smsResult = await sendSMS(telephone, smsMessage);
-    
+
     if (!smsResult.success) {
-      console.error('╔════════════════════════════════════════╗');
-      console.error('║   ⚠️  ÉCHEC ENVOI SMS                 ║');
-      console.error('╚════════════════════════════════════════╝');
-      console.error('Erreur:', smsResult.error);
-      console.error('Détails:', smsResult.details);
-      console.error('⚠️ OTP stocké mais SMS non envoyé!');
-      
-      // En cas d'échec, retourner une erreur à l'utilisateur
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Impossible d\'envoyer le SMS. Veuillez vérifier votre numéro et réessayer.' 
-      });
+      if (DEV_MODE) {
+        // En mode dev : on ignore l'échec SMS et on continue
+        console.warn('⚠️ [DEV] SMS non envoyé mais OTP stocké en DB. Code:', otpCode);
+      } else {
+        // En production : bloquer si le SMS échoue
+        console.error('❌ ÉCHEC ENVOI SMS:', smsResult.error);
+        return res.status(500).json({
+          success: false,
+          message: 'Impossible d\'envoyer le SMS. Veuillez vérifier votre numéro et réessayer.'
+        });
+      }
+    } else {
+      console.log('✅ SMS envoyé au', telephone);
     }
-    
-    console.log('╔════════════════════════════════════════╗');
-    console.log('║   ✅ SMS ENVOYÉ AVEC SUCCÈS           ║');
-    console.log('╚════════════════════════════════════════╝');
-    console.log('✅ Code OTP envoyé au', telephone);
-    console.log('📊 Résumé:');
-    console.log('  - Code OTP: ***', otpCode.slice(-2), '(masqué dans les logs production)');
-    console.log('  - Destinataire:', telephone);
-    console.log('  - Expiration:', new Date(expiresAt).toLocaleString());
-    console.log('  - SMS envoyé: ✅ OUI');
-    console.log('\n');
-    
-    res.json({ 
-      success: true, 
-      message: 'Code OTP envoyé avec succès'
-      // ⚠️ NE JAMAIS retourner le code OTP dans la réponse
+
+    console.log('📊 OTP:', DEV_MODE ? otpCode : '***' + otpCode.slice(-2), '| Expire:', new Date(expiresAt).toLocaleString());
+
+    // En mode DEV : retourner le code OTP pour pouvoir tester sans SMS
+    res.json({
+      success: true,
+      message: DEV_MODE ? '[DEV] Code OTP généré (SMS peut être ignoré)' : 'Code OTP envoyé avec succès',
+      ...(DEV_MODE && { otpCode }) // ⚠️ RETIRER EN PRODUCTION (DEV_MODE = false)
     });
   } catch (error) {
     console.error('\n╔════════════════════════════════════════╗');

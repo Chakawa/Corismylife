@@ -177,12 +177,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Envoyer l'OTP
-      await AuthService.sendOtp(
+      final receivedOtpCode = await AuthService.sendOtp(
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );
-      // Ne plus stocker le code OTP (pas de mode développement sur cette page)
-      // Le code sera uniquement reçu par SMS
+      // En mode DEV : pré-remplir le champ OTP automatiquement
+      if (receivedOtpCode != null && receivedOtpCode.isNotEmpty) {
+        otpController.text = receivedOtpCode;
+      }
       if (!mounted) return;
       // Démarrer le timer de 5 minutes
       _startOtpTimer();
@@ -1494,10 +1496,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Envoyer un NOUVEAU code OTP (l'ancien est remplacé côté serveur)
-      await AuthService.sendOtp(
+      final newOtpCode = await AuthService.sendOtp(
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );
+      // En mode DEV : pré-remplir le champ OTP automatiquement
+      if (newOtpCode != null && newOtpCode.isNotEmpty) {
+        otpController.text = newOtpCode;
+      }
       if (!mounted) return;
       // Redémarrer le timer à 5 minutes
       _startOtpTimer();
