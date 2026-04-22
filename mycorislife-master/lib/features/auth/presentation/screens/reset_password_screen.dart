@@ -18,7 +18,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final newPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
   bool isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -26,7 +25,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String? devCode; // Pour le développement
 
   static const String baseUrl = 'http://192.168.1.32:5000/api/password-reset';
-
   // Étape 1: Demander le code de vérification
   Future<void> _requestCode() async {
     if (_formKey.currentState!.validate()) {
@@ -37,14 +35,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'email': emailController.text.trim()}),
         );
-
         final data = jsonDecode(response.body);
-
         if (mounted) {
           if (data['success']) {
             // Stocker le code de développement s'il est fourni
             devCode = data['devCode'];
-
             setState(() => currentStep = 1);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -53,7 +48,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 duration: const Duration(seconds: 4),
               ),
             );
-
             // Afficher le code en mode développement
             if (devCode != null) {
               Future.delayed(const Duration(milliseconds: 500), () {
@@ -143,9 +137,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           'code': codeController.text.trim(),
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (mounted) {
         if (data['success']) {
           setState(() => currentStep = 2);
@@ -194,9 +186,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             'newPassword': newPasswordController.text,
           }),
         );
-
         final data = jsonDecode(response.body);
-
         if (mounted) {
           if (data['success']) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -281,7 +271,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   // Indicateur d'étapes
                   _buildStepIndicator(),
                   SizedBox(height: context.r(30)),
-
                   // Contenu selon l'étape
                   if (currentStep == 0) _buildEmailStep(),
                   if (currentStep == 1) _buildCodeStep(),
@@ -316,7 +305,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget _buildStepCircle(int step, String label) {
     bool isActive = currentStep >= step;
     bool isCurrent = currentStep == step;
-
     return Column(
       children: [
         Container(

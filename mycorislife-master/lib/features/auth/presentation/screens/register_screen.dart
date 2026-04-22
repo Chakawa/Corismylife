@@ -23,21 +23,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final List<GlobalKey<FormState>> _formKeys =
       List.generate(4, (_) => GlobalKey<FormState>()); // Changé de 3 à 4
   final storage = const FlutterSecureStorage();
-
   // Contrôleur pour l'OTP
   final otpController = TextEditingController();
-
   // Timer pour l'OTP
   Timer? _otpTimer;
   int _otpTimeRemaining = 300; // 5 minutes en secondes
   bool _isOtpExpired = false;
-
   // Contrôleurs pour stocker les données
   final nomController = TextEditingController();
   final prenomController = TextEditingController();
   DateTime? dateNaissance;
   final lieuNaissanceController = TextEditingController();
-
   final emailController = TextEditingController();
   final telephoneController = TextEditingController();
   final adresseController = TextEditingController();
@@ -53,13 +49,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   DateTime? dateDelivrance;
   DateTime? dateExpiration;
   final autoriteDelivranceController = TextEditingController();
-
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-
   String? selectedCivilite = 'Monsieur';
   String? selectedDocumentType = 'CNI';
-
   final List<Map<String, String>> indicatifs = [
     {'pays': 'Côte d’Ivoire', 'indicatif': '+225', 'flag': '🇨🇮'},
     {'pays': 'Burkina Faso', 'indicatif': '+226', 'flag': '🇧🇫'},
@@ -91,7 +84,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool get hasSpecial =>
       passwordController.text.contains(RegExp(r'[!@#\$&*~_.,;:^%()-]'));
   bool get hasMinLength => passwordController.text.length >= 8;
-
   bool get isPasswordValid =>
       hasUppercase && hasLowercase && hasDigit && hasSpecial && hasMinLength;
 
@@ -99,7 +91,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _checkPhoneAvailability() async {
     final phoneNumber =
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}";
-
     if (telephoneController.text.isEmpty ||
         !RegExp(r'^\d{10}$').hasMatch(telephoneController.text)) {
       return; // Ne pas vérifier si le numéro n'est pas valide
@@ -109,7 +100,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       isCheckingPhone = true;
       phoneErrorMessage = null;
     });
-
     try {
       final exists = await AuthService.checkPhoneExists(phoneNumber);
       if (mounted) {
@@ -131,7 +121,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   /// Vérifie si un email existe déjà
   Future<void> _checkEmailAvailability() async {
     final email = emailController.text.trim();
-
     if (email.isEmpty) {
       setState(() => emailErrorMessage = null);
       return; // L'email est optionnel
@@ -145,7 +134,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       isCheckingEmail = true;
       emailErrorMessage = null;
     });
-
     try {
       final exists = await AuthService.checkEmailExists(email);
       if (mounted) {
@@ -166,13 +154,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   /// Envoyer le code OTP (appelé depuis l'étape 3 - mot de passe)
   Future<void> _sendOtp() async {
     if (_currentPage >= _formKeys.length) return;
-
     final form = _formKeys[_currentPage].currentState;
     if (form == null || !form.validate()) return;
-
     if (!mounted) return;
     setState(() => isLoading = true);
-
     try {
       final payload = {
         "password": passwordController.text,
@@ -186,7 +171,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
       };
-
       // Ajouter l'email seulement s'il est fourni
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
@@ -197,20 +181,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );
-
       // Ne plus stocker le code OTP (pas de mode développement sur cette page)
       // Le code sera uniquement reçu par SMS
-
       if (!mounted) return;
-
       // Démarrer le timer de 5 minutes
       _startOtpTimer();
-
       // Passer à l'étape 4 (vérification OTP)
       setState(() => _currentPage++);
       _controller.nextPage(
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -242,19 +221,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   /// Vérifier l'OTP et créer le compte (étape 4)
   Future<void> _verifyOtpAndRegister() async {
     if (_currentPage >= _formKeys.length) return;
-
     final form = _formKeys[_currentPage].currentState;
     if (form == null || !form.validate()) return;
-
     if (!mounted) return;
     setState(() => isLoading = true);
-
     try {
       await AuthService.verifyOtpAndRegister(
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         otpController.text,
       );
-
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -266,7 +241,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
@@ -295,13 +269,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ignore: unused_element
   Future<void> _register() async {
     if (_currentPage >= _formKeys.length) return;
-
     final form = _formKeys[_currentPage].currentState;
     if (form == null || !form.validate()) return;
-
     if (!mounted) return;
     setState(() => isLoading = true);
-
     try {
       final payload = {
         "password": passwordController.text,
@@ -315,14 +286,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
       };
-
       // Ajouter l'email seulement s'il est fourni
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
       }
 
       await AuthService.registerClient(payload);
-
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -334,7 +303,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
@@ -447,7 +415,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String? value = date != null
         ? "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}"
         : null;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -595,7 +562,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final size = MediaQuery.of(context).size;
     final fontSize = size.width * 0.045;
     final padding = size.width * 0.05;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
@@ -1003,7 +969,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     // Étape 3 : Pièce d'identité
-
                     Form(
                       key: _formKeys[2],
                       child: SingleChildScrollView(
@@ -1248,7 +1213,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               },
                             ),
                             SizedBox(height: fontSize),
-
                             // Timer et état de l'OTP
                             if (!_isOtpExpired)
                               Container(
@@ -1278,7 +1242,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ],
                                 ),
                               ),
-
                             if (_isOtpExpired)
                               Container(
                                 padding: EdgeInsets.all(fontSize * 0.8),
@@ -1307,7 +1270,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ],
                                 ),
                               ),
-
                             SizedBox(height: fontSize),
                             ElevatedButton.icon(
                               onPressed: isLoading ? null : _resendOtp,
@@ -1487,13 +1449,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _startOtpTimer() {
     // Annuler le timer précédent s'il existe
     _otpTimer?.cancel();
-
     // Réinitialiser le timer
     setState(() {
       _otpTimeRemaining = 300; // 5 minutes
       _isOtpExpired = false;
     });
-
     // Créer un nouveau timer
     _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_otpTimeRemaining > 0) {
@@ -1513,10 +1473,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _resendOtp() async {
     // Vider le champ OTP
     otpController.clear();
-
     if (!mounted) return;
     setState(() => isLoading = true);
-
     try {
       final payload = {
         "password": passwordController.text,
@@ -1530,7 +1488,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
       };
-
       // Ajouter l'email seulement s'il est fourni
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
@@ -1541,12 +1498,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         payload,
       );
-
       if (!mounted) return;
-
       // Redémarrer le timer à 5 minutes
       _startOtpTimer();
-
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

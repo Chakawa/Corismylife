@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 class IdentityDocumentPickerResult {
   final List<File> files;
   final List<String> labels;
-
   IdentityDocumentPickerResult({
     required this.files,
     required this.labels,
@@ -28,7 +26,6 @@ class IdentityDocumentPicker {
   ) async {
     final source = await _showSourceChoice(context);
     if (source == null) return null;
-
     if (source == _DocumentSource.files) {
       return _pickFromFiles(context);
     }
@@ -210,16 +207,12 @@ class IdentityDocumentPicker {
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       allowMultiple: true,
     );
-
     if (result == null) return null;
-
     final files = <File>[];
     final labels = <String>[];
-
     for (final item in result.files) {
       if (item.path == null) continue;
       final file = File(item.path!);
-
       final fileSize = await file.length();
       if (fileSize > _maxFileSizeBytes) {
         if (!context.mounted) return null;
@@ -252,7 +245,6 @@ class IdentityDocumentPicker {
     }
 
     if (files.isEmpty) return null;
-
     return IdentityDocumentPickerResult(files: files, labels: labels);
   }
 
@@ -261,28 +253,22 @@ class IdentityDocumentPicker {
   ) async {
     final files = <File>[];
     final labels = <String>[];
-
     final sides = ['Recto', 'Verso'];
-
     for (final side in sides) {
       var validated = false;
-
       while (!validated) {
         if (!context.mounted) return null;
-
         await _showInfoDialog(
           context,
           title: 'Capture $side',
           message:
               'Prenez la photo du $side de la piece d\'identite dans un environnement bien eclaire.',
         );
-
         final shot = await _imagePicker.pickImage(
           source: ImageSource.camera,
           imageQuality: 95,
           maxWidth: 2500,
         );
-
         if (shot == null) {
           if (!context.mounted) return null;
           final shouldCancel = await _confirmCancel(context, side);
@@ -291,7 +277,6 @@ class IdentityDocumentPicker {
         }
 
         final file = File(shot.path);
-
         final fileSize = await file.length();
         if (fileSize > _maxFileSizeBytes) {
           if (!context.mounted) return null;
@@ -388,7 +373,6 @@ class IdentityDocumentPicker {
         ],
       ),
     );
-
     return answer ?? false;
   }
 
@@ -418,7 +402,6 @@ class IdentityDocumentPicker {
         ],
       ),
     );
-
     return answer ?? false;
   }
 
@@ -498,7 +481,6 @@ class IdentityDocumentPicker {
 class _ImageQualityResult {
   final bool ok;
   final String? reason;
-
   const _ImageQualityResult(this.ok, this.reason);
 }
 

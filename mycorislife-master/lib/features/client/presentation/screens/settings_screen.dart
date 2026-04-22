@@ -27,7 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const Color grisTexte = Color(0xFF64748B);
   static const Color vertSucces = Color(0xFF10B981);
   static const Color rougeCoris = Color(0xFFE30613);
-
   // ===================================
   // VARIABLES D'ÉTAT POUR LES PARAMÈTRES
   // ===================================
@@ -36,9 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _smsNotifications = false;
   bool _biometricEnabled = false;
   bool _isChangingPassword = false;
-
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
   // ===================================
   // INITIALISATION
   // ===================================
@@ -62,9 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout() async {
     try {
       await AuthService.logout();
-
       if (!mounted) return;
-
       // Rediriger vers la page de connexion et supprimer toutes les routes
       Navigator.pushAndRemoveUntil(
         context,
@@ -183,9 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
-
             SizedBox(height: context.r(20)),
-
           // Section Sécurité
           _buildSectionHeader('Sécurité'),
           _buildSettingCard(
@@ -210,9 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _showChangePasswordDialog();
             },
           ),
-
             SizedBox(height: context.r(20)),
-
           // Section Compte
           _buildSectionHeader('Compte'),
           _buildSettingCard(
@@ -261,12 +252,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _showAboutDialog();
             },
           ),
-
             SizedBox(height: context.r(20)),
-
           // Bouton de déconnexion
           _buildLogoutButton(),
-
             SizedBox(height: context.r(28)),
         ],
       ),
@@ -392,7 +380,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final oldPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -492,7 +479,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final oldPwd = oldPasswordController.text.trim();
                         final newPwd = newPasswordController.text.trim();
                         final confirmPwd = confirmPasswordController.text.trim();
-
                         if (oldPwd.isEmpty || newPwd.isEmpty || confirmPwd.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

@@ -35,10 +35,8 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
       setState(() {
         _isLoading = true;
       });
-
       // Récupérer les clients qui ont déjà des souscriptions
       final clients = await CommercialService.getClientsWithSubscriptions();
-
       if (mounted) {
         setState(() {
           _clients = clients;
@@ -140,7 +138,6 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
               ),
             ),
           ),
-
           // Bouton pour souscrire directement (le commercial ne crée plus de compte client)
           Container(
             width: double.infinity,
@@ -174,9 +171,7 @@ class _SelectClientScreenState extends State<SelectClientScreen> {
               ),
             ),
           ),
-
           SizedBox(height: context.r(8)),
-
           // Liste des clients
           Expanded(
             child: _isLoading

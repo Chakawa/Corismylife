@@ -58,22 +58,18 @@ import 'package:mycorislife/features/commercial/presentation/screens/details_cli
 import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/contrat_details_app_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
-
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
-
 final Map<String, WidgetBuilder> appRoutes = {
   // publiccc
   '/': (context) => const LoginScreen(),
   '/login': (context) => const LoginScreen(),
   '/register': (context) => const RegisterScreen(),
   '/reset_password': (context) => const ResetPasswordScreen(),
-
   // client route
   '/client_home': (context) => const HomePage(),
   '/clientHome': (context) => HomePage(),
   '/client/dashboard': (context) => const HomePage(),
-
   // Simulations Client
   '/simulation_etude': (context) => const SimulationEtudeScreen(),
   '/simulation_retraite': (context) => const CorisRetraiteScreen(),
@@ -83,7 +79,6 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/simulation_solidarite': (context) => const SolidariteSimulationPage(),
   '/simulation_familis': (context) => const SimulationFamilisScreen(),
   '/simulation': (context) => ProduitsPage(),
-
   // Souscriptions Client
   '/souscription': (context) => HomeSouscriptionPage(),
   '/souscription_epargne': (context) => SouscriptionEpargnePage(),
@@ -180,7 +175,6 @@ final Map<String, WidgetBuilder> appRoutes = {
       existingData: args?['existingData'],
     );
   },
-
   // commercial route
   '/commercial_home': (context) => const CommercialHomePage(),
   '/commercialHome': (context) => CommercialHomePage(),
@@ -224,9 +218,7 @@ final Map<String, WidgetBuilder> appRoutes = {
       simulationData: args?['simulationData'],
     );
   },
-
   // adminroute
-
   // description
   '/produits': (context) => HomeSouscriptionPage(),
   '/serenite': (context) => const DescriptionSerenitePage(),
@@ -251,11 +243,9 @@ final Map<String, WidgetBuilder> appRoutes = {
       const DescriptionRetraiteCollectivePage(),
   '/prevoyance-collective': (context) =>
       const DescriptionPrevoyanceCollectivePage(),
-
   // profil
   '/profile': (context) => const ProfilPage(),
   '/commercial-profile': (context) => const CommercialProfile(),
-
   // notifications
   '/notifications': (context) => const NotificationsScreen(),
 };

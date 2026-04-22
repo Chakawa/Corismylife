@@ -21,7 +21,6 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
   Future<void> _attach() async {
     final numero = _numeroPoliceController.text.trim();
     final idStr = _idController.text.trim();
-
     if (numero.isEmpty && idStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez saisir un numéro de police ou un ID'), backgroundColor: Colors.red),
@@ -116,5 +115,4 @@ class _AttachProposalScreenState extends State<AttachProposalScreen> {
     super.dispose();
   }
 }
-
 

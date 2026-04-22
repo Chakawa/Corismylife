@@ -1,595 +1,644 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:mycorislife/core/utils/responsive.dart';
-import 'package:mycorislife/services/notification_service.dart';
-import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
-import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
-
-class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
-
-  @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  final PageController _pageController = PageController();
-  int _currentCarouselIndex = 0;
-  Timer? _carouselTimer;
-
-  // Nombre de notifications non lues
-  int _unreadNotificationsCount = 0;
-
-  // Gestion des onglets produits
-  String _selectedProductTab =
-      'particuliers'; // 'particuliers' ou 'entreprises'
-
-  static const bleuCoris = Color(0xFF002B6B);
-  static const rougeCoris = Color(0xFFE30613);
-
-  final List<String> _carouselData = [
-    'assets/images/Produits_assurances-19.png',
-    'assets/images/Produits_assurances-20.png',
-    'assets/images/Produits_assurances-21.png',
-    'assets/images/Produits_assurances-22.png',
-    'assets/images/Produits_assurances-23.png',
-    'assets/images/Produits_assurances-24.png',
-  ];
-
-  // Produits pour particuliers
-  final List<Map<String, dynamic>> _produitsParticuliers = [
-    {
-      'image': 'assets/images/etudee.png',
-      'title': 'CORIS ETUDE',
-      'route': '/etude',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/retraitee.png',
-      'title': 'CORIS RETRAITE',
-      'route': '/retraite',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/epargnee.png',
-      'title': 'CORIS ÉPARGNE BONUS',
-      'route': '/epargne',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/serenite.png',
-      'title': 'CORIS SERENITE PLUS',
-      'route': '/serenite',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/solidarite.png',
-      'title': 'CORIS SOLIDARITE',
-      'route': '/solidarite',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/familis.png',
-      'title': 'CORIS FAMILIS',
-      'route': '/familis',
-      'isIcon': false,
-    },
-    // PRODUITS AFFICHÉS (souscription désactivée dans les détails)
-    {
-      'image': 'assets/images/emprunteur.png',
-      'title': 'FLEX EMPRUNTEUR',
-      'route': '/flex',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/bon_plan_coris.jpg',
-      'title': 'MON BON PLAN CORIS',
-      'route': '/bon-plan',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/coris_assure_prestige.jpg',
-      'title': 'CORIS ASSURE PRESTIGE',
-      'route': '/assure-prestige',
-      'isIcon': false,
-    },
-  ];
-
-  // Produits pour entreprises
-  final List<Map<String, dynamic>> _produitsEntreprises = [
-    {
-      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
-      'title': 'IFC - Indemnité Fin de Carrière',
-      'route': '/ifc',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
-      'title': 'Retraite Complementaire Entreprise',
-      'route': '/retraite-collective',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/prevoyance_social_entreprise.jpg',
-      'title': 'Prevoyance Sociale Entreprise',
-      'route': '/prevoyance-collective',
-      'isIcon': false,
-    },
-    {
-      'image': 'assets/images/homme_cle.jpg',
-      'title': 'Homme Clé',
-      'route': '/homme-cle',
-      'isIcon': false,
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_pageController.hasClients) {
-        int nextPage = (_currentCarouselIndex + 1) % _carouselData.length;
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-
-    // Charger le nombre de notifications non lues
-    _loadUnreadNotificationsCount();
-  }
-
-  @override
-  void dispose() {
-    _carouselTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  /// Charge le nombre de notifications non lues
-  Future<void> _loadUnreadNotificationsCount() async {
-    try {
-      final count = await NotificationService.getUnreadCount();
-      if (mounted) {
-        setState(() {
-          _unreadNotificationsCount = count;
-        });
-      }
-    } catch (e) {
-      print('Erreur chargement notifications: $e');
-    }
-  }
-
-  /// Navigue vers la page des notifications
-  void _goToNotifications() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-    );
-    // Recharger le compteur au retour
-    _loadUnreadNotificationsCount();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: bleuCoris,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Container(
-              width: context.r(35),
-              height: context.r(35),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 35,
-                  height: 35,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            SizedBox(width: context.r(10)),
-            Text(
-              'MyCorisLife',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: context.sp(18),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none,
-                    color: Colors.white, size: 28),
-                onPressed: _goToNotifications,
-              ),
-              if (_unreadNotificationsCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE30613),
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Text(
-                      _unreadNotificationsCount > 99
-                          ? '99+'
-                          : _unreadNotificationsCount.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          double screenWidth = MediaQuery.of(context).size.width;
-          double screenHeight = MediaQuery.of(context).size.height;
-          double carouselHeight = screenHeight * 0.3;
-          if (carouselHeight > 250) carouselHeight = 250;
-
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(screenWidth * 0.05),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        bleuCoris,
-                        Color.fromRGBO(0, 43, 107, 0.8),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenue ',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: screenWidth * 0.07,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chez Coris Assurances Vie Côte d\'Ivoire !',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: screenWidth * 0.04,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: carouselHeight,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentCarouselIndex = index;
-                      });
-                    },
-                    itemCount: _carouselData.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(
-                            horizontal: screenWidth * 0.03),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(25),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.asset(
-                            _carouselData[index],
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _carouselData.length,
-                    (index) => Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentCarouselIndex == index
-                            ? rougeCoris
-                            : Colors.grey[300],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width * 0.05),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/souscription');
-                          },
-                          icon: const Icon(Icons.add_circle_outline,
-                              color: bleuCoris, size: 22),
-                          label: Text(
-                            'Faire une souscription',
-                            style: TextStyle(
-                              color: bleuCoris,
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.045,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: bleuCoris, width: 2),
-                            backgroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                                vertical:
-                                    MediaQuery.of(context).size.height * 0.02),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            ContractPaymentFlow.showSearchAndAmountDialog(
-                                context);
-                          },
-                          icon: const Icon(Icons.payment_outlined,
-                              color: bleuCoris, size: 22),
-                          label: Text(
-                            'Payer mes cotisations',
-                            style: TextStyle(
-                              color: bleuCoris,
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.045,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: bleuCoris, width: 2),
-                            backgroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                                vertical:
-                                    MediaQuery.of(context).size.height * 0.02),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: context.r(24)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedProductTab = 'particuliers';
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedProductTab == 'particuliers'
-                                ? bleuCoris
-                                : Colors.grey[300],
-                            foregroundColor: _selectedProductTab == 'particuliers'
-                                ? Colors.white
-                                : Colors.black87,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: _selectedProductTab == 'particuliers' ? 4 : 1,
-                          ),
-                          child: Text(
-                            'Nos produits aux particuliers',
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.035,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedProductTab = 'entreprises';
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedProductTab == 'entreprises'
-                                ? bleuCoris
-                                : Colors.grey[300],
-                            foregroundColor: _selectedProductTab == 'entreprises'
-                                ? Colors.white
-                                : Colors.black87,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: _selectedProductTab == 'entreprises' ? 4 : 1,
-                          ),
-                          child: Text(
-                            'Nos produits aux entreprises',
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.035,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: context.r(16)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: context.gridColumns,
-                      crossAxisSpacing: context.r(10),
-                      mainAxisSpacing: context.r(10),
-                      childAspectRatio: context.cardAspectRatio,
-                    ),
-                    itemCount: _selectedProductTab == 'particuliers'
-                        ? _produitsParticuliers.length
-                        : _produitsEntreprises.length,
-                    itemBuilder: (context, index) {
-                      final products = _selectedProductTab == 'particuliers'
-                          ? _produitsParticuliers
-                          : _produitsEntreprises;
-                      final product = products[index];
-
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pushNamed(context, product['route']);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(context.r(10)),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(8),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: context.r(40),
-                                height: context.r(40),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    product['image'],
-                                    width: context.r(40),
-                                    height: context.r(40),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: context.r(40),
-                                        height: context.r(40),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          size: context.r(22),
-                                          color: Colors.grey,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: context.r(10)),
-                              Expanded(
-                                child: Text(
-                                  product['title'],
-                                  style: TextStyle(
-                                    fontSize: screenWidth * 0.028,
-                                    fontWeight: FontWeight.w600,
-                                    color: bleuCoris,
-                                    height: 1.2,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(height: context.r(24)),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
+import 'package:mycorislife/services/notification_service.dart';
+import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
+
+class HomeContent extends StatefulWidget {
+
+  const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+
+  final PageController _pageController = PageController();
+  int _currentCarouselIndex = 0;
+  Timer? _carouselTimer;
+
+  // Nombre de notifications non lues
+  int _unreadNotificationsCount = 0;
+
+  // Gestion des onglets produits
+  String _selectedProductTab =
+      'particuliers'; // 'particuliers' ou 'entreprises'
+
+  static const bleuCoris = Color(0xFF002B6B);
+
+  static const rougeCoris = Color(0xFFE30613);
+
+  final List<String> _carouselData = [
+    'assets/images/Produits_assurances-19.png',
+    'assets/images/Produits_assurances-20.png',
+    'assets/images/Produits_assurances-21.png',
+    'assets/images/Produits_assurances-22.png',
+    'assets/images/Produits_assurances-23.png',
+    'assets/images/Produits_assurances-24.png',
+  ];
+
+  // Produits pour particuliers
+  final List<Map<String, dynamic>> _produitsParticuliers = [
+    {
+
+      'image': 'assets/images/etudee.png',
+      'title': 'CORIS ETUDE',
+      'route': '/etude',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/retraitee.png',
+      'title': 'CORIS RETRAITE',
+      'route': '/retraite',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/epargnee.png',
+      'title': 'CORIS ÉPARGNE BONUS',
+      'route': '/epargne',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/serenite.png',
+      'title': 'CORIS SERENITE PLUS',
+      'route': '/serenite',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/solidarite.png',
+      'title': 'CORIS SOLIDARITE',
+      'route': '/solidarite',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/familis.png',
+      'title': 'CORIS FAMILIS',
+      'route': '/familis',
+      'isIcon': false,
+    },
+    // PRODUITS AFFICHÉS (souscription désactivée dans les détails)
+    {
+
+      'image': 'assets/images/emprunteur.png',
+      'title': 'FLEX EMPRUNTEUR',
+      'route': '/flex',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/bon_plan_coris.jpg',
+      'title': 'MON BON PLAN CORIS',
+      'route': '/bon-plan',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/coris_assure_prestige.jpg',
+      'title': 'CORIS ASSURE PRESTIGE',
+      'route': '/assure-prestige',
+      'isIcon': false,
+    },
+  ];
+
+  // Produits pour entreprises
+  final List<Map<String, dynamic>> _produitsEntreprises = [
+    {
+
+      'image': 'assets/images/IFC_indemnite_fin_carriere.jpg',
+      'title': 'IFC - Indemnité Fin de Carrière',
+      'route': '/ifc',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/retraite_complementaire_entreprise.jpg',
+      'title': 'Retraite Complementaire Entreprise',
+      'route': '/retraite-collective',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/prevoyance_social_entreprise.jpg',
+      'title': 'Prevoyance Sociale Entreprise',
+      'route': '/prevoyance-collective',
+      'isIcon': false,
+    },
+    {
+
+      'image': 'assets/images/homme_cle.jpg',
+      'title': 'Homme Clé',
+      'route': '/homme-cle',
+      'isIcon': false,
+    },
+  ];
+
+  @override
+
+  void initState() {
+
+    super.initState();
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+
+      if (_pageController.hasClients) {
+
+        int nextPage = (_currentCarouselIndex + 1) % _carouselData.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+
+    });
+
+    // Charger le nombre de notifications non lues
+    _loadUnreadNotificationsCount();
+  }
+
+  @override
+
+  void dispose() {
+
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// Charge le nombre de notifications non lues
+
+  Future<void> _loadUnreadNotificationsCount() async {
+
+    try {
+
+      final count = await NotificationService.getUnreadCount();
+      if (mounted) {
+
+        setState(() {
+
+          _unreadNotificationsCount = count;
+        });
+      }
+
+    } catch (e) {
+
+      print('Erreur chargement notifications: $e');
+    }
+
+  }
+
+  /// Navigue vers la page des notifications
+
+  void _goToNotifications() async {
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+    );
+    // Recharger le compteur au retour
+    _loadUnreadNotificationsCount();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: bleuCoris,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Container(
+              width: context.r(35),
+              height: context.r(35),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 35,
+                  height: 35,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            SizedBox(width: context.r(10)),
+            Text(
+              'MyCorisLife',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: context.sp(18),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none,
+                    color: Colors.white, size: 28),
+                onPressed: _goToNotifications,
+              ),
+              if (_unreadNotificationsCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE30613),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      _unreadNotificationsCount > 99
+                          ? '99+'
+                          : _unreadNotificationsCount.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+
+          double screenWidth = MediaQuery.of(context).size.width;
+          double screenHeight = MediaQuery.of(context).size.height;
+          double carouselHeight = screenHeight * 0.3;
+          if (carouselHeight > 250) carouselHeight = 250;
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(screenWidth * 0.05),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        bleuCoris,
+                        Color.fromRGBO(0, 43, 107, 0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bienvenue ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: screenWidth * 0.07,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Chez Coris Assurances Vie Côte d\'Ivoire !',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: screenWidth * 0.04,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: carouselHeight,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+
+                      setState(() {
+
+                        _currentCarouselIndex = index;
+                      });
+                    },
+                    itemCount: _carouselData.length,
+                    itemBuilder: (context, index) {
+
+                      return Container(
+                        margin: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.03),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(25),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.asset(
+                            _carouselData[index],
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    _carouselData.length,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentCarouselIndex == index
+                            ? rougeCoris
+                            : Colors.grey[300],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.05),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+
+                            Navigator.pushNamed(context, '/souscription');
+                          },
+                          icon: const Icon(Icons.add_circle_outline,
+                              color: bleuCoris, size: 22),
+                          label: Text(
+                            'Faire une souscription',
+                            style: TextStyle(
+                              color: bleuCoris,
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.045,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: bleuCoris, width: 2),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical:
+                                    MediaQuery.of(context).size.height * 0.02),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+
+                            ContractPaymentFlow.showSearchAndAmountDialog(
+                                context);
+                          },
+                          icon: const Icon(Icons.payment_outlined,
+                              color: bleuCoris, size: 22),
+                          label: Text(
+                            'Payer mes cotisations',
+                            style: TextStyle(
+                              color: bleuCoris,
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.045,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: bleuCoris, width: 2),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical:
+                                    MediaQuery.of(context).size.height * 0.02),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: context.r(24)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+
+                            setState(() {
+
+                              _selectedProductTab = 'particuliers';
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedProductTab == 'particuliers'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'particuliers'
+                                ? Colors.white
+                                : Colors.black87,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: _selectedProductTab == 'particuliers' ? 4 : 1,
+                          ),
+                          child: Text(
+                            'Nos produits aux particuliers',
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.035,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+
+                            setState(() {
+
+                              _selectedProductTab = 'entreprises';
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedProductTab == 'entreprises'
+                                ? bleuCoris
+                                : Colors.grey[300],
+                            foregroundColor: _selectedProductTab == 'entreprises'
+                                ? Colors.white
+                                : Colors.black87,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: _selectedProductTab == 'entreprises' ? 4 : 1,
+                          ),
+                          child: Text(
+                            'Nos produits aux entreprises',
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.035,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: context.r(16)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: context.gridColumns,
+                      crossAxisSpacing: context.r(10),
+                      mainAxisSpacing: context.r(10),
+                      childAspectRatio: context.cardAspectRatio,
+                    ),
+                    itemCount: _selectedProductTab == 'particuliers'
+                        ? _produitsParticuliers.length
+                        : _produitsEntreprises.length,
+                    itemBuilder: (context, index) {
+
+                      final products = _selectedProductTab == 'particuliers'
+                          ? _produitsParticuliers
+                          : _produitsEntreprises;
+                      final product = products[index];
+
+                      return InkWell(
+                        onTap: () {
+
+                          Navigator.pushNamed(context, product['route']);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(context.r(10)),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(8),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: context.r(40),
+                                height: context.r(40),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.asset(
+                                    product['image'],
+                                    width: context.r(40),
+                                    height: context.r(40),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+
+                                      return Container(
+                                        width: context.r(40),
+                                        height: context.r(40),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: context.r(22),
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: context.r(10)),
+                              Expanded(
+                                child: Text(
+                                  product['title'],
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.028,
+                                    fontWeight: FontWeight.w600,
+                                    color: bleuCoris,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: context.r(24)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+}
+

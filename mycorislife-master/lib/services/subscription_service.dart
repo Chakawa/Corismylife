@@ -19,7 +19,6 @@ class SubscriptionService {
   Future<http.Response> createSubscription(
       Map<String, dynamic> subscriptionData) async {
     final token = await storage.read(key: 'token');
-
     final response = await http.post(
       Uri.parse('$baseUrl/subscriptions/create'),
       headers: {
@@ -28,7 +27,6 @@ class SubscriptionService {
       },
       body: jsonEncode(subscriptionData),
     );
-
     return response;
   }
 
@@ -39,7 +37,6 @@ class SubscriptionService {
   Future<http.Response> updateSubscription(
       int subscriptionId, Map<String, dynamic> subscriptionData) async {
     final token = await storage.read(key: 'token');
-
     final response = await http.put(
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/update'),
       headers: {
@@ -48,7 +45,6 @@ class SubscriptionService {
       },
       body: jsonEncode(subscriptionData),
     );
-
     return response;
   }
 
@@ -57,7 +53,6 @@ class SubscriptionService {
       int subscriptionId, bool paymentSuccess,
       {String? paymentMethod, String? transactionId}) async {
     final token = await storage.read(key: 'token');
-
     final response = await http.put(
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/payment-status'),
       headers: {
@@ -71,7 +66,6 @@ class SubscriptionService {
             'simulated_${DateTime.now().millisecondsSinceEpoch}',
       }),
     );
-
     return response;
   }
 
@@ -79,7 +73,6 @@ class SubscriptionService {
   Future<http.Response> updateSubscriptionStatus(
       int subscriptionId, String status) async {
     final token = await storage.read(key: 'token');
-
     final response = await http.put(
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/status'),
       headers: {
@@ -88,7 +81,6 @@ class SubscriptionService {
       },
       body: jsonEncode({'status': status}),
     );
-
     return response;
   }
 
@@ -99,7 +91,6 @@ class SubscriptionService {
       Uri.parse('$baseUrl/subscriptions/user/propositions'),
       headers: {'Authorization': 'Bearer $token'},
     );
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
@@ -118,7 +109,6 @@ class SubscriptionService {
       Uri.parse('$baseUrl/contrats/mes-contrats'),
       headers: {'Authorization': 'Bearer $token'},
     );
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
@@ -145,18 +135,14 @@ class SubscriptionService {
   Future<http.Response> uploadDocument(
       int subscriptionId, String filePath) async {
     final token = await storage.read(key: 'token');
-
     var request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/upload-document'),
     );
-
     request.headers['Authorization'] = 'Bearer $token';
-
     // Déterminer le type MIME en fonction de l'extension du fichier
     final extension = filePath.toLowerCase().split('.').last;
     String contentType;
-
     if (extension == 'pdf') {
       contentType = 'application/pdf';
     } else if (extension == 'png') {
@@ -173,13 +159,11 @@ class SubscriptionService {
 
     debugPrint('📄 Extension fichier: $extension');
     debugPrint('📝 Content-Type: $contentType');
-
     request.files.add(await http.MultipartFile.fromPath(
       'document',
       filePath,
       contentType: MediaType.parse(contentType),
     ));
-
     var response = await http.Response.fromStream(await request.send());
     return response;
   }
@@ -206,7 +190,6 @@ class SubscriptionService {
           'Authorization': 'Bearer $token',
         },
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
@@ -233,7 +216,6 @@ class SubscriptionService {
           'Authorization': 'Bearer $token',
         },
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {

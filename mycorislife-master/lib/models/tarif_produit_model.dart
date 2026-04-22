@@ -10,7 +10,6 @@ class TarifProduit {
   final String? categorie; // Optionnel, pour catégoriser les tarifs
   final DateTime? createdAt;
   final DateTime? updatedAt;
-
   TarifProduit({
     this.id,
     required this.produitId,
@@ -23,7 +22,6 @@ class TarifProduit {
     this.createdAt,
     this.updatedAt,
   });
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,

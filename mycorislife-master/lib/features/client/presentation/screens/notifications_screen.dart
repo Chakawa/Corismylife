@@ -23,7 +23,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   static const Color vertSucces = Color(0xFF10B981);
   static const Color orangeWarning = Color(0xFFF59E0B);
   static const Color rougeCoris = Color(0xFFE30613);
-
   // ===================================
   // DONNÉES DE NOTIFICATIONS
   // ===================================
@@ -39,11 +38,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   /// Charge les notifications depuis l'API
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
-
     try {
       final data = await NotificationService.getNotifications();
       final notifList = data['notifications'] as List;
-
       setState(() {
         notifications =
             notifList.map((notif) => NotificationItem.fromJson(notif)).toList();
@@ -52,7 +49,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     } catch (e) {
       debugPrint('Erreur chargement notifications: $e');
       setState(() => _isLoading = false);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -72,7 +68,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAsRead(int notificationId) async {
     try {
       await NotificationService.markAsRead(notificationId);
-
       setState(() {
         final index = notifications.indexWhere((n) => n.id == notificationId);
         if (index != -1) {
@@ -88,13 +83,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAllAsRead() async {
     try {
       await NotificationService.markAllAsRead();
-
       setState(() {
         for (var notification in notifications) {
           notification.isRead = true;
         }
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -122,7 +115,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       notifications.removeWhere((n) => n.id == notificationId);
     });
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Notification supprimée'),
@@ -133,7 +125,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   /// Compte le nombre de notifications non lues
   int get _unreadCount => notifications.where((n) => !n.isRead).length;
-
   // ===================================
   // INTERFACE UTILISATEUR
   // ===================================
@@ -274,7 +265,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
               SizedBox(width: context.r(16)),
-
               // Contenu de la notification
               Expanded(
                 child: Column(
@@ -292,7 +282,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     ),
                     SizedBox(height: context.r(4)),
-
                     // Message
                     Text(
                       notification.message,
@@ -303,7 +292,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     ),
                     SizedBox(height: context.r(8)),
-
                     // Date
                     Text(
                       _formatDate(notification.date),
@@ -315,7 +303,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ],
                 ),
               ),
-
               // Indicateur non lu
               if (!notification.isRead)
                 Container(
@@ -370,7 +357,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {
@@ -410,7 +396,6 @@ class NotificationItem {
   final String message;
   final DateTime date;
   bool isRead;
-
   NotificationItem({
     required this.id,
     required this.type,

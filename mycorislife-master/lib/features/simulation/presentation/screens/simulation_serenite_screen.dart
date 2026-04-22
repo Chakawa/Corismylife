@@ -20,17 +20,14 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color backgroundGrey = Color(0xFFF8FAFB);
   static const Color bleuClair = Color(0xFFE8F4FD);
-
   // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
-
   // Contrôleurs pour les champs de saisie
   final TextEditingController _capitalController = TextEditingController();
   final TextEditingController _primeController = TextEditingController();
   final TextEditingController _dureeController = TextEditingController();
   final TextEditingController _dateNaissanceController =
       TextEditingController();
-
   // Variables d'état
   DateTime? _dateNaissance;
   int _dureeEnMois = 12;
@@ -43,7 +40,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   bool _calculEffectue = false;
   bool _isLoading = false;
   String _selectedSimulationType = 'Par Capital';
-
   // Tableau tarifaire (fallback si base de données non disponible)
   final Map<int, Map<int, double>> _tarifaire = {
     18: {
@@ -990,7 +986,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
   int _findDureeTarifaire(int dureeSaisie) {
     if (_tarifaire.isEmpty) return dureeSaisie;
-
     List<int> durees = _tarifaire[18]!.keys.toList()..sort();
     for (int duree in durees) {
       if (duree >= dureeSaisie) return duree;
@@ -1001,13 +996,11 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   Future<double> _getPrimePour1000() async {
     int age = _calculateAge();
     int duree = _findDureeTarifaire(_dureeEnMois);
-
     print(
         '\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
     print('â•‘ 🔍 [SÉRÉNITÉ] Recherche tarif                                â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print('   📊 Paramètres: age=$age, duree=$duree mois');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
@@ -1019,7 +1012,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         periodicite: 'annuel',
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
         print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
@@ -1119,7 +1111,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           ? 'Par Capital'
           : 'Par Prime',
     };
-
     // Vérifier le rôle et rediriger
     final userRole = await AuthService.getUserRole();
     if (userRole == 'commercial') {
@@ -1182,10 +1173,8 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     setState(() {
       _isLoading = true;
     });
-
     // Récupérer le tarif (depuis DB ou fallback)
     double primePour1000 = await _getPrimePour1000();
-
     if (primePour1000 == 0.0) {
       setState(() => _isLoading = false);
       _showMessage("Erreur lors de la lecture du tableau tarifaire");
@@ -1193,12 +1182,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     }
 
     await Future.delayed(const Duration(milliseconds: 500));
-
     setState(() {
       _calculEffectue = true;
       _isLoading = false;
       double coefficient = _getCoefficientPeriodicite();
-
       if (_currentSimulation == SimulationType.parCapital) {
         String capitalText = _capitalController.text.replaceAll(' ', '');
         double capital = double.tryParse(capitalText) ?? 0;
@@ -1223,17 +1210,15 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         }
 
         double primeAnnuelle = (capital / 1000) * primePour1000;
-
         if (_selectedPeriode == Periode.annuel) {
           _resultatCalcul = primeAnnuelle;
         } else {
           _resultatCalcul = primeAnnuelle * coefficient;
         }
-        
+
         // Stocker les deux valeurs
         _calculatedCapital = capital;
         _calculatedPrime = _resultatCalcul;
-        
         // Enregistrer la simulation dans la base de données
         _saveSimulation(
           typeSimulation: 'Par Capital',
@@ -1251,7 +1236,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 
         double primeAnnuellePour1000 = primePour1000;
         double primePeriodiquePour1000;
-
         if (_selectedPeriode == Periode.annuel) {
           primePeriodiquePour1000 = primeAnnuellePour1000;
         } else {
@@ -1259,7 +1243,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
         }
 
         _resultatCalcul = (prime / primePeriodiquePour1000) * 1000;
-
         // Vérification du capital maximum (40 000 000 FCFA)
         if (_resultatCalcul > 40000000) {
           _showProfessionalDialog(
@@ -1280,11 +1263,10 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
           }
           _primeController.text = _formatNumber(prime);
         }
-        
+
         // Stocker les deux valeurs
         _calculatedCapital = _resultatCalcul;
         _calculatedPrime = prime;
-        
         // Enregistrer la simulation dans la base de données
         _saveSimulation(
           typeSimulation: 'Par Prime',
@@ -1307,10 +1289,8 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
     final age = _dateNaissance != null 
         ? DateTime.now().year - _dateNaissance!.year 
         : null;
-    
     // Récupérer la durée en mois
     final dureeMois = _dureeEnMois;
-    
     // Déterminer la périodicité
     String periodicite;
     switch (_selectedPeriode) {
@@ -1512,7 +1492,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
   Widget build(BuildContext context) {
     int age = _calculateAge();
     String ageText = age > 0 ? "($age ans)" : "";
-
     return Scaffold(
       backgroundColor: backgroundGrey,
       body: Column(
@@ -1568,27 +1547,21 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                             ],
                           ),
                           SizedBox(height: context.r(20)),
-
                           // Sélecteur de type de simulation
                           _buildSimulationTypeDropdown(),
                           SizedBox(height: context.r(16)),
-
                           // Champ pour le capital/prime
                           _buildMontantField(),
                           SizedBox(height: context.r(16)),
-
                           // Champ pour la date de naissance
                           _buildDateNaissanceField(ageText),
                           SizedBox(height: context.r(16)),
-
                           // Champ pour la durée
                           _buildDureeField(),
                           SizedBox(height: context.r(16)),
-
                           // Sélecteur de périodicité
                           _buildPeriodiciteDropdown(),
                           SizedBox(height: context.r(20)),
-
                           // Bouton de simulation
                           SizedBox(
                             width: double.infinity,
@@ -1636,9 +1609,7 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                       ),
                     ),
                   ),
-
                   SizedBox(height: context.r(20)),
-
                   // Carte de résultat
                   if (_calculEffectue) _buildResultCard(),
                 ],
@@ -1972,7 +1943,6 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
                     _selectedUnite = newValue!;
                     if (_dureeController.text.isNotEmpty) {
                       int duree = int.tryParse(_dureeController.text) ?? 0;
-
                       // Vérification de la durée maximale (15 ans = 180 mois)
                       if (_selectedUnite == 'années' && duree > 15) {
                         _showMessage(
@@ -2171,6 +2141,5 @@ class _SimulationSereniteScreenState extends State<SimulationSereniteScreen> {
 }
 
 enum Periode { mensuel, trimestriel, semestriel, annuel }
-
 enum SimulationType { parCapital, parPrime }
 

@@ -18,7 +18,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   final _dateNaissanceParentController = TextEditingController();
   final _ageEnfantController = TextEditingController();
   final _valeurController = TextEditingController();
-
   String selectedOption = 'rente';
   String selectedPeriodicite = 'mensuel';
   double? result;
@@ -28,7 +27,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   bool isLoading = false;
   int? ageParent;
   int? dureeContrat;
-
   // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
@@ -37,7 +35,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color bleuClair = Color(0xFFE8F4FD);
   static const Color grisClairBg = Color(0xFFF8FAFB);
-
   // Tableau tarifaire pour les rentes fixes
   final Map<int, Map<int, double>> tarifRenteFixe = {
     18: {
@@ -1062,21 +1059,17 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
 
   void simuler() async {
     if (!_validateInputs()) return;
-
     setState(() {
       isLoading = true;
       result = null;
       resultLabel = '';
     });
-
     await Future.delayed(const Duration(milliseconds: 1200));
-
     try {
       int ageParentValue = ageParent!;
       int ageEnfant = int.parse(_ageEnfantController.text);
       int dureeMois = ((17 - ageEnfant) * 12).round();
       dureeMois = closestDuree(dureeMois);
-
       double valeur = double.tryParse(_valeurController.text
               .replaceAll(' ', '')
               .replaceAll(',', '.')) ??
@@ -1120,13 +1113,11 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
     }
 
     setState(() => isLoading = false);
-
     // Sauvegarder la simulation en base de données
     if (result != null && result! > 0) {
       int ageEnfant = int.parse(_ageEnfantController.text);
       int dureeMois = ((17 - ageEnfant) * 12).round();
       double valeur = double.tryParse(_valeurController.text.replaceAll(' ', '').replaceAll(',', '.')) ?? 0;
-      
       SimulationService.saveSimulation(
         produitNom: 'CORIS ETUDE',
         typeSimulation: selectedOption == 'rente' ? 'Par Prime' : 'Par Rente',
@@ -1146,7 +1137,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
     int dureeEffective = closestDuree(dureeMois);
     print('\n================ [ETUDE] CALCUL RENTE DEMARRE ===================');
     print('   Parametres: age=$age, duree=$dureeEffective mois, primeMensuelle=$primeMensuelle');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print('\n   ETAPE 1: tentative de recuperation depuis la base de donnees (serveur uniquement)...');
     try {
@@ -1157,11 +1147,9 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
         periodicite: 'annuel',
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         double primePour10000 = tarifFromDB.prime!;
         print('   ✅ Tarif trouvé depuis le SERVEUR: $primePour10000');
-
         // Détecter si les décimales ont été perdues lors de la transmission
         bool hasLostDecimals =
             (primePour10000 == primePour10000.roundToDouble()) &&
@@ -1226,7 +1214,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
     print('\n================ [ETUDE] CALCUL PRIME DEMARRE ====================');
     print(
         '   Parametres: age=$age, duree=$dureeEffective mois, renteSouhaitee=$renteSouhaitee');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '\n   ETAPE 1: tentative de recuperation depuis la base de donnees (serveur uniquement)...');
@@ -1238,11 +1225,9 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
         periodicite: 'annuel',
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         double primePour10000 = tarifFromDB.prime!;
         print('   ✅ Tarif trouvé depuis le SERVEUR: $primePour10000');
-
         // Détecter si les décimales ont été perdues lors de la transmission
         bool hasLostDecimals =
             (primePour10000 == primePour10000.roundToDouble()) &&
@@ -1748,7 +1733,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
   Widget _buildMontantField(BoxConstraints constraints) {
     // Determine hint text based on simulation type
     final hintText = selectedOption == 'rente' ? 'Ex: 5000' : 'Ex: 50000';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1957,7 +1941,6 @@ class _SimulationEtudeScreenState extends State<SimulationEtudeScreen> {
                         : result!,
                     'periodicite': selectedPeriodicite,
                   };
-
                   // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {

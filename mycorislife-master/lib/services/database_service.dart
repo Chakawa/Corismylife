@@ -26,10 +26,8 @@ import '../models/tarif_produit_model.dart';
 class DatabaseService {
   // Singleton : une seule instance de DatabaseService dans toute l'application
   static final DatabaseService instance = DatabaseService._init();
-
   // Instance de la base de données (lazy loading)
   static Database? _database;
-
   // Constructeur privé pour forcer l'utilisation du singleton
   DatabaseService._init();
 
@@ -45,7 +43,6 @@ class DatabaseService {
   Future<Database> get database async {
     // Si la base existe déjà, la retourner directement
     if (_database != null) return _database!;
-
     // Sinon, initialiser la base de données
     _database = await _initDB('mycorislife.db');
     return _database!;
@@ -64,10 +61,8 @@ class DatabaseService {
   Future<Database> _initDB(String filePath) async {
     // Obtenir le chemin du répertoire des bases de données de l'application
     final dbPath = await getDatabasesPath();
-
     // Construire le chemin complet vers le fichier de base de données
     final path = join(dbPath, filePath);
-
     // Ouvrir la base de données avec gestion des versions
     return await openDatabase(
       path,
@@ -120,7 +115,6 @@ class DatabaseService {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     ''');
-
     // Créer la table 'tarif_produit' pour stocker les tarifs
     // Note : age est nullable car RETRAITE et SOLIDARITÉ n'utilisent pas l'âge
     await db.execute('''
@@ -138,29 +132,23 @@ class DatabaseService {
         FOREIGN KEY (produit_id) REFERENCES produit(id) ON DELETE CASCADE
       )
     ''');
-
     // Créer des index pour améliorer les performances des requêtes de recherche
-
     // Index sur produit_id : accélère les recherches de tarifs par produit
     await db.execute('''
       CREATE INDEX idx_tarif_produit_id ON tarif_produit(produit_id)
     ''');
-
     // Index sur age : accélère les recherches par âge
     await db.execute('''
       CREATE INDEX idx_tarif_age ON tarif_produit(age)
     ''');
-
     // Index sur periodicite : accélère les recherches par périodicité
     await db.execute('''
       CREATE INDEX idx_tarif_periodicite ON tarif_produit(periodicite)
     ''');
-
     // Index sur duree_contrat : accélère les recherches par durée
     await db.execute('''
       CREATE INDEX idx_tarif_duree ON tarif_produit(duree_contrat)
     ''');
-
     // Index composite : accélère les recherches combinant produit_id, age et duree_contrat
     // Utile pour les requêtes qui filtrent par ces 3 critères simultanément
     await db.execute('''
@@ -195,7 +183,6 @@ class DatabaseService {
     if (oldVersion < 2) {
       // SQLite ne supporte pas ALTER COLUMN, il faut recréer la table
       print('🔄 [DB] Migration vers version 2: rendre age nullable');
-
       // Créer une table temporaire avec le nouveau schéma
       await db.execute('''
         CREATE TABLE tarif_produit_new (
@@ -212,7 +199,6 @@ class DatabaseService {
           FOREIGN KEY (produit_id) REFERENCES produit(id) ON DELETE CASCADE
         )
       ''');
-
       // Copier les données
       await db.execute('''
         INSERT INTO tarif_produit_new 
@@ -220,13 +206,10 @@ class DatabaseService {
         SELECT id, produit_id, duree_contrat, periodicite, prime, capital, age, categorie, created_at, updated_at
         FROM tarif_produit
       ''');
-
       // Supprimer l'ancienne table
       await db.execute('DROP TABLE tarif_produit');
-
       // Renommer la nouvelle table
       await db.execute('ALTER TABLE tarif_produit_new RENAME TO tarif_produit');
-
       // Recréer les index
       await db.execute(
           'CREATE INDEX idx_tarif_produit_id ON tarif_produit(produit_id)');
@@ -237,7 +220,6 @@ class DatabaseService {
           'CREATE INDEX idx_tarif_duree ON tarif_produit(duree_contrat)');
       await db.execute(
           'CREATE INDEX idx_tarif_produit_age_duree ON tarif_produit(produit_id, age, duree_contrat)');
-
       print('✅ [DB] Migration terminée: age est maintenant nullable');
     }
   }
@@ -276,7 +258,6 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
-
     if (maps.isNotEmpty) {
       return Produit.fromMap(maps.first);
     }
@@ -300,7 +281,6 @@ class DatabaseService {
       where: 'libelle = ?',
       whereArgs: [libelle],
     );
-
     if (maps.isNotEmpty) {
       return Produit.fromMap(maps.first);
     }
@@ -349,7 +329,6 @@ class DatabaseService {
   Future<int> insertTarifsBatch(List<TarifProduit> tarifs) async {
     final db = await database;
     final batch = db.batch();
-
     for (var tarif in tarifs) {
       batch.insert('tarif_produit', tarif.toMap());
     }
@@ -395,12 +374,10 @@ class DatabaseService {
         categorie, // Optionnel - pour différencier les types (ex: 'amortissable', 'decouvert', 'perte_emploi')
   }) async {
     final db = await database;
-
     // TOUJOURS filtrer par produit_id en premier pour éviter les mélanges entre produits
     // Utiliser LOWER() pour comparaison case-insensitive de la périodicité
     String whereClause = 'produit_id = ? AND LOWER(TRIM(periodicite)) = ?';
     List<dynamic> whereArgs = [produitId, periodicite.toLowerCase().trim()];
-
     // Ajouter la condition age seulement si fourni
     if (age != null) {
       whereClause += ' AND age = ?';
@@ -423,16 +400,13 @@ class DatabaseService {
 
     print(
         '🔍 [DB] getTarifByParams: whereClause="$whereClause", whereArgs=$whereArgs');
-
     final maps = await db.query(
       'tarif_produit',
       where: whereClause,
       whereArgs: whereArgs,
       limit: 1,
     );
-
     print('🔍 [DB] getTarifByParams: ${maps.length} résultat(s) trouvé(s)');
-
     if (maps.isNotEmpty) {
       final tarif = TarifProduit.fromMap(maps.first);
       print(
@@ -451,10 +425,8 @@ class DatabaseService {
     String? categorie,
   }) async {
     final db = await database;
-
     List<String> conditions = [];
     List<dynamic> args = [];
-
     // IMPORTANT: produit_id doit TOUJOURS être spécifié pour éviter les mélanges entre produits
     if (produitId != null) {
       conditions.add('produit_id = ?');
@@ -499,7 +471,6 @@ class DatabaseService {
       whereArgs: args.isEmpty ? null : args,
       orderBy: 'age, duree_contrat',
     );
-
     return maps.map((map) => TarifProduit.fromMap(map)).toList();
   }
 

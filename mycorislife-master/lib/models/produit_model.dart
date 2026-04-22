@@ -1,12 +1,10 @@
 class Produit {
   final int? id;
   final String libelle;
-
   Produit({
     this.id,
     required this.libelle,
   });
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -24,18 +22,4 @@ class Produit {
   @override
   String toString() => 'Produit(id: $id, libelle: $libelle)';
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

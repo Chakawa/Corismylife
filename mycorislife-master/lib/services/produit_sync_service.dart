@@ -26,7 +26,6 @@ import 'package:mycorislife/config/app_config.dart';
 class ProduitSyncService {
   // Instance du service de base de données locale (SQLite)
   final DatabaseService _dbService = DatabaseService.instance;
-
   // Mémoïsation en mémoire (TTL) pour accélérer les simulations répétées
   static final Map<String, _MemEntry<List<TarifProduit>>> _memCache = {};
   static const Duration _memTtl = Duration(minutes: 5);
@@ -81,7 +80,6 @@ class ProduitSyncService {
           throw Exception('Timeout');
         },
       );
-
       // Le backend est disponible si la réponse est 200 (OK)
       final isAvailable = response.statusCode == 200;
       if (isAvailable) {
@@ -120,7 +118,6 @@ class ProduitSyncService {
     try {
       print(
           '🔄 [SYNC] Récupération produits depuis API: ${AppConfig.baseUrl}/produits');
-
       // Faire la requête GET avec timeout réduit à 5 secondes pour détecter rapidement l'absence de serveur
       final response =
           await http.get(Uri.parse('${AppConfig.baseUrl}/produits')).timeout(
@@ -130,20 +127,16 @@ class ProduitSyncService {
               'Timeout: Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet.');
         },
       );
-
       print('📡 [SYNC] Réponse API produits: ${response.statusCode}');
-
       // Vérifier si la requête a réussi (code 200)
       if (response.statusCode == 200) {
         // Décoder la réponse JSON
         final data = json.decode(response.body);
-
         // Vérifier si le serveur a retourné un succès
         if (data['success'] == true) {
           // Extraire la liste des produits depuis data['data']
           final List<dynamic> produitsData = data['data'];
           print('✅ [SYNC] ${produitsData.length} produits reçus de l\'API');
-
           // Convertir chaque Map en objet Produit et retourner la liste
           return produitsData.map((p) => Produit.fromMap(p)).toList();
         }
@@ -197,7 +190,6 @@ class ProduitSyncService {
       }
 
       print('🔄 [SYNC] Récupération tarifs depuis API: $url');
-
       // Faire la requête GET avec timeout réduit à 8 secondes
       // (légèrement plus long que pour les produits car il peut y avoir beaucoup de tarifs)
       final response = await http.get(Uri.parse(url)).timeout(
@@ -207,21 +199,17 @@ class ProduitSyncService {
               'Timeout: La récupération des tarifs prend trop de temps. Vérifiez votre connexion Internet.');
         },
       );
-
       print('📡 [SYNC] Réponse API tarifs: ${response.statusCode}');
-
       // Vérifier si la requête a réussi (code 200)
       if (response.statusCode == 200) {
         // Décoder la réponse JSON
         final data = json.decode(response.body);
-
         // Vérifier si le serveur a retourné un succès
         if (data['success'] == true) {
           // Extraire la liste des tarifs depuis data['data']
           final List<dynamic> tarifsData = data['data'];
           print(
               '✅ [SYNC] ${tarifsData.length} tarifs reçus pour produit_id=$produitId');
-
           // Convertir chaque Map en objet TarifProduit et retourner la liste
           return tarifsData.map((t) => TarifProduit.fromMap(t)).toList();
         }
@@ -277,7 +265,6 @@ class ProduitSyncService {
   ///   - Erreur lors de l'insertion en base locale
   Future<bool> syncProduits() async {
     print('🚀 [SYNC] Démarrage synchronisation...');
-
     // Vérifier d'abord la connexion Internet
     if (!await isConnectedToInternet()) {
       print(
@@ -289,15 +276,12 @@ class ProduitSyncService {
     try {
       // Étape 1: Récupérer tous les produits depuis le serveur
       final produitsAPI = await fetchProduitsFromAPI();
-
       // Étape 2: Pour chaque produit, récupérer et sauvegarder ses tarifs
       for (var produit in produitsAPI) {
         print('📦 [SYNC] Traitement produit: ${produit.libelle}');
-
         // Vérifier si le produit existe déjà dans la base locale
         Produit? existingProduit =
             await _dbService.getProduitByLibelle(produit.libelle);
-
         int produitIdLocal;
         if (existingProduit != null) {
           // Le produit existe déjà, utiliser son ID local
@@ -313,12 +297,10 @@ class ProduitSyncService {
         // car l'API attend l'ID serveur, pas l'ID local
         final tarifsAPI =
             await fetchTarifsFromAPI(produit.id); // produit.id = ID serveur
-
         // Supprimer les anciens tarifs locaux du produit avant d'insérer les nouveaux
         // Cela garantit que les données sont toujours à jour
         await _dbService.deleteAllTarifsByProduit(produitIdLocal);
         print('   🗑️  Anciens tarifs supprimés');
-
         if (tarifsAPI.isNotEmpty) {
           // Préparer tous les tarifs avec l'ID local (produitIdLocal) pour l'insertion
           // car dans la base locale, on doit utiliser l'ID local, pas l'ID serveur
@@ -334,12 +316,10 @@ class ProduitSyncService {
                     categorie: tarif.categorie,
                   ))
               .toList();
-
           // Insérer tous les tarifs en batch pour une meilleure performance
           // (plus rapide que d'insérer un par un)
           await _dbService.insertTarifsBatch(tarifsToInsert);
           print('   ✅ ${tarifsAPI.length} tarifs insérés localement (batch)');
-
           // Debug: Afficher un échantillon pour vérifier que les données sont correctes
           if (tarifsToInsert.isNotEmpty) {
             final sample = tarifsToInsert.first;
@@ -587,7 +567,6 @@ class ProduitSyncService {
   Future<void> initializeOfflineData() async {
     // Vérifier si des produits existent déjà dans la base locale
     final produits = await _dbService.getAllProduits();
-
     if (produits.isNotEmpty) {
       print('Les données existent déjà en local (${produits.length} produits)');
       return;

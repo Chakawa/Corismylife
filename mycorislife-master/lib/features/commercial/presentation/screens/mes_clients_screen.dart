@@ -16,7 +16,6 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   bool _showSearchBar = false; // Contrôle l'affichage de la barre de recherche
-
   // ============================================
   // CHARTE GRAPHIQUE CORIS
   // ============================================
@@ -39,9 +38,7 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
       setState(() {
         _isLoading = true;
       });
-
       final subscriptions = await CommercialService.getSubscriptions();
-
       if (mounted) {
         setState(() {
           _subscriptions = subscriptions;
@@ -293,7 +290,6 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                 ),
               ),
             ),
-
           // Liste des propositions/contrats
           Expanded(
             child: _isLoading
@@ -344,13 +340,11 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
                             final clientNameDisplay = clientName.isEmpty
                                 ? 'Client non renseigné'
                                 : clientName;
-
                             // Couleurs pour le design amélioré
                             final statusColor =
                                 _getStatusColor(subscription['statut']);
                             final isContrat =
                                 subscription['statut'] == 'contrat';
-
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(

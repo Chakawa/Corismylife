@@ -25,7 +25,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   static const Color fondGris = Color(0xFFF0F4F8);
   static const Color grisTexte = Color(0xFF64748B);
   static const Color vertSucces = Color(0xFF10B981);
-
   // ===================================
   // CONTRÔLEURS DE FORMULAIRE
   // ===================================
@@ -35,7 +34,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telephoneController = TextEditingController();
   final TextEditingController _adresseController = TextEditingController();
-
   // ===================================
   // VARIABLES D'ÉTAT
   // ===================================
@@ -46,7 +44,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _photoUrl; // URL de la photo actuelle
   File? _selectedPhoto; // Photo sélectionnée mais pas encore uploadée
   final ImagePicker _picker = ImagePicker();
-
   // ===================================
   // INITIALISATION
   // ===================================
@@ -73,7 +70,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       debugPrint('Erreur lors du chargement des données: $e');
       setState(() => _isLoading = false);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -88,9 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   /// Sauvegarde les modifications du profil
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSaving = true);
-
     try {
       // Récupérer l'utilisateur en cache pour préserver les champs
       final existingUser = await UserService.getUserFromStorage();
@@ -98,7 +92,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           existingUser != null ? existingUser['date_naissance'] : null;
       final existingLieu =
           existingUser != null ? existingUser['lieu_naissance'] : null;
-
       // Appeler l'API pour mettre à jour le profil. On inclut explicitement
       // la date et le lieu de naissance si présents afin d'éviter de les
       // écraser avec des valeurs nulles.
@@ -111,9 +104,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         dateNaissance: existingDate,
         lieuNaissance: existingLieu,
       );
-
       if (!mounted) return;
-
       // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -121,13 +112,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           backgroundColor: vertSucces,
         ),
       );
-
       // Retourner à la page précédente
       Navigator.pop(context, true);
     } catch (e) {
       debugPrint('Erreur lors de la sauvegarde: $e');
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erreur lors de la mise à jour du profil'),
@@ -148,7 +137,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         maxWidth: 1200,
       );
       if (image == null) return;
-
       // Essayer de recadrer l'image (optionnel)
       CroppedFile? croppedFile;
       try {
@@ -184,20 +172,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       // Utiliser l'image recadrée si disponible, sinon l'originale
       final imagePathToUpload = croppedFile?.path ?? image.path;
-
       setState(() {
         _selectedPhoto = File(imagePathToUpload);
         _isUploadingPhoto = true;
       });
-
       final photoUrl = await UserService.uploadPhoto(imagePathToUpload);
-
       setState(() {
         _photoUrl = photoUrl;
         _selectedPhoto = null;
         _isUploadingPhoto = false;
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -363,12 +347,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                       SizedBox(height: context.r(30)),
-
                       // Section Civilité
                       _buildSectionTitle('Civilité'),
                       _buildCiviliteSelector(),
                       SizedBox(height: context.r(24)),
-
                       // Section Informations personnelles
                       _buildSectionTitle('Informations personnelles'),
                       SizedBox(height: context.r(12)),
@@ -396,7 +378,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                       ),
                       SizedBox(height: context.r(24)),
-
                       // Section Contact
                       _buildSectionTitle('Contact'),
                       SizedBox(height: context.r(12)),
@@ -430,7 +411,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                       ),
                       SizedBox(height: context.r(24)),
-
                       // Section Adresse
                       _buildSectionTitle('Adresse'),
                       SizedBox(height: context.r(12)),
@@ -441,7 +421,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         maxLines: 3,
                       ),
                       SizedBox(height: context.r(40)),
-
                       // Bouton de sauvegarde
                       SizedBox(
                         width: double.infinity,
@@ -532,7 +511,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   /// Construit une option de civilité
   Widget _buildCiviliteOption(String label, String value) {
     final isSelected = _civilite == value;
-
     return GestureDetector(
       onTap: () => setState(() => _civilite = value),
       child: Container(

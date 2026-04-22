@@ -3,7 +3,6 @@ import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
-
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/pdf_service.dart';
 import 'package:mycorislife/services/download_notification_service.dart';
@@ -19,7 +18,6 @@ import 'package:url_launcher/url_launcher.dart';
 class ContratDetailPage extends StatefulWidget {
   final int subscriptionId;
   final String contractNumber;
-
   const ContratDetailPage({
     super.key,
     required this.subscriptionId,
@@ -35,7 +33,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
   final SubscriptionService _service = SubscriptionService();
   Map<String, dynamic>? _subscriptionData;
   Map<String, dynamic>? _userData;
@@ -49,7 +46,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -57,7 +53,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       parent: _animationController,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     ));
-
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -65,14 +60,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
       parent: _animationController,
       curve: const Interval(0.2, 1.0, curve: Curves.easeOutBack),
     ));
-
     _loadContractData();
   }
 
   Future<void> _loadContractData() async {
     try {
       final data = await _service.getSubscriptionDetail(widget.subscriptionId);
-
       developer.log('=== TOUTES LES CLÉS DISPONIBLES CONTRAT ===');
       if (data['subscription'] != null) {
         developer.log('Clés dans subscription: ${data['subscription'].keys}');
@@ -81,7 +74,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
             developer.log('$key: $value (type: ${value.runtimeType})');
           }
         });
-
         if (data['subscription']['souscriptiondata'] != null) {
           developer.log('=== SOUSCRIPTIONDATA CONTRAT ===');
           developer.log(
@@ -121,7 +113,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   String _formatDate(dynamic dateValue) {
     try {
       if (dateValue == null) return 'Non définie';
-
       DateTime date;
       if (dateValue is DateTime) {
         date = dateValue;
@@ -140,14 +131,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
   String _formatDateTime(dynamic dateValue) {
     try {
       if (dateValue == null) return 'Non definie';
-
       DateTime date;
       if (dateValue is DateTime) {
         date = dateValue;
       } else if (dateValue is String) {
         final raw = dateValue.trim();
         if (raw.isEmpty) return 'Non definie';
-
         // Supporte aussi le format fr: dd/MM/yyyy HH:mm[:ss]
         final fr = RegExp(
                 r'^(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$')
@@ -180,7 +169,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   String _formatMontant(dynamic montant) {
     if (montant == null) return '0 FCFA';
-
     // Some APIs return a structured object (e.g. {"amount": 1000}).
     if (montant is Map) {
       final candidates = [
@@ -219,7 +207,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         details['prime'] ??
         details['montant'] ??
         details['prime_totale'];
-
     if (montantRaw == null) return 0;
     return AmountParser.parse(montantRaw);
   }
@@ -233,7 +220,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         .toString()
         .toLowerCase()
         .trim();
-
     final successKeywords = {
       'success',
       'succeeded',
@@ -251,7 +237,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       'contrat',
       'oui'
     };
-
     if (statusRaw.isEmpty) {
       return 'FAILED';
     }
@@ -303,7 +288,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   // IconData _getProductIcon(String produit) {
   //   ...
   // }
-
   String _getProductType() {
     return _subscriptionData?['produit_nom'] ??
         _subscriptionData?['product_type'] ??
@@ -366,11 +350,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Map<String, dynamic> _getSolidariteData() {
     final details = _getSubscriptionDetails();
-
     final dateEffet = details['date_effet'] ??
         _subscriptionData?['date_effet'] ??
         _subscriptionData?['date_creation'];
-
     dynamic dateEcheanceCalculee;
     if (dateEffet != null) {
       try {
@@ -416,7 +398,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   List<dynamic> _extractMembres(Map<String, dynamic> details, String type) {
     final membres = details[type];
-
     if (membres is List) {
       for (var i = 0; i < membres.length; i++) {
         if (membres[i] is Map && !membres[i].containsKey('lien_parente')) {
@@ -437,7 +418,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildProductSection() {
     final productType = _getProductType().toLowerCase();
-
     if (productType.contains('solidarite')) {
       final solidariteData = _getSolidariteData();
       return _buildSolidariteSection(solidariteData);
@@ -460,7 +440,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Map<String, dynamic>? _getPaymentInfo() {
     final details = _getSubscriptionDetails();
-
     // Support multiple locations for payment info
     // (some environments store it inside `souscriptiondata`, others at root)
     final rawPaymentInfo = _subscriptionData?['payment_info'] ??
@@ -469,7 +448,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         details['paiement'] ??
         _subscriptionData?['payment'] ??
         details['payment'];
-
     String? pickText(List<dynamic> values) {
       for (final value in values) {
         if (value == null) continue;
@@ -528,7 +506,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final paymentMeta = toMap(_subscriptionData?['paiement'] ??
         details['paiement'] ??
         details['payment']);
-
     final paymentMethod = pickText([
       paymentInfo['payment_method'],
       paymentInfo['method'],
@@ -538,7 +515,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       details['payment_method'],
       _subscriptionData?['payment_method'],
     ]);
-
     final paymentDate = pickText([
       paymentInfo['payment_date'],
       paymentInfo['date_paiement'],
@@ -551,7 +527,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       _subscriptionData?['updated_at'],
       _subscriptionData?['created_at'],
     ]);
-
     final amount = pickValue([
       paymentInfo['amount'],
       paymentInfo['montant'],
@@ -577,7 +552,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       _subscriptionData?['montant_encaisse'],
       _subscriptionData?['total_paid'],
     ]);
-
     final paymentId = pickText([
       paymentInfo['payment_id'],
       paymentInfo['provider_payment_id'],
@@ -607,7 +581,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       details['transaction_id'],
       details['transactionId'],
     ]);
-
     final providerStatus = pickText([
       paymentInfo['provider_status'],
       paymentInfo['status'],
@@ -616,7 +589,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       details['provider_status'],
       details['status'],
     ]);
-
     if (paymentMethod == null &&
         paymentDate == null &&
         amount == null &&
@@ -642,7 +614,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final paymentMethodRaw = (paymentInfo['payment_method'] ?? '').toString();
     final paymentMethod =
         paymentMethodRaw.trim().isEmpty ? 'Non defini' : paymentMethodRaw;
-
     final amount = paymentInfo['amount'] ??
         paymentInfo['montant'] ??
         paymentInfo['amount_paid'] ??
@@ -652,16 +623,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
         _subscriptionData?['montant_encaisse'] ??
         _subscriptionData?['total_paid'] ??
         _subscriptionData?['prime'];
-
     final paymentDate = paymentInfo['payment_date'] ??
         paymentInfo['date_paiement'] ??
         _subscriptionData?['date_validation'];
-
     final paymentId = paymentInfo['payment_id'] ??
         paymentInfo['transactionId'] ??
         paymentInfo['transaction_id'] ??
         _subscriptionData?['payment_transaction_id'];
-
     final providerStatusRaw = (paymentInfo['provider_status'] ??
         paymentInfo['status'] ??
         paymentInfo['statut'] ??
@@ -670,9 +638,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final providerStatus = providerStatusRaw.trim().isEmpty
       ? 'INCONNU'
       : providerStatusRaw.toUpperCase();
-
     final validationStatus = _getPaymentStatus(paymentInfo);
-
     return _buildRecapSection(
       'Section paiement',
       Icons.account_balance_wallet_outlined,
@@ -696,7 +662,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final conjoints = data['conjoints'] ?? [];
     final enfants = data['enfants'] ?? [];
     final ascendants = data['ascendants'] ?? [];
-
     return _buildRecapSection(
       'Détails du contrat',
       Icons.people_outline,
@@ -782,7 +747,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final dateNaissance = membre['date_naissance'] ??
         membre['birthDate'] ??
         membre['dateNaissance'];
-
     String lienParente = '';
     if (membre.containsKey('lien_parente')) {
       lienParente = membre['lien_parente'] ?? '';
@@ -867,7 +831,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final rente = data['rente_calculee'] ?? data['rente'];
     final ageParent = data['age_parent'] ?? 'Non renseigné';
     final dateNaissanceParent = data['date_naissance_parent'];
-
     return _buildRecapSection(
       'Détails du contrat',
       Icons.school_outlined,
@@ -904,7 +867,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final duree = data['duree'] ?? 'Non définie';
     final capital = data['capital'] ?? 0;
     final prime = data['prime'] ?? data['prime_calculee'] ?? 0;
-
     return _buildRecapSection(
       'Détails du contrat',
       Icons.family_restroom_outlined,
@@ -973,7 +935,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildRetraiteSection(Map<String, dynamic> data) {
     final duree = data['duree'] ?? 'Non définie';
-
     return _buildRecapSection(
       'Détails du contrat',
       Icons.savings_outlined,
@@ -995,7 +956,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildSereniteSection(Map<String, dynamic> data) {
     final duree = data['duree'] ?? 'Non définie';
-
     return _buildRecapSection(
       'Détails du contrat',
       Icons.health_and_safety_outlined,
@@ -1027,13 +987,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
             'Date de création',
             _formatDate(_subscriptionData?['date_creation'] ??
                 _subscriptionData?['created_at'])),
-
         if (data['capital'] != null)
           _buildRecapRow('Capital', _formatMontant(data['capital'])),
-
         if (data['prime'] != null)
           _buildRecapRow('Prime', _formatMontant(data['prime'])),
-
         if (data['duree'] != null)
           _buildRecapRow(
               'Durée',
@@ -1150,13 +1107,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final status = _getContractStatus();
     final statusColor = _getStatusColor(status);
     final badgeColor = _getBadgeColor(_getProductType());
-
     // CORRECTION : remplacement de withOpacity
     final badgeColorWithAlpha = Color.alphaBlend(
       badgeColor.withAlpha((255 * 0.8).round()),
       Colors.transparent,
     );
-
     return SliverAppBar(
       expandedHeight: 140,
       pinned: true,
@@ -1482,7 +1437,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final subscriptionData = _getSubscriptionDetails();
     final beneficiaire = subscriptionData['beneficiaire'];
     final contactUrgence = subscriptionData['contact_urgence'];
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1553,7 +1507,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildCommercialAssistanceCard() {
     final subscriptionData = _getSubscriptionDetails();
     final assistanceCommerciale = subscriptionData['assistance_commerciale'];
-
     if (assistanceCommerciale is! Map) {
       return const SizedBox.shrink();
     }
@@ -1563,7 +1516,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final nomPrenom = assistanceCommerciale['commercial_nom_prenom']?.toString();
     final codeApporteur =
         assistanceCommerciale['commercial_code_apporteur']?.toString();
-
     if (!isAideParCommercial &&
         (nomPrenom == null || nomPrenom.trim().isEmpty) &&
         (codeApporteur == null || codeApporteur.trim().isEmpty)) {
@@ -1579,7 +1531,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildContactItem(String type, String nom, String relation,
       String? contact, String? dateNaissance, IconData icon) {
     final badgeColor = _getBadgeColor(_getProductType());
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1682,7 +1633,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
     void parse(dynamic value) {
       if (value == null) return;
-
       if (value is String) {
         final trimmed = value.trim();
         if (trimmed.isEmpty || trimmed.toLowerCase() == 'null') return;
@@ -1731,7 +1681,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     }
 
     parse(raw);
-
     final seen = <String>{};
     return docs.where((doc) {
       final path = doc['path']?.toString() ?? '';
@@ -1743,14 +1692,12 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Widget _buildDocumentsCard() {
     final subscriptionData = _getSubscriptionDetails();
-
     // Récupération robuste des documents d'identité multiples
     final identityDocs = <Map<String, dynamic>>[];
     final rawIdentityDocs = [
       subscriptionData['piece_identite_documents'],
       _subscriptionData?['piece_identite_documents'],
     ];
-
     for (var docList in rawIdentityDocs) {
       if (docList != null) {
         final extracted = _extractDocumentsList(docList);
@@ -1770,7 +1717,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
             _subscriptionData?['piece_identite_label'] ??
             pieceIdentite)
         ?.toString();
-
     final docsList = <Map<String, dynamic>>[
       ..._extractDocumentsList(subscriptionData['documents']),
       ..._extractDocumentsList(_subscriptionData?['documents']),
@@ -1778,7 +1724,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
       ..._extractDocumentsList(_subscriptionData?['souscription_documents']),
       ...identityDocs, // documents multiples
     ];
-
     if (pieceIdentite != null && pieceIdentite.trim().isNotEmpty) {
       final identityPath = pieceIdentite.trim();
       final alreadyExists = docsList.any((doc) {
@@ -1801,12 +1746,9 @@ class ContratDetailPageState extends State<ContratDetailPage>
       seenPaths.add(path);
       return true;
     }).toList();
-
     final normalizedDocsList =
         deduplicatedDocsList.isEmpty ? null : deduplicatedDocsList;
-
     final totalDocuments = normalizedDocsList?.length ?? 0;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1855,7 +1797,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
     final hasDocument = documentName != null &&
         documentName.isNotEmpty &&
         documentName != 'Non téléchargée';
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1957,7 +1898,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         .split('/')
         .last
         .trim();
-
     if (normalizedDocumentName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1984,7 +1924,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
   Widget _buildBottomBar() {
     final status = _getContractStatus();
     final suggestedAmount = _getSuggestedPaymentAmount();
-
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -2118,13 +2057,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   void _viewContractPdf() {
     HapticFeedback.lightImpact();
-
     final productType = _getProductType().toLowerCase();
     final excludeQuestionnaire = productType.contains('etude') ||
         productType.contains('familis') ||
         productType.contains('serenite') ||
         productType.contains('sérénité');
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -2138,7 +2075,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Future<void> _shareContract() async {
     HapticFeedback.lightImpact();
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Préparation du PDF à partager...'),
@@ -2146,7 +2082,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         behavior: SnackBarBehavior.floating,
       ),
     );
-
     try {
       // Réutilise le même endpoint PDF que le bouton Télécharger pour garantir la cohérence.
       final productType = _getProductType().toLowerCase();
@@ -2154,16 +2089,13 @@ class ContratDetailPageState extends State<ContratDetailPage>
           productType.contains('familis') ||
           productType.contains('serenite') ||
           productType.contains('sérénité');
-
       final tempFile = await PdfService.fetchToTemp(
         widget.subscriptionId,
         excludeQuestionnaire: excludeQuestionnaire,
       );
-
       final policy = widget.contractNumber.isNotEmpty
           ? widget.contractNumber
           : '#${widget.subscriptionId}';
-
       await Share.shareXFiles(
         [XFile(tempFile.path)],
         subject: 'Contrat CORIS $policy',
@@ -2183,9 +2115,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Future<void> _downloadContract() async {
     HapticFeedback.lightImpact();
-
     final notificationId = 10000 + widget.subscriptionId;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Téléchargement du contrat en cours...'),
@@ -2193,20 +2123,17 @@ class ContratDetailPageState extends State<ContratDetailPage>
         behavior: SnackBarBehavior.floating,
       ),
     );
-
     try {
       await DownloadNotificationService.showProgress(
         notificationId,
         title: 'Telechargement du contrat CORIS',
         progress: 0,
       );
-
       final productType = _getProductType().toLowerCase();
       final excludeQuestionnaire = productType.contains('etude') ||
           productType.contains('familis') ||
           productType.contains('serenite') ||
           productType.contains('sérénité');
-
       final downloadedFile = await PdfService.downloadToDownloadsWithProgress(
         widget.subscriptionId,
         excludeQuestionnaire: excludeQuestionnaire,
@@ -2218,13 +2145,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
           );
         },
       );
-
       await DownloadNotificationService.showCompleted(
         notificationId,
         title: 'Telechargement termine',
         filePath: downloadedFile.path,
       );
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2249,7 +2174,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         title: 'Echec du telechargement',
         message: 'Impossible de telecharger le contrat',
       );
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2282,9 +2206,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
 
   Future<void> _contactSupport() async {
     HapticFeedback.lightImpact();
-
     if (!mounted) return;
-
     await showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(

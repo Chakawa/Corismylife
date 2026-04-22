@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -15,12 +14,9 @@ class DownloadNotificationService {
 
   static Future<void> initialize() async {
     if (_initialized) return;
-
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-
     const settings = InitializationSettings(android: androidSettings);
-
     await _plugin.initialize(
       settings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
@@ -30,11 +26,9 @@ class DownloadNotificationService {
         }
       },
     );
-
     final androidPlugin =
         _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
-
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -43,7 +37,6 @@ class DownloadNotificationService {
         importance: Importance.high,
       ),
     );
-
     if (Platform.isAndroid) {
       await androidPlugin?.requestNotificationsPermission();
     }
@@ -57,7 +50,6 @@ class DownloadNotificationService {
     required int progress,
   }) async {
     await initialize();
-
     final safeProgress = progress.clamp(0, 100);
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -74,7 +66,6 @@ class DownloadNotificationService {
         autoCancel: false,
       ),
     );
-
     await _plugin.show(
       id,
       title,
@@ -89,7 +80,6 @@ class DownloadNotificationService {
     required String filePath,
   }) async {
     await initialize();
-
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
@@ -102,7 +92,6 @@ class DownloadNotificationService {
         autoCancel: true,
       ),
     );
-
     await _plugin.show(
       id,
       title,
@@ -118,7 +107,6 @@ class DownloadNotificationService {
     required String message,
   }) async {
     await initialize();
-
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
@@ -128,7 +116,6 @@ class DownloadNotificationService {
         priority: Priority.high,
       ),
     );
-
     await _plugin.show(id, title, message, details);
   }
 }

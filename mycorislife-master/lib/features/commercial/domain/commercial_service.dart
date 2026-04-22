@@ -36,7 +36,6 @@ class CommercialService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -76,7 +75,6 @@ class CommercialService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -124,19 +122,16 @@ class CommercialService {
             body: json.encode(clientData),
           )
           .timeout(const Duration(seconds: 30));
-
       final responseBody = json.decode(response.body);
-      
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (responseBody['success'] == true) {
           // Le backend retourne { success: true, data: { id, email, nom, prenom, ... } }
           final client = responseBody['data'] ?? {};
-          
           // S'assurer que l'ID est présent
           if (client['id'] == null) {
             throw Exception('Erreur: Le client a été créé mais l\'ID n\'a pas été retourné');
           }
-          
+
           return client;
         } else {
           throw Exception(
@@ -180,7 +175,6 @@ class CommercialService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -226,7 +220,6 @@ class CommercialService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 15));
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -273,7 +266,6 @@ class CommercialService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {

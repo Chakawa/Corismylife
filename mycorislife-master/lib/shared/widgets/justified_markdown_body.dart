@@ -7,7 +7,6 @@ import 'package:markdown/markdown.dart' as md;
 class JustifiedMarkdownBody extends StatelessWidget {
   final String data;
   final MarkdownStyleSheet styleSheet;
-
   const JustifiedMarkdownBody({
     super.key,
     required this.data,
@@ -34,9 +33,7 @@ class JustifiedMarkdownBody extends StatelessWidget {
 class _JustifiedParagraphBuilder extends MarkdownElementBuilder {
   final TextStyle? pStyle;
   final TextStyle? strongStyle;
-
   _JustifiedParagraphBuilder({this.pStyle, this.strongStyle});
-
   List<InlineSpan> _buildSpans(List<md.Node>? nodes, TextStyle? baseStyle) {
     final spans = <InlineSpan>[];
     for (final node in nodes ?? []) {

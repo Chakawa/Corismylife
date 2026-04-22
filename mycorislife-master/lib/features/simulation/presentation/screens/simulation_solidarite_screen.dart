@@ -21,20 +21,16 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   static const Color fondGris = Color(0xFFF5F7FA);
   static const Color texteGris = Color(0xFF666666);
   static const Color grisClair = Color(0xFFE0E0E0);
-
   // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
-
   int? selectedCapital = 500000;
   String selectedPeriodicite = 'Mensuel';
   int nbConjoints = 1;
   int nbEnfants = 1;
   int nbAscendants = 0;
   double? primeTotaleResult;
-
   final periodicites = ['Mensuel', 'Trimestriel', 'Semestriel', 'Annuel'];
   final capitalOptions = [500000, 1000000, 1500000, 2000000];
-
   // Tableaux tarifaires (à insérer manuellement)
   final Map<int, Map<String, double>> primeTotaleFamilleBase = {
     500000: {
@@ -140,21 +136,17 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       'annuelle': 71400
     },
   };
-
   // Helper pour récupérer un tarif depuis la DB ou fallback
   Future<double> _getTarifFromDbOrFallback(
     Map<int, Map<String, double>> fallbackData,
     String categorie,
   ) async {
     if (selectedCapital == null) return 0.0;
-
     // Détermine la clé de la périodicité
     String periodiciteKey = selectedPeriodicite.toLowerCase();
     if (periodiciteKey == 'annuel') periodiciteKey = 'annuelle';
-
     print(
         '🔍 [SOLIDARITÉ] Recherche tarif: capital=$selectedCapital, periodicite=$periodiciteKey, categorie=$categorie');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
@@ -165,7 +157,6 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
         periodicite: periodiciteKey == 'annuelle' ? 'annuel' : periodiciteKey,
         categorie: categorie,
       );
-
       if (tarifs.isNotEmpty && tarifs[0].prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifs[0].prime}');
         print('   ðŸ’¡ Cache local IGNORÉ - Données du serveur uniquement');
@@ -211,13 +202,11 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
   // logique calcul
   Future<void> simulerPrime() async {
     if (selectedCapital == null) return;
-
     // Calcul de la prime de base et des surprimes
     final double base = await _getTarifFromDbOrFallback(
       primeTotaleFamilleBase,
       'famille_base',
     );
-
     final double conjointSupplBase = await _getTarifFromDbOrFallback(
       surprimesConjointsSupplementaires.map((key, value) =>
           MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
@@ -225,7 +214,6 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     );
     final double conjointSuppl =
         conjointSupplBase * (nbConjoints > 1 ? nbConjoints - 1 : 0);
-
     final double enfantsSupplBase = await _getTarifFromDbOrFallback(
       surprimesEnfantsSupplementaires.map((key, value) =>
           MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
@@ -233,18 +221,15 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
     );
     final double enfantsSuppl =
         enfantsSupplBase * (nbEnfants > 6 ? nbEnfants - 6 : 0);
-
     final double ascendantsSupplBase = await _getTarifFromDbOrFallback(
       surprimesAscendants.map((key, value) =>
           MapEntry(key, value.map((k, v) => MapEntry(k, v.toDouble())))),
       'avec_ascendant',
     );
     final double ascendantsSuppl = ascendantsSupplBase * nbAscendants;
-
     setState(() {
       primeTotaleResult = base + conjointSuppl + enfantsSuppl + ascendantsSuppl;
     });
-
     // Sauvegarder la simulation en base de données
     if (primeTotaleResult != null && primeTotaleResult! > 0) {
       SimulationService.saveSimulation(
@@ -273,7 +258,6 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
       'nbEnfants': nbEnfants,
       'nbAscendants': nbAscendants,
     };
-
     // Vérifier le rôle et rediriger
     final userRole = await AuthService.getUserRole();
     if (userRole == 'commercial') {
@@ -410,20 +394,16 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                             ],
                           ),
                           SizedBox(height: context.r(20)),
-
                           // Sélecteur de capital
                           _buildCapitalDropdown(),
                           SizedBox(height: context.r(16)),
-
                           // Sélecteur de périodicité
                           _buildPeriodiciteDropdown(),
                           SizedBox(height: context.r(25)),
-
                           // Séparateur
                           const Divider(
                               color: grisClair, height: 1, thickness: 1),
                           SizedBox(height: context.r(25)),
-
                           // Steppers pour les membres de la famille
                           _buildStepper(
                               "Nombre de conjoints", nbConjoints, 1, 10, (val) {
@@ -437,9 +417,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                               "Nombre d'ascendants", nbAscendants, 0, 4, (val) {
                             setState(() => nbAscendants = val);
                           }),
-
                           SizedBox(height: context.r(20)),
-
                           // Bouton de simulation
                           SizedBox(
                             width: double.infinity,
@@ -474,9 +452,7 @@ class _SolidariteSimulationPageState extends State<SolidariteSimulationPage> {
                       ),
                     ),
                   ),
-
                   SizedBox(height: context.r(20)),
-
                   // Carte de résultat
                   if (primeTotaleResult != null) _buildResultCard(),
                 ],

@@ -11,7 +11,6 @@ import 'package:mycorislife/features/client/presentation/screens/help_support_sc
 import 'package:mycorislife/services/user_service.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
-
 // Couleurs partagées
 const Color bleuCoris = Color(0xFF002B6B);
 const Color rougeCoris = Color(0xFFE30613);
@@ -480,11 +479,9 @@ class _ProfilPageState extends State<ProfilPage> {
         builder: (context) => const EditProfileScreen(),
       ),
     );
-
     // Recharger les données si le profil a été modifié
     if (updated == true && mounted) {
       await _loadUserProfile(); // Recharger le profil
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -503,7 +500,6 @@ class _ProfilPageState extends State<ProfilPage> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     bool isChanging = false;
-
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -589,7 +585,6 @@ class _ProfilPageState extends State<ProfilPage> {
                         final newPwd = newPasswordController.text.trim();
                         final confirmPwd =
                             confirmPasswordController.text.trim();
-
                         if (oldPwd.isEmpty ||
                             newPwd.isEmpty ||
                             confirmPwd.isEmpty) {
@@ -684,9 +679,7 @@ class _ProfilPageState extends State<ProfilPage> {
     try {
       // Déconnexion via AuthService
       await AuthService.logout();
-
       if (!mounted) return;
-
       // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -694,7 +687,6 @@ class _ProfilPageState extends State<ProfilPage> {
           backgroundColor: Color(0xFF10B981),
         ),
       );
-
       // Rediriger vers la page de connexion et supprimer toutes les routes
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -704,7 +696,6 @@ class _ProfilPageState extends State<ProfilPage> {
     } catch (e) {
       debugPrint('❌ Erreur lors de la déconnexion : $e');
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erreur lors de la déconnexion'),
@@ -851,7 +842,6 @@ class ProfileMenuItem extends StatelessWidget {
   final Color? iconColor;
   final Color? titleColor;
   final Widget? trailing;
-
   const ProfileMenuItem({
     super.key,
     required this.icon,

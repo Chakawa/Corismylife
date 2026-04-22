@@ -15,7 +15,6 @@ class SubscriptionAttachService {
   }) async {
     final token = await _storage.read(key: 'token');
     if (token == null) throw Exception('Token non trouvé');
-
     final response = await http.post(
       Uri.parse('$baseUrl/attach'),
       headers: {
@@ -27,7 +26,6 @@ class SubscriptionAttachService {
         if (id != null) 'id': id,
       }),
     );
-
     final data = json.decode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
       return data;
@@ -36,6 +34,4 @@ class SubscriptionAttachService {
     }
   }
 }
-
-
 

@@ -8,29 +8,24 @@ class AmountParser {
   static double parse(dynamic value, {double fallback = 0.0}) {
     if (value == null) return fallback;
     if (value is num) return value.toDouble();
-
     var raw = value.toString().trim();
     if (raw.isEmpty) return fallback;
-
     raw = raw
         .replaceAll('\u00A0', '')
         .replaceAll('\u202F', '')
         .replaceAll(' ', '')
       .replaceAll(RegExp(r'fcfa|xof|xaf', caseSensitive: false), '')
         .replaceAll(RegExp(r'[^0-9,.-]'), '');
-
     if (raw.isEmpty || raw == '-' || raw == '.' || raw == ',') {
       return fallback;
     }
 
     final hasComma = raw.contains(',');
     final hasDot = raw.contains('.');
-
     // If both separators exist, keep the last one as decimal separator.
     if (hasComma && hasDot) {
       final lastComma = raw.lastIndexOf(',');
       final lastDot = raw.lastIndexOf('.');
-
       if (lastComma > lastDot) {
         raw = raw.replaceAll('.', '');
         raw = raw.replaceAll(',', '.');

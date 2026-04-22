@@ -18,16 +18,13 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   final _capitalController = TextEditingController();
   final _dureeController = TextEditingController();
   final _dateNaissanceController = TextEditingController();
-
   // Garanties
   final _capitalPrevoyanceController = TextEditingController();
   final _capitalPerteEmploiController = TextEditingController();
-
   String dureeType = 'mois';
   String typePret = 'Prêt amortissable';
   bool garantiePrevoyance = false;
   bool garantiePerteEmploi = false;
-
   bool isLoading = false;
   Map<String, dynamic>? result;
 
@@ -35,10 +32,8 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
   static const Color rougeCoris = Color(0xFFE30613);
   static const Color vertCoris = Color(0xFF00A650);
   static const Color grisClairBg = Color(0xFFF8FAFB);
-
   // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
-
   // Données hardcodées pour fallback (si la base de données n'est pas disponible)
   final Map<String, double> tarifsPretAmortissable = {
     '18_12': 0.14979,
@@ -1730,7 +1725,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print(
         '   📊 Paramètres: age=$age, duree=$dureeMois mois, categorie=$categorie');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
@@ -1744,7 +1738,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
             categorie, // Filtrer par catégorie (amortissable ou decouvert)
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       // Vérifier que le tarif correspond à la catégorie demandée (si spécifiée)
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         // Vérifier que la catégorie correspond
@@ -1816,7 +1809,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         .toSet()
         .toList();
     allAges.sort((a, b) => (a - age).abs().compareTo((b - age).abs()));
-
     if (allAges.isNotEmpty) {
       final closestAge = allAges.first;
       final closestAgeKeys = tableFallback.keys
@@ -1870,9 +1862,7 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
     print('â•‘ 🔍 [FLEX EMPRUNTEUR] Recherche taux Perte d\'Emploi           â•‘');
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print('   📊 Paramètres: duree=$dureeAnnees années');
-
     int dureeEffective = dureeAnnees > 6 ? 6 : dureeAnnees;
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
@@ -1885,7 +1875,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
         categorie: 'perte_emploi', // Filtrer par catégorie perte_emploi
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       // Vérifier que le tarif correspond à la catégorie perte_emploi
       if (tarifFromDB != null &&
           tarifFromDB.prime != null &&
@@ -1935,17 +1924,13 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
   void _simuler() async {
     if (!_validateInputs()) return;
-
     setState(() {
       isLoading = true;
       result = null;
     });
-
     await Future.delayed(const Duration(milliseconds: 500));
-
     try {
       double capital = _parseDouble(_capitalController.text);
-
       // Vérification du montant maximum (30 000 000 FCFA)
       if (capital > 30000000) {
         _showProfessionalDialog(
@@ -1964,7 +1949,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
       int duree = _parseInt(_dureeController.text);
       int dureeMois = dureeType == 'années' ? duree * 12 : duree;
       int dureeAnnees = dureeType == 'années' ? duree : (dureeMois / 12).ceil();
-
       // Taux de base selon type de prêt
       // Utiliser la base de données ou le fallback
       double rateBase;
@@ -1987,7 +1971,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
       final rateBaseDecimal = rateBase / 100;
       final primeBase = (capital * rateBaseDecimal).clamp(0, double.infinity);
-
       // Garanties optionnelles
       double primePrevoyance = 0.0;
       if (garantiePrevoyance && typePret != 'Prêt scolaire') {
@@ -1998,7 +1981,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           categorie: 'decouvert',
           tableFallback: tarifsPretDecouvert,
         );
-
         final ratePrevDecimal = ratePrev / 100;
         primePrevoyance =
             (capitalPrev * ratePrevDecimal).clamp(0, double.infinity);
@@ -2011,14 +1993,12 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           dureeAnnees: dureeAnnees,
           tableFallback: tarifsPerteEmploi,
         );
-
         final ratePEDecimal = ratePE / 100;
         primePerteEmploi =
             (capitalPE * ratePEDecimal).clamp(0, double.infinity);
       }
 
       final primeTotal = primeBase + primePrevoyance + primePerteEmploi;
-
       setState(() {
         result = {
           'primeBase': primeBase,
@@ -2028,7 +2008,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
           'rateBase': rateBase,
         };
       });
-
       // Sauvegarder la simulation en base de données
       if (result != null && result!['primeTotal'] > 0) {
         final age = _calculateAge(_dateNaissanceController.text);
@@ -2214,11 +2193,9 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               ],
             ),
             SizedBox(height: context.r(32)),
-
             // Nouveau design pour le type de prêt
             _buildTypePretDropdown(),
             SizedBox(height: context.r(24)),
-
             _buildModernTextField(
               controller: _capitalController,
               label: 'Montant du prêt à couvrir',
@@ -2260,7 +2237,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               },
             ),
             SizedBox(height: context.r(24)),
-
             Row(
               children: [
                 Expanded(
@@ -2289,14 +2265,11 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
               ],
             ),
             SizedBox(height: context.r(24)),
-
             // Champ date de naissance au lieu de l'âge
             _buildDateNaissanceField(),
             SizedBox(height: context.r(32)),
-
             _buildGarantiesSection(),
             SizedBox(height: context.r(32)),
-
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -2409,7 +2382,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
   Widget _buildDateNaissanceField() {
     final age = _calculateAge(_dateNaissanceController.text);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2477,7 +2449,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
 
   Widget _buildGarantiesSection() {
     final disabled = typePret == 'Prêt scolaire';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2762,7 +2733,6 @@ class _FlexEmprunteurPageState extends State<FlexEmprunteurPage> {
                             .replaceAll(' ', ''))
                         : 0,
                   };
-
                   // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {

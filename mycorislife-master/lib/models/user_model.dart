@@ -5,7 +5,6 @@ class AppUser {
   final String prenom;
   final String civilite;
   final String role;
-
   AppUser({
     required this.id,
     required this.email,
@@ -14,7 +13,6 @@ class AppUser {
     required this.civilite,
     required this.role,
   });
-
   factory AppUser.fromLoginMap(Map<String, dynamic> map) {
     return AppUser(
       id: map['user']['id'],

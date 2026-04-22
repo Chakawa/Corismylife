@@ -29,7 +29,6 @@ class HelpSupportScreen extends StatelessWidget {
         builder: (context, snapshot) {
           final phone = snapshot.data?['phone'] ?? '0778685858';
           final email = snapshot.data?['email'] ?? 'corisvie-ci@coris-assurances.ci';
-          
           return ListView(
             padding: EdgeInsets.all(context.r(16)),
             children: [
@@ -105,5 +104,4 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 }
-
 

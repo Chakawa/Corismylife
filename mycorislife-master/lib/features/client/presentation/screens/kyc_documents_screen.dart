@@ -47,7 +47,6 @@ class _KYCDocumentsScreenState extends State<KYCDocumentsScreen> {
   Future<void> _uploadDocument(String docKey, String label) async {
     final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
-
     try {
       await KYCService.uploadDocument(image.path, docKey);
       if (mounted) {
@@ -99,6 +98,4 @@ class _KYCDocumentsScreenState extends State<KYCDocumentsScreen> {
     );
   }
 }
-
-
 

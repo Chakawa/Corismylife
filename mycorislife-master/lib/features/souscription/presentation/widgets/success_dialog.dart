@@ -2,7 +2,6 @@
 class SuccessDialog extends StatelessWidget {
   final bool isPaid;
   final String pdfUrl;
-
   const SuccessDialog({required this.isPaid, required this.pdfUrl});
 
   @override

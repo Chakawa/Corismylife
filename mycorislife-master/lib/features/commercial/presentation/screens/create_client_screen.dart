@@ -19,14 +19,12 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
   final _telephoneController = TextEditingController();
   final _adresseController = TextEditingController();
   final _lieuNaissanceController = TextEditingController();
-
   String? _selectedCivilite = 'Monsieur';
   DateTime? _dateNaissance;
   String? _selectedPays = "Côte d'Ivoire";
   bool _isLoading = false;
 
   static const bleuCoris = Color(0xFF002B6B);
-
   final List<String> _civilites = ['Monsieur', 'Madame', 'Mademoiselle'];
   final List<String> _pays = [
     "Côte d'Ivoire",
@@ -71,7 +69,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
     setState(() {
       _isLoading = true;
     });
-
     try {
       final clientData = {
         'email': _emailController.text.trim(),
@@ -85,9 +82,7 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
         'adresse': _adresseController.text.trim(),
         'pays': _selectedPays,
       };
-
       final client = await CommercialService.createClient(clientData);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -96,7 +91,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
             duration: Duration(seconds: 2),
           ),
         );
-
         // Si un type de produit est spécifié, naviguer vers la souscription avec le client créé
         if (widget.productType != null && widget.productType!.isNotEmpty) {
           Navigator.pushReplacementNamed(
@@ -159,7 +153,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               SizedBox(height: context.r(24)),
-
               // Civilité
               DropdownButtonFormField<String>(
                 initialValue: _selectedCivilite,
@@ -183,7 +176,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Nom
               TextFormField(
                 controller: _nomController,
@@ -202,7 +194,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Prénom
               TextFormField(
                 controller: _prenomController,
@@ -221,7 +212,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Email
               TextFormField(
                 controller: _emailController,
@@ -244,7 +234,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Mot de passe
               TextFormField(
                 controller: _passwordController,
@@ -267,7 +256,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Téléphone
               TextFormField(
                 controller: _telephoneController,
@@ -287,7 +275,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(16)),
-
               // Date de naissance
               InkWell(
                 onTap: _selectDate,
@@ -311,7 +298,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               SizedBox(height: context.r(16)),
-
               // Lieu de naissance
               TextFormField(
                 controller: _lieuNaissanceController,
@@ -324,7 +310,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               SizedBox(height: context.r(16)),
-
               // Adresse
               TextFormField(
                 controller: _adresseController,
@@ -337,7 +322,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 ),
               ),
               SizedBox(height: context.r(16)),
-
               // Pays
               DropdownButtonFormField<String>(
                 initialValue: _selectedPays,
@@ -361,7 +345,6 @@ class _CreateClientScreenState extends State<CreateClientScreen> {
                 },
               ),
               SizedBox(height: context.r(32)),
-
               // Bouton de création
               ElevatedButton(
                 onPressed: _isLoading ? null : _createClient,

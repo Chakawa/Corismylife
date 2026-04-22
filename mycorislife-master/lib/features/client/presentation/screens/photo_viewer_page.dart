@@ -8,11 +8,9 @@ class PhotoViewerPage extends StatelessWidget {
   final String? photoUrl;
   final File? localFile;
   final String? title;
-
   // Constantes de couleur
   static const Color blanc = Colors.white;
   static const Color bleuCoris = Color(0xFF002B6B);
-
   const PhotoViewerPage({
     super.key,
     this.photoUrl,

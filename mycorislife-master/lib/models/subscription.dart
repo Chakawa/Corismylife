@@ -7,7 +7,6 @@ class Subscription {
   final DateTime dateCreation;
   final DateTime? dateValidation;
   final Map<String, dynamic> souscriptionData;
-
   Subscription({
     required this.id,
     required this.userId,
@@ -18,7 +17,6 @@ class Subscription {
     this.dateValidation,
     required this.souscriptionData,
   });
-
   factory Subscription.fromJson(Map<String, dynamic> json) {
     return Subscription(
       id: json['id'],

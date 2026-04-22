@@ -71,7 +71,6 @@ class NotificationService {
               'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet.');
         },
       );
-
       // Gérer le cas où la réponse est vide ou invalide
       if (response.body.isEmpty) {
         return {
@@ -81,7 +80,6 @@ class NotificationService {
       }
 
       final data = json.decode(response.body);
-
       if (response.statusCode == 200) {
         // Gérer différents formats de réponse du backend
         if (data['success'] == true) {
@@ -167,9 +165,7 @@ class NotificationService {
           throw Exception('Timeout'); // Timeout, retourner 0 via catch
         },
       );
-
       final data = json.decode(response.body);
-
       if (response.statusCode == 200 && data['success'] == true) {
         return data['data']['unreadCount'] ?? 0;
       } else {
@@ -185,7 +181,6 @@ class NotificationService {
   static Future<void> markAsRead(int notificationId) async {
     try {
       final token = await _storage.read(key: 'token');
-
       if (token == null) {
         throw Exception('Token non trouvé');
       }
@@ -197,9 +192,7 @@ class NotificationService {
           'Authorization': 'Bearer $token',
         },
       );
-
       final data = json.decode(response.body);
-
       if (response.statusCode != 200 || data['success'] != true) {
         throw Exception(
             data['message'] ?? 'Erreur lors du marquage de la notification');
@@ -214,7 +207,6 @@ class NotificationService {
   static Future<void> markAllAsRead() async {
     try {
       final token = await _storage.read(key: 'token');
-
       if (token == null) {
         throw Exception('Token non trouvé');
       }
@@ -226,9 +218,7 @@ class NotificationService {
           'Authorization': 'Bearer $token',
         },
       );
-
       final data = json.decode(response.body);
-
       if (response.statusCode != 200 || data['success'] != true) {
         throw Exception(
             data['message'] ?? 'Erreur lors du marquage des notifications');

@@ -11,38 +11,27 @@ class DescriptionEpargnePage extends StatelessWidget {
   Widget build(BuildContext context) {
     const String markdownContent = """
 ### **CORIS ÉPARGNE BONUS** 
-
 **Constituez votre capital à votre rythme et en toute simplicité.**
-
 Le contrat **CORIS ÉPARGNE BONUS** est un contrat d'assurance-vie qui vous permet de vous constituer un capital pour vos projets futurs. Que ce soit pour un achat important, un voyage ou simplement pour créer un fonds de sécurité, ce produit d'épargne est la solution idéale pour faire fructifier votre argent sans risque.
-
 ---
-
 #### **Présentation du produit**
-
 **CORIS ÉPARGNE BONUS** est une solution d'épargne simple et accessible qui vous permet de constituer progressivement un capital garanti. Ce contrat d'assurance-vie vous offre la flexibilité nécessaire pour épargner selon vos moyens tout en bénéficiant d'un rendement attractif et sécurisé.
-
 #### **Avantages exclusifs**
-
 **💰 Avantages financiers**
 * **Rendement garanti** : Votre épargne bénéfie d'un taux d'intérêt sécurisé
 * **Capitalisation** : Les intérêts générés sont automatiquement réinvestis
 * **Transparence totale** : Suivi en temps réel de l'évolution de votre épargne
 * **Bonus de fidélité** : Avantages supplémentaires pour les épargnants fidèles
-
 **🎯 Avantages pratiques**
 * **Utilisation flexible** : Utilisez le capital pour vos projets personnels
 * **Accessibilité** : Produit accessible à tous les budgets
 * **Simplicité** : Gestion facile et intuitive de votre contrat
 * **Accompagnement** : Conseils personnalisés de nos experts
-
 **🛡️ Sécurité et garanties**
 * **Capital protégé** : Aucun risque de perte sur le montant de vos cotisations
 * **Garantie décès** : Protection de vos proches en cas de décès
 * **Stabilité** : Produit adossé à des actifs sécurisés
-
 """;
-
     return Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -104,7 +93,6 @@ Le contrat **CORIS ÉPARGNE BONUS** est un contrat d'assurance-vie qui vous perm
                     ),
                   ),
                 ),
-
                 // Main Content
                 Container(
                   color: Colors.white,
@@ -157,7 +145,6 @@ Le contrat **CORIS ÉPARGNE BONUS** est un contrat d'assurance-vie qui vous perm
                     ),
                   ),
                 ),
-
                 // Call to Action Footer
                 Container(
                   width: double.infinity,

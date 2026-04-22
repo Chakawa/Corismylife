@@ -19,12 +19,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
   final _capitalController = TextEditingController();
   final _dureeController = TextEditingController();
   final _dateNaissanceController = TextEditingController();
-
   String periodicite = 'annuel';
   bool isLoading = false;
   Map<String, dynamic>? result;
   int? age;
-
   // Service pour synchroniser avec la base de données
   final ProduitSyncService _produitSyncService = ProduitSyncService();
 
@@ -33,7 +31,6 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
   static const Color vertCoris = Color(0xFF00A650);
   static const Color bleuClair = Color(0xFFE8F4FD);
   static const Color grisClairBg = Color(0xFFF8FAFB);
-
   Map<int, Map<int, double>> tauxUnique = {
     18: {
       1: 0.27220,
@@ -2377,7 +2374,6 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     print('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     print(
         '   📊 Paramètres: age=$age, duree=$dureeAnnees ans, periodicite=$periodicite');
-
     // Étape 1: Essayer de récupérer depuis la base de données (serveur uniquement)
     print(
         '\n   ðŸ“ ÉTAPE 1: Tentative récupération depuis BASE DE DONNÉES (serveur uniquement)...');
@@ -2389,7 +2385,6 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
         periodicite: periodicite,
       );
       final tarifFromDB = result['tarif'] as TarifProduit?;
-
       if (tarifFromDB != null && tarifFromDB.prime != null) {
         print('   ✅ Tarif trouvé depuis le SERVEUR: ${tarifFromDB.prime}');
         print(
@@ -2409,11 +2404,9 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
     // Étape 2: Fallback - Utiliser les données codées en dur
     print('\n   ðŸ“ ÉTAPE 2: Utilisation FALLBACK (données hardcodées)...');
-
     // Étape 2: Fallback - Utiliser les données codées en dur
     final Map<int, Map<int, double>> selectedTable =
         periodicite == 'unique' ? tauxUnique : tauxAnnuel;
-
     if (!selectedTable.containsKey(age)) {
       final ages = selectedTable.keys.toList()..sort();
       int closestAge = ages.first;
@@ -2452,21 +2445,16 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
 
   void _simuler() async {
     if (!_validateInputs()) return;
-
     setState(() {
       isLoading = true;
       result = null;
     });
-
     await Future.delayed(const Duration(milliseconds: 500));
-
     try {
       final capital = _parseDouble(_capitalController.text);
       int dureeAnnees = _parseInt(_dureeController.text);
-
       final taux = await _findRateInTable(age: age!, dureeAnnees: dureeAnnees);
       final primeTotal = (capital * (taux / 100)).clamp(0, double.infinity);
-
       setState(() {
         result = {
           'primeTotal': primeTotal,
@@ -2485,12 +2473,10 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
     }
 
     setState(() => isLoading = false);
-
     // Sauvegarder la simulation en base de données
     if (result != null && result!['primeTotal'] != null && result!['primeTotal'] > 0) {
       final capital = _parseDouble(_capitalController.text);
       int dureeAnnees = _parseInt(_dureeController.text);
-      
       SimulationService.saveSimulation(
         produitNom: 'CORIS FAMILIS',
         typeSimulation: 'Par Capital',
@@ -3000,7 +2986,6 @@ class _SimulationFamilisScreenState extends State<SimulationFamilisScreen> {
                     'duree': int.parse(_dureeController.text),
                     'periodicite': periodicite,
                   };
-
                   // Vérifier le rôle et rediriger
                   final userRole = await AuthService.getUserRole();
                   if (userRole == 'commercial') {

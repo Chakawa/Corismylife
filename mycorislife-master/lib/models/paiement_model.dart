@@ -6,7 +6,6 @@ class Paiement {
   final String methode;
   final String statut; // 'en_attente', 'reussi', 'echoue'
   final DateTime datePaiement;
-
   Paiement({
     required this.id,
     required this.souscriptionId,
@@ -15,7 +14,6 @@ class Paiement {
     required this.statut,
     DateTime? datePaiement,
   }) : datePaiement = datePaiement ?? DateTime.now();
-
   factory Paiement.fromMap(Map<String, dynamic> map) {
     return Paiement(
       id: map['id'],

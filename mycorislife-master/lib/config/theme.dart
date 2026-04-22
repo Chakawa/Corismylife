@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-
 const bleuCoris = Color(0xFF002B6B);
 const rougeCoris = Color.fromARGB(255, 242, 4, 4);
 const vertSucces = Color(0xFF10B981);
-
 final appTheme = ThemeData(
   primaryColor: bleuCoris,
   scaffoldBackgroundColor: Colors.grey[100],

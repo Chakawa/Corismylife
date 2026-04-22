@@ -1,1152 +1,1229 @@
-import 'package:flutter/material.dart';
-import 'package:mycorislife/core/utils/responsive.dart';
-import 'package:mycorislife/services/contrat_service.dart';
-import 'package:mycorislife/models/contrat.dart';
-import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
-
-class MesContratsClientPage extends StatefulWidget {
-  const MesContratsClientPage({super.key});
-
-  @override
-  State<MesContratsClientPage> createState() => _MesContratsClientPageState();
-}
-
-class _MesContratsClientPageState extends State<MesContratsClientPage> {
-  final ContratService _service = ContratService();
-  List<Contrat> contrats = [];
-  List<Contrat> filteredContrats = [];
-  bool isLoading = true;
-  String? errorMessage;
-  String _filterStatus = 'tous';
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadContrats();
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    setState(() {
-      _searchQuery = _searchController.text.toLowerCase();
-      _filterContrats();
-    });
-  }
-
-  Future<void> _loadContrats() async {
-    print('🔄 _loadContrats appelé');
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
-    try {
-      print('ðŸ“ž Appel du service getContrats...');
-      final result = await _service.getContrats();
-      print('✅ Service retourné ${result.length} contrat(s)');
-
-      if (!mounted) return;
-
-      setState(() {
-        contrats = result;
-        _filterContrats();
-        isLoading = false;
-      });
-      print('✅ État mis à jour avec ${contrats.length} contrat(s)');
-    } catch (e, stackTrace) {
-      print('❌ Erreur dans _loadContrats: $e');
-      print('ðŸ“ StackTrace: $stackTrace');
-
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-    }
-  }
-
-  void _filterContrats() {
-    setState(() {
-      filteredContrats = contrats.where((contrat) {
-        // Filtre par statut
-        bool matchesStatus = true;
-        if (_filterStatus != 'tous') {
-          matchesStatus = contrat.etat?.toLowerCase() == _filterStatus;
-        }
-
-        // Filtre par recherche
-        bool matchesSearch = true;
-        if (_searchQuery.isNotEmpty) {
-          matchesSearch =
-              (contrat.numepoli?.toLowerCase().contains(_searchQuery) ??
-                      false) ||
-                  (contrat.codeprod.toLowerCase().contains(_searchQuery));
-        }
-
-        return matchesStatus && matchesSearch;
-      }).toList();
-    });
-  }
-
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Filtrer par statut'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildFilterOption('Tous', 'tous'),
-            _buildFilterOption('Actif', 'actif'),
-            _buildFilterOption('Inactif', 'inactif'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterOption(String label, String value) {
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _filterStatus,
-      onChanged: (newValue) {
-        setState(() {
-          _filterStatus = newValue!;
-          _filterContrats();
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  String _formatDate(dynamic dateValue) {
-    if (dateValue == null) return 'N/A';
-    try {
-      DateTime date;
-      if (dateValue is DateTime) {
-        date = dateValue;
-      } else if (dateValue is String) {
-        date = DateTime.parse(dateValue);
-      } else {
-        return 'N/A';
-      }
-      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-    } catch (e) {
-      return 'N/A';
-    }
-  }
-
-  String _getProductName(String? codeprod) {
-    if (codeprod == null) return 'Produit CORIS';
-
-    switch (codeprod) {
-      case '242':
-        return 'ÉPARGNE BONUS';
-      case '202':
-        return 'CORIS SÉRÉNITÉ';
-      case '200':
-        return 'CORIS FAMILIS';
-      case '240':
-        return 'CORIS RETRAITE';
-      case '225':
-        return 'CORIS SOLIDARITÉ';
-      case '246':
-        return 'CORIS ÉTUDE';
-      case '205':
-        return 'CORIS FLEX EMPRUNTEUR';
-      default:
-        return 'Produit CORIS $codeprod';
-    }
-  }
-
-  Color _getProductColor(String? codeprod) {
-    if (codeprod == null) return const Color(0xFF002B6B);
-
-    switch (codeprod) {
-      case '225':
-        return const Color(0xFF002B6B); // Bleu CORIS
-      case '205':
-        return const Color(0xFFE30613); // Rouge
-      case '242':
-        return const Color(0xFF8B5CF6); // Violet
-      case '240':
-        return const Color(0xFF10B981); // Vert
-      case '202':
-        return const Color(0xFFF59E0B); // Orange
-      case '246':
-        return const Color(0xFF6366F1); // Indigo
-      case '200':
-        return const Color(0xFFEC4899); // Rose
-      default:
-        return const Color(0xFF002B6B);
-    }
-  }
-
-  String _formatClientName(Contrat contrat) {
-    return contrat.clientName;
-  }
-
-  String _getStatutDisplay(Contrat contrat) {
-    if (contrat.etat == null) {
-      return 'Inconnu';
-    }
-    final statut = contrat.etat!.toLowerCase().trim();
-
-    // Vérifier l'égalité exacte d'abord pour éviter les faux positifs
-    if (statut == 'actif' || statut == 'active') {
-      return 'ACTIF';
-    } else if (statut == 'inactif' || statut == 'inactive') {
-      return 'INACTIF';
-    } else if (statut == 'suspendu') {
-      return 'SUSPENDU';
-    } else if (statut.contains('résili') || statut.contains('resili')) {
-      return 'RÉSILIÉ';
-    } else if (statut.contains('échu') || statut.contains('echu')) {
-      return 'ÉCHU';
-    }
-
-    return statut.toUpperCase();
-  }
-
-  Color _getStatutColor(Contrat contrat) {
-    final statut = _getStatutDisplay(contrat);
-
-    switch (statut) {
-      case 'ACTIF':
-        return Colors.green;
-      case 'INACTIF':
-        return Colors.grey;
-      case 'SUSPENDU':
-        return Colors.orange;
-      case 'RÉSILIÉ':
-      case 'ÉCHU':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatNumber(double? number) {
-    if (number == null) return 'N/A';
-    return number.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]} ',
-        );
-  }
-
-  int _resolveSubscriptionId(Contrat contrat) {
-    return contrat.subscriptionId ?? contrat.id;
-  }
-
-  // Contrat souscrit dans l'application mobile.
-  // On combine plusieurs critères pour éviter les faux positifs sur des contrats legacy.
-  bool _isAppSubscriptionContract(Contrat contrat) {
-    final source = (contrat.source ?? '').toLowerCase().trim();
-    final hasSubscriptionId = contrat.subscriptionId != null;
-    final hasLegacyTechnicalCode = (contrat.codeinte ?? '').trim().isNotEmpty;
-
-    return source == 'subscription' &&
-        hasSubscriptionId &&
-        !hasLegacyTechnicalCode;
-  }
-
-  Future<void> _openContractDetails(Contrat contrat) async {
-    if (_isAppSubscriptionContract(contrat)) {
-      await Navigator.pushNamed(
-        context,
-        '/contrat_details_app',
-        arguments: contrat.toJson(),
-      );
-      return;
-    }
-
-    await Navigator.pushNamed(
-      context,
-      '/contrat_details',
-      arguments: contrat.toJson(),
-    );
-  }
-
-  Future<void> _payPrime(Contrat contrat) async {
-    await ContractPaymentFlow.showSearchAndAmountDialog(
-      context,
-      initialPolicyNumber: contrat.numepoli,
-      knownSubscriptionId: _resolveSubscriptionId(contrat),
-      initialAmount: contrat.prime,
-      onPaymentSuccess: () {
-        _loadContrats();
-      },
-    );
-  }
-
-  bool _isAppPendingValidation(Contrat contrat) {
-    // Le bandeau "En attente de validation" doit apparaître uniquement
-    // pour les contrats réellement souscrits via l'application.
-    return _isAppSubscriptionContract(contrat);
-  }
-
-  Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
-    if (paiementsEnRetard == 0 && paiementsProches == 0) {
-      return const SizedBox.shrink();
-    }
-
-    final isUrgent = paiementsEnRetard > 0;
-    final color = isUrgent ? const Color(0xFFF44336) : const Color(0xFFFF9800);
-    final icon = isUrgent ? Icons.error : Icons.schedule;
-
-    String message;
-    if (paiementsEnRetard > 0 && paiementsProches > 0) {
-      message =
-          '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
-    } else if (paiementsEnRetard > 0) {
-      message = '$paiementsEnRetard paiement(s) en retard';
-    } else {
-      message = '$paiementsProches paiement(s) à effectuer dans les 5 jours';
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        border: Border(
-          left: BorderSide(color: color, width: 4),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(width: context.r(12)),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isUrgent ? 'Paiement(s) en retard !' : 'Paiement(s) à venir',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: context.sp(14),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: context.r(2)),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: color.withOpacity(0.8),
-                    fontSize: context.sp(12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.arrow_forward_ios, color: color, size: 16),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final actifsCount =
-        contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
-    final paiementsEnRetard = contrats.where((c) => c.isPaymentLate).length;
-    final paiementsProches = contrats.where((c) => c.isPaymentDueSoon).length;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new),
-          color: Colors.white,
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/client_home',
-            (route) => false,
-          ),
-        ),
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Rechercher...',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.white.withOpacity(0.5)),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white, width: 2),
-                  ),
-                  isDense: true,
-                ),
-              )
-            : Text(
-                'Mes Contrats',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-        backgroundColor: const Color(0xFF002B6B),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            color: Colors.white,
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            color: Colors.white,
-            onPressed: _showFilterDialog,
-          ),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            color: Colors.white,
-            onPressed: _loadContrats,
-            tooltip: 'Actualiser',
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
-              ),
-            )
-          : errorMessage != null
-              ? _buildErrorState()
-              : Column(
-                  children: [
-                    // Alerte paiements urgents (nouveau)
-                    if (paiementsEnRetard > 0 || paiementsProches > 0)
-                      _buildPaymentAlert(paiementsEnRetard, paiementsProches),
-
-                    // Statistiques
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Total',
-                              '${contrats.length}',
-                              Icons.description,
-                              const Color(0xFF002B6B),
-                            ),
-                          ),
-                          SizedBox(width: context.r(12)),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Actifs',
-                              '$actifsCount',
-                              Icons.check_circle,
-                              const Color(0xFF10B981),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Liste des contrats
-                    Expanded(
-                      child: contrats.isEmpty
-                          ? _buildEmptyState()
-                          : _buildContratsList(),
-                    ),
-                  ],
-                ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              SizedBox(width: context.r(8)),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: context.sp(14),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: context.r(8)),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: context.sp(24),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red.shade400,
-              ),
-            ),
-            SizedBox(height: context.r(24)),
-            Text(
-              'Erreur de chargement',
-              style: TextStyle(
-                fontSize: context.sp(22),
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            SizedBox(height: context.r(12)),
-            Text(
-              errorMessage ?? 'Une erreur est survenue',
-              style: TextStyle(
-                fontSize: context.sp(15),
-                color: Color(0xFF64748B),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: context.r(32)),
-            ElevatedButton.icon(
-              onPressed: _loadContrats,
-              icon: Icon(Icons.refresh),
-              label: Text(
-                'Réessayer',
-                style: TextStyle(
-                  fontSize: context.sp(16),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF002B6B),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0E7FF),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.shield_outlined,
-              size: 80,
-              color: Color(0xFF002B6B),
-            ),
-          ),
-          SizedBox(height: context.r(32)),
-          Text(
-            "Aucun contrat",
-            style: TextStyle(
-              fontSize: context.sp(24),
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          SizedBox(height: context.r(12)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 48.0),
-            child: Text(
-              "Vos contrats d'assurance\napparaîtront ici",
-              style: TextStyle(
-                fontSize: context.sp(16),
-                color: Color(0xFF64748B),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContratsList() {
-    final displayContrats = filteredContrats.isEmpty &&
-            _searchQuery.isEmpty &&
-            _filterStatus == 'tous'
-        ? contrats
-        : filteredContrats;
-
-    if (displayContrats.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            SizedBox(height: context.r(16)),
-            Text(
-              'Aucun contrat trouvé',
-              style: TextStyle(
-                fontSize: context.sp(18),
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            SizedBox(height: context.r(8)),
-            Text(
-              'Essayez de modifier vos filtres',
-              style: TextStyle(
-                fontSize: context.sp(14),
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadContrats,
-      color: const Color(0xFF002B6B),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: displayContrats.length,
-        itemBuilder: (context, index) {
-          final contrat = displayContrats[index];
-          return _buildContratCard(contrat);
-        },
-      ),
-    );
-  }
-
-  Widget _buildContratCard(Contrat contrat) {
-    final productColor = _getProductColor(contrat.codeprod);
-    final productName = _getProductName(contrat.codeprod);
-    final clientName = _formatClientName(contrat);
-    // Afficher le numéro de police complet avec codeinte
-    final numpolice =
-        '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
-    final dateeffet = _formatDate(contrat.dateeffet);
-    final dateeche = _formatDate(contrat.dateeche);
-    final prime = _formatNumber(contrat.prime);
-    final capital = _formatNumber(contrat.capital);
-    final statut = _getStatutDisplay(contrat);
-    final statutColor = _getStatutColor(contrat);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: productColor.withOpacity(0.3),
-          width: 1.5,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          print('ðŸ”— [CLIENT CONTRATS] Navigation vers détails');
-          print('ðŸ“„ [CLIENT CONTRATS] Numéro de police: ${contrat.numepoli}');
-          print('ðŸ“¦ [CLIENT CONTRATS] Données contrat: ${contrat.toJson()}');
-          _openContractDetails(contrat);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: Icône + Numéro de police + Badge statut
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          productColor,
-                          productColor.withOpacity(0.8),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: productColor.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.description_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  SizedBox(width: context.r(12)),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          numpolice,
-                          style: TextStyle(
-                            fontSize: context.sp(15),
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF002B6B),
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        SizedBox(height: context.r(6)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: productColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            productName,
-                            style: TextStyle(
-                              color: productColor,
-                              fontSize: context.sp(11),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Badge statut à droite
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statutColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: statutColor.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      statut,
-                      style: TextStyle(
-                        color: statutColor,
-                        fontSize: context.sp(11),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: Color(0xFF002B6B),
-                    size: 18,
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              // Nom du produit
-              Row(
-                children: [
-                  Icon(
-                    Icons.shield_outlined,
-                    size: 18,
-                    color: productColor,
-                  ),
-                  SizedBox(width: context.r(8)),
-                  Expanded(
-                    child: Text(
-                      productName,
-                      style: TextStyle(
-                        fontSize: context.sp(15),
-                        fontWeight: FontWeight.bold,
-                        color: productColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.r(12)),
-              // Assuré
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: 18,
-                    color: Color(0xFF64748B),
-                  ),
-                  SizedBox(width: context.r(8)),
-                  Expanded(
-                    child: Text(
-                      clientName,
-                      style: TextStyle(
-                        fontSize: context.sp(14),
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.r(12)),
-              // Informations financières
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: productColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Prime',
-                            style: TextStyle(
-                              fontSize: context.sp(11),
-                              color: productColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: context.r(4)),
-                          Text(
-                            '$prime FCFA',
-                            style: TextStyle(
-                              fontSize: context.sp(14),
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: context.r(12)),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: productColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Capital',
-                            style: TextStyle(
-                              fontSize: context.sp(11),
-                              color: productColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: context.r(4)),
-                          Text(
-                            '$capital FCFA',
-                            style: TextStyle(
-                              fontSize: context.sp(14),
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.r(12)),
-              // Dates
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: Color(0xFF64748B),
-                  ),
-                  SizedBox(width: context.r(8)),
-                  Text(
-                    'Effet: $dateeffet',
-                    style: TextStyle(
-                      fontSize: context.sp(13),
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  if (dateeche != 'N/A') ...[
-                    SizedBox(width: context.r(16)),
-                    Icon(
-                      Icons.event_busy,
-                      size: 16,
-                      color: Color(0xFF64748B),
-                    ),
-                    SizedBox(width: context.r(8)),
-                    Text(
-                      'Échéance: $dateeche',
-                      style: TextStyle(
-                        fontSize: context.sp(13),
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-
-              if (_isAppPendingValidation(contrat)) ...[
-                SizedBox(height: context.r(12)),
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFFED7AA),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.hourglass_top_rounded,
-                        color: Color(0xFFB45309),
-                        size: 18,
-                      ),
-                      SizedBox(width: context.r(8)),
-                      Expanded(
-                        child: Text(
-                          'En attente de validation de CORIS Assurance Vie CI',
-                          style: TextStyle(
-                            fontSize: context.sp(12),
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFB45309),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              SizedBox(height: context.r(12)),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _openContractDetails(contrat),
-                      icon: Icon(Icons.info_outline, size: 18),
-                      label: Text('Détails'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF002B6B),
-                        side: const BorderSide(color: Color(0xFF002B6B)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: context.r(10)),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _payPrime(contrat),
-                      icon: Icon(Icons.payment_outlined, size: 18),
-                      label: Text('Payer ma cotisation'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF002B6B),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Informations de paiement (nouveau)
-              if (contrat.nextPaymentDate != null) ...[
-                SizedBox(height: context.r(12)),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Color(contrat.paymentStatusColor).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Color(contrat.paymentStatusColor).withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            contrat.isPaymentLate
-                                ? Icons.warning_amber_rounded
-                                : contrat.isPaymentDueSoon
-                                    ? Icons.schedule
-                                    : Icons.check_circle,
-                            size: 18,
-                            color: Color(contrat.paymentStatusColor),
-                          ),
-                          SizedBox(width: context.r(8)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  contrat.isPaymentLate
-                                      ? 'Paiement en retard !'
-                                      : contrat.isPaymentDueSoon
-                                          ? 'Échéance proche (${contrat.joursRestants} jours)'
-                                          : 'Prochain paiement',
-                                  style: TextStyle(
-                                    fontSize: context.sp(12),
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(contrat.paymentStatusColor),
-                                  ),
-                                ),
-                                SizedBox(height: context.r(2)),
-                                Text(
-                                  _formatDate(contrat.nextPaymentDate),
-                                  style: TextStyle(
-                                    fontSize: context.sp(13),
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${_formatNumber(contrat.prime)} FCFA',
-                            style: TextStyle(
-                              fontSize: context.sp(14),
-                              fontWeight: FontWeight.bold,
-                              color: Color(contrat.paymentStatusColor),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (contrat.periodicite != null) ...[
-                        SizedBox(height: context.r(8)),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.repeat,
-                              size: 14,
-                              color: Color(0xFF64748B),
-                            ),
-                            SizedBox(width: context.r(4)),
-                            Text(
-                              'Périodicité: ${contrat.periodicite}',
-                              style: TextStyle(
-                                fontSize: context.sp(11),
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/responsive.dart';
+import 'package:mycorislife/services/contrat_service.dart';
+import 'package:mycorislife/models/contrat.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
+
+class MesContratsClientPage extends StatefulWidget {
+
+  const MesContratsClientPage({super.key});
+
+  @override
+  State<MesContratsClientPage> createState() => _MesContratsClientPageState();
+}
+
+class _MesContratsClientPageState extends State<MesContratsClientPage> {
+
+  final ContratService _service = ContratService();
+  List<Contrat> contrats = [];
+  List<Contrat> filteredContrats = [];
+  bool isLoading = true;
+  String? errorMessage;
+  String _filterStatus = 'tous';
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+
+  void initState() {
+
+    super.initState();
+    _loadContrats();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+
+  void dispose() {
+
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+
+    setState(() {
+
+      _searchQuery = _searchController.text.toLowerCase();
+      _filterContrats();
+    });
+  }
+
+  Future<void> _loadContrats() async {
+
+    print('🔄 _loadContrats appelé');
+    setState(() {
+
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+
+      print('ðŸ“ž Appel du service getContrats...');
+      final result = await _service.getContrats();
+      print('✅ Service retourné ${result.length} contrat(s)');
+
+      if (!mounted) return;
+
+      setState(() {
+
+        contrats = result;
+        _filterContrats();
+        isLoading = false;
+      });
+      print('✅ État mis à jour avec ${contrats.length} contrat(s)');
+    } catch (e, stackTrace) {
+
+      print('❌ Erreur dans _loadContrats: $e');
+      print('ðŸ“ StackTrace: $stackTrace');
+
+      if (!mounted) return;
+
+      setState(() {
+
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+
+  }
+
+  void _filterContrats() {
+
+    setState(() {
+
+      filteredContrats = contrats.where((contrat) {
+
+        // Filtre par statut
+        bool matchesStatus = true;
+        if (_filterStatus != 'tous') {
+
+          matchesStatus = contrat.etat?.toLowerCase() == _filterStatus;
+        }
+
+        // Filtre par recherche
+        bool matchesSearch = true;
+        if (_searchQuery.isNotEmpty) {
+
+          matchesSearch =
+              (contrat.numepoli?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
+                  (contrat.codeprod.toLowerCase().contains(_searchQuery));
+        }
+
+        return matchesStatus && matchesSearch;
+      }).toList();
+    });
+  }
+
+  void _showFilterDialog() {
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Filtrer par statut'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildFilterOption('Tous', 'tous'),
+            _buildFilterOption('Actif', 'actif'),
+            _buildFilterOption('Inactif', 'inactif'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOption(String label, String value) {
+
+    return RadioListTile<String>(
+      title: Text(label),
+      value: value,
+      groupValue: _filterStatus,
+      onChanged: (newValue) {
+
+        setState(() {
+
+          _filterStatus = newValue!;
+          _filterContrats();
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _formatDate(dynamic dateValue) {
+
+    if (dateValue == null) return 'N/A';
+    try {
+
+      DateTime date;
+      if (dateValue is DateTime) {
+
+        date = dateValue;
+      } else if (dateValue is String) {
+
+        date = DateTime.parse(dateValue);
+      } else {
+
+        return 'N/A';
+      }
+
+      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+    } catch (e) {
+
+      return 'N/A';
+    }
+
+  }
+
+  String _getProductName(String? codeprod) {
+
+    if (codeprod == null) return 'Produit CORIS';
+
+    switch (codeprod) {
+
+      case '242':
+        return 'ÉPARGNE BONUS';
+      case '202':
+        return 'CORIS SÉRÉNITÉ';
+      case '200':
+        return 'CORIS FAMILIS';
+      case '240':
+        return 'CORIS RETRAITE';
+      case '225':
+        return 'CORIS SOLIDARITÉ';
+      case '246':
+        return 'CORIS ÉTUDE';
+      case '205':
+        return 'CORIS FLEX EMPRUNTEUR';
+      default:
+        return 'Produit CORIS $codeprod';
+    }
+
+  }
+
+  Color _getProductColor(String? codeprod) {
+
+    if (codeprod == null) return const Color(0xFF002B6B);
+
+    switch (codeprod) {
+
+      case '225':
+        return const Color(0xFF002B6B); // Bleu CORIS
+      case '205':
+        return const Color(0xFFE30613); // Rouge
+      case '242':
+        return const Color(0xFF8B5CF6); // Violet
+      case '240':
+        return const Color(0xFF10B981); // Vert
+      case '202':
+        return const Color(0xFFF59E0B); // Orange
+      case '246':
+        return const Color(0xFF6366F1); // Indigo
+      case '200':
+        return const Color(0xFFEC4899); // Rose
+      default:
+        return const Color(0xFF002B6B);
+    }
+
+  }
+
+  String _formatClientName(Contrat contrat) {
+
+    return contrat.clientName;
+  }
+
+  String _getStatutDisplay(Contrat contrat) {
+
+    if (contrat.etat == null) {
+
+      return 'Inconnu';
+    }
+
+    final statut = contrat.etat!.toLowerCase().trim();
+
+    // Vérifier l'égalité exacte d'abord pour éviter les faux positifs
+    if (statut == 'actif' || statut == 'active') {
+
+      return 'ACTIF';
+    } else if (statut == 'inactif' || statut == 'inactive') {
+
+      return 'INACTIF';
+    } else if (statut == 'suspendu') {
+
+      return 'SUSPENDU';
+    } else if (statut.contains('résili') || statut.contains('resili')) {
+
+      return 'RÉSILIÉ';
+    } else if (statut.contains('échu') || statut.contains('echu')) {
+
+      return 'ÉCHU';
+    }
+
+    return statut.toUpperCase();
+  }
+
+  Color _getStatutColor(Contrat contrat) {
+
+    final statut = _getStatutDisplay(contrat);
+
+    switch (statut) {
+
+      case 'ACTIF':
+        return Colors.green;
+      case 'INACTIF':
+        return Colors.grey;
+      case 'SUSPENDU':
+        return Colors.orange;
+      case 'RÉSILIÉ':
+      case 'ÉCHU':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+
+  }
+
+  String _formatNumber(double? number) {
+
+    if (number == null) return 'N/A';
+    return number.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]} ',
+        );
+  }
+
+  int _resolveSubscriptionId(Contrat contrat) {
+
+    return contrat.subscriptionId ?? contrat.id;
+  }
+
+  // Contrat souscrit dans l'application mobile.
+  // On combine plusieurs critères pour éviter les faux positifs sur des contrats legacy.
+  bool _isAppSubscriptionContract(Contrat contrat) {
+
+    final source = (contrat.source ?? '').toLowerCase().trim();
+    final hasSubscriptionId = contrat.subscriptionId != null;
+    final hasLegacyTechnicalCode = (contrat.codeinte ?? '').trim().isNotEmpty;
+
+    return source == 'subscription' &&
+        hasSubscriptionId &&
+        !hasLegacyTechnicalCode;
+  }
+
+  Future<void> _openContractDetails(Contrat contrat) async {
+
+    if (_isAppSubscriptionContract(contrat)) {
+
+      await Navigator.pushNamed(
+        context,
+        '/contrat_details_app',
+        arguments: contrat.toJson(),
+      );
+      return;
+    }
+
+    await Navigator.pushNamed(
+      context,
+      '/contrat_details',
+      arguments: contrat.toJson(),
+    );
+  }
+
+  Future<void> _payPrime(Contrat contrat) async {
+
+    await ContractPaymentFlow.showSearchAndAmountDialog(
+      context,
+      initialPolicyNumber: contrat.numepoli,
+      knownSubscriptionId: _resolveSubscriptionId(contrat),
+      initialAmount: contrat.prime,
+      onPaymentSuccess: () {
+
+        _loadContrats();
+      },
+    );
+  }
+
+  bool _isAppPendingValidation(Contrat contrat) {
+
+    // Le bandeau "En attente de validation" doit apparaître uniquement
+    // pour les contrats réellement souscrits via l'application.
+    return _isAppSubscriptionContract(contrat);
+  }
+
+  Widget _buildPaymentAlert(int paiementsEnRetard, int paiementsProches) {
+
+    if (paiementsEnRetard == 0 && paiementsProches == 0) {
+
+      return const SizedBox.shrink();
+    }
+
+    final isUrgent = paiementsEnRetard > 0;
+    final color = isUrgent ? const Color(0xFFF44336) : const Color(0xFFFF9800);
+    final icon = isUrgent ? Icons.error : Icons.schedule;
+
+    String message;
+    if (paiementsEnRetard > 0 && paiementsProches > 0) {
+
+      message =
+          '$paiementsEnRetard paiement(s) en retard et $paiementsProches échéance(s) proche(s)';
+    } else if (paiementsEnRetard > 0) {
+
+      message = '$paiementsEnRetard paiement(s) en retard';
+    } else {
+
+      message = '$paiementsProches paiement(s) à effectuer dans les 5 jours';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border(
+          left: BorderSide(color: color, width: 4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          SizedBox(width: context.r(12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isUrgent ? 'Paiement(s) en retard !' : 'Paiement(s) à venir',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: context.sp(14),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: context.r(2)),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: color.withOpacity(0.8),
+                    fontSize: context.sp(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios, color: color, size: 16),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    final actifsCount =
+        contrats.where((c) => c.etat?.toLowerCase() == 'actif').length;
+    final paiementsEnRetard = contrats.where((c) => c.isPaymentLate).length;
+    final paiementsProches = contrats.where((c) => c.isPaymentDueSoon).length;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new),
+          color: Colors.white,
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/client_home',
+            (route) => false,
+          ),
+        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white, width: 2),
+                  ),
+                  isDense: true,
+                ),
+              )
+            : Text(
+                'Mes Contrats',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+        backgroundColor: const Color(0xFF002B6B),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            color: Colors.white,
+            onPressed: () {
+
+              setState(() {
+
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+
+                  _searchController.clear();
+                }
+
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            color: Colors.white,
+            onPressed: _showFilterDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh),
+            color: Colors.white,
+            onPressed: _loadContrats,
+            tooltip: 'Actualiser',
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF002B6B)),
+              ),
+            )
+          : errorMessage != null
+              ? _buildErrorState()
+              : Column(
+                  children: [
+                    // Alerte paiements urgents (nouveau)
+                    if (paiementsEnRetard > 0 || paiementsProches > 0)
+                      _buildPaymentAlert(paiementsEnRetard, paiementsProches),
+
+                    // Statistiques
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Total',
+                              '${contrats.length}',
+                              Icons.description,
+                              const Color(0xFF002B6B),
+                            ),
+                          ),
+                          SizedBox(width: context.r(12)),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Actifs',
+                              '$actifsCount',
+                              Icons.check_circle,
+                              const Color(0xFF10B981),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Liste des contrats
+                    Expanded(
+                      child: contrats.isEmpty
+                          ? _buildEmptyState()
+                          : _buildContratsList(),
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              SizedBox(width: context.r(8)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: context.sp(14),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.r(8)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: context.sp(24),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red.shade400,
+              ),
+            ),
+            SizedBox(height: context.r(24)),
+            Text(
+              'Erreur de chargement',
+              style: TextStyle(
+                fontSize: context.sp(22),
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            SizedBox(height: context.r(12)),
+            Text(
+              errorMessage ?? 'Une erreur est survenue',
+              style: TextStyle(
+                fontSize: context.sp(15),
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: context.r(32)),
+            ElevatedButton.icon(
+              onPressed: _loadContrats,
+              icon: Icon(Icons.refresh),
+              label: Text(
+                'Réessayer',
+                style: TextStyle(
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF002B6B),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E7FF),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.shield_outlined,
+              size: 80,
+              color: Color(0xFF002B6B),
+            ),
+          ),
+          SizedBox(height: context.r(32)),
+          Text(
+            "Aucun contrat",
+            style: TextStyle(
+              fontSize: context.sp(24),
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          SizedBox(height: context.r(12)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 48.0),
+            child: Text(
+              "Vos contrats d'assurance\napparaîtront ici",
+              style: TextStyle(
+                fontSize: context.sp(16),
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContratsList() {
+
+    final displayContrats = filteredContrats.isEmpty &&
+            _searchQuery.isEmpty &&
+            _filterStatus == 'tous'
+        ? contrats
+        : filteredContrats;
+
+    if (displayContrats.isEmpty) {
+
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            SizedBox(height: context.r(16)),
+            Text(
+              'Aucun contrat trouvé',
+              style: TextStyle(
+                fontSize: context.sp(18),
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            SizedBox(height: context.r(8)),
+            Text(
+              'Essayez de modifier vos filtres',
+              style: TextStyle(
+                fontSize: context.sp(14),
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadContrats,
+      color: const Color(0xFF002B6B),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: displayContrats.length,
+        itemBuilder: (context, index) {
+
+          final contrat = displayContrats[index];
+          return _buildContratCard(contrat);
+        },
+      ),
+    );
+  }
+
+  Widget _buildContratCard(Contrat contrat) {
+
+    final productColor = _getProductColor(contrat.codeprod);
+    final productName = _getProductName(contrat.codeprod);
+    final clientName = _formatClientName(contrat);
+    // Afficher le numéro de police complet avec codeinte
+    final numpolice =
+        '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
+    final dateeffet = _formatDate(contrat.dateeffet);
+    final dateeche = _formatDate(contrat.dateeche);
+    final prime = _formatNumber(contrat.prime);
+    final capital = _formatNumber(contrat.capital);
+    final statut = _getStatutDisplay(contrat);
+    final statutColor = _getStatutColor(contrat);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: productColor.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+
+          print('ðŸ”— [CLIENT CONTRATS] Navigation vers détails');
+          print('ðŸ“„ [CLIENT CONTRATS] Numéro de police: ${contrat.numepoli}');
+          print('ðŸ“¦ [CLIENT CONTRATS] Données contrat: ${contrat.toJson()}');
+          _openContractDetails(contrat);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: Icône + Numéro de police + Badge statut
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          productColor,
+                          productColor.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: productColor.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.description_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  SizedBox(width: context.r(12)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          numpolice,
+                          style: TextStyle(
+                            fontSize: context.sp(15),
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF002B6B),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SizedBox(height: context.r(6)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: productColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            productName,
+                            style: TextStyle(
+                              color: productColor,
+                              fontSize: context.sp(11),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Badge statut à droite
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statutColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: statutColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      statut,
+                      style: TextStyle(
+                        color: statutColor,
+                        fontSize: context.sp(11),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Color(0xFF002B6B),
+                    size: 18,
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              // Nom du produit
+              Row(
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 18,
+                    color: productColor,
+                  ),
+                  SizedBox(width: context.r(8)),
+                  Expanded(
+                    child: Text(
+                      productName,
+                      style: TextStyle(
+                        fontSize: context.sp(15),
+                        fontWeight: FontWeight.bold,
+                        color: productColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.r(12)),
+              // Assuré
+              Row(
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 18,
+                    color: Color(0xFF64748B),
+                  ),
+                  SizedBox(width: context.r(8)),
+                  Expanded(
+                    child: Text(
+                      clientName,
+                      style: TextStyle(
+                        fontSize: context.sp(14),
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.r(12)),
+              // Informations financières
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: productColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Prime',
+                            style: TextStyle(
+                              fontSize: context.sp(11),
+                              color: productColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: context.r(4)),
+                          Text(
+                            '$prime FCFA',
+                            style: TextStyle(
+                              fontSize: context.sp(14),
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: context.r(12)),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: productColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Capital',
+                            style: TextStyle(
+                              fontSize: context.sp(11),
+                              color: productColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: context.r(4)),
+                          Text(
+                            '$capital FCFA',
+                            style: TextStyle(
+                              fontSize: context.sp(14),
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.r(12)),
+              // Dates
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: Color(0xFF64748B),
+                  ),
+                  SizedBox(width: context.r(8)),
+                  Text(
+                    'Effet: $dateeffet',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  if (dateeche != 'N/A') ...[
+                    SizedBox(width: context.r(16)),
+                    Icon(
+                      Icons.event_busy,
+                      size: 16,
+                      color: Color(0xFF64748B),
+                    ),
+                    SizedBox(width: context.r(8)),
+                    Text(
+                      'Échéance: $dateeche',
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+
+              if (_isAppPendingValidation(contrat)) ...[
+                SizedBox(height: context.r(12)),
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFED7AA),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.hourglass_top_rounded,
+                        color: Color(0xFFB45309),
+                        size: 18,
+                      ),
+                      SizedBox(width: context.r(8)),
+                      Expanded(
+                        child: Text(
+                          'En attente de validation de CORIS Assurance Vie CI',
+                          style: TextStyle(
+                            fontSize: context.sp(12),
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              SizedBox(height: context.r(12)),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openContractDetails(contrat),
+                      icon: Icon(Icons.info_outline, size: 18),
+                      label: Text('Détails'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF002B6B),
+                        side: const BorderSide(color: Color(0xFF002B6B)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: context.r(10)),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _payPrime(contrat),
+                      icon: Icon(Icons.payment_outlined, size: 18),
+                      label: Text('Payer ma cotisation'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF002B6B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Informations de paiement (nouveau)
+              if (contrat.nextPaymentDate != null) ...[
+                SizedBox(height: context.r(12)),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(contrat.paymentStatusColor).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Color(contrat.paymentStatusColor).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            contrat.isPaymentLate
+                                ? Icons.warning_amber_rounded
+                                : contrat.isPaymentDueSoon
+                                    ? Icons.schedule
+                                    : Icons.check_circle,
+                            size: 18,
+                            color: Color(contrat.paymentStatusColor),
+                          ),
+                          SizedBox(width: context.r(8)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  contrat.isPaymentLate
+                                      ? 'Paiement en retard !'
+                                      : contrat.isPaymentDueSoon
+                                          ? 'Échéance proche (${contrat.joursRestants} jours)'
+                                          : 'Prochain paiement',
+                                  style: TextStyle(
+                                    fontSize: context.sp(12),
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(contrat.paymentStatusColor),
+                                  ),
+                                ),
+                                SizedBox(height: context.r(2)),
+                                Text(
+                                  _formatDate(contrat.nextPaymentDate),
+                                  style: TextStyle(
+                                    fontSize: context.sp(13),
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '${_formatNumber(contrat.prime)} FCFA',
+                            style: TextStyle(
+                              fontSize: context.sp(14),
+                              fontWeight: FontWeight.bold,
+                              color: Color(contrat.paymentStatusColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (contrat.periodicite != null) ...[
+                        SizedBox(height: context.r(8)),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.repeat,
+                              size: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                            SizedBox(width: context.r(4)),
+                            Text(
+                              'Périodicité: ${contrat.periodicite}',
+                              style: TextStyle(
+                                fontSize: context.sp(11),
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+

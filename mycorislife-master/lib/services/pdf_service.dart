@@ -56,10 +56,8 @@ class PdfService {
     final fileName =
         'contrat_${subscriptionId}_${DateTime.now().millisecondsSinceEpoch}.pdf';
     final target = File('${downloads.path}/$fileName');
-
     final request = http.Request('GET', Uri.parse(url));
     request.headers['Authorization'] = 'Bearer $token';
-
     final client = http.Client();
     try {
       final streamed = await client.send(request);
@@ -71,11 +69,9 @@ class PdfService {
       final total = streamed.contentLength ?? 0;
       var received = 0;
       var lastProgress = -1;
-
       await for (final chunk in streamed.stream) {
         received += chunk.length;
         sink.add(chunk);
-
         if (total > 0 && onProgress != null) {
           final progress = ((received / total) * 100).floor().clamp(0, 100);
           if (progress != lastProgress) {
@@ -106,7 +102,6 @@ class PdfService {
 
     final fileName = tempFile.uri.pathSegments.last;
     final target = File('${downloads!.path}/$fileName');
-    
     // Copier le fichier
     await tempFile.copy(target.path);
     return target;

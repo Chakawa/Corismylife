@@ -1,7 +1,6 @@
 /* lib/features/souscription/presentation/widgets/payment_bottom_sheet.dart
 class PaymentBottomSheet extends StatelessWidget {
   final Function(String) onPayNow;
-
   const PaymentBottomSheet({required this.onPayNow});
 
   @override
