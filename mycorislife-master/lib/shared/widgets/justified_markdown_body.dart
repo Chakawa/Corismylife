@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-// Types de ligne markdown
 enum _LineType { heading, separator, listItem, paragraph, empty }
 
 _LineType _classifyLine(String line) {
@@ -20,9 +19,6 @@ class _Block {
   _Block(this.content, this.type);
 }
 
-/// Widget qui affiche du contenu Markdown avec les paragraphes justifiés.
-/// Sépare les titres, séparateurs, listes et paragraphes ligne par ligne
-/// pour garantir la séparation visuelle même sans lignes vides dans le markdown.
 class JustifiedMarkdownBody extends StatelessWidget {
   final String data;
   final MarkdownStyleSheet styleSheet;
@@ -54,7 +50,6 @@ class JustifiedMarkdownBody extends StatelessWidget {
         continue;
       }
 
-      // Heading et separator : chaque ligne = son propre bloc
       if (type == _LineType.heading || type == _LineType.separator) {
         flush();
         blocks.add(_Block(line.trim(), type));
@@ -62,7 +57,6 @@ class JustifiedMarkdownBody extends StatelessWidget {
         continue;
       }
 
-      // Changement de type → flush et démarrer un nouveau bloc
       if (currentLines.isNotEmpty && type != currentType) {
         flush();
       }
@@ -81,7 +75,7 @@ class JustifiedMarkdownBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
-      children: blocks.map((block) {
+      children: blocks.map<Widget>((block) {
         switch (block.type) {
           case _LineType.heading:
           case _LineType.separator:
@@ -106,23 +100,22 @@ class JustifiedMarkdownBody extends StatelessWidget {
   }
 }
 
-/// Paragraphe justifié avec parsing inline : **gras**, *italique*, `code`
 class _JustifiedParagraph extends StatelessWidget {
   final String text;
   final TextStyle? baseStyle;
 
   const _JustifiedParagraph({required this.text, this.baseStyle});
 
-  List<InlineSpan> _parseInline(String text, TextStyle style) {
+  List<InlineSpan> _parseInline(String raw, TextStyle style) {
     final spans = <InlineSpan>[];
     final pattern = RegExp(
       r'\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`',
       dotAll: true,
     );
     int lastEnd = 0;
-    for (final match in pattern.allMatches(text)) {
+    for (final match in pattern.allMatches(raw)) {
       if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start), style: style));
+        spans.add(TextSpan(text: raw.substring(lastEnd, match.start), style: style));
       }
       if (match.group(1) != null) {
         spans.add(TextSpan(
@@ -147,11 +140,11 @@ class _JustifiedParagraph extends StatelessWidget {
       }
       lastEnd = match.end;
     }
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd), style: style));
+    if (lastEnd < raw.length) {
+      spans.add(TextSpan(text: raw.substring(lastEnd), style: style));
     }
     if (spans.isEmpty) {
-      spans.add(TextSpan(text: text, style: style));
+      spans.add(TextSpan(text: raw, style: style));
     }
     return spans;
   }
@@ -159,7 +152,6 @@ class _JustifiedParagraph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effective = baseStyle ?? DefaultTextStyle.of(context).style;
-    // Jointure des lignes multiples avec un espace
     final normalized = text
         .split('\n')
         .map((l) => l.trim())
@@ -175,150 +167,3 @@ class _JustifiedParagraph extends StatelessWidget {
     );
   }
 }
-
-class JustifiedMarkdownBody extends StatelessWidget {
-  final String data;
-  final MarkdownStyleSheet styleSheet;
-
-  const JustifiedMarkdownBody({
-    super.key,
-    required this.data,
-    required this.styleSheet,
-  });
-
-  // Découpe le markdown en blocs (séparés par une ou plusieurs lignes vides)
-  List<String> _splitIntoBlocks(String text) {
-    return text
-        .split(RegExp(r'\n[ \t]*\n'))
-        .map((b) => b.trim())
-        .where((b) => b.isNotEmpty)
-        .toList();
-  }
-
-  // Détermine si un bloc est un paragraphe simple (pas un titre, liste, etc.)
-  bool _isParagraph(String block) {
-    final t = block;
-    // Ligne horizontale (---, ***, ___)
-    if (RegExp(r'^[-*_]{3,}$').hasMatch(t.replaceAll(' ', ''))) return false;
-    // Titre (#, ##, ###, etc.)
-    if (RegExp(r'^#{1,6}\s').hasMatch(t)) return false;
-    // Liste non-ordonnée
-    if (RegExp(r'^[-*+]\s').hasMatch(t)) return false;
-    // Liste ordonnée
-    if (RegExp(r'^\d+\.\s').hasMatch(t)) return false;
-    // Bloc de code indenté
-    if (t.startsWith('    ') || t.startsWith('\t')) return false;
-    // Bloc de code clôturé
-    if (t.startsWith('```')) return false;
-    // Citation
-    if (t.startsWith('>')) return false;
-    // Tableau
-    if (t.startsWith('|')) return false;
-    return true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final blocks = _splitIntoBlocks(data);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: blocks.map((block) {
-        if (_isParagraph(block)) {
-          return _JustifiedParagraph(
-            text: block,
-            baseStyle: styleSheet.p,
-          );
-        } else {
-          return MarkdownBody(data: block, styleSheet: styleSheet);
-        }
-      }).toList(),
-    );
-  }
-}
-
-/// Rendu d'un paragraphe avec TextAlign.justify et parsing inline simplifié.
-class _JustifiedParagraph extends StatelessWidget {
-  final String text;
-  final TextStyle? baseStyle;
-
-  const _JustifiedParagraph({required this.text, this.baseStyle});
-
-  /// Parse le markdown inline : ***bold+italic***, **bold**, *italic*, `code`
-  List<InlineSpan> _parseInline(String text, TextStyle style) {
-    final spans = <InlineSpan>[];
-    // Ordre important : tester ***...*** avant **...** avant *...*
-    final pattern = RegExp(
-      r'\*\*\*(.+?)\*\*\*'  // ***bold+italic***
-      r'|\*\*(.+?)\*\*'     // **bold**
-      r'|\*(.+?)\*'         // *italic*
-      r'|`(.+?)`',          // `code`
-      dotAll: true,
-    );
-
-    int lastEnd = 0;
-    for (final match in pattern.allMatches(text)) {
-      // Texte brut avant le match
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(
-          text: text.substring(lastEnd, match.start),
-          style: style,
-        ));
-      }
-
-      if (match.group(1) != null) {
-        spans.add(TextSpan(
-          text: match.group(1),
-          style: style.copyWith(
-            fontWeight: FontWeight.bold,
-            fontStyle: FontStyle.italic,
-          ),
-        ));
-      } else if (match.group(2) != null) {
-        spans.add(TextSpan(
-          text: match.group(2),
-          style: style.copyWith(fontWeight: FontWeight.bold),
-        ));
-      } else if (match.group(3) != null) {
-        spans.add(TextSpan(
-          text: match.group(3),
-          style: style.copyWith(fontStyle: FontStyle.italic),
-        ));
-      } else if (match.group(4) != null) {
-        spans.add(TextSpan(
-          text: match.group(4),
-          style: style.copyWith(fontFamily: 'monospace'),
-        ));
-      }
-      lastEnd = match.end;
-    }
-
-    // Texte restant après le dernier match
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd), style: style));
-    }
-
-    // Fallback : texte brut sans formatage
-    if (spans.isEmpty) {
-      spans.add(TextSpan(text: text, style: style));
-    }
-    return spans;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final effective = baseStyle ?? DefaultTextStyle.of(context).style;
-    // Normaliser les retours à la ligne simples (soft breaks) → espace
-    final normalized = text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' ');
-    final spans = _parseInline(normalized, effective);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: RichText(
-        text: TextSpan(style: effective, children: spans),
-        textAlign: TextAlign.justify,
-        textScaler: MediaQuery.textScalerOf(context),
-      ),
-    );
-  }
-}
-
