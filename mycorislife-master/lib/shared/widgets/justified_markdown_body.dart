@@ -3,8 +3,9 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 
 /// Widget qui affiche du contenu Markdown avec les paragraphes justifiés.
-/// Préserve le formatage gras, italique et code des éléments inline.
-class JustifiedMarkdownBody extends StatelessWidget {
+/// Utilise StatefulWidget pour éviter de recréer le builder à chaque rebuild
+/// (évite l'assertion '_dependents.isEmpty: is not true').
+class JustifiedMarkdownBody extends StatefulWidget {
   final String data;
   final MarkdownStyleSheet styleSheet;
   const JustifiedMarkdownBody({
@@ -14,16 +15,41 @@ class JustifiedMarkdownBody extends StatelessWidget {
   });
 
   @override
+  State<JustifiedMarkdownBody> createState() => _JustifiedMarkdownBodyState();
+}
+
+class _JustifiedMarkdownBodyState extends State<JustifiedMarkdownBody> {
+  late Map<String, MarkdownElementBuilder> _builders;
+
+  @override
+  void initState() {
+    super.initState();
+    _initBuilders();
+  }
+
+  @override
+  void didUpdateWidget(JustifiedMarkdownBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.styleSheet != widget.styleSheet) {
+      _initBuilders();
+    }
+  }
+
+  void _initBuilders() {
+    _builders = {
+      'p': _JustifiedParagraphBuilder(
+        pStyle: widget.styleSheet.p,
+        strongStyle: widget.styleSheet.strong,
+      ),
+    };
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MarkdownBody(
-      data: data,
-      styleSheet: styleSheet,
-      builders: {
-        'p': _JustifiedParagraphBuilder(
-          pStyle: styleSheet.p,
-          strongStyle: styleSheet.strong,
-        ),
-      },
+      data: widget.data,
+      styleSheet: widget.styleSheet,
+      builders: _builders,
     );
   }
 }
