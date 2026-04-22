@@ -285,8 +285,8 @@ router.post('/verify-otp', async (req, res) => {
       }
       const passwordHash = await bcryptLib.hash(userData.password, 10);
       const insertResult = await pool.query(
-        `INSERT INTO users (email, password_hash, role, nom, prenom, civilite, date_naissance, lieu_naissance, telephone, adresse, pays)
-         VALUES ($1, $2, 'client', $3, $4, $5, $6, $7, $8, $9, $10)
+        `INSERT INTO users (email, password_hash, role, nom, prenom, civilite, date_naissance, lieu_naissance, telephone, adresse, pays, profession, secteur_activite)
+         VALUES ($1, $2, 'client', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING id, email, nom, prenom, role`,
         [
           userData.email || null,
@@ -298,7 +298,9 @@ router.post('/verify-otp', async (req, res) => {
           userData.lieu_naissance || null,
           userData.telephone,
           userData.adresse || null,
-          userData.pays || "Côte d'Ivoire"
+          userData.pays || "Côte d'Ivoire",
+          userData.profession || null,
+          userData.secteur_activite || null
         ]
       );
       const user = insertResult.rows[0];

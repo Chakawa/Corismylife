@@ -187,8 +187,9 @@ async function registerClient(userData) {
   const query = `
     INSERT INTO users (
       email, password_hash, role, nom, prenom, civilite, 
-      date_naissance, lieu_naissance, telephone, adresse, pays
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      date_naissance, lieu_naissance, telephone, adresse, pays,
+      profession, secteur_activite
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     RETURNING id, email, nom, prenom, role
   `;
   
@@ -204,7 +205,9 @@ async function registerClient(userData) {
     userData.lieu_naissance, // $8
     userData.telephone,      // $9
     userData.adresse,        // $10
-    userData.pays            // $11
+    userData.pays,           // $11
+    userData.profession || null,       // $12
+    userData.secteur_activite || null  // $13
   ];
   
   // Exécuter la requête et récupérer le résultat

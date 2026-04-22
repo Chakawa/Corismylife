@@ -51,6 +51,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final autoriteDelivranceController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final professionController = TextEditingController();
+  final secteurActiviteController = TextEditingController();
   String? selectedCivilite = 'Monsieur';
   String? selectedDocumentType = 'CNI';
   final List<Map<String, String>> indicatifs = [
@@ -175,6 +177,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
       }
+      if (professionController.text.trim().isNotEmpty) {
+        payload["profession"] = professionController.text.trim();
+      }
+      if (secteurActiviteController.text.trim().isNotEmpty) {
+        payload["secteur_activite"] = secteurActiviteController.text.trim();
+      }
 
       // Envoyer l'OTP
       final receivedOtpCode = await AuthService.sendOtp(
@@ -291,6 +299,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Ajouter l'email seulement s'il est fourni
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
+      }
+      if (professionController.text.trim().isNotEmpty) {
+        payload["profession"] = professionController.text.trim();
+      }
+      if (secteurActiviteController.text.trim().isNotEmpty) {
+        payload["secteur_activite"] = secteurActiviteController.text.trim();
       }
 
       await AuthService.registerClient(payload);
@@ -966,6 +980,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   setState(() => selectedPays = val),
                               fontSize: fontSize,
                             ),
+                            _buildTextField(
+                              'Profession (optionnel)',
+                              professionController,
+                              icon: Icons.work_outline,
+                              hintText: 'Ex: Enseignant, Médecin, Commerçant',
+                              fontSize: fontSize,
+                            ),
+                            _buildTextField(
+                              "Secteur d'activité (optionnel)",
+                              secteurActiviteController,
+                              icon: Icons.business_center_outlined,
+                              hintText: "Ex: Éducation, Santé, Commerce",
+                              fontSize: fontSize,
+                            ),
                           ],
                         ),
                       ),
@@ -1493,6 +1521,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Ajouter l'email seulement s'il est fourni
       if (emailController.text.trim().isNotEmpty) {
         payload["email"] = emailController.text.trim();
+      }
+      if (professionController.text.trim().isNotEmpty) {
+        payload["profession"] = professionController.text.trim();
+      }
+      if (secteurActiviteController.text.trim().isNotEmpty) {
+        payload["secteur_activite"] = secteurActiviteController.text.trim();
       }
 
       // Envoyer un NOUVEAU code OTP (l'ancien est remplacé côté serveur)
