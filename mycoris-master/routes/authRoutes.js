@@ -8,7 +8,7 @@ const pool = require('../db'); // Import de la connexion DB
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
 // ⚠️ MODE DÉVELOPPEMENT : mettre à false en PRODUCTION
-const DEV_MODE = true; // true = OTP retourné dans la réponse + SMS non bloquant
+const DEV_MODE = false; // true = OTP retourné dans la réponse + SMS non bloquant
 
 // Configuration API SMS
 const SMS_API_URL = 'https://apis.letexto.com/v1/messages/send'; // URL de l'API SMS CI
