@@ -1,17 +1,18 @@
 class AppConfig {
-
   // IMPORTANT: à laisser à false hors tests contrôlés.
 
   static const bool TEST_MODE_FORCE_10_XOF = false;
 
   // TEST LOCAL (emulateur Android)
 
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // SERVEUR EN LIGNE (actif pour generation APK)
-  // static const String baseUrl = 'https://www.mycorislife.com/api';
+  static const String baseUrl = 'https://www.mycorislife.com/api';
 
-  static const List<String> fallbackBaseUrls = ['https://mycorislife.com/api', 'http://10.0.2.2:5000/api'];
+  static const List<String> fallbackBaseUrls = [
+    'https://mycorislife.com/api'
+  ]; // 'http://10.0.2.2:5000/api'
 
   static List<String> get allBaseUrls => [baseUrl, ...fallbackBaseUrls];
 
@@ -21,4 +22,3 @@ class AppConfig {
 
   static const String supportPhone = '+2250778685858';
 }
-

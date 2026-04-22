@@ -88,8 +88,10 @@ Ce produit vous permet d'assurer l'éducation et l'avenir de vos enfants même s
 - Certificats de naissance des enfants
 - Questionnaire médical simplifié
 **🏆 Pourquoi choisir CORIS FAMILIS ?**
+
 Être parent, c'est vouloir le meilleur pour ses enfants et s'assurer qu'ils auront toujours les moyens de réaliser leurs rêves, même en votre absence. CORIS FAMILIS vous offre cette garantie en protégeant financièrement l'avenir de vos enfants.
 Avec CORIS FAMILIS, vous leur offrez bien plus qu'une assurance : vous leur garantissez un avenir serein et des opportunités préservées.
+
 *Protégez aujourd'hui ce qu'ils ont de plus précieux : leur avenir.*
 """;
     return Scaffold(
