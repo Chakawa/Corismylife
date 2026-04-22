@@ -176,16 +176,6 @@ class _JustifiedParagraph extends StatelessWidget {
   }
 }
 
-
-/// Widget qui affiche du contenu Markdown avec les paragraphes justifiés.
-///
-/// Stratégie : on découpe le markdown en blocs (séparés par des lignes vides).
-/// - Blocs paragraphe → RichText(textAlign: TextAlign.justify) avec parsing
-///   inline manuel (gras, italique, code).
-/// - Blocs non-paragraphe (titres, listes, etc.) → MarkdownBody standard.
-///
-/// Cette approche évite totalement le mécanisme MarkdownElementBuilder de
-/// flutter_markdown, qui causait l'assertion '_inlines.isEmpty: is not true'.
 class JustifiedMarkdownBody extends StatelessWidget {
   final String data;
   final MarkdownStyleSheet styleSheet;
