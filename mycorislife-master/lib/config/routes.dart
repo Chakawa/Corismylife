@@ -58,6 +58,8 @@ import 'package:mycorislife/features/commercial/presentation/screens/details_cli
 import 'package:mycorislife/features/shared/presentation/screens/contrat_details_unified_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/contrat_details_app_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/notifications_screen.dart';
+import 'package:mycorislife/features/client/presentation/screens/admin_dashboard_screen.dart';
+import 'package:mycorislife/features/client/presentation/screens/pending_registrations_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/contrats_screen.dart';
 //import 'package:mycorislife/features/client/presentation/screens/propositions_screen.dart';
 final Map<String, WidgetBuilder> appRoutes = {
@@ -248,4 +250,8 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/commercial-profile': (context) => const CommercialProfile(),
   // notifications
   '/notifications': (context) => const NotificationsScreen(),
+  // admin
+  '/adminDashboard': (context) => const AdminDashboardScreen(),
+  '/admin/pending-registrations': (context) =>
+      const PendingRegistrationsScreen(),
 };

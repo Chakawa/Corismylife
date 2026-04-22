@@ -2163,4 +2163,140 @@ router.put('/update-profile', async (req, res) => {
   }
 });
 
+// ============================================================
+// INSCRIPTIONS EN ATTENTE (pending_registrations)
+// ============================================================
+
+/**
+ * GET /api/admin/pending-registrations
+ * Liste tous les utilisateurs qui n'ont pas finalisé leur inscription
+ */
+router.get('/pending-registrations', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, telephone, user_data, created_at, updated_at
+      FROM pending_registrations
+      ORDER BY updated_at DESC
+    `);
+
+    const rows = result.rows.map(row => ({
+      id: row.id,
+      telephone: row.telephone,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      ...row.user_data
+    }));
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Erreur récupération pending_registrations:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/admin/pending-registrations/:id/activate
+ * Active le compte d'un utilisateur en attente (l'administrateur crée le compte manuellement)
+ */
+router.post('/pending-registrations/:id/activate', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    // Récupérer les données de l'inscription en attente
+    const pending = await client.query(
+      'SELECT * FROM pending_registrations WHERE id = $1',
+      [id]
+    );
+    if (pending.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Inscription non trouvée' });
+    }
+
+    const userData = pending.rows[0].user_data;
+    const telephone = pending.rows[0].telephone;
+
+    // Vérifier qu'un compte n'existe pas déjà avec ce téléphone
+    const existing = await client.query(
+      'SELECT id FROM users WHERE telephone = $1',
+      [telephone]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Un compte actif existe déjà pour ce numéro de téléphone'
+      });
+    }
+
+    // Générer un mot de passe temporaire sécurisé si non fourni
+    const bcrypt = require('bcryptjs');
+    const tempPassword = userData.password || Math.random().toString(36).slice(-8) + 'A1!';
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+    await client.query('BEGIN');
+
+    // Créer le compte utilisateur
+    const insertResult = await client.query(
+      `INSERT INTO users (email, password_hash, role, nom, prenom, civilite,
+        date_naissance, lieu_naissance, telephone, adresse, pays, profession, secteur_activite)
+       VALUES ($1, $2, 'client', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id, email, nom, prenom, telephone, role`,
+      [
+        userData.email || null,
+        passwordHash,
+        userData.nom || null,
+        userData.prenom || null,
+        userData.civilite || 'Monsieur',
+        userData.date_naissance || null,
+        userData.lieu_naissance || null,
+        telephone,
+        userData.adresse || null,
+        userData.pays || "Côte d'Ivoire",
+        userData.profession || null,
+        userData.secteur_activite || null
+      ]
+    );
+
+    const user = insertResult.rows[0];
+
+    // Supprimer l'inscription en attente
+    await client.query('DELETE FROM pending_registrations WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
+
+    console.log(`✅ [ADMIN] Compte activé pour: ${telephone} (id: ${user.id})`);
+    res.status(201).json({
+      success: true,
+      message: 'Compte créé avec succès',
+      user
+    });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Erreur activation pending_registration:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la création du compte' });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * DELETE /api/admin/pending-registrations/:id
+ * Supprime une inscription en attente
+ */
+router.delete('/pending-registrations/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'DELETE FROM pending_registrations WHERE id = $1 RETURNING id, telephone',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Inscription non trouvée' });
+    }
+    console.log(`🗑️ [ADMIN] Inscription en attente supprimée: ${result.rows[0].telephone}`);
+    res.json({ success: true, message: 'Inscription supprimée' });
+  } catch (error) {
+    console.error('Erreur suppression pending_registration:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+
 module.exports = router;
