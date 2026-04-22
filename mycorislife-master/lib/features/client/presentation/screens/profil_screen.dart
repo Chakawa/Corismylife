@@ -72,6 +72,12 @@ class _ProfilPageState extends State<ProfilPage> {
   /// Obtient l'adresse
   String get _adresse => _userData?['adresse'] ?? 'Non renseignée';
 
+  /// Obtient la profession
+  String get _profession => _userData?['profession'] ?? '';
+
+  /// Obtient le secteur d'activité
+  String get _secteurActivite => _userData?['secteur_activite'] ?? '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,6 +366,40 @@ class _ProfilPageState extends State<ProfilPage> {
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_profession.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.work_outline,
+                          size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        _profession,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_secteurActivite.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.business_center_outlined,
+                          size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        _secteurActivite,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
