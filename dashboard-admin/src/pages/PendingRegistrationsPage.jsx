@@ -9,6 +9,7 @@ import {
 export default function PendingRegistrationsPage() {
   const [registrations, setRegistrations] = useState([])
   const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
@@ -28,11 +29,21 @@ export default function PendingRegistrationsPage() {
 
   const loadRegistrations = async () => {
     setLoading(true)
+    setApiError(null)
     try {
       const data = await pendingRegistrationsService.getAll()
       setRegistrations(data.data || [])
     } catch (error) {
       console.error('Erreur chargement inscriptions en attente:', error)
+      const status = error.response?.status
+      const msg = error.response?.data?.message || error.message || 'Erreur inconnue'
+      if (status === 404) {
+        setApiError('Route API introuvable (404). Le serveur n\'a peut-être pas été redémarré après le dernier déploiement. Exécutez : git pull && pm2 restart all')
+      } else if (status === 500) {
+        setApiError(`Erreur serveur (500) : ${msg}. La table pending_registrations existe peut-être pas encore. Exécutez la migration SQL.`)
+      } else {
+        setApiError(`Erreur : ${msg}`)
+      }
       setRegistrations([])
     } finally {
       setLoading(false)
@@ -116,6 +127,18 @@ export default function PendingRegistrationsPage() {
           {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span className="text-sm font-medium">{toast.message}</span>
           <button onClick={() => setToast(null)}><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
+      {/* Bannière d'erreur API */}
+      {apiError && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-600" />
+          <div className="flex-1 text-sm">
+            <p className="font-semibold mb-1">Erreur de chargement</p>
+            <p className="font-mono text-xs bg-red-100 p-2 rounded">{apiError}</p>
+          </div>
+          <button onClick={() => setApiError(null)} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
         </div>
       )}
 

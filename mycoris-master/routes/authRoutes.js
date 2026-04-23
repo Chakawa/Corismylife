@@ -149,14 +149,18 @@ router.post('/send-otp', async (req, res) => {
     );
 
     // Sauvegarder les données dans pending_registrations (inscription incomplète)
-    // Permet de recontacter le client si le SMS échoue ou s'il n'a pas finalisé
-    await pool.query(
-      `INSERT INTO pending_registrations (telephone, user_data, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (telephone) DO UPDATE SET user_data = $2, updated_at = NOW()`,
-      [telephone, JSON.stringify(userData)]
-    );
-    console.log('💾 Données sauvegardées dans pending_registrations');
+    // ⚠️ Non-bloquant : si la table n'existe pas encore, l'OTP s'envoie quand même
+    try {
+      await pool.query(
+        `INSERT INTO pending_registrations (telephone, user_data, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (telephone) DO UPDATE SET user_data = $2, updated_at = NOW()`,
+        [telephone, JSON.stringify(userData)]
+      );
+      console.log('💾 Données sauvegardées dans pending_registrations');
+    } catch (pendingError) {
+      console.warn('⚠️ pending_registrations non disponible (migration à exécuter?):', pendingError.message);
+    }
     
     console.log('💾 OTP stocké en base de données');
     console.log('⏰ Expiration:', new Date(expiresAt).toLocaleString());
