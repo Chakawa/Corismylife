@@ -53,6 +53,27 @@ const pool = require('../db');  // Pool de connexions PostgreSQL
 const bcrypt = require('bcrypt');  // Bibliothèque pour hasher les mots de passe (utilisée pour la création de clients - DEPRECATED)
 const axios = require('axios');  // Bibliothèque pour faire des requêtes HTTP vers l'API externe des bordereaux
 
+// ============================================
+// UTILITAIRE DATE
+// ============================================
+// Formate une date (YYYY-MM-DD string ou JS Date) → DD/MM/YYYY
+// Utilisé pour normaliser les dates avant envoi au mobile Flutter
+const formatDateDDMMYYYY = (raw) => {
+  if (!raw) return '';
+  if (raw instanceof Date) {
+    const day = String(raw.getUTCDate()).padStart(2, '0');
+    const month = String(raw.getUTCMonth() + 1).padStart(2, '0');
+    const year = raw.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  const str = String(raw).split('T')[0].split(' ')[0];
+  const parts = str.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+  }
+  return str;
+};
+
 /**
  * Récupère les statistiques du commercial connecté
  * GET /api/commercial/stats
@@ -561,17 +582,6 @@ exports.getCommercialCommissions = async (req, res) => {
       const montant = parseFloat(bordereau.montfeui) || 0;
       totalCommissions += montant;
 
-      // Formater une date YYYY-MM-DD (ou ISO timestamp) → DD/MM/YYYY
-      const formatDateDDMMYYYY = (raw) => {
-        if (!raw) return '';
-        const str = raw.toString().split('T')[0].split(' ')[0]; // enlever heure si présente
-        const parts = str.split('-');
-        if (parts.length === 3 && parts[0].length === 4) {
-          return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
-        }
-        return str; // déjà formaté ou format inconnu
-      };
-
       const dateDebut = formatDateDDMMYYYY(bordereau.datedebut || bordereau.datefeui);
       const dateFin = formatDateDDMMYYYY(bordereau.datefin);
 
@@ -682,7 +692,11 @@ exports.getMesContratsCommercial = async (req, res) => {
 
     const contratsAvecNomProduit = result.rows.map(contrat => ({
       ...contrat,
-      nom_produit: produitsMap[contrat.codeprod] || `Produit ${contrat.codeprod}`
+      nom_produit: produitsMap[contrat.codeprod] || `Produit ${contrat.codeprod}`,
+      dateeffet: formatDateDDMMYYYY(contrat.dateeffet),
+      datesous: formatDateDDMMYYYY(contrat.dateeffet),
+      dateecheance: formatDateDDMMYYYY(contrat.dateecheance),
+      datenaissance: formatDateDDMMYYYY(contrat.datenaissance),
     }));
 
     res.json({
@@ -986,7 +1000,11 @@ exports.getContratDetails = async (req, res) => {
 
     const contratAvecNomProduit = {
       ...result.rows[0],
-      nom_produit: produitsMap[result.rows[0].codeprod] || `Produit ${result.rows[0].codeprod}`
+      nom_produit: produitsMap[result.rows[0].codeprod] || `Produit ${result.rows[0].codeprod}`,
+      dateeffet: formatDateDDMMYYYY(result.rows[0].dateeffet),
+      datesous: formatDateDDMMYYYY(result.rows[0].datesous || result.rows[0].dateeffet),
+      dateecheance: formatDateDDMMYYYY(result.rows[0].dateecheance),
+      datenaissance: formatDateDDMMYYYY(result.rows[0].datenaissance),
     };
 
     // Récupérer les bénéficiaires du contrat

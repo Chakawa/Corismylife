@@ -170,18 +170,22 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
     return 'N/A';
   }
 
-  String _formatDate(String? date) {
-
-    if (date == null || date.isEmpty) return 'N/A';
+  /// Formate une date en DD/MM/YYYY.
+  /// Le backend envoie DD/MM/YYYY directement.
+  /// Fallback : YYYY-MM-DD ou timestamp ISO.
+  String _formatDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'N/A';
+    final date = dateRaw.toString().trim();
+    if (date.isEmpty) return 'N/A';
+    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) return date;
     try {
-
-      final dt = DateTime.parse(date);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-    } catch (e) {
-
-      return date.split('T')[0];
-    }
-
+      final clean = date.split('T')[0].split(' ')[0];
+      final parts = clean.split('-');
+      if (parts.length == 3 && parts[0].length == 4) {
+        return '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
+      }
+    } catch (_) {}
+    return date;
   }
 
   @override
