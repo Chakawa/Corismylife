@@ -5,12 +5,10 @@ import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 import 'package:mycorislife/services/auth_service.dart';
 
 class DescriptionEtudePage extends StatelessWidget {
-
   const DescriptionEtudePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     const String markdownContent = """
 ### **CORIS ÉTUDE** 🎓
 
@@ -30,11 +28,11 @@ class DescriptionEtudePage extends StatelessWidget {
 
 #### **CORIS ÉTUDE, de quoi s'agit-il ?**
 
-Le contrat CORIS ÉTUDE permet aux parents ou tuteurs d'enfants de garantir des rentes certaines, pendant une durée de dix ans ou d'un capital, pour l'éducation des enfants, en cas de vie, mais aussi en cas de décès ou de Perte Totale et Irréversible d'Autonomie pendant la période de cotisation.
+Le contrat CORIS ÉTUDE permet aux parents ou tuteurs d'enfants de garantir des rentes certaines, pendant une durée de dix ans, ou un capital pour l'éducation des enfants en cas de vie, mais aussi en cas de décès ou de Perte Totale et Irréversible d'Autonomie pendant la période de cotisation.
 
 #### **CORIS ÉTUDE, comment ça fonctionne ?**
 
-• Les cotisations nettes de frais capitalisées au taux d'intérêt annuel de **3,5%** majorées de la participation aux bénéfices avec une périodicité de paiement des primes : mensuelle, trimestrielle, semestrielle, annuelle, unique
+• Les cotisations nettes de frais capitalisées au taux d'intérêt annuel de **3,5%** majorées de la participation aux bénéfices, avec une périodicité de paiement des primes : mensuelle, trimestrielle, semestrielle, annuelle, unique
 
 • La durée et le montant de la cotisation sont déterminés par le souscripteur en fonction de l'âge de l'enfant bénéficiaire et de son projet avec une prime minimale de 10 000 F CFA. Les frais de dossier sont de 5 000 F CFA payable une seule fois
 
@@ -42,7 +40,7 @@ Le contrat CORIS ÉTUDE permet aux parents ou tuteurs d'enfants de garantir des 
   ◦ en cas de vie de l'assuré au terme de la période de cotisation, CORIS VIE CI verse une rente certaine annuelle de 10 ans échu, dont le montant est défini dans le contrat pendant une durée de 5 ans
   ◦ en cas de décès ou de Perte Totale et Irréversible d'Autonomie de l'assuré pendant la durée de cotisation :
 
-**En paiement de sinistre CORIS VIE CI verse un capital dont le montant est égal à 50 % de la rente annuelle prévue dans le contrat**
+**En paiement de sinistre, CORIS VIE CI verse un capital dont le montant est égal à 50 % de la rente annuelle prévue dans le contrat**
 
 -à partir de la première date d'anniversaire du contrat suivant le sinistre et ce, jusqu'au terme de la période de cotisation, CORIS VIE CI **verse une rente annuelle équivalente à 50 % de la rente annuelle définie à la souscription**
 
@@ -211,24 +209,19 @@ Pour souscrire, choisissez le montant de la cotisation ou la rente annuelle et r
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-
                           final userRole = await AuthService.getUserRole();
                           if (userRole == 'commercial') {
-
                             Navigator.pushNamed(
                               context,
                               '/commercial/select_client',
                               arguments: {
-
                                 'productType': 'etude',
                                 'simulationData': null,
                               },
                             );
                           } else {
-
                             Navigator.pushNamed(context, '/souscription_etude');
                           }
-
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE30613),
@@ -265,6 +258,4 @@ Pour souscrire, choisissez le montant de la cotisation ou la rente annuelle et r
       ),
     );
   }
-
 }
-

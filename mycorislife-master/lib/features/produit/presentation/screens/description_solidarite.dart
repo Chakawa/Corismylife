@@ -29,7 +29,7 @@ Le contrat **CORIS SOLIDARITÉ** vous permet de faire face aux événements soci
 
 #### **CORIS SOLIDARITÉ, comment ça fonctionne ?**
 
-L'adhésion est réservée à toute personne physique âgée de moins soixante-quatre (64) ans et le groupe familial de base assuré est composé :
+L'adhésion est réservée à toute personne physique âgée de moins de soixante-quatre (64) ans et le groupe familial de base assuré est composé :
 
 • **du souscripteur** : qui est l'assuré principal qui signe le contrat et paye les primes. Il est le propriétaire du contrat d'assurance
 
@@ -47,7 +47,7 @@ Le souscripteur a le choix entre quatre (04) options de capitaux garantis par t�
 
 #### **CORIS SOLIDARITÉ, quels sont les avantages ?**
 
-• une assistance inédite : mise à la disposition, du bénéficiaire désigné, d'un ensemble de prestations par l'intermédiaire des pompes funèbres partenaires ou le paiement du capital
+• une assistance inédite : mise à la disposition du bénéficiaire désigné, d'un ensemble de prestations par l'intermédiaire des pompes funèbres partenaires ou le paiement du capital
 
 • une offre souple et accessible : adhérer sur une simple déclaration écrite sur l'honneur de la composition de la famille sans formalités médicales
 

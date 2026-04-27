@@ -4,12 +4,10 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:mycorislife/shared/widgets/justified_markdown_body.dart';
 
 class DescriptionRetraitePage extends StatelessWidget {
-
   const DescriptionRetraitePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     const String markdownContent = """
 ### **CORIS RETRAITE**
 
@@ -31,7 +29,7 @@ Le contrat **CORIS RETRAITE** vous permet de constituer, par des versements pér
 
 #### **CORIS RETRAITE, comment ça fonctionne ?**
 
-• Les cotisations nettes de frais capitalisées au taux d'intérêt annuel de **3,5%** majorées de la participation aux bénéfices avec une périodicité de paiement des primes : mensuelle, trimestrielle, semestrielle, annuelle, unique
+• Les cotisations nettes de frais capitalisées au taux d'intérêt annuel de **3,5%** majorées de la participation aux bénéfices, avec une périodicité de paiement des primes : mensuelle, trimestrielle, semestrielle, annuelle, unique
 
 • La durée et le montant de la cotisation sont déterminés par le souscripteur avec une prime minimale de 10 000 F CFA et des frais de dossier de 5 000 F CFA payable une seule fois
 
@@ -83,7 +81,8 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18.0),
-                    border: Border.all(color: const Color(0x26002B6B), width: 1.2),
+                    border:
+                        Border.all(color: const Color(0x26002B6B), width: 1.2),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x1A000000),
@@ -158,7 +157,6 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-
                           Navigator.pushNamed(
                               context, '/souscription_retraite');
                         },
@@ -197,6 +195,4 @@ Pour souscrire, choisissez le montant de la cotisation ou le capital minimum et 
       ),
     );
   }
-
 }
-

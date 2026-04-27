@@ -78,7 +78,7 @@ Ce produit vous permet d'assurer l'éducation et l'avenir de vos enfants même s
 - **Rente éducation** : Versement d'une rente mensuelle (option)
 **💳 Primes et paiements**
 - **Prime** : Calculée selon l'âge, le capital et le nombre d'enfants
-- **Périodicité** : Mensuelle, trimestrielle, semestrielle ou annuelle
+- **Périodicité** : unique ou annuelle
 - **Modes de paiement** : Virement, prélèvement, mobile money
 - **Évolution** : Prime constante pendant toute la durée
 **📄 Conditions de souscription**
