@@ -106,22 +106,20 @@ class _CommercialProfileState extends State<CommercialProfile>
 
   }
 
-  String _formatDate(dynamic date) {
+  String _formatDate(dynamic dateRaw) {
 
-    if (date == null) return 'Non renseigné';
+    if (dateRaw == null) return 'Non renseigné';
+    final date = dateRaw.toString().trim();
+    if (date.isEmpty) return 'Non renseigné';
+    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) return date;
     try {
-
-      if (date is String) {
-
-        final d = DateTime.parse(date);
-        return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+      final clean = date.split('T')[0].split(' ')[0];
+      final parts = clean.split('-');
+      if (parts.length == 3 && parts[0].length == 4) {
+        return '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
       }
-
-      return date.toString();
-    } catch (e) {
-
-      return date.toString();
-    }
+    } catch (_) {}
+    return date.toString();
 
   }
 

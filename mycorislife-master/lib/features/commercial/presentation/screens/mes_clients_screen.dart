@@ -77,14 +77,19 @@ class _MesClientsScreenState extends State<MesClientsScreen> {
     }).toList();
   }
 
-  String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return 'Non renseigné';
+  String _formatDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'Non renseigné';
+    final date = dateRaw.toString().trim();
+    if (date.isEmpty) return 'Non renseigné';
+    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) return date;
     try {
-      final d = DateTime.parse(date);
-      return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-    } catch (e) {
-      return date;
-    }
+      final clean = date.split('T')[0].split(' ')[0];
+      final parts = clean.split('-');
+      if (parts.length == 3 && parts[0].length == 4) {
+        return '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
+      }
+    } catch (_) {}
+    return date;
   }
 
   String _formatProductName(String productName) {
