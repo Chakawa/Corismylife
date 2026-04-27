@@ -139,70 +139,26 @@ class _MesCommissionsScreenState extends State<MesCommissionsScreen> {
   }
 
   /// Formate une date au format DD/MM/YYYY
-  String _formatDate(String? date) {
+  /// Le backend envoie désormais DD/MM/YYYY directement.
+  /// Ce fallback gère aussi YYYY-MM-DD et les ISO timestamps.
+  String _formatDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'Non renseigné';
+    final date = dateRaw.toString().trim();
+    if (date.isEmpty) return 'Non renseigné';
 
-    if (date == null || date.isEmpty) return 'Non renseigné';
+    // Format attendu du backend : DD/MM/YYYY → retourner directement
+    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) return date;
 
-    // Si la date contient déjà le bon format DD/MM/YYYY, la retourner telle quelle
-    if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(date)) {
-
-      return date;
-    }
-
-    // Sinon, parser et formater proprement (enlever les timestamps)
+    // Fallback : ISO YYYY-MM-DD ou timestamp YYYY-MM-DDTHH:mm:ss.sssZ
     try {
-
-      // Supprimer les timestamps et heures si présents
-      String cleanDate = date.split('T')[0].split(' ')[0];
-
-      // Parser la date
-      DateTime parsedDate;
-      if (cleanDate.contains('-')) {
-
-        // Format ISO 8601 : YYYY-MM-DD
-        parsedDate = DateTime.parse(cleanDate);
-      } else if (cleanDate.contains('/')) {
-
-        // Format déjà DD/MM/YYYY ou MM/DD/YYYY
-        final parts = cleanDate.split('/');
-        if (parts.length == 3) {
-
-          // Assumer DD/MM/YYYY si le premier nombre est <= 31
-          if (int.parse(parts[0]) <= 31) {
-
-            parsedDate = DateTime(
-              int.parse(parts[2]), // année
-              int.parse(parts[1]), // mois
-              int.parse(parts[0]), // jour
-            );
-          } else {
-
-            // MM/DD/YYYY
-            parsedDate = DateTime(
-              int.parse(parts[2]),
-              int.parse(parts[0]),
-              int.parse(parts[1]),
-            );
-          }
-
-        } else {
-
-          return date;
-        }
-
-      } else {
-
-        return date;
+      final clean = date.split('T')[0].split(' ')[0];
+      final parts = clean.split('-');
+      if (parts.length == 3 && parts[0].length == 4) {
+        return '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
       }
+    } catch (_) {}
 
-      // Formater au format DD/MM/YYYY
-      return '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
-    } catch (e) {
-
-      // En cas d'erreur, retourner la date telle quelle
-      return date;
-    }
-
+    return date; // dernier recours : afficher tel quel
   }
 
   /// Filtre les bordereaux selon la requête de recherche

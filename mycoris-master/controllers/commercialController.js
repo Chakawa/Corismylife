@@ -561,11 +561,19 @@ exports.getCommercialCommissions = async (req, res) => {
       const montant = parseFloat(bordereau.montfeui) || 0;
       totalCommissions += montant;
 
-      // Formater les dates (déjà au format texte dans la DB)
-      // ✅ RÉSULTAT DIAGNOSTIC: datedebut est toujours présent (78/78 bordereaux)
-      // On utilise datedebut comme date principale, datefeui comme fallback de sécurité
-      const dateDebut = bordereau.datedebut || bordereau.datefeui || '';
-      const dateFin = bordereau.datefin || '';
+      // Formater une date YYYY-MM-DD (ou ISO timestamp) → DD/MM/YYYY
+      const formatDateDDMMYYYY = (raw) => {
+        if (!raw) return '';
+        const str = raw.toString().split('T')[0].split(' ')[0]; // enlever heure si présente
+        const parts = str.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+          return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+        }
+        return str; // déjà formaté ou format inconnu
+      };
+
+      const dateDebut = formatDateDDMMYYYY(bordereau.datedebut || bordereau.datefeui);
+      const dateFin = formatDateDDMMYYYY(bordereau.datefin);
 
       // Déterminer le type d'apporteur
       const typeApporteur = bordereau.typeappo || 'A';
