@@ -249,13 +249,32 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       );
 
       print('Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
+      // Si 404, essayer l'URL directe dans uploads (fichier physique sur le serveur)
+      http.Response effectiveResponse = response;
+      if (response.statusCode == 404) {
+        final fallbackUrl =
+            '${AppConfig.baseUrl}/uploads/identity-cards/${Uri.encodeComponent(normalizedDocumentName)}';
+        print('⚠️ 404 sur endpoint subscription, tentative fallback: $fallbackUrl');
+        try {
+          final fallbackResponse = await http.get(
+            Uri.parse(fallbackUrl),
+            headers: {'Authorization': 'Bearer $token'},
+          );
+          print('Fallback status: ${fallbackResponse.statusCode}');
+          if (fallbackResponse.statusCode == 200) {
+            effectiveResponse = fallbackResponse;
+          }
+        } catch (_) {
+          // Garder la réponse 404 originale
+        }
+      }
+
+      if (effectiveResponse.statusCode == 200) {
 
         final dir = await getTemporaryDirectory();
         final file = File('${dir.path}/$normalizedDocumentName');
-        await file.writeAsBytes(response.bodyBytes);
+        await file.writeAsBytes(effectiveResponse.bodyBytes);
 
         setState(() {
 
@@ -263,28 +282,28 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
           _fileExtension = normalizedDocumentName.split('.').last.toLowerCase();
           _isLoading = false;
         });
-      } else if (response.statusCode == 401) {
+      } else if (effectiveResponse.statusCode == 401) {
 
         setState(() {
 
           _errorMessage =
-              'Session expirée. Veuillez vous reconnecter.\nCode: ${response.statusCode}';
+              'Session expirée. Veuillez vous reconnecter.\nCode: ${effectiveResponse.statusCode}';
           _isLoading = false;
         });
-      } else if (response.statusCode == 404) {
+      } else if (effectiveResponse.statusCode == 404) {
 
         setState(() {
 
           _errorMessage =
-              'Document non trouvé sur le serveur\nCode: ${response.statusCode}';
+              'Document non trouvé sur le serveur\nCode: ${effectiveResponse.statusCode}';
           _isLoading = false;
         });
-      } else if (response.statusCode == 403) {
+      } else if (effectiveResponse.statusCode == 403) {
 
         setState(() {
 
           _errorMessage =
-              'Accès refusé au document\nCode: ${response.statusCode}';
+              'Accès refusé au document\nCode: ${effectiveResponse.statusCode}';
           _isLoading = false;
         });
       } else {
@@ -292,7 +311,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         setState(() {
 
           _errorMessage =
-              'Erreur de téléchargement\nCode: ${response.statusCode}\nMessage: ${response.body}';
+              'Erreur de téléchargement\nCode: ${effectiveResponse.statusCode}\nMessage: ${effectiveResponse.body}';
           _isLoading = false;
         });
       }

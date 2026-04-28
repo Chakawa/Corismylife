@@ -755,7 +755,8 @@ exports.getDocument = async (req, res) => {
         s.code_apporteur,
         s.souscriptiondata->>'piece_identite' as doc_name,
         s.souscriptiondata->>'piece_identite_url' as doc_url,
-        s.souscriptiondata->'client_info'->>'telephone' as client_info_telephone
+        s.souscriptiondata->'client_info'->>'telephone' as client_info_telephone,
+        s.souscriptiondata->'piece_identite_documents' as piece_identite_documents
       FROM subscriptions s
       WHERE s.id = $1
     `;
@@ -839,10 +840,30 @@ exports.getDocument = async (req, res) => {
       ? path.basename(String(subscription.doc_url).split('\\').join('/'))
       : null;
 
+    // Extraire tous les noms de fichiers depuis piece_identite_documents (multi-upload)
+    const allDocFilenames = [];
+    try {
+      let pieceIdentiteDocs = subscription.piece_identite_documents;
+      if (typeof pieceIdentiteDocs === 'string') {
+        pieceIdentiteDocs = JSON.parse(pieceIdentiteDocs);
+      }
+      if (Array.isArray(pieceIdentiteDocs)) {
+        for (const doc of pieceIdentiteDocs) {
+          if (doc && typeof doc === 'object') {
+            const fn = doc.filename || doc.url || doc.path || doc.name;
+            if (fn) {
+              allDocFilenames.push(path.basename(String(fn).split('\\').join('/')));
+            }
+          }
+        }
+      }
+    } catch (_) { /* JSON parse error, ignore */ }
+
     const candidateNames = [...new Set([
       requestedFilename,
       dbDocName,
       dbDocUrlName,
+      ...allDocFilenames,
     ].filter(Boolean))];
 
     const searchFolders = [

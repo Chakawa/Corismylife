@@ -1133,9 +1133,20 @@ exports.getMesContrats = async (req, res) => {
       const existingSource = (existing.source || '').toLowerCase();
       const incomingSource = (row.source || '').toLowerCase();
 
-      // Prioriser la source "legacy" pour masquer l'attente dès synchronisation métier
       if (existingSource !== 'legacy' && incomingSource === 'legacy') {
-        byPolice.set(normalizedPolice, row);
+        // Legacy prend la priorité pour les données d'affichage,
+        // mais on préserve subscription_id de la souscription app pour l'accès aux documents
+        byPolice.set(normalizedPolice, {
+          ...row,
+          subscription_id: existing.subscription_id ?? row.subscription_id ?? null,
+        });
+      } else if (existingSource === 'legacy' && incomingSource === 'subscription') {
+        // Legacy garde la priorité pour l'affichage, mais on enrichit subscription_id
+        // pour que ContratDetailPage puisse accéder aux documents via le bon ID
+        byPolice.set(normalizedPolice, {
+          ...existing,
+          subscription_id: row.subscription_id ?? existing.subscription_id ?? null,
+        });
       }
     }
 
