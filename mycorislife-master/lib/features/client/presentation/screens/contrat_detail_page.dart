@@ -317,6 +317,10 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   String _getContractStatus() {
+    final statutRaw = (_subscriptionData?['statut'] ?? '').toString().toLowerCase().trim();
+    if (statutRaw == 'proposition') {
+      return 'En attente de paiement';
+    }
     final dateEcheance = _subscriptionData?['date_echeance'] ??
         _getSubscriptionDetails()['date_echeance'];
     if (dateEcheance != null) {
@@ -343,6 +347,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
         return const Color(0xFFF59E0B);
       case 'échu':
         return const Color(0xFFEF4444);
+      case 'En attente de paiement':
+        return const Color(0xFFF59E0B);
       default:
         return const Color(0xFF64748B);
     }
@@ -606,6 +612,11 @@ class ContratDetailPageState extends State<ContratDetailPage>
   }
 
   Widget _buildPaymentInfoCard() {
+    // N'afficher la section paiement que si le paiement est confirmé (statut = contrat)
+    final statutSouscription = (_subscriptionData?['statut'] ?? '').toString().toLowerCase().trim();
+    if (statutSouscription != 'contrat') {
+      return const SizedBox.shrink();
+    }
     final paymentInfo = _getPaymentInfo();
     if (paymentInfo == null) {
       return const SizedBox.shrink();
@@ -630,15 +641,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
         paymentInfo['transactionId'] ??
         paymentInfo['transaction_id'] ??
         _subscriptionData?['payment_transaction_id'];
-    final providerStatusRaw = (paymentInfo['provider_status'] ??
-        paymentInfo['status'] ??
-        paymentInfo['statut'] ??
-        '')
-      .toString();
-    final providerStatus = providerStatusRaw.trim().isEmpty
-      ? 'INCONNU'
-      : providerStatusRaw.toUpperCase();
-    final validationStatus = _getPaymentStatus(paymentInfo);
     return _buildRecapSection(
       'Section paiement',
       Icons.account_balance_wallet_outlined,
@@ -649,8 +651,6 @@ class ContratDetailPageState extends State<ContratDetailPage>
             'Date de paiement', _formatDateTime(paymentDate)),
         _buildCombinedRecapRow(
             'ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
-        _buildCombinedRecapRow('Statut provider', providerStatus, '', ''),
-        _buildCombinedRecapRow('Validation', validationStatus, '', ''),
       ],
     );
   }
