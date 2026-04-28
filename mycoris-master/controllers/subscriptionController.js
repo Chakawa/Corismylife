@@ -1384,8 +1384,9 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
     // =========================================
     let enrichedSubscription = subscription;
     try {
-      const latestPaymentResult = await pool.query(
-        `SELECT transaction_id, provider, montant, statut, created_at, session_id, api_response
+      // Récupérer TOUS les paiements confirmés pour l'historique (du plus récent au plus ancien)
+      const allPaymentsResult = await pool.query(
+        `SELECT transaction_id, provider, montant, statut, created_at, session_id
          FROM payment_transactions
          WHERE subscription_id = $1
            AND LOWER(statut) IN (
@@ -1393,10 +1394,20 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
              'validated', 'confirmed', 'ok',
              'validé', 'validée', 'confirmé', 'confirmée'
            )
-         ORDER BY created_at DESC
-         LIMIT 1`,
+         ORDER BY created_at DESC`,
         [id]
       );
+
+      const paymentHistory = allPaymentsResult.rows.map(row => ({
+        transaction_id: row.transaction_id,
+        provider: row.provider,
+        montant: Number(row.montant || 0),
+        statut: row.statut,
+        date: row.created_at,
+        session_id: row.session_id,
+      }));
+
+      const latestPaymentResult = { rows: allPaymentsResult.rows.slice(0, 1) };
 
       if (latestPaymentResult.rows.length > 0) {
         const latestPayment = latestPaymentResult.rows[0];
@@ -1502,6 +1513,7 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
           montant_encaisse: totalPaid,
           total_paid: totalPaid,
           payment_transaction_id: latestPayment.transaction_id || latestPayment.session_id || enrichedSubscription.payment_transaction_id || null,
+          payment_history: paymentHistory,
           souscriptiondata: {
             ...currentData,
             payment_info: mergedPaymentInfo,

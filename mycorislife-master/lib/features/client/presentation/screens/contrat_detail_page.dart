@@ -617,41 +617,277 @@ class ContratDetailPageState extends State<ContratDetailPage>
     if (statutSouscription != 'contrat') {
       return const SizedBox.shrink();
     }
-    final paymentInfo = _getPaymentInfo();
-    if (paymentInfo == null) {
-      return const SizedBox.shrink();
+
+    // Récupérer l'historique complet des paiements
+    final rawHistory = _subscriptionData?['payment_history'];
+    List<Map<String, dynamic>> history = [];
+    if (rawHistory is List) {
+      for (final item in rawHistory) {
+        if (item is Map<String, dynamic>) history.add(item);
+        else if (item is Map) history.add(Map<String, dynamic>.from(item));
+      }
     }
 
-    final paymentMethodRaw = (paymentInfo['payment_method'] ?? '').toString();
-    final paymentMethod =
-        paymentMethodRaw.trim().isEmpty ? 'Non defini' : paymentMethodRaw;
-    final amount = paymentInfo['amount'] ??
-        paymentInfo['montant'] ??
-        paymentInfo['amount_paid'] ??
-        paymentInfo['montant_paye'] ??
-        paymentInfo['montant_encaisse'] ??
-        _subscriptionData?['montant'] ??
-        _subscriptionData?['montant_encaisse'] ??
-        _subscriptionData?['total_paid'] ??
-        _subscriptionData?['prime'];
-    final paymentDate = paymentInfo['payment_date'] ??
-        paymentInfo['date_paiement'] ??
-        _subscriptionData?['date_validation'];
-    final paymentId = paymentInfo['payment_id'] ??
-        paymentInfo['transactionId'] ??
-        paymentInfo['transaction_id'] ??
-        _subscriptionData?['payment_transaction_id'];
-    return _buildRecapSection(
-      'Section paiement',
-      Icons.account_balance_wallet_outlined,
-      const Color(0xFF10B981),
-      [
-        _buildCombinedRecapRow('Mode de paiement', paymentMethod, '', ''),
-        _buildCombinedRecapRow('Montant paye', _formatMontant(amount),
-            'Date de paiement', _formatDateTime(paymentDate)),
-        _buildCombinedRecapRow(
-            'ID paiement', (paymentId ?? 'Non definie').toString(), '', ''),
-      ],
+    // Fallback : construire une ligne unique depuis payment_info si pas d'historique
+    if (history.isEmpty) {
+      final paymentInfo = _getPaymentInfo();
+      if (paymentInfo != null) {
+        history.add({
+          'provider': paymentInfo['payment_method'],
+          'montant': paymentInfo['amount'],
+          'date': paymentInfo['payment_date'],
+          'transaction_id': paymentInfo['payment_id'],
+        });
+      }
+    }
+
+    if (history.isEmpty) return const SizedBox.shrink();
+
+    final totalPaid = history.fold<double>(
+      0,
+      (sum, p) => sum + (double.tryParse(p['montant']?.toString() ?? '0') ?? 0),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête section
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withAlpha(25),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.receipt_long_outlined,
+                    color: Color(0xFF10B981), size: 18),
+              ),
+              SizedBox(width: context.r(10)),
+              Expanded(
+                child: Text(
+                  'Historique des paiements',
+                  style: TextStyle(
+                    fontSize: context.sp(16),
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withAlpha(20),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${history.length} paiement${history.length > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: context.sp(12),
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.r(14)),
+
+          // En-tête tableau
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF002B6B),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Date',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: context.sp(12),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Montant',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: context.sp(12),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Mode',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: context.sp(12),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: context.r(24),
+                  child: Text(
+                    '',
+                    style: TextStyle(fontSize: context.sp(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: context.r(4)),
+
+          // Lignes du tableau
+          ...history.asMap().entries.map((entry) {
+            final index = entry.key;
+            final payment = entry.value;
+            final isEven = index % 2 == 0;
+            final provider = (payment['provider'] ?? '').toString();
+            final montant = double.tryParse(payment['montant']?.toString() ?? '0') ?? 0;
+            final dateRaw = payment['date'];
+            final transactionId = payment['transaction_id']?.toString() ?? '';
+
+            String dateFormatted = '—';
+            try {
+              if (dateRaw != null && dateRaw.toString().isNotEmpty) {
+                final d = DateTime.parse(dateRaw.toString()).toLocal();
+                final day = d.day.toString().padLeft(2, '0');
+                final month = d.month.toString().padLeft(2, '0');
+                final year = d.year;
+                final hour = d.hour.toString().padLeft(2, '0');
+                final min = d.minute.toString().padLeft(2, '0');
+                dateFormatted = '$day/$month/$year\n$hour:$min';
+              }
+            } catch (_) {}
+
+            final montantFormatted = '${montant.toStringAsFixed(0).replaceAllMapped(
+              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+              (m) => '${m[1]} ',
+            )} FCFA';
+
+            return Container(
+              margin: EdgeInsets.only(bottom: context.r(2)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isEven
+                    ? const Color(0xFFF8FAFC)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      dateFormatted,
+                      style: TextStyle(
+                        fontSize: context.sp(12),
+                        color: const Color(0xFF475569),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      montantFormatted,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: context.sp(12),
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      provider.isEmpty ? '—' : provider,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: context.sp(12),
+                        color: const Color(0xFF002B6B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: context.r(24),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: const Color(0xFF10B981),
+                      size: context.r(16),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          // Ligne total
+          SizedBox(height: context.r(8)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF002B6B).withAlpha(10),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF002B6B).withAlpha(40)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Total versé',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF002B6B),
+                    ),
+                  ),
+                ),
+                Text(
+                  '${totalPaid.toStringAsFixed(0).replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (m) => '${m[1]} ',
+                  )} FCFA',
+                  style: TextStyle(
+                    fontSize: context.sp(14),
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF002B6B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
