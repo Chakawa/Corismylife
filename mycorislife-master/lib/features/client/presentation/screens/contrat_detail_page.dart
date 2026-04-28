@@ -319,7 +319,7 @@ class ContratDetailPageState extends State<ContratDetailPage>
   String _getContractStatus() {
     final statutRaw = (_subscriptionData?['statut'] ?? '').toString().toLowerCase().trim();
     if (statutRaw == 'proposition') {
-      return 'En attente de paiement';
+      return 'Proposition';
     }
     final dateEcheance = _subscriptionData?['date_echeance'] ??
         _getSubscriptionDetails()['date_echeance'];
@@ -347,8 +347,8 @@ class ContratDetailPageState extends State<ContratDetailPage>
         return const Color(0xFFF59E0B);
       case 'échu':
         return const Color(0xFFEF4444);
-      case 'En attente de paiement':
-        return const Color(0xFFF59E0B);
+      case 'Proposition':
+        return const Color(0xFF002B6B);
       default:
         return const Color(0xFF64748B);
     }

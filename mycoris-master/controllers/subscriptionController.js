@@ -1380,6 +1380,7 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
 
     // =========================================
     // ÉTAPE 5 : Enrichir avec les infos de paiement (Wave/OM/etc.)
+    // On ne prend QUE les paiements confirmés (SUCCESS) — les PENDING/FAILED sont ignorés
     // =========================================
     let enrichedSubscription = subscription;
     try {
@@ -1387,6 +1388,11 @@ exports.getSubscriptionWithUserDetails = async (req, res) => {
         `SELECT transaction_id, provider, montant, statut, created_at, session_id, api_response
          FROM payment_transactions
          WHERE subscription_id = $1
+           AND LOWER(statut) IN (
+             'success', 'succeeded', 'paid', 'completed',
+             'validated', 'confirmed', 'ok',
+             'validé', 'validée', 'confirmé', 'confirmée'
+           )
          ORDER BY created_at DESC
          LIMIT 1`,
         [id]
