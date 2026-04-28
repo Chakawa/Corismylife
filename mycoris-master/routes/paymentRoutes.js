@@ -1761,27 +1761,6 @@ router.get('/wave-success', async (req, res) => {
           <h1>${successTitle}</h1>
           <p>${successMessage}</p>
 
-          <div class="details">
-            <div class="detail-row">
-              <strong>Montant paye:</strong>
-              <span>${formattedAmount || 'N/A'} ${displayCurrency}</span>
-            </div>
-            <div class="detail-row">
-              <strong>ID de session:</strong>
-              <span>${session_id ? session_id.substring(0, 15) + '...' : 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <strong>Reference:</strong>
-              <span>${displayReference}</span>
-            </div>
-            <div class="detail-row">
-              <strong>Heure:</strong>
-              <span>${new Date().toLocaleString('fr-FR')}</span>
-            </div>
-          </div>
-
-          <p>Un SMS de confirmation a ete envoye a votre numero de telephone.</p>
-
           <div class="actions">
             <button class="btn-primary" onclick="returnToApp()">
               <span class="loading-spinner"></span> Retourner a l'application
