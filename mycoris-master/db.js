@@ -1,7 +1,13 @@
 // Importation de la bibliothèque pg
 
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 require('dotenv').config();
+
+// Fix timezone: forcer pg à retourner les colonnes 'date' (OID 1082) comme
+// chaîne 'YYYY-MM-DD' au lieu d'un objet Date JS local.
+// Sans ce fix, '2025-03-01' devient new Date('2025-03-01T00:00:00') en heure
+// locale (Paris UTC+1) = 2025-02-28T23:00:00Z, et getUTCDate() retourne 28.
+types.setTypeParser(1082, val => val); // date → string 'YYYY-MM-DD'
 
 // Création de la connexion au pool PostgreSQL
 const pool = new Pool({
