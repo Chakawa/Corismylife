@@ -660,28 +660,76 @@ exports.getMesContratsCommercial = async (req, res) => {
       });
     }
 
-    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
+    // SOURCE 1 : table contrats legacy (contrats issus du système CORIS)
+    // SOURCE 2 : table subscriptions avec statut='contrat' ET code_apporteur du commercial
+    //            → inclut les souscriptions faites par un client avec assistance commerciale
     const query = `
+      -- Contrats depuis la table legacy CORIS
       SELECT 
-        c.id,
+        'legacy_' || c.id::text AS id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
         c.etat,
+        c.dateeffet,
         c.dateeffet as datesous,
         c.codeinte,
         c.codeappo as code_apporteur,
-        c.dateeffet,
         c.dateeche as dateecheance,
         c.datenaissance,
         c.duree,
         c.periodicite,
-        -- Extraire prénom et nom si possible (format: "Prénom Nom")
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
-        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
+        TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
+        'legacy' as source
       FROM contrats c
       WHERE c.codeappo = $1
-      ORDER BY c.dateeffet DESC
+
+      UNION ALL
+
+      -- Contrats issus de la table subscriptions (client avec assistance commerciale)
+      SELECT
+        'sub_' || s.id::text AS id,
+        s.numero_police as numepoli,
+        CASE s.produit_nom
+          WHEN 'coris_serenite' THEN '202'
+          WHEN 'coris_familis'  THEN '200'
+          WHEN 'coris_retraite' THEN '240'
+          WHEN 'coris_etude'    THEN '246'
+          WHEN 'coris_epargne_bonus' THEN '242'
+          WHEN 'coris_solidarite' THEN '225'
+          ELSE s.produit_nom
+        END as codeprod,
+        COALESCE(
+          (s.souscriptiondata->'client_info'->>'prenom') || ' ' || (s.souscriptiondata->'client_info'->>'nom'),
+          u.prenom || ' ' || u.nom,
+          'Client'
+        ) as nom_prenom,
+        'Actif' as etat,
+        (s.souscriptiondata->>'date_effet')::date as dateeffet,
+        (s.souscriptiondata->>'date_effet')::date as datesous,
+        '' as codeinte,
+        s.code_apporteur,
+        (s.souscriptiondata->>'date_echeance')::date as dateecheance,
+        COALESCE(
+          (s.souscriptiondata->'client_info'->>'date_naissance')::date,
+          u.date_naissance
+        ) as datenaissance,
+        (s.souscriptiondata->>'duree')::integer as duree,
+        COALESCE(s.souscriptiondata->>'periodicite', '') as periodicite,
+        COALESCE(s.souscriptiondata->'client_info'->>'prenom', u.prenom, '') as prenom,
+        COALESCE(s.souscriptiondata->'client_info'->>'nom', u.nom, '') as nom,
+        'subscription' as source
+      FROM subscriptions s
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.code_apporteur = $1
+        AND s.statut = 'contrat'
+        -- Exclure ceux déjà dans la table contrats (même numéro de police)
+        AND s.numero_police NOT IN (
+          SELECT numepoli FROM contrats WHERE codeappo = $1
+        )
+
+      ORDER BY dateeffet DESC NULLS LAST
     `;
 
     const result = await pool.query(query, [String(codeApporteur)]);
@@ -701,7 +749,7 @@ exports.getMesContratsCommercial = async (req, res) => {
       ...contrat,
       nom_produit: produitsMap[contrat.codeprod] || `Produit ${contrat.codeprod}`,
       dateeffet: formatDateDDMMYYYY(contrat.dateeffet),
-      datesous: formatDateDDMMYYYY(contrat.dateeffet),
+      datesous: formatDateDDMMYYYY(contrat.datesous),
       dateecheance: formatDateDDMMYYYY(contrat.dateecheance),
       datenaissance: formatDateDDMMYYYY(contrat.datenaissance),
     }));
@@ -795,10 +843,11 @@ exports.getContratsActifs = async (req, res) => {
       });
     }
 
-    // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
+    // SOURCE 1 : table contrats legacy (actifs uniquement)
+    // SOURCE 2 : subscriptions avec statut='contrat' et code_apporteur du commercial
     const query = `
       SELECT 
-        c.id,
+        'legacy_' || c.id::text AS id,
         c.numepoli,
         c.codeprod,
         c.nom_prenom,
@@ -811,12 +860,53 @@ exports.getContratsActifs = async (req, res) => {
         c.datenaissance,
         c.duree,
         c.periodicite,
-        -- Extraire prénom et nom si possible (format: "Prénom Nom")
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
         TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
       FROM contrats c
       WHERE c.codeappo = $1 AND LOWER(c.etat) = 'actif'
-      ORDER BY c.dateeffet DESC
+
+      UNION ALL
+
+      SELECT
+        'sub_' || s.id::text AS id,
+        s.numero_police as numepoli,
+        CASE s.produit_nom
+          WHEN 'coris_serenite' THEN '202'
+          WHEN 'coris_familis'  THEN '200'
+          WHEN 'coris_retraite' THEN '240'
+          WHEN 'coris_etude'    THEN '246'
+          WHEN 'coris_epargne_bonus' THEN '242'
+          WHEN 'coris_solidarite' THEN '225'
+          ELSE s.produit_nom
+        END as codeprod,
+        COALESCE(
+          (s.souscriptiondata->'client_info'->>'prenom') || ' ' || (s.souscriptiondata->'client_info'->>'nom'),
+          u.prenom || ' ' || u.nom,
+          'Client'
+        ) as nom_prenom,
+        'Actif' as etat,
+        (s.souscriptiondata->>'date_effet')::date as datesous,
+        '' as codeinte,
+        s.code_apporteur,
+        (s.souscriptiondata->>'date_effet')::date as dateeffet,
+        (s.souscriptiondata->>'date_echeance')::date as dateecheance,
+        COALESCE(
+          (s.souscriptiondata->'client_info'->>'date_naissance')::date,
+          u.date_naissance
+        ) as datenaissance,
+        (s.souscriptiondata->>'duree')::integer as duree,
+        COALESCE(s.souscriptiondata->>'periodicite', '') as periodicite,
+        COALESCE(s.souscriptiondata->'client_info'->>'prenom', u.prenom, '') as prenom,
+        COALESCE(s.souscriptiondata->'client_info'->>'nom', u.nom, '') as nom
+      FROM subscriptions s
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.code_apporteur = $1
+        AND s.statut = 'contrat'
+        AND s.numero_police NOT IN (
+          SELECT numepoli FROM contrats WHERE codeappo = $1
+        )
+
+      ORDER BY dateeffet DESC NULLS LAST
     `;
 
     const result = await pool.query(query, [String(codeApporteur)]);
