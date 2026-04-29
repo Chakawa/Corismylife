@@ -927,31 +927,36 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       return 'N/A';
     }
 
+    /// Parse une valeur date qui peut être ISO (YYYY-MM-DD) ou français (DD/MM/YYYY)
+    DateTime? _parseAnyDate(dynamic value) {
+      if (value is DateTime) return value;
+      final s = value.toString().trim().split('T')[0].split(' ')[0];
+      if (s.isEmpty) return null;
+      // Format français DD/MM/YYYY
+      final frMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(s);
+      if (frMatch != null) {
+        return DateTime(
+          int.parse(frMatch.group(3)!),
+          int.parse(frMatch.group(2)!),
+          int.parse(frMatch.group(1)!),
+        );
+      }
+      // Format ISO YYYY-MM-DD
+      try {
+        return DateTime.parse(s);
+      } catch (_) {
+        return null;
+      }
+    }
+
     try {
 
-      DateTime debut;
-      DateTime fin;
+      final debut = _parseAnyDate(dateEffet);
+      final fin = _parseAnyDate(dateEcheance);
 
-      if (dateEffet is String) {
-
-        debut = DateTime.parse(dateEffet);
-      } else if (dateEffet is DateTime) {
-
-        debut = dateEffet;
-      } else {
-
-        debut = DateTime.parse(dateEffet.toString());
-      }
-
-      if (dateEcheance is String) {
-
-        fin = DateTime.parse(dateEcheance);
-      } else if (dateEcheance is DateTime) {
-
-        fin = dateEcheance;
-      } else {
-
-        fin = DateTime.parse(dateEcheance.toString());
+      if (debut == null || fin == null) {
+        print('❌ [DUREE] Impossible de parser les dates');
+        return 'N/A';
       }
 
       // Calculer la différence en mois
@@ -961,6 +966,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       if (fin.day < debut.day) {
 
         moisTotal--;
+      }
+
+      // Afficher en années si multiple exact de 12, sinon en mois
+      if (moisTotal > 0 && moisTotal % 12 == 0) {
+        final ans = moisTotal ~/ 12;
+        print('✅ [DUREE] Résultat: $ans ans ($moisTotal mois)');
+        return '$ans ans ($moisTotal mois)';
       }
 
       print('✅ [DUREE] Résultat: $moisTotal mois');

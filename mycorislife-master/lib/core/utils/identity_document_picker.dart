@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class IdentityDocumentPickerResult {
   final List<File> files;
@@ -199,6 +200,14 @@ class IdentityDocumentPicker {
     );
   }
 
+  /// Copie un fichier vers le répertoire de support de l'app (persistant).
+  /// Retourne le fichier copié.
+  static Future<File> _copyToPersistentDir(File source, String name) async {
+    final dir = await getApplicationSupportDirectory();
+    final destPath = '${dir.path}/$name';
+    return source.copy(destPath);
+  }
+
   static Future<IdentityDocumentPickerResult?> _pickFromFiles(
     BuildContext context,
   ) async {
@@ -206,13 +215,27 @@ class IdentityDocumentPicker {
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       allowMultiple: true,
+      withData: true,
     );
     if (result == null) return null;
     final files = <File>[];
     final labels = <String>[];
+    final dir = await getApplicationSupportDirectory();
     for (final item in result.files) {
-      if (item.path == null) continue;
-      final file = File(item.path!);
+      File file;
+      if (item.path != null) {
+        // Copier vers un emplacement persistant pour éviter les suppressions
+        // de fichiers temporaires sur Android
+        final destPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${item.name}';
+        file = await File(item.path!).copy(destPath);
+      } else if (item.bytes != null) {
+        // Fallback : écrire les bytes (chemin null sur Android 10+)
+        final destPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${item.name}';
+        file = File(destPath);
+        await file.writeAsBytes(item.bytes!);
+      } else {
+        continue;
+      }
       final fileSize = await file.length();
       if (fileSize > _maxFileSizeBytes) {
         if (!context.mounted) return null;
@@ -313,7 +336,13 @@ class IdentityDocumentPicker {
           continue;
         }
 
-        files.add(file);
+        // Copier vers un emplacement persistant pour éviter la suppression
+        // du fichier temporaire de la caméra avant l'upload
+        final persistentFile = await _copyToPersistentDir(
+          file,
+          '${DateTime.now().millisecondsSinceEpoch}_id_${side.toLowerCase()}.jpg',
+        );
+        files.add(persistentFile);
         labels.add('Piece identite - $side');
         validated = true;
       }
