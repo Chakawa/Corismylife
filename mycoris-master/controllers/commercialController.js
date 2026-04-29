@@ -138,11 +138,18 @@ exports.getCommercialStats = async (req, res) => {
     const nbContrats = parseInt(contratsResult.rows[0].count) || 0;
 
     // Compter le nombre de propositions (souscriptions avec statut 'proposition')
+    // Inclut : souscriptions créées par le commercial (s.code_apporteur)
+    //          ET souscriptions créées par un client avec assistance de ce commercial (s.code_apporteur aussi, via createSubscription)
+    //          ET souscriptions dont le user appartient au commercial (u.code_apporteur - legacy)
     const propositionsQuery = `
       SELECT COUNT(DISTINCT s.id) as count
       FROM subscriptions s
-      INNER JOIN users u ON s.user_id = u.id
-      WHERE u.code_apporteur = $1 AND s.statut = 'proposition'
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.statut = 'proposition'
+        AND (
+          s.code_apporteur = $1
+          OR u.code_apporteur = $1
+        )
     `;
     const propositionsResult = await pool.query(propositionsQuery, [codeApporteur]);
     const nbPropositions = parseInt(propositionsResult.rows[0].count) || 0;

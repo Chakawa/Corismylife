@@ -131,6 +131,23 @@ exports.createSubscription = async (req, res) => {
       // Les infos client sont dans souscription_data.client_info
     }
     
+    // WORKFLOW CLIENT avec assistance commerciale :
+    // Si un client a renseigné un code apporteur dans le formulaire d'assistance,
+    // on l'utilise comme code_apporteur de la souscription afin que le commercial
+    // puisse la voir dans son tableau de bord.
+    if (userRole !== 'commercial') {
+      const assistance = subscriptionData.assistance_commerciale;
+      if (
+        assistance &&
+        assistance.is_aide_par_commercial === true &&
+        assistance.commercial_code_apporteur &&
+        assistance.commercial_code_apporteur.trim() !== ''
+      ) {
+        finalCodeApporteur = assistance.commercial_code_apporteur.trim();
+        console.log('ℹ️ Assistance commerciale client → code_apporteur:', finalCodeApporteur);
+      }
+    }
+    
     // Générer un numéro de police unique pour cette souscription
     // Format: PROD-YYYY-XXXXX (ex: SER-2025-00123)
     const numeroPolice = await generatePolicyNumber(product_type);
