@@ -1075,14 +1075,7 @@ exports.getContratDetails = async (req, res) => {
       userTelephone || null
     ]);
 
-    console.log('📊 [CONTRAT DETAILS] Résultats trouvés:', result.rows.length);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Contrat non trouvé'
-      });
-    }
+    console.log('📊 [CONTRAT DETAILS] Résultats trouvés dans contrats:', result.rows.length);
 
     // Ajouter le nom du produit côté serveur
     const produitsMap = {
@@ -1094,6 +1087,112 @@ exports.getContratDetails = async (req, res) => {
       '246': 'CORIS ÉTUDE',
       '200': 'CORIS FAMILIS'
     };
+
+    // Si non trouvé dans la table contrats, chercher dans subscriptions
+    if (result.rows.length === 0) {
+      console.log('🔄 [CONTRAT DETAILS] Non trouvé dans contrats, recherche dans subscriptions...');
+
+      const subQuery = `
+        SELECT
+          s.id,
+          s.numero_police as numepoli,
+          CASE s.produit_nom
+            WHEN 'coris_serenite' THEN '202'
+            WHEN 'coris_familis'  THEN '200'
+            WHEN 'coris_retraite' THEN '240'
+            WHEN 'coris_etude'    THEN '246'
+            WHEN 'coris_epargne_bonus' THEN '242'
+            WHEN 'coris_solidarite' THEN '225'
+            ELSE s.produit_nom
+          END as codeprod,
+          COALESCE(
+            (s.souscriptiondata->'client_info'->>'prenom') || ' ' || (s.souscriptiondata->'client_info'->>'nom'),
+            u.prenom || ' ' || u.nom,
+            'Client'
+          ) as nom_prenom,
+          'Actif' as etat,
+          (s.souscriptiondata->>'date_effet')::date as datesous,
+          '' as codeinte,
+          s.code_apporteur,
+          (s.souscriptiondata->>'date_effet')::date as dateeffet,
+          (s.souscriptiondata->>'date_echeance')::date as dateecheance,
+          COALESCE(
+            (s.souscriptiondata->'client_info'->>'date_naissance')::date,
+            u.date_naissance
+          ) as datenaissance,
+          (s.souscriptiondata->>'duree')::integer as duree,
+          COALESCE(s.souscriptiondata->>'periodicite', '') as periodicite,
+          NULL::numeric as capital,
+          NULL::numeric as rente,
+          COALESCE(
+            (s.souscriptiondata->>'prime_mensuelle')::numeric,
+            (s.souscriptiondata->'client_info'->>'prime')::numeric,
+            (s.souscriptiondata->>'prime')::numeric
+          ) as prime,
+          COALESCE(
+            (SELECT SUM(pt.montant) FROM payment_transactions pt
+             WHERE pt.subscription_id = s.id
+               AND LOWER(pt.statut) IN ('success','succeeded','paid','completed','validated','confirmed','ok')
+            ), 0
+          ) as montant_encaisse,
+          0 as impaye,
+          NULL as domiciliation,
+          COALESCE(
+            s.souscriptiondata->'client_info'->>'telephone',
+            u.telephone
+          ) as telephone1,
+          NULL as telephone2,
+          COALESCE(s.souscriptiondata->'client_info'->>'prenom', u.prenom, '') as prenom,
+          COALESCE(s.souscriptiondata->'client_info'->>'nom', u.nom, '') as nom,
+          s.id as subscription_id
+        FROM subscriptions s
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.numero_police = $1
+          AND s.statut = 'contrat'
+          AND (
+            ($2::text IS NOT NULL AND CAST(s.code_apporteur AS TEXT) = CAST($2 AS TEXT))
+            OR ($3::int IS NOT NULL AND s.user_id = $3)
+            OR (
+              $4::text IS NOT NULL
+              AND REPLACE(COALESCE(s.souscriptiondata->'client_info'->>'telephone', ''), ' ', '') LIKE '%' || REPLACE($4, ' ', '') || '%'
+            )
+          )
+      `;
+
+      const subResult = await pool.query(subQuery, [
+        numepoli,
+        codeApporteur || null,
+        req.user.id,
+        userTelephone || null
+      ]);
+
+      console.log('📊 [CONTRAT DETAILS] Résultats dans subscriptions:', subResult.rows.length);
+
+      if (subResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Contrat non trouvé'
+        });
+      }
+
+      const subRow = subResult.rows[0];
+      const contratSub = {
+        ...subRow,
+        nom_produit: produitsMap[subRow.codeprod] || `Produit ${subRow.codeprod}`,
+        dateeffet: formatDateDDMMYYYY(subRow.dateeffet),
+        datesous: formatDateDDMMYYYY(subRow.datesous || subRow.dateeffet),
+        dateecheance: formatDateDDMMYYYY(subRow.dateecheance),
+        datenaissance: formatDateDDMMYYYY(subRow.datenaissance),
+      };
+
+      console.log('✅ [CONTRAT DETAILS] Contrat trouvé dans subscriptions, numepoli:', subRow.numepoli);
+
+      return res.json({
+        success: true,
+        contrat: contratSub,
+        beneficiaires: []
+      });
+    }
 
     const contratAvecNomProduit = {
       ...result.rows[0],
