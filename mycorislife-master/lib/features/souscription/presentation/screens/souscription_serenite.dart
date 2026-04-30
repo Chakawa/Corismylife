@@ -6535,7 +6535,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         // ÉTAPE 1.5: Upload du document pièce d'identité si présent
         if (_pieceIdentite != null) {
 
-          await _uploadDocument(subscriptionId);
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+            // On continue même si l'upload échoue
+          }
         }
 
         if (mounted) {
@@ -6607,7 +6612,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (paymentMethod == 'Wave') {
@@ -6690,7 +6700,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (mounted) {

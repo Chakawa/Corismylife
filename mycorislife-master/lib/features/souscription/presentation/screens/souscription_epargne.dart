@@ -1564,7 +1564,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         // Upload du document pièce d'identité si présent
         if (_pieceIdentite != null) {
 
-          await _uploadDocument(subscriptionId);
+          try {
+            await _uploadDocument(subscriptionId);
+          } catch (uploadError) {
+            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+            // On continue même si l'upload échoue
+          }
         }
 
         // Afficher le modal de paiement CorisMoney
@@ -1616,7 +1621,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (paymentMethod == 'Wave') {
@@ -1675,7 +1685,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       _showSuccessDialog(false);

@@ -418,16 +418,20 @@ exports.updateSubscription = async (req, res) => {
     }
 
     // Requête SQL pour mettre à jour la souscription
+    // Utilise l'opérateur || pour FUSIONNER les données (merge) au lieu de remplacer
+    // Les clés existantes non présentes dans les nouvelles données (ex: piece_identite_documents,
+    // payment_info, signature_path) sont préservées automatiquement
     const query = `
       UPDATE subscriptions 
-      SET produit_nom = $1, souscriptiondata = $2
+      SET produit_nom = $1,
+          souscriptiondata = COALESCE(souscriptiondata, '{}'::jsonb) || $2::jsonb
       WHERE id = $3 AND user_id = $4
       RETURNING *;
     `;
 
     const values = [
       product_type || null,
-      subscriptionData,
+      JSON.stringify(subscriptionData),
       id,
       currentUserId
     ];

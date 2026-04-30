@@ -4480,7 +4480,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (paymentMethod == 'Wave') {
@@ -4564,7 +4569,12 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
       // Upload du document pièce d'identité si présent
       if (_pieceIdentite != null) {
 
-        await _uploadDocument(subscriptionId);
+        try {
+          await _uploadDocument(subscriptionId);
+        } catch (uploadError) {
+          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          // On continue même si l'upload échoue
+        }
       }
 
       if (mounted) {
