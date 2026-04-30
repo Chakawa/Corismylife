@@ -3130,6 +3130,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           } catch (uploadError) {
 
             debugPrint('⚠️ Erreur upload document: $uploadError');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           }
 
         }
@@ -3211,6 +3220,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           // On continue même si l'upload échoue
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
 
       }
@@ -3320,6 +3338,15 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           // On continue même si l'upload échoue
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
 
       }
@@ -3405,6 +3432,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       debugPrint('❌ Exception upload document: $e');
       // Ne pas bloquer la souscription si l'upload échoue
+      rethrow;
     }
 
   }

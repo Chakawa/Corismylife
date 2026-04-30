@@ -1182,6 +1182,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
             debugPrint(
                 '⚠️ Erreur upload document (non bloquant): $uploadError');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           }
 
         }
@@ -1252,6 +1261,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         } catch (uploadError) {
 
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
 
       }
@@ -1332,6 +1350,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         } catch (uploadError) {
 
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
 
       }
@@ -1414,6 +1441,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     } catch (e) {
 
       debugPrint('❌ Exception upload document: $e');
+      rethrow;
     }
 
   }

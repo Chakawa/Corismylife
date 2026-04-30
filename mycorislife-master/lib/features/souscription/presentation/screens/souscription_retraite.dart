@@ -5543,7 +5543,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         if (response.statusCode != 200 || !responseData['success']) {
 
           debugPrint('❌ Erreur upload: ${responseData['message']}');
-          throw Exception(responseData['message'] ?? 'Erreur upload document');
+          throw Exception(responseData['message'] ?? 'Erreur lors de l\'upload du document');
         }
 
       }
