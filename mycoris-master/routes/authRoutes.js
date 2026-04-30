@@ -567,9 +567,13 @@ router.get('/profile', verifyToken, async (req, res) => {
       prenom: userData.prenom
     });
 
-    // Formater la date si elle existe
+    // Formater la date si elle existe (date_naissance peut être string ou Date)
     if (userData.date_naissance) {
-      userData.date_naissance = userData.date_naissance.toISOString().split('T')[0];
+      if (userData.date_naissance instanceof Date) {
+        userData.date_naissance = userData.date_naissance.toISOString().split('T')[0];
+      } else {
+        userData.date_naissance = String(userData.date_naissance).split('T')[0];
+      }
     }
 
     res.json({
@@ -632,9 +636,13 @@ router.get('/me', verifyToken, async (req, res) => {
     const userData = result.rows[0];
     console.log('✅ Route /me - Données utilisateur:', userData);
 
-    // Formater la date si elle existe
+    // Formater la date si elle existe (date_naissance peut être string ou Date)
     if (userData.date_naissance) {
-      userData.date_naissance = userData.date_naissance.toISOString().split('T')[0];
+      if (userData.date_naissance instanceof Date) {
+        userData.date_naissance = userData.date_naissance.toISOString().split('T')[0];
+      } else {
+        userData.date_naissance = String(userData.date_naissance).split('T')[0];
+      }
     }
 
     res.json(userData);
