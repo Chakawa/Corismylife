@@ -1429,24 +1429,29 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
       ..._extractDocumentsList(_subscriptionData?['piece_identite_documents']),
     ];
 
-    // Ne plus ajouter manuellement pieceIdentite - elle devrait déjà être incluse dans piece_identite_documents
-    // Si elle n'y est pas, c'est un problème de données côté serveur
-// Ajouter pieceIdentite seulement si elle n'existe pas déjà
+    // Ajouter pieceIdentite seulement si c'est un fichier serveur (préfixe identity_)
+    // Les noms de fichiers locaux (ex: "1745678901234_id_recto.jpg") ne sont pas des fichiers
+    // serveur valides et provoqueraient une erreur 404 lors de l'affichage.
     if (actualFilename != null && actualFilename.isNotEmpty) {
 
-      final alreadyExists = docsList.any((doc) {
+      final basename = actualFilename.replaceAll('\\', '/').split('/').last.trim();
+      // Un fichier serveur commence par "identity_" (généré par multer)
+      final isServerFile = basename.startsWith('identity_');
+      if (isServerFile) {
 
-        final path = doc['path']?.toString().trim() ?? '';
-        final normalized = path.replaceAll('\\', '/').split('/').last.trim();
-        final currentFile =
-            actualFilename.replaceAll('\\', '/').split('/').last.trim();
-        return normalized == currentFile;
-      });
+        final alreadyExists = docsList.any((doc) {
 
-      if (!alreadyExists) {
+          final path = doc['path']?.toString().trim() ?? '';
+          final normalized = path.replaceAll('\\', '/').split('/').last.trim();
+          return normalized == basename;
+        });
 
-        docsList.add(
-            {'path': actualFilename, 'label': displayLabel ?? actualFilename});
+        if (!alreadyExists) {
+
+          docsList.add(
+              {'path': actualFilename, 'label': displayLabel ?? actualFilename});
+        }
+
       }
 
     }

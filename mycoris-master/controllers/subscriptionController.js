@@ -189,6 +189,14 @@ exports.createSubscription = async (req, res) => {
       }
     }
     
+    // Supprimer les champs piece_identite* qui proviennent de l'app Flutter :
+    // ils contiennent des noms de fichiers locaux (sur le téléphone) non valides côté serveur.
+    // Ces champs sont UNIQUEMENT définis par la route uploadDocument après l'envoi réel du fichier.
+    delete subscriptionData.piece_identite;
+    delete subscriptionData.piece_identite_url;
+    delete subscriptionData.piece_identite_label;
+    delete subscriptionData.piece_identite_documents;
+
     // Requête SQL pour insérer la nouvelle souscription
     // IMPORTANT : Le statut par défaut est "proposition" (pas encore payé)
     const query = `
@@ -416,6 +424,15 @@ exports.updateSubscription = async (req, res) => {
         console.error('❌ Erreur mise à jour signature:', error.message);
       }
     }
+
+    // Supprimer les champs piece_identite* du payload Flutter :
+    // ils contiennent des noms de fichiers locaux (téléphone) non valides côté serveur.
+    // La fusion || préserverait sinon le bon nom serveur par le mauvais nom local.
+    // Ces champs sont UNIQUEMENT mis à jour par la route uploadDocument.
+    delete subscriptionData.piece_identite;
+    delete subscriptionData.piece_identite_url;
+    delete subscriptionData.piece_identite_label;
+    delete subscriptionData.piece_identite_documents;
 
     // Requête SQL pour mettre à jour la souscription
     // Utilise l'opérateur || pour FUSIONNER les données (merge) au lieu de remplacer

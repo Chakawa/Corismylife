@@ -1962,15 +1962,20 @@ class ContratDetailPageState extends State<ContratDetailPage>
     ];
     if (pieceIdentite != null && pieceIdentite.trim().isNotEmpty) {
       final identityPath = pieceIdentite.trim();
-      final alreadyExists = docsList.any((doc) {
-        final docPath = doc['path']?.toString().trim();
-        return docPath != null && docPath == identityPath;
-      });
-      if (!alreadyExists) {
-        docsList.insert(0, {
-          'path': identityPath,
-          'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+      final basename = identityPath.replaceAll('\\', '/').split('/').last.trim();
+      // N'afficher que les fichiers serveur (préfixe identity_) pour éviter les 404
+      final isServerFile = basename.startsWith('identity_');
+      if (isServerFile) {
+        final alreadyExists = docsList.any((doc) {
+          final docPath = doc['path']?.toString().trim();
+          return docPath != null && docPath.replaceAll('\\', '/').split('/').last.trim() == basename;
         });
+        if (!alreadyExists) {
+          docsList.insert(0, {
+            'path': identityPath,
+            'label': pieceIdentiteLabel ?? 'Pièce d\'identité',
+          });
+        }
       }
     }
 
