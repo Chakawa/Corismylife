@@ -1348,6 +1348,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Future<void> _showSignatureAndPayment() async {
 
+    // Avertir si aucun document d'identité n'a été ajouté
+    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
+            backgroundColor: Color(0xFFFF8C00),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -1695,6 +1708,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _saveAsProposition() async {
+
+    // Avertir si aucun document d'identité n'a été ajouté
+    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
+            backgroundColor: Color(0xFFFF8C00),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
 
     try {
 

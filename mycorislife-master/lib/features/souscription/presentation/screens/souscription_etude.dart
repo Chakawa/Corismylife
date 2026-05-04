@@ -2864,6 +2864,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   Future<void> _showSignatureAndPayment() async {
 
+    // Avertir si aucun document d'identité n'a été ajouté
+    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
+            backgroundColor: Color(0xFFFF8C00),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+
     final hasSignature = await _ensureClientSignature();
     if (!hasSignature) return;
 
@@ -3295,6 +3308,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _saveAsProposition() async {
+
+    // Avertir si aucun document d'identité n'a été ajouté
+    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
+            backgroundColor: Color(0xFFFF8C00),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
 
     // Assurer qu'une signature a bien été collectée avant de sauvegarder
     if (_clientSignature == null) {
