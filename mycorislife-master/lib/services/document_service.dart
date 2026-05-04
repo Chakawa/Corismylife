@@ -156,8 +156,8 @@ class DocumentService {
       return '${AppConfig.baseUrl}/users/photo/$photoUrl';
     }
 
-    // Si c'est un chemin relatif
-    return '${AppConfig.baseUrl}$photoUrl';
+    // Si c'est un chemin relatif (ex: /uploads/profiles/...) — pas de /api
+    return '${AppConfig.baseUrl.replaceAll('/api', '')}$photoUrl';
   }
 
   /// Télécharger un document depuis le serveur

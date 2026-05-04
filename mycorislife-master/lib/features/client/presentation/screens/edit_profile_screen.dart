@@ -283,7 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fit: BoxFit.cover)
                                       : _photoUrl != null
                                           ? Image.network(
-                                              '${AppConfig.baseUrl}$_photoUrl',
+                                              '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl',
                                               fit: BoxFit.cover,
                                               errorBuilder: (_, __, ___) =>
                                                   const Icon(Icons.person,

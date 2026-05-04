@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -24,7 +25,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   int currentStep = 0; // 0: Email, 1: Code, 2: Nouveau mot de passe
   String? devCode; // Pour le développement
 
-  static const String baseUrl = 'http://192.168.1.32:5000/api/password-reset';
+  static String get baseUrl => '${AppConfig.baseUrl}/password-reset';
   // Étape 1: Demander le code de vérification
   Future<void> _requestCode() async {
     if (_formKey.currentState!.validate()) {

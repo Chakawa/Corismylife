@@ -254,7 +254,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       http.Response effectiveResponse = response;
       if (response.statusCode == 404) {
         final fallbackUrl =
-            '${AppConfig.baseUrl}/uploads/identity-cards/${Uri.encodeComponent(normalizedDocumentName)}';
+            '${AppConfig.baseUrl.replaceAll('/api', '')}/uploads/identity-cards/${Uri.encodeComponent(normalizedDocumentName)}';
         print('⚠️ 404 sur endpoint subscription, tentative fallback: $fallbackUrl');
         try {
           final fallbackResponse = await http.get(
