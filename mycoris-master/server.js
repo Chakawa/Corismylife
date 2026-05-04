@@ -102,8 +102,10 @@ app.use('/api/simulations', require('./routes/simulationRoutes'));
 /// ============================================
 require('./cron/paymentReminders');
 
-// Servir les fichiers uploadés
-app.use('/uploads', express.static('uploads'));
+// Servir les fichiers uploadés (chemin absolu pour PM2 en production)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Accessible aussi via /api/uploads (fallback Flutter)
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/health', (_,res)=>res.json({ ok:true, ts: Date.now() }));
 
