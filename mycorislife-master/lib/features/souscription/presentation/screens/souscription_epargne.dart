@@ -1,4 +1,4 @@
-// ignore_for_file: unused_field, unused_element
+﻿// ignore_for_file: unused_field, unused_element
 import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -1348,19 +1348,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Future<void> _showSignatureAndPayment() async {
 
-    // Avertir si aucun document d'identité n'a été ajouté
-    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
-            backgroundColor: Color(0xFFFF8C00),
-            duration: Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -1708,19 +1695,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _saveAsProposition() async {
-
-    // Avertir si aucun document d'identité n'a été ajouté
-    if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⚠️ Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.'),
-            backgroundColor: Color(0xFFFF8C00),
-            duration: Duration(seconds: 5),
-          ),
-        );
-      }
-    }
 
     try {
 
@@ -3710,6 +3684,30 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ),
                   ),
                   SizedBox(height: context.r(20)),
+
+                  // Avertissement si aucun document d'identité ajouté
+                  if (_pieceIdentite == null && _pieceIdentiteFiles.isEmpty)
+                    Container(
+                      margin: EdgeInsets.only(bottom: context.r(16)),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        border: Border.all(color: const Color(0xFFFF8C00)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF8C00), size: 20),
+                          SizedBox(width: context.r(8)),
+                          Expanded(
+                            child: Text(
+                              'Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.',
+                              style: TextStyle(color: const Color(0xFF7D4B00), fontSize: context.sp(13)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Option 1: Payer maintenant
                   InkWell(
