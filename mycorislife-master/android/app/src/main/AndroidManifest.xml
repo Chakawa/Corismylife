@@ -59,7 +59,6 @@
         <!-- Activité UCrop pour image_cropper -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         
         <meta-data
