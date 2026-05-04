@@ -18,7 +18,6 @@ import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionEpargnePage extends StatefulWidget {
-
   final int? subscriptionId; // ID pour modification
   final Map<String, dynamic>?
       existingData; // Données existantes pour modification
@@ -33,7 +32,6 @@ class SouscriptionEpargnePage extends StatefulWidget {
 
 class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     with TickerProviderStateMixin {
-
   // Charte graphique CORIS améliorée
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -84,8 +82,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
-  final TextEditingController _clientProfessionController = TextEditingController();
-  final TextEditingController _clientSecteurActiviteController = TextEditingController();
+  final TextEditingController _clientProfessionController =
+      TextEditingController();
+  final TextEditingController _clientSecteurActiviteController =
+      TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
   String _selectedClientIndicatif = '+225';
 
@@ -155,28 +155,24 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   // Options de capital et prime avec bonus
   final List<Map<String, dynamic>> _capitalOptions = [
     {
-
       'capital': 1000000,
       'prime': 5500,
       'popularite': false,
       'bonus': '+ 5% de bonus au terme',
     },
     {
-
       'capital': 2000000,
       'prime': 10500,
       'popularite': true,
       'bonus': '+ 7% de bonus au terme',
     },
     {
-
       'capital': 4000000,
       'prime': 20500,
       'popularite': false,
       'bonus': '+ 10% de bonus au terme',
     },
     {
-
       'capital': 6000000,
       'prime': 30500,
       'popularite': false,
@@ -197,9 +193,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   final storage = const FlutterSecureStorage();
 
   @override
-
   void initState() {
-
     super.initState();
     _animationController = AnimationController(
       duration: Duration(milliseconds: 800),
@@ -221,16 +215,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     _animationController.forward();
 
     if (widget.existingData != null) {
-
       _prefillFromExistingData();
     }
-
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
 
   void _prefillFromExistingData() {
-
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -238,7 +229,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
-
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
       _clientNomController.text = clientInfo['nom'] ?? '';
@@ -249,25 +239,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       _clientAdresseController.text = clientInfo['adresse'] ?? '';
       // Note: souscription_epargne n'a pas de champ numéro de pièce
       if (clientInfo['civilite'] != null) {
-
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
       if (clientInfo['date_naissance'] != null) {
-
         try {
-
           DateTime? dateNaissance;
           if (clientInfo['date_naissance'] is String) {
-
             dateNaissance = DateTime.parse(clientInfo['date_naissance']);
           } else if (clientInfo['date_naissance'] is DateTime) {
-
             dateNaissance = clientInfo['date_naissance'];
           }
 
           if (dateNaissance != null) {
-
             _clientDateNaissance = dateNaissance;
             _clientDateNaissanceController.text =
                 '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
@@ -276,198 +260,145 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             if (maintenant.month < dateNaissance.month ||
                 (maintenant.month == dateNaissance.month &&
                     maintenant.day < dateNaissance.day)) {
-
               _clientAge--;
             }
-
           }
-
         } catch (e) {
-
           debugPrint('Erreur parsing date de naissance client: $e');
         }
-
       }
 
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
-
           _selectedClientIndicatif = parts[0];
           if (parts.length > 1) {
-
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           }
-
         }
-
       }
-
     }
 
     try {
-
       setState(() {
-
         if (data['capital'] != null) {
-
           _selectedCapital = data['capital'] is int
               ? data['capital']
               : int.parse(data['capital'].toString());
         }
 
         if (data['prime_mensuelle'] != null) {
-
           _selectedPrime = data['prime_mensuelle'] is int
               ? data['prime_mensuelle']
               : int.parse(data['prime_mensuelle'].toString());
         }
 
         if (data['date_effet'] != null) {
-
           try {
-
             _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
           } catch (e) {
-
             debugPrint('⚠️ Erreur parsing date_effet: $e');
           }
-
         }
 
         if (data['date_fin'] != null) {
-
           try {
-
             _dateFinContrat = DateTime.parse(data['date_fin'].toString());
           } catch (e) {
-
             debugPrint('⚠️ Erreur parsing date_fin: $e');
           }
-
         }
-
       });
 
       if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
-
         final beneficiaire = data['beneficiaire'];
         if (beneficiaire['nom'] != null) {
-
           _beneficiaireNomController.text = beneficiaire['nom'].toString();
         }
 
         if (beneficiaire['contact'] != null) {
-
           final contact = beneficiaire['contact'].toString();
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedBeneficiaireIndicatif = parts[0];
             _beneficiaireContactController.text = parts.sublist(1).join(' ');
           }
-
         }
 
         if (beneficiaire['lien_parente'] != null) {
-
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         }
 
         if (beneficiaire['date_naissance'] != null) {
-
           try {
-
             _beneficiaireDateNaissance =
                 DateTime.parse(beneficiaire['date_naissance']);
             _beneficiaireDateNaissanceController.text =
                 DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
           } catch (e) {
-
             debugPrint('Erreur parsing date_naissance beneficiaire: $e');
           }
-
         }
-
       }
 
       if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
-
         final contactUrgence = data['contact_urgence'];
         if (contactUrgence['nom'] != null) {
-
           _personneContactNomController.text = contactUrgence['nom'].toString();
         }
 
         if (contactUrgence['contact'] != null) {
-
           final contact = contactUrgence['contact'].toString();
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedContactIndicatif = parts[0];
             _personneContactTelController.text = parts.sublist(1).join(' ');
           }
-
         }
 
         if (contactUrgence['lien_parente'] != null) {
-
           _selectedLienParenteUrgence =
               contactUrgence['lien_parente'].toString();
         }
-
       }
 
-        if (data['assistance_commerciale'] != null &&
+      if (data['assistance_commerciale'] != null &&
           data['assistance_commerciale'] is Map) {
-
         final assistance = data['assistance_commerciale'];
-        _isAideParCommercial =
-          assistance['is_aide_par_commercial'] == true;
+        _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
         _commercialNomPrenomController.text =
-          assistance['commercial_nom_prenom']?.toString() ?? '';
+            assistance['commercial_nom_prenom']?.toString() ?? '';
         _commercialCodeApporteurController.text =
-          assistance['commercial_code_apporteur']?.toString() ?? '';
-        }
+            assistance['commercial_code_apporteur']?.toString() ?? '';
+      }
 
       debugPrint('✅ Pré-remplissage ÉPARGNE terminé');
     } catch (e) {
-
       debugPrint('❌ Erreur pré-remplissage ÉPARGNE: $e');
     }
-
   }
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args['isCommercial'] == true) {
-
       if (!_isCommercial) {
-
         setState(() {
-
           _isCommercial = true;
         });
       }
 
       // Si on est en mode modification (avec existingData), ne rien écraser
       if (args['existingData'] != null) {
-
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
       }
 
       // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
-
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
@@ -478,15 +409,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         _clientAdresseController.text = clientInfo['adresse'] ?? '';
 
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
         // Gérer la date de naissance
         if (clientInfo['date_naissance'] != null) {
-
           try {
-
             _clientDateNaissance = DateTime.parse(clientInfo['date_naissance']);
             _clientDateNaissanceController.text =
                 '${_clientDateNaissance!.day.toString().padLeft(2, '0')}/${_clientDateNaissance!.month.toString().padLeft(2, '0')}/${_clientDateNaissance!.year}';
@@ -495,72 +423,52 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             if (maintenant.month < _clientDateNaissance!.month ||
                 (maintenant.month == _clientDateNaissance!.month &&
                     maintenant.day < _clientDateNaissance!.day)) {
-
               _clientAge--;
             }
-
           } catch (e) {
-
             debugPrint('Erreur parsing date de naissance: $e');
           }
-
         }
 
         // Gérer l'indicatif téléphonique
         if (clientInfo['telephone'] != null) {
-
           final telephone = clientInfo['telephone'].toString();
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-
             _selectedClientIndicatif = parts[0];
             if (parts.length > 1) {
-
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
-
           }
-
         }
-
       }
-
     }
 
     if (!_isCommercial) {
-
       _loadUserData();
     }
-
   }
 
   Future<void> _loadUserData() async {
-
     try {
-
       final token = await storage.read(key: 'token');
       if (token == null) return;
 
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data == null || data is! Map) {
-
           debugPrint(
               '⚠️ Profil: réponse API vide ou non-Map: ${response.body}');
           if (mounted) {
-
             setState(() {
-
               _userData = _userData.isNotEmpty ? _userData : {};
             });
           }
@@ -574,7 +482,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         if (data['success'] == true &&
             data['user'] != null &&
             data['user'] is Map) {
-
           userData = Map<String, dynamic>.from(data['user']);
         }
 
@@ -582,41 +489,29 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         else if (data['success'] == true &&
             data['data'] != null &&
             data['data'] is Map) {
-
           userData = Map<String, dynamic>.from(data['data']);
         }
 
         // 3) Direct user object
         else if (data.containsKey('id') && data.containsKey('email')) {
-
           userData = Map<String, dynamic>.from(data);
         }
 
         if (userData != null && userData.isNotEmpty) {
-
           if (mounted) {
-
             setState(() {
-
               _userData = userData!;
             });
           }
-
         }
-
       }
-
     } catch (e) {
-
       debugPrint('Erreur chargement données utilisateur: $e');
     }
-
   }
 
   @override
-
   void dispose() {
-
     _animationController.dispose();
     _progressController.dispose();
     _pageController.dispose();
@@ -646,16 +541,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   String _formatMontant(int montant) {
-
     return "${montant.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   /// Parse le RIB unifié en ses 3 composantes
   Map<String, String> _parseRibUnified(String rib) {
-
     final parts = rib.split('/').map((s) => s.trim()).toList();
     return {
-
       'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
@@ -664,7 +556,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
-
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
@@ -681,12 +572,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   /// Formate l'entrée RIB en temps réel
 
   void _formatRibInput() {
-
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (onlyDigits.isEmpty) {
-
       _ribUnifiedController.text = '';
       return;
     }
@@ -694,42 +583,34 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
     if (onlyDigits.isNotEmpty) {
-
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 5) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 16) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(16, min(18, onlyDigits.length)));
     }
 
     final formatted = buffer.toString();
     if (formatted != text) {
-
       _ribUnifiedController.text = formatted;
       _ribUnifiedController.selection = TextSelection.fromPosition(
         TextPosition(offset: formatted.length),
       );
     }
-
   }
 
   Future<void> _pickDocument() async {
-
     try {
-
       final picked = await IdentityDocumentPicker.pickDocuments(context);
       if (picked == null || picked.files.isEmpty || !mounted) return;
 
       setState(() {
-
         _pieceIdentiteFiles
           ..clear()
           ..addAll(picked.files);
@@ -758,31 +639,22 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         ),
       );
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar('Erreur lors de la sélection du fichier');
       }
-
     }
-
   }
 
   String _formatDate(String dateString) {
-
     try {
-
       final date = DateTime.parse(dateString);
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
-
       return dateString;
     }
-
   }
 
   String _getBonusText() {
-
     if (_selectedCapital == null) return 'Non défini';
 
     final option = _capitalOptions.firstWhere(
@@ -800,19 +672,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   /// si elles ne sont pas déjà disponibles dans _userData
 
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
-
     try {
-
       // Si _userData est déjà chargé et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé');
         // Retourner un map vide au lieu de lever une exception
         return {};
@@ -822,28 +690,22 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['user']);
             // Calculer l'âge si la date de naissance est disponible
             if (userData['date_naissance'] != null) {
-
               try {
-
                 final dateNaissance =
                     DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
@@ -851,24 +713,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 if (maintenant.month < dateNaissance.month ||
                     (maintenant.month == dateNaissance.month &&
                         maintenant.day < dateNaissance.day)) {
-
                   age--;
                 }
 
                 userData['age'] = age;
               } catch (e) {
-
                 debugPrint('Erreur parsing date: $e');
               }
-
             }
 
             debugPrint(
                 '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -880,15 +737,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-
               final userData = Map<String, dynamic>.from(dataObj);
               if (userData['date_naissance'] != null) {
-
                 try {
-
                   final dateNaissance =
                       DateTime.parse(userData['date_naissance']);
                   final maintenant = DateTime.now();
@@ -896,31 +749,25 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   if (maintenant.month < dateNaissance.month ||
                       (maintenant.month == dateNaissance.month &&
                           maintenant.day < dateNaissance.day)) {
-
                     age--;
                   }
 
                   userData['age'] = age;
                 } catch (e) {
-
                   debugPrint('Erreur parsing date: $e');
                 }
-
               }
 
               debugPrint(
                   '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
-
                 setState(() {
-
                   _userData = userData;
                 });
               }
 
               return userData;
             }
-
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
@@ -928,12 +775,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               data['data'] is Map &&
               data['data']['user'] != null &&
               data['data']['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['data']['user']);
             if (userData['date_naissance'] != null) {
-
               try {
-
                 final dateNaissance =
                     DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
@@ -941,24 +785,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 if (maintenant.month < dateNaissance.month ||
                     (maintenant.month == dateNaissance.month &&
                         maintenant.day < dateNaissance.day)) {
-
                   age--;
                 }
 
                 userData['age'] = age;
               } catch (e) {
-
                 debugPrint('Erreur parsing date: $e');
               }
-
             }
 
             debugPrint(
                 '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -968,12 +807,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
-
             final userData = Map<String, dynamic>.from(data);
             if (userData['date_naissance'] != null) {
-
               try {
-
                 final dateNaissance =
                     DateTime.parse(userData['date_naissance']);
                 final maintenant = DateTime.now();
@@ -981,24 +817,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                 if (maintenant.month < dateNaissance.month ||
                     (maintenant.month == dateNaissance.month &&
                         maintenant.day < dateNaissance.day)) {
-
                   age--;
                 }
 
                 userData['age'] = age;
               } catch (e) {
-
                 debugPrint('Erreur parsing date: $e');
               }
-
             }
 
             debugPrint(
                 '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -1009,32 +840,25 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           debugPrint(
               '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
-
       } else {
-
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
-
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
-
   }
 
   void _showErrorSnackBar(String message) {
-
     if (mounted) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1052,62 +876,43 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         ),
       );
     }
-
   }
 
   void _nextStep() {
-
     final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
-
       bool canProceed = false;
 
       if (_isCommercial) {
-
         // Pour les commerciaux: step 0 = infos client, step 1 = capital, step 2 = contrat, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       } else {
-
         // Pour les clients: step 0 = capital, step 1 = contrat, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       }
 
       if (canProceed) {
-
         // Si on avance vers le récapitulatif, s'assurer que les valeurs sont calculées
         if (_currentStep + 1 == maxStep) {
-
           try {
-
             _ensureEpargneCalculated();
           } catch (e) {
-
             debugPrint('Erreur lors du calcul Epargne avant récap: $e');
           }
-
         }
 
         setState(() => _currentStep++);
@@ -1120,19 +925,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           curve: Curves.easeInOutCubic,
         );
       }
-
     }
-
   }
 
   /// Ensure selected capital/prime are set before showing recap
 
   void _ensureEpargneCalculated() {
-
     if (_selectedCapital == null && _capitalOptions.isNotEmpty) {
-
       setState(() {
-
         _selectedCapital = _capitalOptions.first['capital'] as int?;
         _selectedPrime = _capitalOptions.first['prime'] as int?;
       });
@@ -1140,26 +940,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     }
 
     if (_selectedPrime == null && _selectedCapital != null) {
-
       final opt = _capitalOptions.firstWhere(
           (opt) => opt['capital'] == _selectedCapital,
           orElse: () => {});
       if (opt.isNotEmpty) {
-
         setState(() {
-
           _selectedPrime = opt['prime'] as int?;
         });
       }
-
     }
-
   }
 
   void _previousStep() {
-
     if (_currentStep > 0) {
-
       setState(() => _currentStep--);
       _progressController.reverse();
       _animationController.reset();
@@ -1170,38 +963,31 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         curve: Curves.easeInOutCubic,
       );
     }
-
   }
 
   bool _validateStepClientInfo() {
-
     if (_clientNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du client');
       return false;
     }
 
     if (_clientPrenomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
 
     if (_clientDateNaissance == null) {
-
       _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
 
     if (_clientAge < 18 || _clientAge > 65) {
-
       _showErrorSnackBar('L\'âge du client doit être entre 18 et 65 ans');
       return false;
     }
 
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
@@ -1210,9 +996,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   bool _validateStep1() {
-
     if (_selectedCapital == null) {
-
       _showErrorSnackBar('Veuillez sélectionner un capital');
       return false;
     }
@@ -1221,14 +1005,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   bool _validateStep2() {
-
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _beneficiaireDateNaissance == null ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty ||
         _dateEffetContrat == null) {
-
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
       return false;
     }
@@ -1236,7 +1018,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
@@ -1245,7 +1026,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     if (_isAideParCommercial &&
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
-
       _showErrorSnackBar(
           'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
       return false;
@@ -1255,46 +1035,36 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   bool _validateStepModePaiement() {
-
     if (_selectedModePaiement == null || _selectedModePaiement!.isEmpty) {
-
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-
       if (_banqueController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le nom de la banque');
         return false;
       }
 
       if (_ribUnifiedController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner votre RIB complet');
         return false;
       }
 
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-
         _showErrorSnackBar(
             'Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
@@ -1302,52 +1072,39 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-
         if (!phone.startsWith('07')) {
-
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
-
       }
-
     } else if (_selectedModePaiement == 'Prélèvement à la source') {
-
       if (_nomStructureController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
 
       if (_numeroMatriculeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
         return false;
       }
-
     } else if (_selectedModePaiement == 'CORIS Money') {
-
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
-
     }
 
     return true;
   }
 
   Future<void> _showSignatureAndPayment() async {
-
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -1355,12 +1112,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
 
     if (signature == null) {
-
       return; // L'utilisateur a annulé
     }
 
     setState(() {
-
       _clientSignature = signature;
     });
 
@@ -1371,19 +1126,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _showPaymentOptions() async {
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => PaymentBottomSheet(
         onPayNow: (paymentMethod) {
-
           Navigator.pop(context);
           _processPayment(paymentMethod);
         },
         onPayLater: () {
-
           Navigator.pop(context);
           _saveAsProposition();
         },
@@ -1392,20 +1144,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Future<int> _saveSubscriptionData() async {
-
     try {
-
       final subscriptionService = SubscriptionService();
 
       final subscriptionData = {
-
         'product_type': 'coris_epargne_bonus',
         'montant': _selectedPrime ?? _selectedCapital, // Ajouté pour l'admin
         'capital': _selectedCapital,
         'prime_mensuelle': _selectedPrime,
         'duree_mois': 180,
         'beneficiaire': {
-
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
@@ -1413,14 +1161,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
-
           'nom': _personneContactNomController.text.trim(),
-          'contact':
-              _personneContactTelController.text.trim(),
+          'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
-
           'is_aide_par_commercial': _isAideParCommercial,
           'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
           'commercial_code_apporteur':
@@ -1428,52 +1173,40 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_fin': _dateFinContrat?.toIso8601String(),
-        'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
-
                 'banque': _banqueController.text.trim(),
                 ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
-
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
-
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
                             _numeroMatriculeController.text.trim(),
                       }
-
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-
                             'numero_telephone':
                                 _corisMoneyPhoneController.text.trim(),
                           }
-
                         : null,
       };
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
-
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
-
         subscriptionData['client_info'] = {
-
           'nom': _clientNomController.text.trim(),
           'prenom': _clientPrenomController.text.trim(),
           'lieu_naissance': _clientLieuNaissanceController.text.trim(),
@@ -1490,11 +1223,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       final http.Response response;
       if (widget.subscriptionId != null) {
-
         response = await subscriptionService.updateSubscription(
             widget.subscriptionId!, subscriptionData);
       } else {
-
         response =
             await subscriptionService.createSubscription(subscriptionData);
       }
@@ -1503,24 +1234,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       if ((response.statusCode != 201 && response.statusCode != 200) ||
           !responseData['success']) {
-
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
       return responseData['data']['id'];
     } catch (e) {
-
       rethrow;
     }
-
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,
       {String? paymentMethod}) async {
-
     try {
-
       final subscriptionService = SubscriptionService();
       final response = await subscriptionService.updatePaymentStatus(
         subscriptionId,
@@ -1531,7 +1257,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode != 200 || !responseData['success']) {
-
         throw Exception(responseData['message'] ??
             'Erreur lors de la mise à jour du statut');
       }
@@ -1539,40 +1264,35 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       debugPrint(
           'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-
       debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
-
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-
     await Future.delayed(const Duration(seconds: 2));
     return true;
   }
 
   void _processPayment(String paymentMethod) async {
-
     // Si CORIS Money est sélectionné, utiliser le modal de paiement
     if (paymentMethod == 'CORIS Money') {
-
       try {
-
         final subscriptionId = await _saveSubscriptionData();
 
         // Upload du document pièce d'identité si présent
-        if (_pieceIdentite != null) {
-
+        if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+            debugPrint(
+                '⚠️ Erreur upload document (non bloquant): $uploadError');
             // On continue même si l'upload échoue
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  content: Text(
+                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
@@ -1583,7 +1303,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
         // Afficher le modal de paiement CorisMoney
         if (mounted) {
-
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -1592,26 +1311,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               montant: _selectedPrime?.toDouble() ?? 0.0,
               description: 'Paiement prime CORIS ÉPARGNE',
               onPaymentSuccess: () {
-
                 if (mounted) {
-
                   Navigator.pop(context);
                   _showSuccessDialog(true);
                 }
-
               },
             ),
           );
         }
-
       } catch (e) {
-
         debugPrint('❌ Erreur lors du processus: $e');
         if (mounted) {
-
           _showErrorSnackBar('Erreur lors du traitement: $e');
         }
-
       }
 
       return;
@@ -1624,12 +1336,10 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     );
 
     try {
-
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
@@ -1638,7 +1348,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -1648,9 +1359,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       }
 
       if (paymentMethod == 'Wave') {
-
         if (mounted) {
-
           Navigator.pop(context);
         }
 
@@ -1669,40 +1378,28 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           paymentMethod: paymentMethod);
 
       if (mounted) {
-
         Navigator.pop(context);
         if (paymentSuccess) {
-
           _showSuccessDialog(true);
         } else {
-
           _showErrorSnackBar(
               'Paiement échoué. Votre proposition a été sauvegardée.');
         }
-
       }
-
     } catch (e) {
-
       if (mounted) {
-
         Navigator.pop(context);
         _showErrorSnackBar('Erreur lors du traitement: $e');
       }
-
     }
-
   }
 
   void _saveAsProposition() async {
-
     try {
-
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
@@ -1711,7 +1408,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -1722,18 +1420,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
       _showSuccessDialog(false);
     } catch (e) {
-
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
     }
-
   }
 
   /// Upload le document pièce d'identité vers le serveur
 
   Future<void> _uploadDocument(int subscriptionId) async {
-
     try {
-
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
@@ -1744,44 +1438,36 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       if (paths.isEmpty) return;
 
       for (final filePath in paths) {
-
         final response = await subscriptionService.uploadDocument(
           subscriptionId,
           filePath,
         );
         final responseData = jsonDecode(response.body);
         if (response.statusCode != 200 || !responseData['success']) {
-
           debugPrint('❌ Erreur upload: ${responseData['message']}');
-          throw Exception(responseData['message'] ?? 'Erreur lors de l\'upload du document');
+          throw Exception(responseData['message'] ??
+              'Erreur lors de l\'upload du document');
         }
-
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-
       debugPrint('❌ Exception upload document: $e');
       rethrow;
     }
-
   }
 
   void _showSuccessDialog(bool isPaid) {
-
     if (mounted) {
-
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => SuccessDialog(isPaid: isPaid),
       );
     }
-
   }
 
   void _selectDateEffet() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -1789,18 +1475,14 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       lastDate: DateTime(2100),
     );
     if (picked != null && mounted) {
-
       setState(() {
-
         _dateEffetContrat = picked;
         _dateFinContrat = DateTime(picked.year + 15, picked.month, picked.day);
       });
     }
-
   }
 
   void _selectBeneficiaireDateNaissance() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _beneficiaireDateNaissance ?? DateTime(2000),
@@ -1808,26 +1490,21 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       lastDate: DateTime.now(),
     );
     if (picked != null && mounted) {
-
       setState(() {
-
         _beneficiaireDateNaissance = picked;
         _beneficiaireDateNaissanceController.text =
             DateFormat('dd/MM/yyyy').format(picked);
       });
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: grisLeger,
       resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-
           return <Widget>[
             SliverAppBar(
               expandedHeight: 120,
@@ -1927,7 +1604,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildModernProgressIndicator() {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2041,11 +1717,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2064,9 +1738,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         icon: Icons.person_outline,
                         items: ['Monsieur', 'Madame', 'Mademoiselle'],
                         onChanged: (value) {
-
                           setState(() {
-
                             _selectedClientCivilite = value!;
                           });
                         },
@@ -2089,9 +1761,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         label: 'Date de naissance',
                         icon: Icons.calendar_today,
                         onDateSelected: (date) {
-
                           setState(() {
-
                             _clientDateNaissance = date;
                             _clientDateNaissanceController.text =
                                 '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -2100,10 +1770,8 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             if (maintenant.month < date.month ||
                                 (maintenant.month == date.month &&
                                     maintenant.day < date.day)) {
-
                               _clientAge--;
                             }
-
                           });
                         },
                       ),
@@ -2119,9 +1787,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                         label: 'Téléphone du client',
                         selectedIndicatif: _selectedClientIndicatif,
                         onIndicatifChanged: (value) {
-
                           setState(() {
-
                             _selectedClientIndicatif = value;
                           });
                         },
@@ -2163,11 +1829,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildStep1() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2187,7 +1851,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ),
                       itemCount: _capitalOptions.length,
                       itemBuilder: (context, index) {
-
                         final option = _capitalOptions[index];
                         final isSelected =
                             _selectedCapital == option['capital'];
@@ -2199,9 +1862,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                             children: [
                               InkWell(
                                 onTap: () {
-
                                   setState(() {
-
                                     _selectedCapital = option['capital'];
                                     _selectedPrime = option['prime'];
                                   });
@@ -2361,7 +2022,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildSelectedOptionSummary() {
-
     return Container(
       margin: EdgeInsets.only(bottom: 20, top: 12),
       padding: EdgeInsets.all(16),
@@ -2402,13 +2062,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildSummaryRow(String label, String value) {
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: grisTexte, fontSize: context.sp(13))),
+          Text(label,
+              style: TextStyle(color: grisTexte, fontSize: context.sp(13))),
           Text(
             value,
             style: TextStyle(
@@ -2423,11 +2083,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildStep2() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2481,9 +2139,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                                     vertical: 16, horizontal: 16),
                               ),
                               validator: (value) {
-
                                 if (value == null || value.trim().isEmpty) {
-
                                   return 'Ce champ est obligatoire';
                                 }
 
@@ -2510,9 +2166,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           label: 'Contact du bénéficiaire',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedBeneficiaireIndicatif = value;
                             });
                           },
@@ -2545,9 +2199,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           ),
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
-
                             if (value == null || value.isEmpty) {
-
                               return 'Veuillez sélectionner la date de naissance';
                             }
 
@@ -2561,9 +2213,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParente = value!;
                             });
                           },
@@ -2586,9 +2236,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           label: 'Contact téléphonique',
                           selectedIndicatif: _selectedContactIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedContactIndicatif = value;
                             });
                           },
@@ -2600,9 +2248,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParenteUrgence = value!;
                             });
                           },
@@ -2624,7 +2270,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildAssistanceCommercialeSection() {
-
     return _buildFormSection(
       'Assistance commerciale',
       Icons.support_agent,
@@ -2644,16 +2289,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           dense: true,
           title: Text('Non'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
               if (!_isAideParCommercial) {
-
                 _commercialNomPrenomController.clear();
                 _commercialCodeApporteurController.clear();
               }
-
             });
           },
         ),
@@ -2664,9 +2305,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           dense: true,
           title: Text('Oui'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
             });
           },
@@ -2690,16 +2329,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildDateField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required ValueChanged<DateTime> onDateSelected,
   }) {
-
     return GestureDetector(
       onTap: () async {
-
         final DateTime? picked = await showDatePicker(
           context: context,
           initialDate: _clientDateNaissance ??
@@ -2707,7 +2343,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
           firstDate: DateTime(1900),
           lastDate: DateTime.now(),
           builder: (context, child) {
-
             return Theme(
               data: Theme.of(context).copyWith(
                 colorScheme: ColorScheme.light(
@@ -2715,17 +2350,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   onPrimary: blanc,
                   surface: blanc,
                   onSurface: bleuCoris,
-                ), dialogTheme: DialogThemeData(backgroundColor: blanc),
+                ),
+                dialogTheme: DialogThemeData(backgroundColor: blanc),
               ),
               child: child!,
             );
           },
         );
         if (picked != null) {
-
           onDateSelected(picked);
         }
-
       },
       child: AbsorbPointer(
         child: TextFormField(
@@ -2759,9 +2393,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             hintText: 'JJ/MM/AAAA',
           ),
           validator: (value) {
-
             if (value == null || value.trim().isEmpty) {
-
               return 'Ce champ est obligatoire';
             }
 
@@ -2773,13 +2405,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildPhoneFieldWithIndicatif({
-
     required TextEditingController controller,
     required String label,
     required String selectedIndicatif,
     required ValueChanged<String> onIndicatifChanged,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2807,7 +2437,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   isExpanded: true,
                   icon: Icon(Icons.arrow_drop_down, size: 20, color: bleuCoris),
                   items: _indicatifOptions.map((option) {
-
                     return DropdownMenuItem<String>(
                       value: option['code'],
                       child: Padding(
@@ -2820,12 +2449,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     );
                   }).toList(),
                   onChanged: (value) {
-
                     if (value != null) {
-
                       onIndicatifChanged(value);
                     }
-
                   },
                 ),
               ),
@@ -2855,14 +2481,11 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Le numéro de téléphone est obligatoire';
                   }
 
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-
                     return 'Numéro de téléphone invalide';
                   }
 
@@ -2877,7 +2500,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2916,7 +2538,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildModernTextField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -2924,7 +2545,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
     int? maxLength,
     Function(String)? onChanged,
   }) {
-
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -2959,9 +2579,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         counterText: '',
       ),
       validator: (value) {
-
         if (value == null || value.trim().isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -2971,14 +2589,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildDropdownField({
-
     required String value,
     required String label,
     required IconData icon,
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-
     // Vérifier si la valeur est dans la liste
     final validValue = items.contains(value) ? value : null;
 
@@ -3012,7 +2628,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       ),
       items: items.map((String value) {
-
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -3020,9 +2635,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       }).toList(),
       onChanged: onChanged,
       validator: (value) {
-
         if (value == null || value.isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -3032,7 +2645,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildDocumentUploadSection() {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3128,11 +2740,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildStepModePaiement() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3211,14 +2821,12 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                     ),
                     child: Column(
                       children: _modePaiementOptions.map((mode) {
-
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
                         Widget? customIconWidget;
 
                         switch (mode) {
-
                           case 'Virement':
                             icon = Icons.account_balance;
                             iconColor = Colors.blue;
@@ -3232,7 +2840,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.water_drop,
                                     color: iconColor, size: 28);
                               },
@@ -3247,7 +2854,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.phone_android,
                                     color: iconColor, size: 28);
                               },
@@ -3266,7 +2872,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.account_balance_wallet,
                                     color: iconColor, size: 28);
                               },
@@ -3279,9 +2884,7 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                         return InkWell(
                           onTap: () {
-
                             setState(() {
-
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
@@ -3376,25 +2979,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                           fillColor: Colors.grey[50],
                         ),
                         items: _banques.map((String banque) {
-
                           return DropdownMenuItem<String>(
                             value: banque,
                             child: Text(banque),
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
-
                           setState(() {
-
                             _selectedBanque = newValue;
                             if (newValue != null && newValue != 'Autre') {
-
                               _banqueController.text = newValue;
                             } else if (newValue == 'Autre') {
-
                               _banqueController.text = '';
                             }
-
                           });
                         },
                       ),
@@ -3460,7 +3057,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                               height: 24,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(
                                   Icons.phone,
                                   color: bleuCoris,
@@ -3573,11 +3169,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildStep4() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3697,12 +3291,15 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF8C00), size: 20),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Color(0xFFFF8C00), size: 20),
                           SizedBox(width: context.r(8)),
                           Expanded(
                             child: Text(
                               'Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.',
-                              style: TextStyle(color: const Color(0xFF7D4B00), fontSize: context.sp(13)),
+                              style: TextStyle(
+                                  color: const Color(0xFF7D4B00),
+                                  fontSize: context.sp(13)),
                             ),
                           ),
                         ],
@@ -3905,11 +3502,9 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildStep3() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3921,23 +3516,19 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
-
                         // Pour les clients, attendre le chargement des données
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-
                           return Center(
                             child: CircularProgressIndicator(color: bleuCoris),
                           );
                         }
 
                         if (snapshot.hasError) {
-
                           debugPrint(
                               'Erreur chargement données récapitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
-
                             return _buildRecapContent(userData: _userData);
                           }
 
@@ -3963,18 +3554,13 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
                         // Si userData est vide, recharger les données
                         if (userData.isEmpty && !_isCommercial) {
-
                           // Recharger les données utilisateur
                           _loadUserDataForRecap().then((data) {
-
                             if (mounted && data.isNotEmpty) {
-
                               setState(() {
-
                                 _userData = data;
                               });
                             }
-
                           });
                           return Center(
                               child:
@@ -3992,7 +3578,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-
     /**
      * CONSTRUCTION DU RÉCAPITULATIF:
      * 
@@ -4001,7 +3586,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
      */
     final displayData = _isCommercial
         ? {
-
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
@@ -4012,7 +3596,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-
         : (userData ?? _userData);
 
     return ListView(
@@ -4200,7 +3783,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
               : null,
           documents: _pieceIdentiteFiles
               .map((file) => {
-
                     'label': file.path.split(RegExp(r'[\\/]+')).last,
                     'path': file.path,
                   })
@@ -4249,7 +3831,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   void _viewLocalDocument(File file, String displayLabel) {
-
     if (!mounted) return;
 
     Navigator.push(
@@ -4266,7 +3847,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Widget _buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -4312,7 +3892,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildSubsectionTitle(String title) {
-
     return Text(
       title,
       style: TextStyle(
@@ -4324,7 +3903,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildRecapRow(String label, String value) {
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -4358,7 +3936,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
 
   Widget _buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -4416,7 +3993,6 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
   }
 
   Widget _buildNavigationButtons() {
-
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -4505,19 +4081,16 @@ class _SouscriptionEpargnePageState extends State<SouscriptionEpargnePage>
       ),
     );
   }
-
 }
 
 // Dialog de chargement moderne
 
 class LoadingDialog extends StatelessWidget {
-
   final String paymentMethod;
   const LoadingDialog({super.key, required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4567,19 +4140,16 @@ class LoadingDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 // Dialog de succès moderne
 
 class SuccessDialog extends StatelessWidget {
-
   final bool isPaid;
   const SuccessDialog({super.key, required this.isPaid});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4639,7 +4209,6 @@ class SuccessDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-
                   // Retour à la page d'accueil client
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
@@ -4665,17 +4234,14 @@ class SuccessDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 // Bottom sheet de paiement moderne
 
 class PaymentBottomSheet extends StatelessWidget {
-
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const PaymentBottomSheet({
-
     super.key,
     required this.onPayNow,
     required this.onPayLater,
@@ -4683,7 +4249,6 @@ class PaymentBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -4802,8 +4367,8 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4860,8 +4425,8 @@ class PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title,
+      String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4888,7 +4453,6 @@ class PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-
                   print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
@@ -4929,6 +4493,4 @@ class PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
-
 }
-

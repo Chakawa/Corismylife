@@ -42,7 +42,6 @@ enum Periode { mensuel, trimestriel, semestriel, annuel }
 /// [existingData] : Données existantes de la proposition à modifier
 
 class SouscriptionRetraitePage extends StatefulWidget {
-
   final Map<String, dynamic>? simulationData;
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
@@ -52,7 +51,6 @@ class SouscriptionRetraitePage extends StatefulWidget {
       existingData; // Données existantes pour modification
 
   const SouscriptionRetraitePage({
-
     super.key,
     this.simulationData,
     this.clientId,
@@ -68,7 +66,6 @@ class SouscriptionRetraitePage extends StatefulWidget {
 
 class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     with TickerProviderStateMixin {
-
   // Charte graphique CORIS
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -145,8 +142,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
-  final TextEditingController _clientProfessionController = TextEditingController();
-  final TextEditingController _clientSecteurActiviteController = TextEditingController();
+  final TextEditingController _clientProfessionController =
+      TextEditingController();
+  final TextEditingController _clientSecteurActiviteController =
+      TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -224,7 +223,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   // Primes minimales par périodicité
   final Map<String, int> minPrimes = {
-
     'mensuel': 5000,
     'trimestriel': 15000,
     'semestriel': 30000,
@@ -233,324 +231,277 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   // Table tarifaire: CAPITAL É€ TERME pour les primes de référence (identique à la simulation)
   final Map<int, Map<String, double>> capitalValues = {
-
     5: {
-
       'mensuel': 605463.405379,
       'trimestriel': 615056.504123,
       'semestriel': 620331.447928,
       'annuel': 625666.388106
     },
     6: {
-
       'mensuel': 739294.364577,
       'trimestriel': 752266.795228,
       'semestriel': 758213.774878,
       'annuel': 764734.523010
     },
     7: {
-
       'mensuel': 877714.810967,
       'trimestriel': 891453.723199,
       'semestriel': 898104.646416,
       'annuel': 908670.042636
     },
     8: {
-
       'mensuel': 1020882.065727,
       'trimestriel': 1038327.916972,
       'semestriel': 1045708.931812,
       'annuel': 1057643.305449
     },
     9: {
-
       'mensuel': 1168958.840396,
       'trimestriel': 1190342.707527,
       'semestriel': 1190479.470698,
       'annuel': 1211830.632461
     },
     10: {
-
       'mensuel': 1322113.421481,
       'trimestriel': 1344587.648202,
       'semestriel': 1356596.978444,
       'annuel': 1371414.515917
     },
     11: {
-
       'mensuel': 1480519.861382,
       'trimestriel': 1507300.829349,
       'semestriel': 1520248.598961,
       'annuel': 1536583.835295
     },
     12: {
-
       'mensuel': 1644358.175855,
       'trimestriel': 1675729.671837,
       'semestriel': 1689628.026197,
       'annuel': 1707534.080851
     },
     13: {
-
       'mensuel': 1813844.548229,
       'trimestriel': 1846605.003713,
       'semestriel': 1861472.384183,
       'annuel': 1880974.450438
     },
     14: {
-
       'mensuel': 1989081.640624,
       'trimestriel': 2026309.492304,
       'semestriel': 2042794.643842,
       'annuel': 2063978.367524
     },
     15: {
-
       'mensuel': 2170358.312385,
       'trimestriel': 2213524.637995,
       'semestriel': 2230463.182648,
       'annuel': 2253387.421708
     },
     16: {
-
       'mensuel': 2361663.347047,
       'trimestriel': 2402847.877909,
       'semestriel': 2424700.120313,
       'annuel': 2449425.792789
     },
     17: {
-
       'mensuel': 2559654.057923,
       'trimestriel': 2602620.867097,
       'semestriel': 2625735.350796,
       'annuel': 2652329.506857
     },
     18: {
-
       'mensuel': 2764594.793679,
       'trimestriel': 2809385.910906,
       'semestriel': 2833806.814345,
       'annuel': 2862326.710918
     },
     19: {
-
       'mensuel': 2976698.105187,
       'trimestriel': 3019148.619548,
       'semestriel': 3044903.438595,
       'annuel': 3079677.957121
     },
     20: {
-
       'mensuel': 3196225.032957,
       'trimestriel': 3240492.134693,
       'semestriel': 3267645.786918,
       'annuel': 3304636.466941
     },
     21: {
-
       'mensuel': 3423435.402467,
       'trimestriel': 3469582.672868,
       'semestriel': 3498184.113972,
       'annuel': 3537468.588654
     },
     22: {
-
       'mensuel': 3658598.135282,
       'trimestriel': 3701991.400963,
       'semestriel': 3736791.284233,
       'annuel': 3778449.797473
     },
     23: {
-
       'mensuel': 3901991.563746,
       'trimestriel': 3947234.413457,
       'semestriel': 3983749.705453,
       'annuel': 4027865.351705
     },
     24: {
-
       'mensuel': 4153903.762206,
       'trimestriel': 4201060.933389,
       'semestriel': 4239351.671416,
       'annuel': 4286010.450336
     },
     25: {
-
       'mensuel': 4414632.887612,
       'trimestriel': 4458560.426312,
       'semestriel': 4498666.347671,
       'annuel': 4547912.261262
     },
     26: {
-
       'mensuel': 4684487.532408,
       'trimestriel': 4730283.355211,
       'semestriel': 4772290.396112,
       'annuel': 4824259.001727
     },
     27: {
-
       'mensuel': 4963787.683771,
       'trimestriel': 5011516.586104,
       'semestriel': 5055491.266247,
       'annuel': 5110277.878109
     },
     28: {
-
       'mensuel': 5252862.131642,
       'trimestriel': 5296815.505562,
       'semestriel': 5348604.207638,
       'annuel': 5406307.415163
     },
     29: {
-
       'mensuel': 5552054.799978,
       'trimestriel': 5597877.362131,
       'semestriel': 5651976.081074,
       'annuel': 5712697.986015
     },
     30: {
-
       'mensuel': 5861719.211707,
       'trimestriel': 5909476.383267,
       'semestriel': 5965965.970183,
       'annuel': 6029812.226846
     },
     31: {
-
       'mensuel': 6182221.877845,
       'trimestriel': 6225575.781317,
       'semestriel': 6284512.371581,
       'annuel': 6358025.466106
     },
     32: {
-
       'mensuel': 6513942.137299,
       'trimestriel': 6559144.247123,
       'semestriel': 6620641.030858,
       'annuel': 6697726.168741
     },
     33: {
-
       'mensuel': 6857272.605833,
       'trimestriel': 6904387.609234,
       'semestriel': 6968534.193210,
       'annuel': 7049316.395967
     },
     34: {
-
       'mensuel': 7212619.840766,
       'trimestriel': 7264612.498187,
       'semestriel': 7328603.616244,
       'annuel': 7413212.281147
     },
     35: {
-
       'mensuel': 7580403.821922,
       'trimestriel': 7624197.249084,
       'semestriel': 7701275.469085,
       'annuel': 7789844.522308
     },
     36: {
-
       'mensuel': 7961060.449418,
       'trimestriel': 8006717.466263,
       'semestriel': 8086990.836775,
       'annuel': 8179658.891909
     },
     37: {
-
       'mensuel': 8355040.058877,
       'trimestriel': 8394751.786861,
       'semestriel': 8478298.278308,
       'annuel': 8575140.790787
     },
     38: {
-
       'mensuel': 8762808.954867,
       'trimestriel': 8804241.412862,
       'semestriel': 8891209.444321,
       'annuel': 8992440.529785
     },
     39: {
-
       'mensuel': 9184849.761809,
       'trimestriel': 9228063.175773,
       'semestriel': 9318572.501144,
       'annuel': 9424345.759649
     },
     40: {
-
       'mensuel': 9621661.997201,
       'trimestriel': 9657988.540329,
       'semestriel': 9760893.264956,
       'annuel': 9871367.672557
     },
     41: {
-
       'mensuel': 10073762.660832,
       'trimestriel': 10111691.452702,
       'semestriel': 10218695.255501,
       'annuel': 10334035.352417
     },
     42: {
-
       'mensuel': 10541686.847690,
       'trimestriel': 10581273.967007,
       'semestriel': 10692520.315715,
       'annuel': 10812896.401073
     },
     43: {
-
       'mensuel': 11025988.381088,
       'trimestriel': 11057612.584807,
       'semestriel': 11173208.346138,
       'annuel': 11308517.586431
     },
     44: {
-
       'mensuel': 11527240.468155,
       'trimestriel': 11560302.338736,
       'semestriel': 11680441.364525,
       'annuel': 11821485.513277
     },
     45: {
-
       'mensuel': 12046036.378270,
       'trimestriel': 12080582.334053,
       'semestriel': 12205427.538555,
       'annuel': 12352407.317562
     },
     46: {
-
       'mensuel': 12582990.145238,
       'trimestriel': 12619080.006705,
       'semestriel': 12748788.228676,
       'annuel': 12901911.384998
     },
     47: {
-
       'mensuel': 13138737.294051,
       'trimestriel': 13176421.181466,
       'semestriel': 13311166.542952,
       'annuel': 13470648.094793
     },
     48: {
-
       'mensuel': 13713935.593071,
       'trimestriel': 13753269.236278,
       'semestriel': 13893228.098227,
       'annuel': 14059290.589432
     },
     49: {
-
       'mensuel': 14309265.832568,
       'trimestriel': 14350306.973009,
       'semestriel': 14483712.331354,
       'annuel': 14668483.327573
     },
     50: {
-
       'mensuel': 14925432.630426,
       'trimestriel': 14968241.030525,
       'semestriel': 15106812.989223,
@@ -560,7 +511,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   // Primes de référence
   final Map<String, double> primeReferenceValues = {
-
     'mensuel': 10000.00000,
     'trimestriel': 30000.00000,
     'semestriel': 60000.00000,
@@ -568,9 +518,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   };
 
   @override
-
   void initState() {
-
     super.initState();
 
     // Initialiser _selectedPeriode avec une valeur par défaut
@@ -595,51 +543,39 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     // Pré-remplir depuis les données existantes OU depuis la simulation
     if (widget.existingData != null) {
-
       _prefillFromExistingData();
     } else {
-
       _prefillSimulationData();
     }
 
     // Après init, vérifier si le calcul doit être refait (si l'âge a été défini après)
     Future.microtask(() {
-
       if (_age > 0 && (_calculatedCapital == 0 || _calculatedPrime == 0)) {
-
         _effectuerCalcul();
       }
-
     });
   }
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args['isCommercial'] == true) {
-
       if (!_isCommercial) {
-
         setState(() {
-
           _isCommercial = true;
         });
       }
 
       // Si on est en mode modification (avec existingData), ne rien écraser
       if (args['existingData'] != null) {
-
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
       }
 
       // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
-
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
@@ -652,29 +588,22 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             clientInfo['numero_piece_identite'] ?? '';
 
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
         // Gérer la date de naissance
         if (clientInfo['date_naissance'] != null) {
-
           try {
-
             DateTime? dateNaissance;
             if (clientInfo['date_naissance'] is String) {
-
               dateNaissance = DateTime.parse(clientInfo['date_naissance']);
             } else if (clientInfo['date_naissance'] is DateTime) {
-
               dateNaissance = clientInfo['date_naissance'];
             }
 
             if (dateNaissance != null) {
-
               final finalDate = dateNaissance;
               setState(() {
-
                 _clientDateNaissance = finalDate;
                 _clientDateNaissanceController.text =
                     '${finalDate.day.toString().padLeft(2, '0')}/${finalDate.month.toString().padLeft(2, '0')}/${finalDate.year}';
@@ -682,7 +611,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 _clientAge = now.year - finalDate.year;
                 if (now.month < finalDate.month ||
                     (now.month == finalDate.month && now.day < finalDate.day)) {
-
                   _clientAge--;
                 }
 
@@ -692,93 +620,67 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               });
               // Déclencher le calcul après avoir défini l'âge
               if (_age > 0) {
-
                 debugPrint(
                     'ðŸ“¢ Appel _effectuerCalcul depuis didChangeDependencies (commercial)');
                 _effectuerCalcul();
               }
-
             }
-
           } catch (e) {
-
             debugPrint('Erreur parsing date de naissance: $e');
           }
-
         }
 
         // Extraire l'indicatif du téléphone si présent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-
             _selectedClientIndicatif = parts[0];
             if (parts.length > 1) {
-
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
-
           }
-
         }
-
       }
-
     }
 
     if (!_isCommercial) {
-
       _loadUserData();
     }
 
     // Listeners pour le calcul automatique
     _primeController.addListener(() {
-
       _formatTextField(_primeController);
       if (_currentSimulation == SimulationType.parPrime && _age > 0) {
-
         _effectuerCalcul();
       }
-
     });
 
     _capitalController.addListener(() {
-
       _formatTextField(_capitalController);
       if (_currentSimulation == SimulationType.parCapital && _age > 0) {
-
         _effectuerCalcul();
       }
-
     });
 
     // 🔍 Validation de la durée uniquement à la sortie du champ
     _dureeFocusNode.addListener(() {
-
       if (!_dureeFocusNode.hasFocus) {
-
         // Utiliser Future.delayed pour éviter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
-
           if (!mounted) return;
 
           // Le champ a perdu le focus - valider maintenant
           if (_dureeController.text.isNotEmpty && _age > 0) {
-
             int? duree = int.tryParse(_dureeController.text);
             if (duree != null) {
-
               setState(() {
-
                 _dureeEnAnnees =
                     _selectedUnite == 'années' ? duree : duree ~/ 12;
               });
 
               // Validation de la durée en années
               if (_dureeEnAnnees < 5) {
-
                 _showProfessionalDialog(
                   title: 'Durée minimale requise',
                   message:
@@ -788,7 +690,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   backgroundColor: orangeWarning,
                 );
                 setState(() {
-
                   _calculatedPrime = 0.0;
                   _calculatedCapital = 0.0;
                 });
@@ -796,7 +697,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               }
 
               if (_dureeEnAnnees > 50) {
-
                 _showProfessionalDialog(
                   title: 'Durée maximale dépassée',
                   message:
@@ -806,7 +706,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   backgroundColor: orangeWarning,
                 );
                 setState(() {
-
                   _calculatedPrime = 0.0;
                   _calculatedCapital = 0.0;
                 });
@@ -815,45 +714,33 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
               _effectuerCalcul();
             }
-
           }
-
         });
       }
-
     });
   }
 
   void _prefillSimulationData() {
-
     if (widget.simulationData != null) {
-
       final data = widget.simulationData!;
 
       // Déterminer le type de simulation
       if (data['type'] == 'capital') {
-
         _currentSimulation = SimulationType.parCapital;
         _selectedSimulationType = 'Par Capital';
         if (data['capital'] != null) {
-
           _capitalController.text = _formatNumber(data['capital'].toDouble());
         }
-
       } else {
-
         _currentSimulation = SimulationType.parPrime;
         _selectedSimulationType = 'Par Prime';
         if (data['prime'] != null) {
-
           _primeController.text = _formatNumber(data['prime'].toDouble());
         }
-
       }
 
       // Pré-remplir la durée
       if (data['duree'] != null) {
-
         _dureeController.text = data['duree'].toString();
         _dureeEnAnnees = data['duree'];
         debugPrint(
@@ -862,16 +749,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Pré-remplir l'unité si fournie
       if (data['unite'] != null) {
-
         _selectedUnite = data['unite'];
         debugPrint('ðŸ“ Unité pré-remplie: $_selectedUnite');
       }
 
       // Pré-remplir la périodicité
       if (data['periodicite'] != null) {
-
         switch (data['periodicite']) {
-
           case 'mensuel':
             _selectedPeriode = Periode.mensuel;
             break;
@@ -885,44 +769,34 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             _selectedPeriode = Periode.annuel;
             break;
         }
-
       }
 
       // Déclencher le calcul si l'âge est disponible
       if (_age > 0) {
-
         debugPrint(
             'ðŸ“¢ Appel _effectuerCalcul depuis _prefillSimulationData (âge: $_age)');
         _effectuerCalcul();
       } else {
-
         debugPrint(
             '⚠️ _prefillSimulationData: âge non disponible ($_age), calcul différé');
         // Si l'âge n'est pas encore disponible, attendre qu'il soit chargé
         Future.delayed(Duration(milliseconds: 200), () {
-
           if (mounted && _age > 0) {
-
             debugPrint(
                 'ðŸ“¢ Appel _effectuerCalcul depuis _prefillSimulationData (retardé, âge: $_age)');
             _effectuerCalcul();
           } else if (mounted) {
-
             debugPrint(
                 '❌ _prefillSimulationData: âge toujours non disponible après délai');
           }
-
         });
       }
-
     }
-
   }
 
   /// Méthode pour pré-remplir les champs depuis une proposition existante
 
   void _prefillFromExistingData() {
-
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
@@ -930,7 +804,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
-
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
       _clientNomController.text = clientInfo['nom'] ?? '';
@@ -942,25 +815,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       _clientNumeroPieceController.text =
           clientInfo['numero_piece_identite'] ?? '';
       if (clientInfo['civilite'] != null) {
-
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
       if (clientInfo['date_naissance'] != null) {
-
         try {
-
           DateTime? dateNaissance;
           if (clientInfo['date_naissance'] is String) {
-
             dateNaissance = DateTime.parse(clientInfo['date_naissance']);
           } else if (clientInfo['date_naissance'] is DateTime) {
-
             dateNaissance = clientInfo['date_naissance'];
           }
 
           if (dateNaissance != null) {
-
             _clientDateNaissance = dateNaissance;
             _clientDateNaissanceController.text =
                 '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
@@ -969,43 +836,31 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             if (maintenant.month < dateNaissance.month ||
                 (maintenant.month == dateNaissance.month &&
                     maintenant.day < dateNaissance.day)) {
-
               _clientAge--;
             }
 
             _age = _clientAge;
           }
-
         } catch (e) {
-
           debugPrint('Erreur parsing date de naissance client: $e');
         }
-
       }
 
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
-
           _selectedClientIndicatif = parts[0];
           if (parts.length > 1) {
-
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           }
-
         }
-
       }
-
     }
 
     try {
-
       // Pré-remplir la durée
       if (data['duree'] != null) {
-
         _dureeController.text = data['duree'].toString();
         _dureeEnAnnees = data['duree'] is int
             ? data['duree']
@@ -1014,16 +869,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Pré-remplir l'unité
       if (data['duree_type'] != null) {
-
         _selectedUnite = data['duree_type'];
       }
 
       // Pré-remplir la périodicité
       if (data['periodicite'] != null) {
-
         final periodicite = data['periodicite'].toString().toLowerCase();
         switch (periodicite) {
-
           case 'mensuel':
             _selectedPeriode = Periode.mensuel;
             break;
@@ -1037,12 +889,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             _selectedPeriode = Periode.annuel;
             break;
         }
-
       }
 
       // Pré-remplir capital et prime
       if (data['capital'] != null) {
-
         _calculatedCapital = data['capital'] is double
             ? data['capital']
             : double.parse(data['capital'].toString());
@@ -1050,7 +900,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
 
       if (data['prime'] != null) {
-
         _calculatedPrime = data['prime'] is double
             ? data['prime']
             : double.parse(data['prime'].toString());
@@ -1059,86 +908,65 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Pré-remplir bénéficiaire
       if (data['beneficiaire'] != null && data['beneficiaire'] is Map) {
-
         final beneficiaire = data['beneficiaire'];
         if (beneficiaire['nom'] != null) {
-
           _beneficiaireNomController.text = beneficiaire['nom'].toString();
         }
 
         if (beneficiaire['contact'] != null) {
-
           final contact = beneficiaire['contact'].toString();
           // Extraire l'indicatif et le numéro (format: "+225 1234567890")
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedBeneficiaireIndicatif = parts[0];
             _beneficiaireContactController.text = parts.sublist(1).join(' ');
           } else {
-
             _beneficiaireContactController.text = contact;
           }
-
         }
 
         if (beneficiaire['lien_parente'] != null) {
-
           _selectedLienParente = beneficiaire['lien_parente'].toString();
         }
 
         if (beneficiaire['date_naissance'] != null) {
-
           try {
-
             _beneficiaireDateNaissance =
                 DateTime.parse(beneficiaire['date_naissance'].toString());
             _beneficiaireDateNaissanceController.text =
                 DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
           } catch (e) {
-
             debugPrint('Erreur parsing date_naissance bénéficiaire: $e');
           }
-
         }
-
       }
 
       // Pré-remplir contact d'urgence
       if (data['contact_urgence'] != null && data['contact_urgence'] is Map) {
-
         final contactUrgence = data['contact_urgence'];
         if (contactUrgence['nom'] != null) {
-
           _personneContactNomController.text = contactUrgence['nom'].toString();
         }
 
         if (contactUrgence['contact'] != null) {
-
           final contact = contactUrgence['contact'].toString();
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedContactIndicatif = parts[0];
             _personneContactTelController.text = parts.sublist(1).join(' ');
           } else {
-
             _personneContactTelController.text = contact;
           }
-
         }
 
         if (contactUrgence['lien_parente'] != null) {
-
           _selectedLienParenteUrgence =
               contactUrgence['lien_parente'].toString();
         }
-
       }
 
       if (data['assistance_commerciale'] != null &&
           data['assistance_commerciale'] is Map) {
-
         final assistance = data['assistance_commerciale'];
         _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
         _commercialNomPrenomController.text =
@@ -1149,94 +977,72 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Pré-remplir dates
       if (data['date_effet'] != null) {
-
         try {
-
           _dateEffetContrat = DateTime.parse(data['date_effet'].toString());
           _dateEffetController.text =
               "${_dateEffetContrat!.day.toString().padLeft(2, '0')}/${_dateEffetContrat!.month.toString().padLeft(2, '0')}/${_dateEffetContrat!.year}";
         } catch (e) {
-
           debugPrint('⚠️ Erreur parsing date_effet: $e');
         }
-
       }
 
       if (data['date_echeance'] != null) {
-
         try {
-
           _dateEcheanceContrat =
               DateTime.parse(data['date_echeance'].toString());
         } catch (e) {
-
           debugPrint('⚠️ Erreur parsing date_echeance: $e');
         }
-
       }
 
       // Pré-remplir les informations client si commercial et si données présentes
       if (data['client_info'] != null && data['client_info'] is Map) {
-
         final clientInfo = data['client_info'];
         _isCommercial = true;
 
         if (clientInfo['nom'] != null) {
-
           _clientNomController.text = clientInfo['nom'].toString();
         }
 
         if (clientInfo['prenom'] != null) {
-
           _clientPrenomController.text = clientInfo['prenom'].toString();
         }
 
         if (clientInfo['email'] != null) {
-
           _clientEmailController.text = clientInfo['email'].toString();
         }
 
         if (clientInfo['telephone'] != null) {
-
           final telephone = clientInfo['telephone'].toString();
           final parts = telephone.split(' ');
           if (parts.length >= 2) {
-
             _selectedClientIndicatif = parts[0];
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           } else {
-
             _clientTelephoneController.text = telephone;
           }
-
         }
 
         if (clientInfo['lieu_naissance'] != null) {
-
           _clientLieuNaissanceController.text =
               clientInfo['lieu_naissance'].toString();
         }
 
         if (clientInfo['adresse'] != null) {
-
           _clientAdresseController.text = clientInfo['adresse'].toString();
         }
 
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'].toString();
         }
 
         if (clientInfo['numero_piece_identite'] != null) {
-
           _clientNumeroPieceController.text =
               clientInfo['numero_piece_identite'].toString();
         }
 
         if (clientInfo['date_naissance'] != null) {
-
           try {
-
             _clientDateNaissance =
                 DateTime.parse(clientInfo['date_naissance'].toString());
             _clientDateNaissanceController.text =
@@ -1246,52 +1052,39 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             if (now.month < _clientDateNaissance!.month ||
                 (now.month == _clientDateNaissance!.month &&
                     now.day < _clientDateNaissance!.day)) {
-
               _clientAge--;
             }
-
           } catch (e) {
-
             debugPrint('⚠️ Erreur parsing date_naissance client: $e');
           }
-
         }
-
       }
 
       debugPrint('✅ Pré-remplissage terminé avec succès');
 
       // Déclencher un setState pour rafraîchir l'UI
       if (mounted) {
-
         setState(() {});
       }
-
     } catch (e) {
-
       debugPrint('❌ Erreur lors du pré-remplissage: $e');
     }
-
   }
 
   // Méthode pour charger les données utilisateur
 
   Future<void> _loadUserData() async {
-
     try {
-
       final token = await storage.read(key: 'token');
       if (token == null) return;
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         Map<String, dynamic>? userData;
 
@@ -1299,7 +1092,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         if (data['success'] == true &&
             data['user'] != null &&
             data['user'] is Map) {
-
           userData = Map<String, dynamic>.from(data['user']);
         }
 
@@ -1307,67 +1099,50 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         else if (data['success'] == true &&
             data['data'] != null &&
             data['data'] is Map) {
-
           userData = Map<String, dynamic>.from(data['data']);
         }
 
         // 3) Direct user object
         else if (data is Map && data.containsKey('id')) {
-
           userData = Map<String, dynamic>.from(data);
         }
 
         if (userData != null && userData.isNotEmpty) {
-
           if (mounted) {
-
             setState(() {
-
               _userData = userData!;
               // Extraire la date de naissance et calculer l'âge
               if (_userData['date_naissance'] != null) {
-
                 _dateNaissance = DateTime.parse(_userData['date_naissance']);
                 final maintenant = DateTime.now();
                 _age = maintenant.year - _dateNaissance!.year;
                 if (maintenant.month < _dateNaissance!.month ||
                     (maintenant.month == _dateNaissance!.month &&
                         maintenant.day < _dateNaissance!.day)) {
-
                   _age--;
                 }
 
                 debugPrint(
                     'ðŸ‘¤ Âge utilisateur calculé: $_age ans (date naissance: $_dateNaissance)');
               } else {
-
                 debugPrint('⚠️ Date de naissance manquante dans userData');
               }
-
             });
             // Effectuer le calcul après le chargement des données
             if (_age > 0) {
-
               debugPrint('ðŸ“¢ Appel _effectuerCalcul depuis _loadUserData');
               _effectuerCalcul();
             }
-
           }
-
         }
-
       }
-
     } catch (e) {
-
       debugPrint('Erreur chargement données utilisateur: $e');
     }
-
   }
 
   // Méthodes pour la simulation
   String _formatNumber(double number) {
-
     return number.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
@@ -1375,32 +1150,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _formatTextField(TextEditingController controller) {
-
     String text = controller.text.replaceAll(' ', '');
     if (text.isNotEmpty) {
-
       double? value = double.tryParse(text);
       if (value != null) {
-
         String formatted = _formatNumber(value);
         if (formatted != controller.text) {
-
           controller.value = controller.value.copyWith(
             text: formatted,
             selection: TextSelection.collapsed(offset: formatted.length),
           );
         }
-
       }
-
     }
-
   }
 
   String _getPeriodiciteKey() {
-
     switch (_selectedPeriode ?? Periode.annuel) {
-
       case Periode.mensuel:
         return 'mensuel';
       case Periode.trimestriel:
@@ -1410,20 +1176,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       case Periode.annuel:
         return 'annuel';
     }
-
   }
 
   double calculatePremium(
       int duration, String periodicity, double desiredCapital) {
-
     if (duration < 5 || duration > 50) {
-
       return -1;
     }
 
     // Si hors ligne, utiliser les données locales
     if (_useLocalData) {
-
       final localPremium = LocalDataService.calculateRetraitePremium(
         duration,
         periodicity,
@@ -1434,7 +1196,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     if (!capitalValues.containsKey(duration) ||
         !capitalValues[duration]!.containsKey(periodicity)) {
-
       return -1;
     }
 
@@ -1452,22 +1213,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   double calculateCapital(
       int duration, String periodicity, double paidPremium) {
-
     if (duration < 5 || duration > 50) {
-
       return -1;
     }
 
     double minPremium = minPrimes[periodicity]!.toDouble();
 
     if (paidPremium < minPremium) {
-
       return -1;
     }
 
     // Si hors ligne, utiliser les données locales
     if (_useLocalData) {
-
       final localCapital = LocalDataService.calculateRetraiteCapital(
         duration,
         periodicity,
@@ -1478,7 +1235,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     if (!capitalValues.containsKey(duration) ||
         !capitalValues[duration]!.containsKey(periodicity)) {
-
       return -1;
     }
 
@@ -1495,18 +1251,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _effectuerCalcul() async {
-
     debugPrint(
         '🔍 _effectuerCalcul appelé - âge: $_age, durée: $_dureeEnAnnees années, périodicité: ${_getPeriodiciteKey()}');
 
     if (_age < 18 || _age > 69) {
-
       debugPrint(
           '⚠️ Âge invalide pour calcul: $_age (doit être entre 18 et 69)');
       if (mounted) {
-
         setState(() {
-
           _calculatedPrime = 0.0;
           _calculatedCapital = 0.0;
         });
@@ -1516,13 +1268,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
 
     if (_dureeEnAnnees < 5 || _dureeEnAnnees > 50) {
-
       debugPrint(
           '⚠️ Durée invalide pour calcul: $_dureeEnAnnees (doit être entre 5 et 50 ans)');
       if (mounted) {
-
         setState(() {
-
           _calculatedPrime = 0.0;
           _calculatedCapital = 0.0;
         });
@@ -1533,19 +1282,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     // Calcul immédiat: suppression du délai artificiel pour une meilleure réactivité
     if (mounted) {
-
       setState(() {
-
         String periodiciteKey = _getPeriodiciteKey();
 
         double prime = 0.0;
         double capital = 0.0;
         if (_currentSimulation == SimulationType.parPrime) {
-
           prime =
               double.tryParse(_primeController.text.replaceAll(' ', '')) ?? 0;
           if (prime <= 0) {
-
             _calculatedPrime = 0.0;
             _calculatedCapital = 0.0;
             return;
@@ -1555,17 +1300,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           debugPrint(
               'ðŸ’° calculateCapital($_dureeEnAnnees, $periodiciteKey, $prime) = $capital');
           if (capital == -1) {
-
             debugPrint('❌ calculateCapital a retourné -1 (erreur)');
             capital = 0;
           }
-
         } else {
-
           capital =
               double.tryParse(_capitalController.text.replaceAll(' ', '')) ?? 0;
           if (capital <= 0) {
-
             _calculatedPrime = 0.0;
             _calculatedCapital = 0.0;
             return;
@@ -1575,11 +1316,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           debugPrint(
               'ðŸ’° calculatePremium($_dureeEnAnnees, $periodiciteKey, $capital) = $prime');
           if (prime == -1) {
-
             debugPrint('❌ calculatePremium a retourné -1 (erreur)');
             prime = 0;
           }
-
         }
 
         _calculatedPrime = prime;
@@ -1589,11 +1328,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             '✅ Calcul effectué - Prime: ${_formatNumber(prime)} FCFA, Capital: ${_formatNumber(capital)} FCFA');
       });
     }
-
   }
 
   void _selectDateEffet() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -1601,11 +1338,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-
       if (mounted) {
-
         setState(() {
-
           _dateEffetContrat = picked;
           _dateEffetController.text =
               '${picked.day}/${picked.month}/${picked.year}';
@@ -1613,19 +1347,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           final duree = int.tryParse(_dureeController.text) ?? 0;
           final dureeAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
           _dateEcheanceContrat = DateTime(
-              picked.year + dureeAnnees,
-              picked.month,
-              picked.day,
-            );
+            picked.year + dureeAnnees,
+            picked.month,
+            picked.day,
+          );
         });
       }
-
     }
-
   }
 
   void _selectBeneficiaireDateNaissance() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
@@ -1634,23 +1365,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       locale: const Locale('fr', 'FR'),
     );
     if (picked != null && mounted) {
-
       setState(() {
-
         _beneficiaireDateNaissance = picked;
         _beneficiaireDateNaissanceController.text =
             DateFormat('dd/MM/yyyy').format(picked);
       });
     }
-
   }
 
   void _onSimulationTypeChanged(String? newValue) {
-
     if (newValue != null) {
-
       setState(() {
-
         _selectedSimulationType = newValue;
         _currentSimulation = newValue == 'Par Prime'
             ? SimulationType.parPrime
@@ -1658,37 +1383,27 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         _effectuerCalcul();
       });
     }
-
   }
 
   void _onPeriodeChanged(Periode? newValue) {
-
     if (newValue != null) {
-
       setState(() {
-
         _selectedPeriode = newValue;
         _effectuerCalcul();
       });
     }
-
   }
 
   void _onUniteChanged(String? newValue) {
-
     if (newValue != null) {
-
       setState(() {
-
         _selectedUnite = newValue;
         if (_dureeController.text.isNotEmpty) {
-
           int duree = int.tryParse(_dureeController.text) ?? 0;
           _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
 
           // Validation de la durée en années
           if (_dureeEnAnnees < 5) {
-
             _showProfessionalDialog(
               title: 'Durée minimale requise',
               message:
@@ -1703,7 +1418,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           }
 
           if (_dureeEnAnnees > 50) {
-
             _showProfessionalDialog(
               title: 'Durée maximale dépassée',
               message:
@@ -1719,16 +1433,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
           _effectuerCalcul();
         }
-
       });
     }
-
   }
 
   String _getPeriodeTextForDisplay() {
-
     switch (_selectedPeriode ?? Periode.annuel) {
-
       case Periode.mensuel:
         return 'Mensuel';
       case Periode.trimestriel:
@@ -1738,26 +1448,20 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       case Periode.annuel:
         return 'Annuel';
     }
-
   }
 
   // Méthodes pour la souscription
   String _formatMontant(double montant) {
-
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   Future<void> _pickDocument() async {
-
     try {
-
       final picked = await IdentityDocumentPicker.pickDocuments(context);
       if (picked == null || picked.files.isEmpty) return;
 
       if (mounted) {
-
         setState(() {
-
           _pieceIdentiteFiles
             ..clear()
             ..addAll(picked.files);
@@ -1772,20 +1476,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               : 'Document ajouté avec succès',
         );
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar('Erreur lors de la sélection du fichier');
       }
-
     }
-
   }
 
   void _showErrorSnackBar(String message) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1801,10 +1499,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   /// Parse le RIB unifié en ses composantes
   Map<String, String> _parseRibUnified(String rib) {
-
     final parts = rib.split('/').map((p) => p.trim()).toList();
     return {
-
       'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
@@ -1813,7 +1509,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
-
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
@@ -1830,12 +1525,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   /// Formate l'entrée RIB en temps réel
 
   void _formatRibInput() {
-
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (onlyDigits.isEmpty) {
-
       _ribUnifiedController.text = '';
       return;
     }
@@ -1843,35 +1536,29 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
     if (onlyDigits.isNotEmpty) {
-
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 5) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 16) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(16, min(18, onlyDigits.length)));
     }
 
     final formatted = buffer.toString();
     if (formatted != text) {
-
       _ribUnifiedController.text = formatted;
       _ribUnifiedController.selection = TextSelection.fromPosition(
         TextPosition(offset: formatted.length),
       );
     }
-
   }
 
   void _showSuccessSnackBar(String message) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1886,19 +1573,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _showProfessionalDialog({
-
     required String title,
     required String message,
     required IconData icon,
     required Color iconColor,
     required Color backgroundColor,
   }) {
-
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -1981,58 +1665,40 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _nextStep() {
-
     final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
-
       bool canProceed = false;
 
       if (_isCommercial) {
-
         // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       } else {
-
         // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
         if (_currentStep == 0 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       }
 
       if (canProceed) {
-
         // If the next step is the recap, ensure calculations are performed
         if (_currentStep + 1 == maxStep) {
-
           try {
-
             _effectuerCalcul();
           } catch (e) {
-
             debugPrint('Erreur lors du calcul avant récapitulatif: $e');
           }
-
         }
 
         setState(() => _currentStep++);
@@ -2043,15 +1709,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeInOutCubic);
       }
-
     }
-
   }
 
   void _previousStep() {
-
     if (_currentStep > 0) {
-
       setState(() => _currentStep--);
       _progressController.reverse();
       _animationController.reset();
@@ -2060,46 +1722,35 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOutCubic);
     }
-
   }
 
   bool _validateStep1() {
-
     // Vérifier que la date d'effet est sélectionnée
     if (_dateEffetContrat == null) {
-
       _showErrorSnackBar(
           'Veuillez sélectionner une date d\'effet pour le contrat');
       return false;
     }
 
     if (_currentSimulation == SimulationType.parPrime) {
-
       if (_primeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez saisir une prime');
         return false;
       }
-
     } else {
-
       if (_capitalController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez saisir un capital');
         return false;
       }
-
     }
 
     if (_dureeController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir une durée');
       return false;
     }
 
     // Si c'est un commercial, on ne valide pas l'âge à l'étape 1 (les champs client ne sont pas encore remplis)
     if (_isCommercial) {
-
       // L'âge sera validé à l'étape 2 quand les infos client seront saisies
       return true;
     }
@@ -2107,61 +1758,48 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     // Si c'est un client, valider son propre âge
     // Recalculer l'âge si la date de naissance est disponible
     if (_dateNaissance != null) {
-
       final maintenant = DateTime.now();
       _age = maintenant.year - _dateNaissance!.year;
       if (maintenant.month < _dateNaissance!.month ||
           (maintenant.month == _dateNaissance!.month &&
               maintenant.day < _dateNaissance!.day)) {
-
         _age--;
       }
-
     }
 
     // Valider l'âge seulement à l'étape 2 si disponible
     // É€ l'étape 1, on ne valide pas l'âge car il sera calculé automatiquement
     if (_currentStep == 1) {
-
       if (_age <= 0) {
-
         _showErrorSnackBar(
             'Veuillez renseigner votre date de naissance dans votre profil');
         return false;
       }
 
       if (_age > 0) {
-
         if (_age < 18 || _age > 69) {
-
           _showErrorSnackBar(
               'Âge non valide (18-69 ans requis). Votre âge: $_age ans');
           return false;
         }
-
       }
-
     }
 
     return true;
   }
 
   bool _validateStepClientInfo() {
-
     if (_clientNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du client');
       return false;
     }
 
     if (_clientPrenomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
 
     if (_clientDateNaissance == null) {
-
       _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
@@ -2171,12 +1809,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (maintenant.month < _clientDateNaissance!.month ||
         (maintenant.month == _clientDateNaissance!.month &&
             maintenant.day < _clientDateNaissance!.day)) {
-
       _clientAge--;
     }
 
     if (_clientAge < 18 || _clientAge > 69) {
-
       _showErrorSnackBar(
           'Âge du client non valide (18-69 ans requis). Âge calculé: $_clientAge ans');
       return false;
@@ -2184,7 +1820,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
@@ -2195,12 +1830,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   bool _validateStep2() {
-
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez remplir tous les champs obligatoires');
       return false;
     }
@@ -2208,7 +1841,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     // En mode modification, elle est optionnelle
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
@@ -2217,7 +1849,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (_isAideParCommercial &&
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
-
       _showErrorSnackBar(
           'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
       return false;
@@ -2227,47 +1858,37 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   bool _validateStepModePaiement() {
-
     if (_selectedModePaiement == null || _selectedModePaiement!.isEmpty) {
-
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-
       if (_banqueController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez sélectionner votre banque.');
         return false;
       }
 
       if (_ribUnifiedController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro RIB complet (format: 55555 / 11111111111 / 22).');
         return false;
       }
 
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-
         _showErrorSnackBar(
             'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-
       final phone = _numeroMobileMoneyController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
@@ -2275,45 +1896,33 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-
         if (!phone.startsWith('07')) {
-
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
-
       }
-
     } else if (_selectedModePaiement == 'Prélèvement à la source') {
-
       if (_nomStructureController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
 
       if (_numeroMatriculeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
         return false;
       }
-
     } else if (_selectedModePaiement == 'CORIS Money') {
-
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
-
     }
 
     return true;
@@ -2323,10 +1932,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   @override
   Widget build(BuildContext context) {
-
     return ConnectivityBuilder(
       builder: (context, isConnected) {
-
         _useLocalData = !isConnected;
 
         return Scaffold(
@@ -2339,7 +1946,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 child: NestedScrollView(
                   headerSliverBuilder:
                       (BuildContext context, bool innerBoxIsScrolled) {
-
                     return <Widget>[
                       SliverAppBar(
                         expandedHeight: 120,
@@ -2436,19 +2042,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildPhoneFieldWithIndicatif({
-
     required TextEditingController controller,
     required String label,
     required String selectedIndicatif,
     required ValueChanged<String?> onIndicatifChanged,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         Row(
           children: [
@@ -2465,13 +2071,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   value: selectedIndicatif,
                   isExpanded: true,
                   items: _indicatifs.map((String value) {
-
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child:
-                            Text(value, style: TextStyle(fontSize: context.sp(14))),
+                        child: Text(value,
+                            style: TextStyle(fontSize: context.sp(14))),
                       ),
                     );
                   }).toList(),
@@ -2505,15 +2110,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   ),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Ce champ est obligatoire';
                   }
 
                   if (!RegExp(r'^[0-9]{8,15}$')
                       .hasMatch(value.replaceAll(' ', ''))) {
-
                     return 'Numéro de téléphone invalide';
                   }
 
@@ -2528,7 +2130,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildModernProgressIndicator() {
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2627,11 +2228,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2650,9 +2249,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         icon: Icons.person_outline,
                         items: ['Monsieur', 'Madame', 'Mademoiselle'],
                         onChanged: (value) {
-
                           setState(() {
-
                             _selectedClientCivilite = value!;
                           });
                         },
@@ -2675,9 +2272,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         label: 'Date de naissance',
                         icon: Icons.calendar_today,
                         onDateSelected: (date) {
-
                           setState(() {
-
                             _clientDateNaissance = date;
                             _clientDateNaissanceController.text =
                                 '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -2687,7 +2282,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             if (maintenant.month < date.month ||
                                 (maintenant.month == date.month &&
                                     maintenant.day < date.day)) {
-
                               _clientAge--;
                             }
 
@@ -2708,9 +2302,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         label: 'Téléphone du client',
                         selectedIndicatif: _selectedClientIndicatif,
                         onIndicatifChanged: (value) {
-
                           setState(() {
-
                             _selectedClientIndicatif = value!;
                           });
                         },
@@ -2758,11 +2350,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildStep1() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2840,13 +2430,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildDateEffetField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Date d\'effet du contrat',
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: _selectDateEffet,
@@ -2879,7 +2470,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildSimulationTypeDropdown() {
-
     return Container(
       decoration: BoxDecoration(
           color: Colors.white,
@@ -2911,7 +2501,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildMontantField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2920,7 +2509,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 ? 'Prime souhaitée'
                 : 'Capital souhaité',
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         TextField(
           controller: _currentSimulation == SimulationType.parPrime
@@ -2951,13 +2542,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildDureeField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Durée',
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         Row(
           children: [
@@ -3016,7 +2608,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildPeriodiciteDropdown() {
-
     return Container(
       decoration: BoxDecoration(
           color: Colors.white,
@@ -3051,7 +2642,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   /// Widget d'affichage du résultat de simulation
   Widget _buildResultSection() {
-
     final resultValue = _currentSimulation == SimulationType.parPrime
         ? _calculatedCapital
         : _calculatedPrime;
@@ -3089,11 +2679,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildStep2() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3120,9 +2708,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           label: 'Contact du bénéficiaire',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedBeneficiaireIndicatif = value!;
                             });
                           },
@@ -3165,9 +2751,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParente = value!;
                             });
                           },
@@ -3199,9 +2783,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParenteUrgence = value!;
                             });
                           },
@@ -3223,7 +2805,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -3241,7 +2822,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           SizedBox(width: context.r(12)),
           Text(title,
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris))
         ]),
         SizedBox(height: context.r(16)),
         ...children,
@@ -3250,7 +2833,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildAssistanceCommercialeSection() {
-
     return _buildFormSection(
       'Assistance commerciale',
       Icons.support_agent,
@@ -3270,16 +2852,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           dense: true,
           title: Text('Non'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
               if (!_isAideParCommercial) {
-
                 _commercialNomPrenomController.clear();
                 _commercialCodeApporteurController.clear();
               }
-
             });
           },
         ),
@@ -3290,9 +2868,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           dense: true,
           title: Text('Oui'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
             });
           },
@@ -3316,13 +2892,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildDateField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required ValueChanged<DateTime> onDateSelected,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3337,14 +2911,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: () async {
-
             final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: DateTime.now().subtract(Duration(days: 365 * 30)),
               firstDate: DateTime(1950),
               lastDate: DateTime.now(),
               builder: (context, child) {
-
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: ColorScheme.light(
@@ -3360,10 +2932,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               },
             );
             if (picked != null) {
-
               onDateSelected(picked);
             }
-
           },
           child: AbsorbPointer(
             child: TextFormField(
@@ -3398,9 +2968,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                 suffixIcon: Icon(Icons.calendar_today, color: bleuCoris),
               ),
               validator: (value) {
-
                 if (value == null || value.trim().isEmpty) {
-
                   return 'Ce champ est obligatoire';
                 }
 
@@ -3418,7 +2986,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       required String label,
       required IconData icon,
       TextInputType? keyboardType}) {
-
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -3457,7 +3024,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       required IconData icon,
       required List<String> items,
       required ValueChanged<String?> onChanged}) {
-
     // Vérifier si la valeur est valide (null ou dans la liste)
     final validValue = (value != null && items.contains(value)) ? value : null;
 
@@ -3495,7 +3061,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildDocumentUploadSection() {
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -3513,7 +3078,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           SizedBox(width: context.r(12)),
           Text('Pièce d\'identité',
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris))
         ]),
         SizedBox(height: context.r(16)),
         GestureDetector(
@@ -3574,19 +3141,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   /// si elles ne sont pas déjà disponibles dans _userData
 
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
-
     try {
-
       // Si _userData est déjà chargé et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé');
         // Retourner un map vide au lieu de lever une exception
         return {};
@@ -3596,29 +3159,23 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
                 '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -3630,24 +3187,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
                   '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
-
                 setState(() {
-
                   _userData = userData;
                 });
               }
 
               return userData;
             }
-
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
@@ -3655,14 +3207,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               data['data'] is Map &&
               data['data']['user'] != null &&
               data['data']['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
                 '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -3672,14 +3221,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
-
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
                 '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -3690,34 +3236,27 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           debugPrint(
               '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
-
       } else {
-
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
-
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
-
   }
 
   Widget _buildStepModePaiement() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3796,14 +3335,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                     ),
                     child: Column(
                       children: _modePaiementOptions.map((mode) {
-
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
                         Widget? customIconWidget;
 
                         switch (mode) {
-
                           case 'Virement':
                             icon = Icons.account_balance;
                             iconColor = Colors.blue;
@@ -3817,7 +3354,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.water_drop,
                                     color: iconColor, size: 28);
                               },
@@ -3832,7 +3368,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.phone_android,
                                     color: iconColor, size: 28);
                               },
@@ -3851,7 +3386,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.account_balance_wallet,
                                     color: iconColor, size: 28);
                               },
@@ -3864,9 +3398,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
                         return InkWell(
                           onTap: () {
-
                             setState(() {
-
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
@@ -3961,25 +3493,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           fillColor: Colors.grey[50],
                         ),
                         items: _banques.map((String banque) {
-
                           return DropdownMenuItem<String>(
                             value: banque,
                             child: Text(banque),
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
-
                           setState(() {
-
                             _selectedBanque = newValue;
                             if (newValue != null && newValue != 'Autre') {
-
                               _banqueController.text = newValue;
                             } else if (newValue == 'Autre') {
-
                               _banqueController.text = '';
                             }
-
                           });
                         },
                       ),
@@ -4064,7 +3590,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                               height: 24,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(
                                   Icons.phone_android,
                                   color: _selectedModePaiement == 'Wave'
@@ -4192,11 +3717,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildStep3() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -4208,23 +3731,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                   : FutureBuilder<Map<String, dynamic>>(
                       future: _loadUserDataForRecap(),
                       builder: (context, snapshot) {
-
                         // Pour les clients, attendre le chargement des données
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-
                           return Center(
                               child:
                                   CircularProgressIndicator(color: bleuCoris));
                         }
 
                         if (snapshot.hasError) {
-
                           debugPrint(
                               'Erreur chargement données récapitulatif: ${snapshot.error}');
                           // En cas d'erreur, essayer d'utiliser _userData si disponible
                           if (_userData.isNotEmpty) {
-
                             return _buildRecapContent(userData: _userData);
                           }
 
@@ -4250,18 +3769,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
                         // Si userData est vide, recharger les données
                         if (userData.isEmpty && !_isCommercial) {
-
                           // Recharger les données utilisateur
                           _loadUserDataForRecap().then((data) {
-
                             if (mounted && data.isNotEmpty) {
-
                               setState(() {
-
                                 _userData = data;
                               });
                             }
-
                           });
                           return Center(
                               child:
@@ -4279,7 +3793,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-
     final duree = _dureeController.text.isNotEmpty
         ? int.tryParse(_dureeController.text) ?? 0
         : 0;
@@ -4292,7 +3805,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
      */
     final displayData = _isCommercial
         ? {
-
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
@@ -4303,7 +3815,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-
         : (userData ?? _userData);
 
     return ListView(children: [
@@ -4477,7 +3988,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             : null,
         documents: _pieceIdentiteFiles
             .map((file) => {
-
                   'label': file.path.split(RegExp(r'[\\/]+')).last,
                   'path': file.path,
                 })
@@ -4508,7 +4018,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           Text(
               'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: grisTexte, fontSize: context.sp(12), height: 1.4)),
+              style: TextStyle(
+                  color: grisTexte, fontSize: context.sp(12), height: 1.4)),
         ]),
       ),
       SizedBox(height: context.r(20)),
@@ -4516,26 +4027,20 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   String _formatDate(String dateString) {
-
     try {
-
       final date = DateTime.parse(dateString);
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
-
       return dateString;
     }
-
   }
 
   Widget _buildRecapRow(String label, String value,
       {bool isHighlighted = false}) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
-
           final screenWidth = MediaQuery.of(context).size.width;
           final isSmallScreen = screenWidth < 360;
           final labelWidth = isSmallScreen ? 100.0 : 120.0;
@@ -4576,7 +4081,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   Widget _buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -4599,7 +4103,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           SizedBox(width: context.r(10)),
           Text(title,
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w700, color: color)),
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w700,
+                  color: color)),
         ]),
         SizedBox(height: context.r(12)),
         ...children,
@@ -4608,27 +4114,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildSubsectionTitle(String title) {
-
     return Text(title,
         style: TextStyle(
-            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(14)));
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+            fontSize: context.sp(14)));
   }
 
   Widget _buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
-
           final screenWidth = MediaQuery.of(context).size.width;
           final isSmallScreen = screenWidth < 360;
           final fontSize = isSmallScreen ? 11.0 : 12.0;
 
           // Sur très petits écrans, afficher en colonne au lieu de côte à côte
           if (screenWidth < 340) {
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -4722,11 +4226,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildStep4() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -4846,12 +4348,15 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF8C00), size: 20),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Color(0xFFFF8C00), size: 20),
                           SizedBox(width: context.r(8)),
                           Expanded(
                             child: Text(
                               'Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.',
-                              style: TextStyle(color: const Color(0xFF7D4B00), fontSize: context.sp(13)),
+                              style: TextStyle(
+                                  color: const Color(0xFF7D4B00),
+                                  fontSize: context.sp(13)),
                             ),
                           ),
                         ],
@@ -5054,7 +4559,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Widget _buildNavigationButtons() {
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: blanc, boxShadow: [
@@ -5125,7 +4629,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Future<void> _showSignatureAndPayment() async {
-
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -5133,12 +4636,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
 
     if (signature == null) {
-
       return; // L'utilisateur a annulé
     }
 
     setState(() {
-
       _clientSignature = signature;
     });
 
@@ -5149,9 +4650,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _showPaymentOptions() {
-
     if (mounted) {
-
       showModalBottomSheet(
           context: context,
           isScrollControlled: true,
@@ -5159,17 +4658,13 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           builder: (context) => PaymentBottomSheet(
               onPayNow: _processPayment, onPayLater: _saveAsProposition));
     }
-
   }
 
   Future<int> _saveSubscriptionData() async {
-
     try {
-
       final subscriptionService = SubscriptionService();
 
       final subscriptionData = {
-
         'product_type': 'coris_retraite',
         'prime': _calculatedPrime,
         'capital': _calculatedCapital,
@@ -5177,7 +4672,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         'duree_type': _selectedUnite,
         'periodicite': _getPeriodeTextForDisplay().toLowerCase(),
         'beneficiaire': {
-
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
@@ -5185,14 +4679,11 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
         },
         'contact_urgence': {
-
           'nom': _personneContactNomController.text.trim(),
-          'contact':
-              _personneContactTelController.text.trim(),
+          'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
-
           'is_aide_par_commercial': _isAideParCommercial,
           'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
           'commercial_code_apporteur':
@@ -5200,53 +4691,41 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
-        'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
-
                 'banque': _banqueController.text.trim(),
                 ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
-
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
-
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
                             _numeroMatriculeController.text.trim(),
                       }
-
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-
                             'numero_telephone':
                                 _corisMoneyPhoneController.text.trim(),
                           }
-
                         : null,
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
-
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
-
         subscriptionData['client_info'] = {
-
           'nom': _clientNomController.text.trim(),
           'prenom': _clientPrenomController.text.trim(),
           'date_naissance':
@@ -5266,11 +4745,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       // Utiliser updateSubscription si on modifie, createSubscription sinon
       final http.Response response;
       if (widget.subscriptionId != null) {
-
         response = await subscriptionService.updateSubscription(
             widget.subscriptionId!, subscriptionData);
       } else {
-
         response =
             await subscriptionService.createSubscription(subscriptionData);
       }
@@ -5279,7 +4756,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       if ((response.statusCode != 201 && response.statusCode != 200) ||
           !responseData['success']) {
-
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
@@ -5287,18 +4763,14 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       // RETOURNER l'ID de la souscription (créée ou mise à jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
-
       debugPrint('Erreur sauvegarde souscription: $e');
       rethrow;
     }
-
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,
       {String? paymentMethod}) async {
-
     try {
-
       final subscriptionService = SubscriptionService();
       final response = await subscriptionService.updatePaymentStatus(
         subscriptionId,
@@ -5309,7 +4781,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode != 200 || !responseData['success']) {
-
         throw Exception(responseData['message'] ??
             'Erreur lors de la mise à jour du statut');
       }
@@ -5317,15 +4788,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       debugPrint(
           'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-
       debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
-
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-
     // Simulation d'un délai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
@@ -5334,36 +4802,29 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   void _processPayment(String paymentMethod) async {
-
     // ✅ SI CORIS MONEY: Afficher le modal de paiement CorisMoney
     if (paymentMethod == 'CORIS Money') {
-
       try {
-
         // 1. Sauvegarder la souscription
         final subscriptionId = await _saveSubscriptionData();
 
         // 2. Upload document si présent
-        if (_pieceIdentite != null) {
-
+        if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
           try {
-
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-
             debugPrint('⚠️ Erreur upload document: $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  content: Text(
+                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
               );
             }
-
           }
-
         }
 
         // 3. Afficher le modal CorisMoney
@@ -5377,7 +4838,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             montant: _calculatedPrime,
             description: 'Paiement prime CORIS RETRAITE',
             onPaymentSuccess: () {
-
               _showSuccessDialog(true);
             },
           ),
@@ -5385,11 +4845,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
         return;
       } catch (e) {
-
         _showErrorSnackBar('Erreur lors de la préparation du paiement: $e');
         return;
       }
-
     }
 
     // ðŸ‘‡ AUTRES MÉTHODES
@@ -5400,37 +4858,30 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         builder: (context) => LoadingDialog(paymentMethod: paymentMethod));
 
     try {
-
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
-
         }
-
       }
 
       if (paymentMethod == 'Wave') {
-
         if (mounted) {
-
           Navigator.pop(context);
         }
 
@@ -5453,82 +4904,60 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           paymentMethod: paymentMethod);
 
       if (mounted) {
-
         Navigator.pop(context); // Fermer le loading
 
         if (paymentSuccess) {
-
           _showSuccessDialog(true); // Contrat activé
         } else {
-
           _showErrorSnackBar(
               'Paiement échoué. Votre proposition a été sauvegardée.');
         }
-
       }
-
     } catch (e) {
-
       if (mounted) {
-
         Navigator.pop(context);
         _showErrorSnackBar('Erreur lors du traitement: $e');
       }
-
     }
-
   }
 
   void _saveAsProposition() async {
-
     try {
-
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
-
         }
-
       }
 
       if (mounted) {
-
         _showSuccessDialog(false);
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
       }
-
     }
-
   }
 
   /// Upload le document pièce d'identité vers le serveur
 
   void _viewLocalDocument(File? documentFile, String fileName) {
-
     if (documentFile == null) return;
 
     Navigator.push(
@@ -5543,9 +4972,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   Future<void> _uploadDocument(int subscriptionId) async {
-
     try {
-
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
@@ -5556,7 +4983,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       if (paths.isEmpty) return;
 
       for (final filePath in paths) {
-
         final response = await subscriptionService.uploadDocument(
           subscriptionId,
           filePath,
@@ -5565,25 +4991,21 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         final responseData = jsonDecode(response.body);
 
         if (response.statusCode != 200 || !responseData['success']) {
-
           debugPrint('❌ Erreur upload: ${responseData['message']}');
-          throw Exception(responseData['message'] ?? 'Erreur lors de l\'upload du document');
+          throw Exception(responseData['message'] ??
+              'Erreur lors de l\'upload du document');
         }
-
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-
       debugPrint('❌ Exception upload document: $e');
       // Rethrow pour que l'appelant puisse gérer l'erreur
       rethrow;
     }
-
   }
 
   void _showSuccessDialog(bool isPaid) {
-
     if (!mounted) return;
     showDialog(
         context: context,
@@ -5592,9 +5014,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   }
 
   @override
-
   void dispose() {
-
     _animationController.dispose();
     _progressController.dispose();
     _pageController.dispose();
@@ -5622,19 +5042,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     _commercialCodeApporteurController.dispose();
     super.dispose();
   }
-
 }
 
 // Classes pour les dialogues
 
 class LoadingDialog extends StatelessWidget {
-
   final String paymentMethod;
   const LoadingDialog({super.key, required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
@@ -5663,21 +5080,19 @@ class LoadingDialog extends StatelessWidget {
             SizedBox(height: context.r(8)),
             Text('Paiement via $paymentMethod...',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF64748B), fontSize: context.sp(14))),
+                style: TextStyle(
+                    color: Color(0xFF64748B), fontSize: context.sp(14))),
           ]),
         ));
   }
-
 }
 
 class SuccessDialog extends StatelessWidget {
-
   final bool isPaid;
   const SuccessDialog({super.key, required this.isPaid});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
@@ -5706,7 +5121,8 @@ class SuccessDialog extends StatelessWidget {
                         : const Color(0xFFF59E0B),
                     size: 40)),
             SizedBox(height: context.r(20)),
-            Text(isPaid ? 'Souscription réussie !' : 'Proposition enregistrée !',
+            Text(
+                isPaid ? 'Souscription réussie !' : 'Proposition enregistrée !',
                 style: TextStyle(
                     fontSize: context.sp(20),
                     fontWeight: FontWeight.w700,
@@ -5718,7 +5134,9 @@ class SuccessDialog extends StatelessWidget {
                     : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    color: Color(0xFF64748B), fontSize: context.sp(14), height: 1.4)),
+                    color: Color(0xFF64748B),
+                    fontSize: context.sp(14),
+                    height: 1.4)),
             SizedBox(height: context.r(24)),
             SizedBox(
                 width: double.infinity,
@@ -5737,11 +5155,9 @@ class SuccessDialog extends StatelessWidget {
           ]),
         ));
   }
-
 }
 
 class PaymentBottomSheet extends StatelessWidget {
-
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const PaymentBottomSheet(
@@ -5749,7 +5165,6 @@ class PaymentBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
         decoration: BoxDecoration(
             color: Colors.white,
@@ -5838,8 +5253,8 @@ class PaymentBottomSheet extends StatelessWidget {
                 ]))));
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -5869,15 +5284,15 @@ class PaymentBottomSheet extends StatelessWidget {
                             fontSize: context.sp(16))),
                     SizedBox(height: context.r(4)),
                     Text(subtitle,
-                        style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
+                        style: TextStyle(
+                            color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title,
+      String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -5902,7 +5317,6 @@ class PaymentBottomSheet extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-
                       print('❌ Erreur chargement image: $imagePath - $error');
                       return Icon(Icons.image_not_supported,
                           size: 32, color: Colors.grey);
@@ -5920,12 +5334,10 @@ class PaymentBottomSheet extends StatelessWidget {
                             fontSize: context.sp(16))),
                     SizedBox(height: context.r(4)),
                     Text(subtitle,
-                        style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
+                        style: TextStyle(
+                            color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
-
 }
-

@@ -18,7 +18,6 @@ import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionBonPlanPage extends StatefulWidget {
-
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
@@ -27,7 +26,6 @@ class SouscriptionBonPlanPage extends StatefulWidget {
   final Map<String, dynamic>? existingData; // Données existantes à préremplir
 
   const SouscriptionBonPlanPage({
-
     super.key,
     this.clientId,
     this.clientData,
@@ -41,7 +39,6 @@ class SouscriptionBonPlanPage extends StatefulWidget {
 
 class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     with TickerProviderStateMixin {
-
   // Charte graphique CORIS améliorée
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -195,8 +192,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
-  final TextEditingController _clientProfessionController = TextEditingController();
-  final TextEditingController _clientSecteurActiviteController = TextEditingController();
+  final TextEditingController _clientProfessionController =
+      TextEditingController();
+  final TextEditingController _clientSecteurActiviteController =
+      TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -205,17 +204,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   final storage = const FlutterSecureStorage();
 
   @override
-
   void initState() {
-
     super.initState();
 
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
-
       _prefillFromExistingData();
     } else {
-
       // Charger les données utilisateur une seule fois
       _userDataFuture = _loadUserDataForRecap();
     }
@@ -228,27 +223,21 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // 🔍 Validation de la durée uniquement à la sortie du champ
     // MON BON PLAN CORIS: durée minimale 2 ans, maximale 15 ans
     _dureeFocusNode.addListener(() {
-
       if (!_dureeFocusNode.hasFocus) {
-
         // Utiliser Future.delayed pour éviter les appels multiples
         Future.delayed(const Duration(milliseconds: 100), () {
-
           if (!mounted) return;
 
           // Le champ a perdu le focus - valider maintenant
           if (_dureeController.text.isNotEmpty) {
-
             int? duree = int.tryParse(_dureeController.text);
             if (duree != null) {
-
               // Convertir en années si nécessaire
               int dureeEnAnnees =
                   _selectedDureeType == 'ans' ? duree : (duree ~/ 12);
 
               // ❌ Validation de la durée minimale (2 ans)
               if (dureeEnAnnees < 2) {
-
                 _showProfessionalDialog(
                   title: 'Durée minimale requise',
                   message:
@@ -262,7 +251,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
               // ❌ Validation de la durée maximale (15 ans)
               if (dureeEnAnnees > 15) {
-
                 _showProfessionalDialog(
                   title: 'Durée maximale dépassée',
                   message:
@@ -273,21 +261,15 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                 );
                 return;
               }
-
             }
-
           }
-
         });
       }
-
     });
   }
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
@@ -301,33 +283,25 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         isCommercialArg || isCommercialProps || isCommercialExistingData;
 
     if (shouldEnableCommercial && !_isCommercial) {
-
       setState(() {
-
         _isCommercial = true;
         _currentStep = 0;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-
         if (mounted) {
-
           _pageController.jumpToPage(0);
         }
-
       });
     }
 
     if (isCommercialArg) {
-
       // Si on est en mode modification (avec existingData), pré-remplir tout
       if (args['existingData'] != null) {
-
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
       }
 
       // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
-
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
@@ -340,29 +314,21 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             clientInfo['numero_piece_identite'] ?? '';
 
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
         // Extraire l'indicatif du téléphone si présent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-
             _selectedClientIndicatif = parts[0];
             if (parts.length > 1) {
-
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
-
           }
-
         }
-
       }
-
     }
 
     _animationController = AnimationController(
@@ -383,12 +349,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Future<Map<String, dynamic>> _loadUserData() async {
-
     try {
-
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé');
         return {};
       }
@@ -398,22 +361,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         headers: {'Authorization': 'Bearer $token'},
       );
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             return Map<String, dynamic>.from(data['user']);
           }
 
           if (data.containsKey('id') && data.containsKey('email')) {
-
             return Map<String, dynamic>.from(data);
           }
-
         }
 
         return {};
@@ -422,11 +380,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       debugPrint('Erreur serveur: ${response.statusCode}');
       return {};
     } catch (e) {
-
       debugPrint('Erreur lors du chargement du profil: $e');
       return {};
     }
-
   }
 
   /// Charge les données utilisateur spécifiquement pour le récapitulatif
@@ -434,12 +390,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   /// Retourne les données depuis l'API ou depuis _userData en fallback
 
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
-
     try {
-
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé pour récap');
         return _userData.isNotEmpty ? _userData : {};
       }
@@ -447,7 +400,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
@@ -455,22 +407,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
       debugPrint('🔄 Chargement des données utilisateur depuis l\'API...');
       if (response.statusCode == 200) {
-
         final data = json.decode(response.body);
         if (data != null && data is Map) {
-
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
                 '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -482,24 +429,19 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
                   '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
-
                 setState(() {
-
                   _userData = userData;
                 });
               }
 
               return userData;
             }
-
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
@@ -507,14 +449,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
               data['data'] is Map &&
               data['data']['user'] != null &&
               data['data']['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
                 '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -524,14 +463,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
-
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
                 '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -542,37 +478,30 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           debugPrint(
               '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
-
       } else {
-
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
       // Fallback vers _userData si la requête échoue
       return _userData.isNotEmpty ? _userData : {};
     } catch (e) {
-
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
-
   }
 
   void _prefillFromExistingData() {
-
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
-
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
 
@@ -587,32 +516,24 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           clientInfo['numero_piece_identite'] ?? '';
 
       if (clientInfo['civilite'] != null) {
-
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
       // Extraire l'indicatif du téléphone si présent
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
-
           _selectedClientIndicatif = parts[0];
           if (parts.length > 1) {
-
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           }
-
         }
-
       }
-
     }
 
     // Montant de la cotisation
     if (data['montant_cotisation'] != null) {
-
       final montant = data['montant_cotisation'] is int
           ? data['montant_cotisation'].toDouble()
           : data['montant_cotisation'];
@@ -621,74 +542,56 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // Périodicité
     if (data['periodicite'] != null) {
-
       _selectedPeriodicite = data['periodicite'];
     }
 
     // Durée du contrat
     if (data['duree_contrat'] != null) {
-
       _dureeController.text = data['duree_contrat'].toString();
     }
 
     // Unité de durée (ans ou mois)
     if (data['unite_duree'] != null) {
-
       _selectedDureeType = data['unite_duree'];
     }
 
     // Date d'effet
     if (data['date_effet'] != null) {
-
       try {
-
         _dateEffetContrat = DateTime.parse(data['date_effet']);
         _dateEffetController.text =
             DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
       } catch (e) {
-
         debugPrint('Erreur parsing date_effet: $e');
       }
-
     }
 
     // Bénéficiaire
     if (data['beneficiaire'] != null) {
-
       final benef = data['beneficiaire'];
       _beneficiaireNomController.text = benef['nom'] ?? '';
       if (benef['contact'] != null) {
-
         final contact = benef['contact'].toString();
         // Extraire l'indicatif et le numéro
         if (contact.startsWith('+')) {
-
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedBeneficiaireIndicatif = parts[0];
             _beneficiaireContactController.text = parts.sublist(1).join(' ');
           }
-
         } else {
-
           _beneficiaireContactController.text = contact;
         }
-
       }
 
       if (benef['date_naissance'] != null) {
-
         try {
-
           _beneficiaireDateNaissance = DateTime.parse(benef['date_naissance']);
           _beneficiaireDateNaissanceController.text =
               DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
         } catch (e) {
-
           debugPrint('Erreur parsing date_naissance beneficiaire: $e');
         }
-
       }
 
       _selectedLienParente = benef['lien_parente'] ?? 'Conjoint';
@@ -696,36 +599,27 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // Contact d'urgence
     if (data['contact_urgence'] != null) {
-
       final contact = data['contact_urgence'];
       _personneContactNomController.text = contact['nom'] ?? '';
       if (contact['contact'] != null) {
-
         final tel = contact['contact'].toString();
         if (tel.startsWith('+')) {
-
           final parts = tel.split(' ');
           if (parts.length >= 2) {
-
             _selectedContactIndicatif = parts[0];
             _personneContactTelController.text = parts.sublist(1).join(' ');
           }
-
         } else {
-
           _personneContactTelController.text = tel;
         }
-
       }
 
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
     }
 
     if (data['assistance_commerciale'] != null) {
-
       final assistance = data['assistance_commerciale'];
-      _isAideParCommercial =
-          assistance['is_aide_par_commercial'] == true;
+      _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
       _commercialNomPrenomController.text =
           assistance['commercial_nom_prenom'] ?? '';
       _commercialCodeApporteurController.text =
@@ -734,14 +628,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
-
       _selectedModePaiement = data['mode_paiement'];
 
       if (data['infos_paiement'] != null) {
-
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
-
           _banqueController.text = infos['banque'] ?? '';
           // Construire le RIB unifié à partir des 3 champs séparés
           final codeGuichet = infos['code_guichet'] ?? '';
@@ -750,32 +641,23 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           if (codeGuichet.isNotEmpty &&
               numeroCompte.isNotEmpty &&
               cleRib.isNotEmpty) {
-
             _ribUnifiedController.text =
                 '$codeGuichet / $numeroCompte / $cleRib';
           }
-
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
-
           _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
         }
-
       }
-
     }
 
     if (mounted) {
-
       setState(() {});
     }
-
   }
 
   @override
-
   void dispose() {
-
     _animationController.dispose();
     _progressController.dispose();
     _pageController.dispose();
@@ -814,13 +696,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   String _formatMontant(double montant) {
-
     final rounded = montant.round();
     return "${rounded.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   String _formatNumber(double number) {
-
     final rounded = number.round();
     return rounded.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -829,31 +709,24 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _formatMontantInput() {
-
     final text = _montantCotisationController.text.replaceAll(' ', '');
     if (text.isNotEmpty) {
-
       final value = double.tryParse(text);
       if (value != null) {
-
         _montantCotisationController.text = _formatNumber(value);
         _montantCotisationController.selection = TextSelection.fromPosition(
           TextPosition(offset: _montantCotisationController.text.length),
         );
       }
-
     }
-
   }
 
   /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
 
   /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
   Map<String, String> _parseRibUnified(String rib) {
-
     final parts = rib.split('/').map((p) => p.trim()).toList();
     return {
-
       'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
@@ -862,7 +735,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
-
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
@@ -879,12 +751,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   /// Formate l'entrée RIB en temps réel
 
   void _formatRibInput() {
-
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (onlyDigits.isEmpty) {
-
       _ribUnifiedController.text = '';
       return;
     }
@@ -892,44 +762,35 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
     if (onlyDigits.isNotEmpty) {
-
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 5) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 16) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(16, min(18, onlyDigits.length)));
     }
 
     final formatted = buffer.toString();
     if (formatted != text) {
-
       _ribUnifiedController.text = formatted;
       _ribUnifiedController.selection = TextSelection.fromPosition(
         TextPosition(offset: formatted.length),
       );
     }
-
   }
 
   Future<void> _pickDocument() async {
-
     try {
-
       final picked = await IdentityDocumentPicker.pickDocuments(context);
       if (picked == null || picked.files.isEmpty) return;
 
       if (mounted) {
-
         setState(() {
-
           _pieceIdentiteFiles
             ..clear()
             ..addAll(picked.files);
@@ -941,26 +802,19 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       }
 
       if (mounted) {
-
         _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
             ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
             : 'Votre pièce d\'identité a été téléchargée avec succès.');
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar(
             'Une erreur s\'est produite lors de la sélection du fichier. Veuillez réessayer.');
       }
-
     }
-
   }
 
   void _showErrorSnackBar(String message) {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -1009,7 +863,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _showSuccessSnackBar(String message) {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -1058,7 +911,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Future<void> _showSignatureAndPayment() async {
-
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -1066,12 +918,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
 
     if (signature == null) {
-
       return; // L'utilisateur a annulé
     }
 
     setState(() {
-
       _clientSignature = signature;
     });
 
@@ -1082,19 +932,16 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _showPaymentOptions() async {
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _PaymentBottomSheet(
         onPayNow: (paymentMethod) {
-
           Navigator.pop(context);
           _processPayment(paymentMethod);
         },
         onPayLater: () {
-
           Navigator.pop(context);
           _saveAsProposition();
         },
@@ -1105,14 +952,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   /// Sauvegarde les données de souscription pour Mon Bon Plan Coris
 
   Future<int> _saveSubscriptionData() async {
-
     try {
-
       final subscriptionService = SubscriptionService();
 
       // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
       final subscriptionData = {
-
         'product_type': 'mon_bon_plan_coris',
         'montant':
             double.parse(_montantCotisationController.text.replaceAll(' ', ''))
@@ -1124,7 +968,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         'duree': int.tryParse(_dureeController.text) ?? 0,
         'duree_type': _selectedDureeType,
         'beneficiaire': {
-
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
@@ -1132,30 +975,24 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
-
           'nom': _personneContactNomController.text.trim(),
-          'contact':
-              _personneContactTelController.text.trim(),
+          'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
-
           'is_aide_par_commercial': _isAideParCommercial,
           'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
           'commercial_code_apporteur':
               _commercialCodeApporteurController.text.trim(),
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
-        'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? () {
-
                 final parsed =
                     _parseRibUnified(_ribUnifiedController.text.trim());
                 return {
-
                   'banque': _banqueController.text.trim(),
                   'code_guichet': parsed['code_guichet'] ?? '',
                   'numero_compte': parsed['numero_compte'] ?? '',
@@ -1165,40 +1002,31 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
-
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
                             _numeroMatriculeController.text.trim(),
                       }
-
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-
                             'numero_telephone':
                                 _corisMoneyPhoneController.text.trim(),
                           }
-
                         : null,
       };
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
-
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
-
         subscriptionData['client_info'] = {
-
           'nom': _clientNomController.text.trim(),
           'prenom': _clientPrenomController.text.trim(),
           'lieu_naissance': _clientLieuNaissanceController.text.trim(),
@@ -1217,13 +1045,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       // Si on modifie une proposition existante, mettre à jour au lieu de créer
       final http.Response response;
       if (widget.subscriptionId != null) {
-
         response = await subscriptionService.updateSubscription(
           widget.subscriptionId!,
           subscriptionData,
         );
       } else {
-
         response =
             await subscriptionService.createSubscription(subscriptionData);
       }
@@ -1233,7 +1059,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       if ((widget.subscriptionId != null && response.statusCode != 200) ||
           (widget.subscriptionId == null && response.statusCode != 201) ||
           !responseData['success']) {
-
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
@@ -1241,17 +1066,13 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
-
       rethrow;
     }
-
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,
       {String? paymentMethod}) async {
-
     try {
-
       final subscriptionService = SubscriptionService();
       final response = await subscriptionService.updatePaymentStatus(
         subscriptionId,
@@ -1262,7 +1083,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode != 200 || !responseData['success']) {
-
         throw Exception(responseData['message'] ??
             'Erreur lors de la mise à jour du statut');
       }
@@ -1270,15 +1090,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       debugPrint(
           'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-
       debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
-
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-
     // Simulation d'un délai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
@@ -1287,48 +1104,40 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _processPayment(String paymentMethod) async {
-
     if (_isProcessing) return;
 
     setState(() {
-
       _isProcessing = true;
     });
 
     // Si CORIS Money est sélectionné, utiliser le modal de paiement
     if (paymentMethod == 'CORIS Money') {
-
       try {
-
         // ÉTAPE 1: Sauvegarder la souscription
         final subscriptionId = await _saveSubscriptionData();
 
         // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-        if (_pieceIdentite != null) {
-
+        if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
           try {
-
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-
             debugPrint(
                 '⚠️ Erreur upload document (non bloquant): $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  content: Text(
+                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
               );
             }
           }
-
         }
 
         // Afficher le modal de paiement CorisMoney
         if (mounted) {
-
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -1339,36 +1148,25 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   0.0,
               description: 'Paiement prime CORIS MON BON PLAN',
               onPaymentSuccess: () {
-
                 if (mounted) {
-
                   Navigator.pop(context);
                   _showSuccessDialog(true);
                 }
-
               },
             ),
           );
         }
-
       } catch (e) {
-
         debugPrint('❌ Erreur lors du processus: $e');
         if (mounted) {
-
           _showErrorSnackBar('Erreur lors du traitement: $e');
         }
-
       } finally {
-
         if (mounted) {
-
           setState(() {
-
             _isProcessing = false;
           });
         }
-
       }
 
       return;
@@ -1381,36 +1179,30 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
 
     try {
-
       // ÉTAPE 1: Sauvegarder la souscription
       final subscriptionId = await _saveSubscriptionData();
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
         }
-
       }
 
       if (paymentMethod == 'Wave') {
-
         if (mounted) {
-
           Navigator.pop(context);
         }
 
@@ -1434,84 +1226,64 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           paymentMethod: paymentMethod);
 
       if (mounted) {
-
         Navigator.pop(context);
       }
 
       if (paymentSuccess) {
-
         _showSuccessDialog(true);
       } else {
-
         _showErrorSnackBar(
             'Paiement échoué. Votre proposition a été sauvegardée.');
       }
-
     } catch (e) {
-
       if (mounted) {
-
         Navigator.pop(context);
       }
 
       _showErrorSnackBar('Erreur lors du traitement: $e');
     } finally {
-
       if (mounted) {
-
         setState(() {
-
           _isProcessing = false;
         });
       }
-
     }
-
   }
 
   void _saveAsProposition() async {
-
     try {
-
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
         }
-
       }
 
       _showSuccessDialog(false);
     } catch (e) {
-
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
     }
-
   }
 
   /// Upload le document pièce d'identité vers le serveur
 
   Future<void> _uploadDocument(int subscriptionId) async {
-
     try {
-
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
@@ -1523,7 +1295,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
       Map<String, dynamic> responseData = {};
       for (final filePath in paths) {
-
         final response = await subscriptionService.uploadDocument(
           subscriptionId,
           filePath,
@@ -1533,56 +1304,41 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         responseData = localData;
 
         if (response.statusCode != 200 || !localData['success']) {
-
           debugPrint('❌ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
-
       }
 
       // Récupérer le label original si présent dans la réponse
       try {
-
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
-
           final souscriptiondata = updated['souscriptiondata'];
           if (souscriptiondata != null) {
-
             if (souscriptiondata is Map) {
-
               _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
             } else if (souscriptiondata is String) {
-
               try {
-
                 final parsed = jsonDecode(souscriptiondata);
                 _pieceIdentiteLabel = parsed['piece_identite_label'];
               } catch (_) {}
             }
-
           }
-
         }
-
       } catch (e) {
-
         debugPrint(
             '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-
       debugPrint('❌ Exception upload document: $e');
       rethrow;
     }
-
   }
 
   void _showSuccessDialog(bool isPaid) {
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1593,19 +1349,16 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   /// 📋 Dialog pour les messages de validation (durée, capital, etc.)
 
   void _showProfessionalDialog({
-
     required String title,
     required String message,
     required IconData icon,
     required Color iconColor,
     required Color backgroundColor,
   }) {
-
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -1688,7 +1441,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _selectDateEffet() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -1699,18 +1451,14 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
 
     if (picked != null && mounted) {
-
       setState(() {
-
         _dateEffetContrat = picked;
         _dateEffetController.text = DateFormat('dd/MM/yyyy').format(picked);
       });
     }
-
   }
 
   void _selectBeneficiaireDateNaissance() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _beneficiaireDateNaissance ?? DateTime(2000),
@@ -1721,15 +1469,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     );
 
     if (picked != null && mounted) {
-
       setState(() {
-
         _beneficiaireDateNaissance = picked;
         _beneficiaireDateNaissanceController.text =
             DateFormat('dd/MM/yyyy').format(picked);
       });
     }
-
   }
 
   // =================================================================
@@ -1737,45 +1482,31 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   // =================================================================
 
   void _nextStep() {
-
     final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
-
       bool canProceed = false;
 
       if (_isCommercial) {
-
         if (_currentStep == 0 && _validateStepClientInfo()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       } else {
-
         if (_currentStep == 0 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       }
 
       if (canProceed) {
-
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -1785,15 +1516,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           curve: Curves.easeInOutCubic,
         );
       }
-
     }
-
   }
 
   void _previousStep() {
-
     if (_currentStep > 0) {
-
       setState(() => _currentStep--);
       _progressController.reverse();
       _animationController.reset();
@@ -1803,32 +1530,26 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         curve: Curves.easeInOutCubic,
       );
     }
-
   }
 
   bool _validateStepClientInfo() {
-
     if (_clientNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du client');
       return false;
     }
 
     if (_clientPrenomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
 
     if (_clientDateNaissance == null) {
-
       _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
 
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
@@ -1837,13 +1558,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   bool _validateStep1() {
-
     // VALIDATION SPÉCIFIQUE É€ MON BON PLAN CORIS
     if (_montantCotisationController.text.trim().isEmpty ||
         _selectedPeriodicite.isEmpty ||
         _dateEffetContrat == null ||
         _dureeController.text.trim().isEmpty) {
-
       _showErrorSnackBar(
           'Veuillez compléter tous les champs obligatoires avant de continuer.');
       return false;
@@ -1853,7 +1572,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     final montant = double.tryParse(montantText);
 
     if (montant == null || montant <= 0) {
-
       _showErrorSnackBar(
           'Le montant saisi est invalide. Veuillez entrer un montant positif.');
       return false;
@@ -1861,7 +1579,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // VÉRIFICATION DU MONTANT MINIMAL DE 3 000 F
     if (montant < MONTANT_MINIMAL_COTISATION) {
-
       _showErrorSnackBar(
           'Le montant minimal de la cotisation est de ${_formatMontant(MONTANT_MINIMAL_COTISATION)}.');
       return false;
@@ -1870,7 +1587,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // Validation de la durée
     final duree = int.tryParse(_dureeController.text);
     if (duree == null || duree <= 0) {
-
       _showErrorSnackBar('Veuillez entrer une durée valide.');
       return false;
     }
@@ -1879,13 +1595,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   bool _validateStep2() {
-
     if (_beneficiaireNomController.text.trim().isEmpty ||
         _beneficiaireContactController.text.trim().isEmpty ||
         _beneficiaireDateNaissance == null ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
-
       _showErrorSnackBar(
           'Veuillez renseigner tous les contacts et informations de bénéficiaire.');
       return false;
@@ -1893,7 +1607,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
@@ -1902,7 +1615,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     // Validation des numéros de téléphone
     if (!RegExp(r'^[0-9]{8,15}$')
         .hasMatch(_beneficiaireContactController.text)) {
-
       _showErrorSnackBar(
           'Le numéro du bénéficiaire semble invalide. Veuillez vérifier.');
       return false;
@@ -1910,7 +1622,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
-
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
       return false;
@@ -1919,7 +1630,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     if (_isAideParCommercial &&
         (_commercialNomPrenomController.text.trim().isEmpty ||
             _commercialCodeApporteurController.text.trim().isEmpty)) {
-
       _showErrorSnackBar(
           'Veuillez renseigner le nom/prénom et le code apporteur du commercial.');
       return false;
@@ -1930,40 +1640,31 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
-
     if (_selectedModePaiement == null) {
-
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-
       if (_banqueController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
 
       if (_ribUnifiedController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro RIB complet (format: 4444 / 11111111111 / 22).');
         return false;
       }
 
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-
         _showErrorSnackBar(
             'Le format du RIB est incorrect. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone $_selectedModePaiement.');
         return false;
@@ -1971,7 +1672,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
@@ -1979,45 +1679,33 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
-
       }
-
     } else if (_selectedModePaiement == 'Prélèvement à la source') {
-
       if (_nomStructureController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
 
       if (_numeroMatriculeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
         return false;
       }
-
     } else if (_selectedModePaiement == 'CORIS Money') {
-
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
-
     }
 
     return true;
@@ -2029,13 +1717,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: grisLeger,
       resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-
           return <Widget>[
             SliverAppBar(
               expandedHeight: 120,
@@ -2135,7 +1821,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildModernProgressIndicator() {
-
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2249,11 +1934,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2274,9 +1957,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           icon: Icons.person_outline,
                           items: ['Monsieur', 'Madame', 'Mademoiselle'],
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedClientCivilite = value!;
                             });
                           },
@@ -2300,9 +1981,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           icon: Icons.cake_outlined,
                           selectedDate: _clientDateNaissance,
                           onDateSelected: (date) {
-
                             setState(() {
-
                               _clientDateNaissance = date;
                               _clientDateNaissanceController.text =
                                   '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -2321,9 +2000,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           label: 'Téléphone du client',
                           selectedIndicatif: _selectedClientIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedClientIndicatif = value;
                             });
                           },
@@ -2372,11 +2049,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildStep1() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2478,7 +2153,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildPeriodiciteDropdown() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2514,27 +2188,20 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                 labelText: 'Choisissez votre périodicité',
               ),
               items: _periodiciteOptions.map((String value) {
-
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
                 );
               }).toList(),
               onChanged: (value) {
-
                 if (value != null) {
-
                   setState(() {
-
                     _selectedPeriodicite = value;
                   });
                 }
-
               },
               validator: (value) {
-
                 if (value == null || value.isEmpty) {
-
                   return 'La périodicité est obligatoire';
                 }
 
@@ -2548,7 +2215,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildMontantCotisationField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2565,7 +2231,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           controller: _montantCotisationController,
           keyboardType: TextInputType.number,
           onEditingComplete: () {
-
             _formatMontantInput();
           },
           decoration: InputDecoration(
@@ -2588,21 +2253,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             errorStyle: TextStyle(fontSize: context.sp(12)),
           ),
           validator: (value) {
-
             if (value == null || value.trim().isEmpty) {
-
               return 'Le montant est obligatoire';
             }
 
             final montantText = value.replaceAll(' ', '');
             final montant = double.tryParse(montantText);
             if (montant == null || montant <= 0) {
-
               return 'Montant invalide';
             }
 
             if (montant < MONTANT_MINIMAL_COTISATION) {
-
               return 'Minimum ${_formatMontant(MONTANT_MINIMAL_COTISATION)}';
             }
 
@@ -2614,7 +2275,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildDateEffetField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2661,9 +2321,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                     EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
               validator: (value) {
-
                 if (value == null || value.trim().isEmpty) {
-
                   return 'La date d\'effet est obligatoire';
                 }
 
@@ -2677,7 +2335,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildDureeContratField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2718,15 +2375,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   errorStyle: TextStyle(fontSize: context.sp(12)),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Durée obligatoire';
                   }
 
                   final duree = int.tryParse(value);
                   if (duree == null || duree <= 0) {
-
                     return 'Durée invalide';
                   }
 
@@ -2751,22 +2405,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                         EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
                   items: _dureeTypeOptions.map((String value) {
-
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
                     );
                   }).toList(),
                   onChanged: (value) {
-
                     if (value != null) {
-
                       setState(() {
-
                         _selectedDureeType = value;
                       });
                     }
-
                   },
                 ),
               ),
@@ -2778,11 +2427,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildStep2() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2808,9 +2455,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           label: 'Contact du bénéficiaire *',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedBeneficiaireIndicatif = value;
                             });
                           },
@@ -2843,9 +2488,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           ),
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
-
                             if (value == null || value.isEmpty) {
-
                               return 'Veuillez sélectionner la date de naissance';
                             }
 
@@ -2859,9 +2502,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParente = value!;
                             });
                           },
@@ -2884,9 +2525,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           label: 'Contact téléphonique *',
                           selectedIndicatif: _selectedContactIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedContactIndicatif = value;
                             });
                           },
@@ -2898,9 +2537,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParenteUrgence = value!;
                             });
                           },
@@ -2922,7 +2559,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildAssistanceCommercialeSection() {
-
     return _buildFormSection(
       'Assistance commerciale',
       Icons.support_agent,
@@ -2942,16 +2578,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           dense: true,
           title: Text('Non'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
               if (!_isAideParCommercial) {
-
                 _commercialNomPrenomController.clear();
                 _commercialCodeApporteurController.clear();
               }
-
             });
           },
         ),
@@ -2962,9 +2594,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
           dense: true,
           title: Text('Oui'),
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
             });
           },
@@ -2992,13 +2622,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   // =================================================================
 
   Widget _buildPhoneFieldWithIndicatif({
-
     required TextEditingController controller,
     required String label,
     required String selectedIndicatif,
     required ValueChanged<String> onIndicatifChanged,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3026,7 +2654,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                   isExpanded: true,
                   icon: Icon(Icons.arrow_drop_down, size: 20, color: bleuCoris),
                   items: _indicatifOptions.map((option) {
-
                     return DropdownMenuItem<String>(
                       value: option['code'],
                       child: Padding(
@@ -3039,12 +2666,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                     );
                   }).toList(),
                   onChanged: (value) {
-
                     if (value != null) {
-
                       onIndicatifChanged(value);
                     }
-
                   },
                 ),
               ),
@@ -3074,14 +2698,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Le numéro de téléphone est obligatoire';
                   }
 
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-
                     return 'Numéro de téléphone invalide';
                   }
 
@@ -3096,7 +2717,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3135,14 +2755,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildModernTextField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
     ValueChanged<String>? onChanged,
   }) {
-
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -3175,9 +2793,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
       validator: (value) {
-
         if (value == null || value.trim().isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -3187,17 +2803,14 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildDatePickerField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required DateTime? selectedDate,
     required ValueChanged<DateTime> onDateSelected,
   }) {
-
     return GestureDetector(
       onTap: () async {
-
         final DateTime now = DateTime.now();
         final DateTime initial =
             selectedDate ?? now.subtract(Duration(days: 365 * 25));
@@ -3210,10 +2823,8 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         );
 
         if (picked != null) {
-
           onDateSelected(picked);
         }
-
       },
       child: AbsorbPointer(
         child: _buildModernTextField(
@@ -3227,14 +2838,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildDropdownField({
-
     required String? value,
     required String label,
     required IconData icon,
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-
     final validValue = (value != null && items.contains(value)) ? value : null;
 
     return DropdownButtonFormField<String>(
@@ -3267,7 +2876,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       ),
       items: items.map((String value) {
-
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -3275,9 +2883,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       }).toList(),
       onChanged: onChanged,
       validator: (value) {
-
         if (value == null || value.isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -3287,7 +2893,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildDocumentUploadSection() {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3384,11 +2989,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// 💳 ÉTAPE MODE DE PAIEMENT (identique aux autres pages)
   Widget _buildStepModePaiement() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3467,14 +3070,12 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                     ),
                     child: Column(
                       children: _modePaiementOptions.map((mode) {
-
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
                         Widget? customIconWidget;
 
                         switch (mode) {
-
                           case 'Virement':
                             icon = Icons.account_balance;
                             iconColor = Colors.blue;
@@ -3488,7 +3089,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.water_drop,
                                     color: iconColor, size: 28);
                               },
@@ -3503,7 +3103,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.phone_android,
                                     color: iconColor, size: 28);
                               },
@@ -3522,7 +3121,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.account_balance_wallet,
                                     color: iconColor, size: 28);
                               },
@@ -3535,9 +3133,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
                         return InkWell(
                           onTap: () {
-
                             setState(() {
-
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
@@ -3632,25 +3228,19 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                           fillColor: Colors.grey[50],
                         ),
                         items: _banques.map((String banque) {
-
                           return DropdownMenuItem<String>(
                             value: banque,
                             child: Text(banque),
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
-
                           setState(() {
-
                             _selectedBanque = newValue;
                             if (newValue != null && newValue != 'Autre') {
-
                               _banqueController.text = newValue;
                             } else if (newValue == 'Autre') {
-
                               _banqueController.text = '';
                             }
-
                           });
                         },
                       ),
@@ -3734,7 +3324,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                               height: 24,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(
                                   Icons.phone_android,
                                   color: _selectedModePaiement == 'Wave'
@@ -3863,12 +3452,10 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// ðŸŸ¦ 4. PAGE DE RÉCAPITULATIF (sans calculs - juste affichage des informations)
   Widget _buildStep3() {
-
     debugPrint('ðŸŸ¦ _buildStep3 appelé - _currentStep: $_currentStep');
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3881,21 +3468,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                 : FutureBuilder<Map<String, dynamic>>(
                     future: _userDataFuture,
                     builder: (context, snapshot) {
-
                       // Pour les clients, attendre le chargement des données
                       if (snapshot.connectionState == ConnectionState.waiting) {
-
                         return Center(
                             child: CircularProgressIndicator(color: bleuCoris));
                       }
 
                       if (snapshot.hasError) {
-
                         debugPrint(
                             'Erreur chargement données récapitulatif: ${snapshot.error}');
                         // En cas d'erreur, essayer d'utiliser _userData si disponible
                         if (_userData.isNotEmpty) {
-
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
@@ -3937,7 +3520,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-
     debugPrint('ðŸŸ¦ _buildRecapContent appelé - userData: ${userData?.keys}');
     // Formater le montant pour l'affichage
     final montantText = _montantCotisationController.text.replaceAll(' ', '');
@@ -3945,7 +3527,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
     final displayData = _isCommercial
         ? {
-
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
@@ -3956,7 +3537,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-
         : (userData ?? _userData);
 
     return ListView(
@@ -4117,7 +3697,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
               : null,
           documents: _pieceIdentiteFiles
               .map((file) => {
-
                     'label': file.path.split(RegExp(r'[\\/]+')).last,
                     'path': file.path,
                   })
@@ -4138,9 +3717,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   void _viewLocalDocument(File? documentFile, String fileName) {
-
     if (documentFile == null) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -4175,7 +3752,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   }
 
   Widget _buildNavigationButtons() {
-
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -4267,11 +3843,9 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// Page étape 4: Paiement
   Widget _buildStep4() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -4394,12 +3968,15 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF8C00), size: 20),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Color(0xFFFF8C00), size: 20),
                           SizedBox(width: context.r(8)),
                           Expanded(
                             child: Text(
                               'Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.',
-                              style: TextStyle(color: const Color(0xFF7D4B00), fontSize: context.sp(13)),
+                              style: TextStyle(
+                                  color: const Color(0xFF7D4B00),
+                                  fontSize: context.sp(13)),
                             ),
                           ),
                         ],
@@ -4600,7 +4177,6 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
       },
     );
   }
-
 }
 
 // =================================================================
@@ -4608,13 +4184,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 // =================================================================
 
 class _LoadingDialog extends StatelessWidget {
-
   final String paymentMethod;
   const _LoadingDialog({required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4664,17 +4238,14 @@ class _LoadingDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _SuccessDialog extends StatelessWidget {
-
   final bool isPaid;
   const _SuccessDialog({required this.isPaid});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4734,7 +4305,6 @@ class _SuccessDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
                 },
@@ -4759,22 +4329,18 @@ class _SuccessDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _PaymentBottomSheet extends StatelessWidget {
-
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const _PaymentBottomSheet({
-
     required this.onPayNow,
     required this.onPayLater,
   });
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -4893,8 +4459,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4951,8 +4517,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title,
+      String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4979,7 +4545,6 @@ class _PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-
                   print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
@@ -5020,6 +4585,4 @@ class _PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
-
 }
-

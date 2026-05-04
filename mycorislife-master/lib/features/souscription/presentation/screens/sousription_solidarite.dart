@@ -29,7 +29,6 @@ const Color orangeWarning = Color(0xFFF59E0B);
 const Color grisLeger = Color(0xFFF1F5F9);
 
 class Membre {
-
   String nomPrenom;
   DateTime dateNaissance;
 
@@ -61,7 +60,6 @@ class Membre {
 /// [existingData] : Données existantes si modification (optionnel)
 
 class SouscriptionSolidaritePage extends StatefulWidget {
-
   final int? capital;
   final String? periodicite;
   final int? nbConjoints;
@@ -75,7 +73,6 @@ class SouscriptionSolidaritePage extends StatefulWidget {
       existingData; // Données existantes si modification
 
   const SouscriptionSolidaritePage({
-
     super.key,
     this.capital,
     this.periodicite,
@@ -95,7 +92,6 @@ class SouscriptionSolidaritePage extends StatefulWidget {
 
 class _SouscriptionSolidaritePageState
     extends State<SouscriptionSolidaritePage> {
-
   int _currentStep = 0;
   final PageController _pageController = PageController();
   final _formKey = GlobalKey<FormState>();
@@ -134,13 +130,13 @@ class _SouscriptionSolidaritePageState
 
   /// ============================================
 
-  /// 
+  ///
 
   /// Ces variables permettent à un commercial de créer une souscription pour un client
 
   /// sans que le client ait besoin d'avoir un compte dans le système.
 
-  /// 
+  ///
 
   /// FONCTIONNEMENT:
 
@@ -173,8 +169,10 @@ class _SouscriptionSolidaritePageState
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
-  final TextEditingController _clientProfessionController = TextEditingController();
-  final TextEditingController _clientSecteurActiviteController = TextEditingController();
+  final TextEditingController _clientProfessionController =
+      TextEditingController();
+  final TextEditingController _clientSecteurActiviteController =
+      TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur'; // Civilité par défaut
@@ -262,30 +260,25 @@ class _SouscriptionSolidaritePageState
   final capitalOptions = [500000, 1000000, 1500000, 2000000];
 
   final Map<int, Map<String, double>> primeTotaleFamilleBase = {
-
     500000: {
-
       'mensuel': 2699,
       'trimestriel': 8019,
       'semestriel': 15882,
       'annuelle': 31141
     },
     1000000: {
-
       'mensuel': 5398,
       'trimestriel': 16038,
       'semestriel': 31764,
       'annuelle': 62283
     },
     1500000: {
-
       'mensuel': 8097,
       'trimestriel': 24057,
       'semestriel': 47646,
       'annuelle': 93424
     },
     2000000: {
-
       'mensuel': 10796,
       'trimestriel': 32076,
       'semestriel': 63529,
@@ -293,30 +286,25 @@ class _SouscriptionSolidaritePageState
     },
   };
   final Map<int, Map<String, int>> surprimesConjointsSupplementaires = {
-
     500000: {
-
       'mensuel': 860,
       'trimestriel': 2555,
       'semestriel': 5061,
       'annuelle': 9924
     },
     1000000: {
-
       'mensuel': 1720,
       'trimestriel': 5111,
       'semestriel': 10123,
       'annuelle': 19848
     },
     1500000: {
-
       'mensuel': 2580,
       'trimestriel': 7666,
       'semestriel': 15184,
       'annuelle': 29773
     },
     2000000: {
-
       'mensuel': 3440,
       'trimestriel': 10222,
       'semestriel': 20245,
@@ -324,30 +312,25 @@ class _SouscriptionSolidaritePageState
     },
   };
   final Map<int, Map<String, int>> surprimesEnfantsSupplementaires = {
-
     500000: {
-
       'mensuel': 124,
       'trimestriel': 370,
       'semestriel': 732,
       'annuelle': 1435
     },
     1000000: {
-
       'mensuel': 249,
       'trimestriel': 739,
       'semestriel': 1464,
       'annuelle': 2870
     },
     1500000: {
-
       'mensuel': 373,
       'trimestriel': 1109,
       'semestriel': 2196,
       'annuelle': 4306
     },
     2000000: {
-
       'mensuel': 498,
       'trimestriel': 1478,
       'semestriel': 2928,
@@ -355,30 +338,25 @@ class _SouscriptionSolidaritePageState
     },
   };
   final Map<int, Map<String, int>> surprimesAscendants = {
-
     500000: {
-
       'mensuel': 1547,
       'trimestriel': 4596,
       'semestriel': 9104,
       'annuelle': 17850
     },
     1000000: {
-
       'mensuel': 3094,
       'trimestriel': 9193,
       'semestriel': 18207,
       'annuelle': 35700
     },
     1500000: {
-
       'mensuel': 4641,
       'trimestriel': 13789,
       'semestriel': 27311,
       'annuelle': 53550
     },
     2000000: {
-
       'mensuel': 6188,
       'trimestriel': 18386,
       'semestriel': 36414,
@@ -387,14 +365,10 @@ class _SouscriptionSolidaritePageState
   };
 
   Future<void> _loadUserData() async {
-
     try {
-
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         if (mounted) {
-
           setState(() => _isLoading = false);
         }
 
@@ -404,27 +378,21 @@ class _SouscriptionSolidaritePageState
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['user']);
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
                 _isLoading = false;
               });
@@ -437,15 +405,11 @@ class _SouscriptionSolidaritePageState
           if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-
               final userData = Map<String, dynamic>.from(dataObj);
               if (mounted) {
-
                 setState(() {
-
                   _userData = userData;
                   _isLoading = false;
                 });
@@ -453,7 +417,6 @@ class _SouscriptionSolidaritePageState
 
               return;
             }
-
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
@@ -461,12 +424,9 @@ class _SouscriptionSolidaritePageState
               data['data'] is Map &&
               data['data']['user'] != null &&
               data['data']['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['data']['user']);
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
                 _isLoading = false;
               });
@@ -477,12 +437,9 @@ class _SouscriptionSolidaritePageState
 
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
-
             final userData = Map<String, dynamic>.from(data);
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
                 _isLoading = false;
               });
@@ -490,31 +447,22 @@ class _SouscriptionSolidaritePageState
 
             return;
           }
-
         }
-
       }
 
       // Fallback : Erreur ou format inattendu
       if (mounted) {
-
         setState(() => _isLoading = false);
       }
-
     } catch (e) {
-
       debugPrint('Erreur chargement données utilisateur: $e');
       if (mounted) {
-
         setState(() => _isLoading = false);
       }
-
     }
-
   }
 
   Future<void> _selectBeneficiaireDateNaissance(BuildContext context) async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _beneficiaireDateNaissance ??
@@ -522,7 +470,6 @@ class _SouscriptionSolidaritePageState
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
-
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
@@ -536,21 +483,16 @@ class _SouscriptionSolidaritePageState
       },
     );
     if (picked != null && picked != _beneficiaireDateNaissance) {
-
       setState(() {
-
         _beneficiaireDateNaissance = picked;
         _beneficiaireDateNaissanceController.text =
             "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
-
   }
 
   @override
-
   void initState() {
-
     super.initState();
 
     // Toujours initialiser selectedCapital avec une valeur valide pour éviter l'erreur dropdown
@@ -561,11 +503,9 @@ class _SouscriptionSolidaritePageState
         widget.subscriptionId != null && widget.existingData != null;
 
     if (_isModification) {
-
       // Mode modification : préremplir avec les données existantes
       _prefillExistingData();
     } else {
-
       // Mode création : initialiser avec les valeurs par défaut
       selectedCapital = widget.capital ?? 500000;
       selectedPeriodicite = widget.periodicite ?? 'Mensuel';
@@ -599,7 +539,7 @@ class _SouscriptionSolidaritePageState
 
   /// ============================================
 
-  /// 
+  ///
 
   /// Cette méthode est appelée automatiquement par Flutter lorsque les dépendances du widget changent.
 
@@ -611,7 +551,7 @@ class _SouscriptionSolidaritePageState
 
   /// 3. Initialiser le mode commercial si nécessaire
 
-  /// 
+  ///
 
   /// ARGUMENTS ATTENDUS (via ModalRoute):
 
@@ -619,7 +559,7 @@ class _SouscriptionSolidaritePageState
 
   /// - clientInfo: Map contenant les informations du client (si un client existant est sélectionné)
 
-  /// 
+  ///
 
   /// FLUX:
 
@@ -630,9 +570,7 @@ class _SouscriptionSolidaritePageState
   /// - Si isCommercial = false : Charge les données de l'utilisateur connecté (mode client normal)
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
 
     // Récupérer les arguments passés lors de la navigation vers cette page
@@ -642,12 +580,9 @@ class _SouscriptionSolidaritePageState
 
     // Vérifier si c'est un commercial qui fait la souscription
     if (args != null && args['isCommercial'] == true) {
-
       // Activer le mode commercial si ce n'est pas déjà fait
       if (!_isCommercial) {
-
         setState(() {
-
           _isCommercial = true;
         });
       }
@@ -661,7 +596,6 @@ class _SouscriptionSolidaritePageState
        * pour un client pour lequel il a déjà créé des souscriptions.
        */
       if (args['clientInfo'] != null) {
-
         // Extraire les informations du client depuis les arguments
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
 
@@ -679,7 +613,6 @@ class _SouscriptionSolidaritePageState
 
         // Pré-remplir la civilité si disponible
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
@@ -695,26 +628,20 @@ class _SouscriptionSolidaritePageState
          * On calcule aussi l'âge du client pour les validations ultérieures.
          */
         if (clientInfo['date_naissance'] != null) {
-
           try {
-
             DateTime? dateNaissance;
             // Vérifier le type de la date et la convertir en DateTime si nécessaire
             if (clientInfo['date_naissance'] is String) {
-
               // Si c'est une String, utiliser DateTime.parse pour la convertir
               dateNaissance = DateTime.parse(clientInfo['date_naissance']);
             } else if (clientInfo['date_naissance'] is DateTime) {
-
               // Si c'est déjà un DateTime, l'utiliser directement
               dateNaissance = clientInfo['date_naissance'];
             }
 
             if (dateNaissance != null) {
-
               final finalDate = dateNaissance;
               setState(() {
-
                 // Stocker la date de naissance
                 _clientDateNaissance = finalDate;
 
@@ -729,19 +656,14 @@ class _SouscriptionSolidaritePageState
                 // Ajuster l'âge si l'anniversaire n'a pas encore eu lieu cette année
                 if (now.month < finalDate.month ||
                     (now.month == finalDate.month && now.day < finalDate.day)) {
-
                   _clientAge--;
                 }
-
               });
             }
-
           } catch (e) {
-
             // En cas d'erreur de parsing, afficher un message dans la console
             print('Erreur parsing date de naissance: $e');
           }
-
         }
 
         /**
@@ -753,25 +675,18 @@ class _SouscriptionSolidaritePageState
          */
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
           // Séparer l'indicatif du numéro (ex: "+225 0707889919" -> ["+225", "0707889919"])
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-
             // Le premier élément est l'indicatif
             _selectedClientIndicatif = parts[0];
             // Le reste est le numéro de téléphone
             if (parts.length > 1) {
-
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
-
           }
-
         }
-
       }
-
     }
 
     /**
@@ -782,11 +697,9 @@ class _SouscriptionSolidaritePageState
      *   et mettre _isLoading à false pour permettre l'affichage de la page
      */
     if (!_isCommercial) {
-
       // Mode client : Charger les données de l'utilisateur connecté
       _loadUserData();
     } else {
-
       /**
        * MODE COMMERCIAL : Pas besoin de charger les données utilisateur
        * 
@@ -796,28 +709,22 @@ class _SouscriptionSolidaritePageState
        * - Les données client seront saisies manuellement ou pré-remplies depuis clientInfo
        */
       if (mounted) {
-
         setState(() {
-
           _isLoading = false;
         });
       }
-
     }
-
   }
 
   /// Préremplir les champs avec les données existantes pour la modification
 
   void _prefillExistingData() {
-
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
-
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
       _clientNomController.text = clientInfo['nom'] ?? '';
@@ -827,25 +734,19 @@ class _SouscriptionSolidaritePageState
       _clientLieuNaissanceController.text = clientInfo['lieu_naissance'] ?? '';
       _clientAdresseController.text = clientInfo['adresse'] ?? '';
       if (clientInfo['civilite'] != null) {
-
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
       if (clientInfo['date_naissance'] != null) {
-
         try {
-
           DateTime? dateNaissance;
           if (clientInfo['date_naissance'] is String) {
-
             dateNaissance = DateTime.parse(clientInfo['date_naissance']);
           } else if (clientInfo['date_naissance'] is DateTime) {
-
             dateNaissance = clientInfo['date_naissance'];
           }
 
           if (dateNaissance != null) {
-
             _clientDateNaissance = dateNaissance;
             _clientDateNaissanceController.text =
                 '${dateNaissance.day.toString().padLeft(2, '0')}/${dateNaissance.month.toString().padLeft(2, '0')}/${dateNaissance.year}';
@@ -854,35 +755,24 @@ class _SouscriptionSolidaritePageState
             if (maintenant.month < dateNaissance.month ||
                 (maintenant.month == dateNaissance.month &&
                     maintenant.day < dateNaissance.day)) {
-
               _clientAge = _clientAge - 1;
             }
-
           }
-
         } catch (e) {
-
           debugPrint('Erreur parsing date de naissance client: $e');
         }
-
       }
 
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
-
           _selectedClientIndicatif = parts[0];
           if (parts.length > 1) {
-
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           }
-
         }
-
       }
-
     }
 
     // Préremplir les données de base
@@ -891,32 +781,24 @@ class _SouscriptionSolidaritePageState
 
     // Préremplir la date d'effet
     if (data['date_effet'] != null) {
-
       try {
-
         _dateEffetContrat = DateTime.parse(data['date_effet']);
         _dateEffetController.text = _formatDate(_dateEffetContrat);
       } catch (e) {
-
         _dateEffetContrat = DateTime.now();
         _dateEffetController.text = _formatDate(_dateEffetContrat);
       }
-
     }
 
     // Préremplir les membres - Conjoints
     if (data['conjoints'] != null && data['conjoints'] is List) {
-
       final conjointsData = List<Map<String, dynamic>>.from(data['conjoints']);
       nbConjoints = conjointsData.length;
       conjoints = conjointsData.map((c) {
-
         DateTime dateNaissance = DateTime.now();
         try {
-
           dateNaissance = DateTime.parse(c['date_naissance'] ?? '');
         } catch (e) {
-
           // Garder la date par défaut
         }
 
@@ -926,24 +808,19 @@ class _SouscriptionSolidaritePageState
         );
       }).toList();
     } else {
-
       nbConjoints = 1;
       conjoints = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
     }
 
     // Préremplir les membres - Enfants
     if (data['enfants'] != null && data['enfants'] is List) {
-
       final enfantsData = List<Map<String, dynamic>>.from(data['enfants']);
       nbEnfants = enfantsData.length;
       enfants = enfantsData.map((e) {
-
         DateTime dateNaissance = DateTime.now();
         try {
-
           dateNaissance = DateTime.parse(e['date_naissance'] ?? '');
         } catch (e) {
-
           // Garder la date par défaut
         }
 
@@ -953,25 +830,20 @@ class _SouscriptionSolidaritePageState
         );
       }).toList();
     } else {
-
       nbEnfants = 1;
       enfants = [Membre(nomPrenom: '', dateNaissance: DateTime.now())];
     }
 
     // Préremplir les membres - Ascendants
     if (data['ascendants'] != null && data['ascendants'] is List) {
-
       final ascendantsData =
           List<Map<String, dynamic>>.from(data['ascendants']);
       nbAscendants = ascendantsData.length;
       ascendants = ascendantsData.map((a) {
-
         DateTime dateNaissance = DateTime.now();
         try {
-
           dateNaissance = DateTime.parse(a['date_naissance'] ?? '');
         } catch (e) {
-
           // Garder la date par défaut
         }
 
@@ -981,7 +853,6 @@ class _SouscriptionSolidaritePageState
         );
       }).toList();
     } else {
-
       nbAscendants = 0;
       ascendants = [];
     }
@@ -990,32 +861,27 @@ class _SouscriptionSolidaritePageState
     _beneficiaireNomController.text = data['beneficiaire_nom'] ?? '';
     _beneficiaireContactController.text = data['beneficiaire_contact'] ?? '';
     if (data['beneficiaire_date_naissance'] != null) {
-
       try {
-
         _beneficiaireDateNaissance =
             DateTime.parse(data['beneficiaire_date_naissance']);
         _beneficiaireDateNaissanceController.text =
             "${_beneficiaireDateNaissance!.day.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.month.toString().padLeft(2, '0')}/${_beneficiaireDateNaissance!.year}";
       } catch (e) {
-
         // Garder la date par défaut
       }
-
     }
 
     _personneContactNomController.text = data['contact_urgence_nom'] ?? '';
     _personneContactTelController.text = data['contact_urgence_tel'] ?? '';
 
     if (data['assistance_commerciale'] != null &&
-      data['assistance_commerciale'] is Map) {
-
+        data['assistance_commerciale'] is Map) {
       final assistance = data['assistance_commerciale'];
       _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
       _commercialNomPrenomController.text =
-        assistance['commercial_nom_prenom']?.toString() ?? '';
+          assistance['commercial_nom_prenom']?.toString() ?? '';
       _commercialCodeApporteurController.text =
-        assistance['commercial_code_apporteur']?.toString() ?? '';
+          assistance['commercial_code_apporteur']?.toString() ?? '';
     }
 
     // Calculer la prime avec les données préremplies
@@ -1023,7 +889,6 @@ class _SouscriptionSolidaritePageState
   }
 
   void _calculerPrime() {
-
     if (selectedCapital == null) return;
 
     // Détermine la clé de la périodicité pour les maps de tarifs
@@ -1043,19 +908,16 @@ class _SouscriptionSolidaritePageState
         (surprimesAscendants[selectedCapital]?[key] ?? 0) * nbAscendants;
 
     setState(() {
-
       primeTotaleResult = base + conjointSuppl + enfantsSuppl + ascendantsSuppl;
     });
   }
 
   String _formatDate(DateTime? dateTime) {
-
     if (dateTime == null) return 'Sélectionner une date';
     return "${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}";
   }
 
   String _formatNumber(int number) {
-
     return number.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
@@ -1065,15 +927,12 @@ class _SouscriptionSolidaritePageState
   // MÉTHODES CRITIQUES POUR LE STATUT DE PAIEMENT
 
   Future<int> _saveSubscriptionData() async {
-
     try {
-
       final subscriptionService = SubscriptionService();
 
       // Convertir les listes de membres en format JSON
       final conjointsData = conjoints
           .map((membre) => {
-
                 'nom_prenom': membre.nomPrenom,
                 'date_naissance': membre.dateNaissance.toIso8601String(),
               })
@@ -1081,7 +940,6 @@ class _SouscriptionSolidaritePageState
 
       final enfantsData = enfants
           .map((membre) => {
-
                 'nom_prenom': membre.nomPrenom,
                 'date_naissance': membre.dateNaissance.toIso8601String(),
               })
@@ -1089,14 +947,12 @@ class _SouscriptionSolidaritePageState
 
       final ascendantsData = ascendants
           .map((membre) => {
-
                 'nom_prenom': membre.nomPrenom,
                 'date_naissance': membre.dateNaissance.toIso8601String(),
               })
           .toList();
 
       final subscriptionData = {
-
         'product_type': 'coris_solidarite',
         'capital': selectedCapital,
         'periodicite': selectedPeriodicite.toLowerCase(),
@@ -1110,7 +966,6 @@ class _SouscriptionSolidaritePageState
         'enfants': enfantsData,
         'ascendants': ascendantsData,
         'beneficiaire': {
-
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
@@ -1118,13 +973,11 @@ class _SouscriptionSolidaritePageState
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
-
           'nom': _personneContactNomController.text.trim(),
           'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
-
           'is_aide_par_commercial': _isAideParCommercial,
           'commercial_nom_prenom': _isAideParCommercial
               ? _commercialNomPrenomController.text.trim()
@@ -1133,15 +986,12 @@ class _SouscriptionSolidaritePageState
               ? _commercialCodeApporteurController.text.trim()
               : null,
         },
-        'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // NE PAS inclure 'status' ici - il sera 'proposition' par défaut dans la base
       };
 
       // Si commercial, ajouter les infos client
       if (_isCommercial) {
-
         subscriptionData['client_info'] = {
-
           'nom': _clientNomController.text.trim(),
           'prenom': _clientPrenomController.text.trim(),
           'date_naissance': _clientDateNaissance?.toIso8601String(),
@@ -1157,7 +1007,6 @@ class _SouscriptionSolidaritePageState
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
-
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
@@ -1165,7 +1014,6 @@ class _SouscriptionSolidaritePageState
       Map<String, dynamic> responseData;
 
       if (_isModification && widget.subscriptionId != null) {
-
         // Mode modification : UPDATE
         debugPrint('🔄 Mode MODIFICATION - ID: ${widget.subscriptionId}');
         response = await subscriptionService.updateSubscription(
@@ -1175,7 +1023,6 @@ class _SouscriptionSolidaritePageState
         responseData = jsonDecode(response.body);
 
         if (response.statusCode != 200 || !responseData['success']) {
-
           throw Exception(
               responseData['message'] ?? 'Erreur lors de la modification');
         }
@@ -1183,7 +1030,6 @@ class _SouscriptionSolidaritePageState
         // Retourner l'ID existant
         return widget.subscriptionId!;
       } else {
-
         // Mode création : INSERT
         debugPrint('âž• Mode CRÉATION');
         response =
@@ -1191,7 +1037,6 @@ class _SouscriptionSolidaritePageState
         responseData = jsonDecode(response.body);
 
         if (response.statusCode != 201 || !responseData['success']) {
-
           throw Exception(
               responseData['message'] ?? 'Erreur lors de la sauvegarde');
         }
@@ -1199,20 +1044,15 @@ class _SouscriptionSolidaritePageState
         // RETOURNER l'ID de la souscription créée
         return responseData['data']['id'];
       }
-
     } catch (e) {
-
       debugPrint('Erreur sauvegarde souscription: $e');
       rethrow;
     }
-
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,
       {String? paymentMethod}) async {
-
     try {
-
       final subscriptionService = SubscriptionService();
       final response = await subscriptionService.updatePaymentStatus(
         subscriptionId,
@@ -1223,7 +1063,6 @@ class _SouscriptionSolidaritePageState
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode != 200 || !responseData['success']) {
-
         throw Exception(responseData['message'] ??
             'Erreur lors de la mise à jour du statut');
       }
@@ -1231,15 +1070,12 @@ class _SouscriptionSolidaritePageState
       debugPrint(
           'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-
       debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
-
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-
     // Simulation d'un délai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
@@ -1248,7 +1084,6 @@ class _SouscriptionSolidaritePageState
   }
 
   void _processPayment(String paymentMethod) async {
-
     if (!mounted) return;
 
     showDialog(
@@ -1257,20 +1092,16 @@ class _SouscriptionSolidaritePageState
         builder: (context) => _LoadingDialog(paymentMethod: paymentMethod));
 
     try {
-
       // ÉTAPE 1: Sauvegarder la souscription (statut: 'proposition' par défaut)
       final subscriptionId = await _saveSubscriptionData();
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         await _uploadDocument(subscriptionId);
       }
 
       if (paymentMethod == 'Wave') {
-
         if (mounted) {
-
           Navigator.pop(context);
         }
 
@@ -1292,67 +1123,47 @@ class _SouscriptionSolidaritePageState
           paymentMethod: paymentMethod);
 
       if (mounted) {
-
         Navigator.pop(context); // Fermer le loading
 
         if (paymentSuccess) {
-
           _showSuccessDialog(true); // Contrat activé
         } else {
-
           _showErrorSnackBar(
               'Paiement échoué. Votre proposition a été sauvegardée.');
         }
-
       }
-
     } catch (e) {
-
       if (mounted) {
-
         Navigator.pop(context);
         _showErrorSnackBar('Erreur lors du traitement: $e');
       }
-
     }
-
   }
 
   void _saveAsProposition() async {
-
     try {
-
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         await _uploadDocument(subscriptionId);
       }
 
       if (mounted) {
-
         _showSuccessDialog(false);
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
       }
-
     }
-
   }
 
   /// Upload du document pièce d'identité vers le serveur
 
   Future<void> _uploadDocument(int subscriptionId) async {
-
     try {
-
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
@@ -1364,7 +1175,6 @@ class _SouscriptionSolidaritePageState
 
       Map<String, dynamic> responseData = {};
       for (final filePath in paths) {
-
         final response = await subscriptionService.uploadDocument(
           subscriptionId,
           filePath,
@@ -1374,59 +1184,44 @@ class _SouscriptionSolidaritePageState
         responseData = localData;
 
         if (response.statusCode != 200 || !localData['success']) {
-
           debugPrint('❌ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
-
       }
 
       // Récupérer le label original si présent dans la réponse
       try {
-
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
-
           final souscriptiondata = updated['souscriptiondata'];
           if (souscriptiondata != null) {
-
             if (souscriptiondata is Map) {
-
               _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
             } else if (souscriptiondata is String) {
-
               try {
-
                 final parsed = jsonDecode(souscriptiondata);
                 _pieceIdentiteLabel = parsed['piece_identite_label'];
               } catch (_) {}
             }
-
           }
-
         }
-
       } catch (e) {
-
         debugPrint(
             '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-
       debugPrint('❌ Exception upload document: $e');
       // Ne pas bloquer la souscription si l'upload échoue
       // On log juste l'erreur
     }
-
   }
 
   // FIN DES MÉTHODES CRITIQUES
 
   Widget _buildModernHeader() {
-
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1475,7 +1270,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildProgressIndicator() {
-
     // Déterminer le nombre d'étapes en fonction des membres
     int totalSteps = 6; // Paramètres + Récapitulatif
     if (nbConjoints == 0) totalSteps--;
@@ -1496,7 +1290,6 @@ class _SouscriptionSolidaritePageState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(totalSteps, (index) {
-
           bool isActive = index <= _currentStep;
           return Expanded(
             child: Row(
@@ -1539,7 +1332,6 @@ class _SouscriptionSolidaritePageState
 
   /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1555,9 +1347,7 @@ class _SouscriptionSolidaritePageState
                 icon: Icons.person_outline,
                 items: ['Monsieur', 'Madame', 'Mademoiselle'],
                 onChanged: (value) {
-
                   setState(() {
-
                     _selectedClientCivilite = value!;
                   });
                 },
@@ -1580,9 +1370,7 @@ class _SouscriptionSolidaritePageState
                 label: 'Date de naissance',
                 icon: Icons.calendar_today,
                 onDateSelected: (date) {
-
                   setState(() {
-
                     _clientDateNaissance = date;
                     _clientDateNaissanceController.text =
                         '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -1591,10 +1379,8 @@ class _SouscriptionSolidaritePageState
                     if (maintenant.month < date.month ||
                         (maintenant.month == date.month &&
                             maintenant.day < date.day)) {
-
                       _clientAge = _clientAge - 1;
                     }
-
                   });
                 },
               ),
@@ -1610,9 +1396,7 @@ class _SouscriptionSolidaritePageState
                 label: 'Téléphone du client',
                 selectedIndicatif: _selectedClientIndicatif,
                 onIndicatifChanged: (value) {
-
                   setState(() {
-
                     _selectedClientIndicatif = value!;
                   });
                 },
@@ -1656,7 +1440,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStep1() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1680,9 +1463,7 @@ class _SouscriptionSolidaritePageState
 
           // Steppers pour les membres de la famille
           _buildStepper("Nombre de conjoints", nbConjoints, 0, 10, (val) {
-
             setState(() {
-
               nbConjoints = val;
               conjoints = List.generate(
                   nbConjoints,
@@ -1695,9 +1476,7 @@ class _SouscriptionSolidaritePageState
           SizedBox(height: context.r(16)),
 
           _buildStepper("Nombre d'enfants", nbEnfants, 0, 20, (val) {
-
             setState(() {
-
               nbEnfants = val;
               enfants = List.generate(
                   nbEnfants,
@@ -1710,9 +1489,7 @@ class _SouscriptionSolidaritePageState
           SizedBox(height: context.r(16)),
 
           _buildStepper("Nombre d'ascendants", nbAscendants, 0, 4, (val) {
-
             setState(() {
-
               nbAscendants = val;
               ascendants = List.generate(
                   nbAscendants,
@@ -1728,7 +1505,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildCapitalDropdown() {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1762,7 +1538,6 @@ class _SouscriptionSolidaritePageState
                   ))
               .toList(),
           onChanged: (val) {
-
             setState(() => selectedCapital = val);
             _calculerPrime();
           },
@@ -1772,7 +1547,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildPeriodiciteDropdown() {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1806,7 +1580,6 @@ class _SouscriptionSolidaritePageState
                   ))
               .toList(),
           onChanged: (val) {
-
             setState(() => selectedPeriodicite = val!);
             _calculerPrime();
           },
@@ -1816,7 +1589,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildDateEffetField() {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1840,14 +1612,12 @@ class _SouscriptionSolidaritePageState
             labelText: 'Date d\'effet du contrat',
           ),
           onTap: () async {
-
             final DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: _dateEffetContrat ?? DateTime.now(),
               firstDate: DateTime.now(),
               lastDate: DateTime.now().add(const Duration(days: 365)),
               builder: (context, child) {
-
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: const ColorScheme.light(
@@ -1861,14 +1631,11 @@ class _SouscriptionSolidaritePageState
               },
             );
             if (pickedDate != null) {
-
               setState(() {
-
                 _dateEffetContrat = pickedDate;
                 _dateEffetController.text = _formatDate(pickedDate);
               });
             }
-
           },
         ),
       ),
@@ -1877,7 +1644,6 @@ class _SouscriptionSolidaritePageState
 
   Widget _buildStepper(
       String label, int value, int min, int max, Function(int) onChanged) {
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1925,7 +1691,6 @@ class _SouscriptionSolidaritePageState
 
   Widget _buildStepperButton(
       IconData icon, VoidCallback onPressed, bool isEnabled) {
-
     return Container(
       width: 32,
       height: 32,
@@ -1942,19 +1707,15 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStepConjoints() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: List.generate(nbConjoints, (index) {
-
           return _buildMembreForm(
             titre: 'Conjoint ${index + 1}',
             membre: conjoints[index],
             onChanged: (membre) {
-
               setState(() {
-
                 conjoints[index] = membre;
               });
             },
@@ -1965,19 +1726,15 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStepEnfants() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: List.generate(nbEnfants, (index) {
-
           return _buildMembreForm(
             titre: 'Enfant ${index + 1}',
             membre: enfants[index],
             onChanged: (membre) {
-
               setState(() {
-
                 enfants[index] = membre;
               });
             },
@@ -1988,19 +1745,15 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStepAscendants() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: List.generate(nbAscendants, (index) {
-
           return _buildMembreForm(
             titre: 'Ascendant ${index + 1}',
             membre: ascendants[index],
             onChanged: (membre) {
-
               setState(() {
-
                 ascendants[index] = membre;
               });
             },
@@ -2014,7 +1767,6 @@ class _SouscriptionSolidaritePageState
       {required String titre,
       required Membre membre,
       required Function(Membre) onChanged}) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
@@ -2061,7 +1813,6 @@ class _SouscriptionSolidaritePageState
             ),
             style: TextStyle(color: bleuCoris, fontSize: context.sp(16)),
             onChanged: (value) {
-
               onChanged(Membre(
                   nomPrenom: value, dateNaissance: membre.dateNaissance));
             },
@@ -2092,14 +1843,12 @@ class _SouscriptionSolidaritePageState
                     : ""),
             style: TextStyle(color: bleuCoris, fontSize: context.sp(16)),
             onTap: () async {
-
               final DateTime? picked = await showDatePicker(
                 context: context,
                 initialDate: membre.dateNaissance,
                 firstDate: DateTime(1900),
                 lastDate: DateTime.now(),
                 builder: (context, child) {
-
                   return Theme(
                     data: ThemeData.light().copyWith(
                       colorScheme: const ColorScheme.light(
@@ -2116,7 +1865,6 @@ class _SouscriptionSolidaritePageState
                 },
               );
               if (picked != null && picked != membre.dateNaissance) {
-
                 // Validation en temps réel de l'âge selon le type de membre
                 final now = DateTime.now();
                 final age = now.year - picked.year;
@@ -2126,32 +1874,25 @@ class _SouscriptionSolidaritePageState
                 String errorMessage = '';
 
                 if (titre.contains('enfant') || titre.contains('Enfant')) {
-
                   if (age < 12 || age > 21) {
-
                     isValid = false;
                     errorMessage =
                         "L'âge des enfants doit être compris entre 12 et 21 ans. Âge sélectionné: $age ans.";
                   }
-
                 } else if (titre.contains('conjoint') ||
                     titre.contains('Conjoint') ||
                     titre.contains('ascendant') ||
                     titre.contains('Ascendant') ||
                     titre.contains('parent') ||
                     titre.contains('Parent')) {
-
                   if (age < 18) {
-
                     isValid = false;
                     errorMessage =
                         "L'âge doit être d'au moins 18 ans. Âge sélectionné: $age ans.";
                   }
-
                 }
 
                 if (!isValid) {
-
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(errorMessage),
@@ -2168,7 +1909,6 @@ class _SouscriptionSolidaritePageState
                 onChanged(
                     Membre(nomPrenom: membre.nomPrenom, dateNaissance: picked));
               }
-
             },
           ),
         ],
@@ -2177,7 +1917,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStep2() {
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -2235,9 +1974,7 @@ class _SouscriptionSolidaritePageState
                   label: 'Contact du bénéficiaire',
                   selectedIndicatif: _selectedBeneficiaireIndicatif,
                   onIndicatifChanged: (value) {
-
                     setState(() {
-
                       _selectedBeneficiaireIndicatif = value!;
                     });
                   },
@@ -2249,9 +1986,7 @@ class _SouscriptionSolidaritePageState
                   icon: Icons.link,
                   items: _lienParenteOptions,
                   onChanged: (value) {
-
                     setState(() {
-
                       _selectedLienParente = value!;
                     });
                   },
@@ -2277,9 +2012,7 @@ class _SouscriptionSolidaritePageState
                   icon: Icons.link,
                   items: _lienParenteOptions,
                   onChanged: (value) {
-
                     setState(() {
-
                       _selectedLienParenteUrgence = value!;
                     });
                   },
@@ -2295,7 +2028,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildAssistanceCommercialeSection() {
-
     return _buildFormSection(
       'Assistance commerciale',
       Icons.support_agent,
@@ -2313,9 +2045,7 @@ class _SouscriptionSolidaritePageState
           value: true,
           groupValue: _isAideParCommercial,
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
             });
           },
@@ -2327,16 +2057,12 @@ class _SouscriptionSolidaritePageState
           value: false,
           groupValue: _isAideParCommercial,
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
               if (!_isAideParCommercial) {
-
                 _commercialNomPrenomController.clear();
                 _commercialCodeApporteurController.clear();
               }
-
             });
           },
           title: const Text('Non'),
@@ -2362,7 +2088,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildSubSectionTitle(String title) {
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
@@ -2377,7 +2102,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -2395,7 +2119,9 @@ class _SouscriptionSolidaritePageState
           SizedBox(width: context.r(12)),
           Text(title,
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris))
         ]),
         SizedBox(height: context.r(16)),
         ...children,
@@ -2404,13 +2130,11 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildModernTextField({
-
     required TextEditingController controller,
     required String label,
     IconData? icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
-
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -2450,11 +2174,11 @@ class _SouscriptionSolidaritePageState
 
   /// ============================================
 
-  /// 
+  ///
 
   /// Crée un champ de saisie de date avec un sélecteur de date intégré.
 
-  /// 
+  ///
 
   /// PARAMÉˆTRES:
 
@@ -2466,7 +2190,7 @@ class _SouscriptionSolidaritePageState
 
   /// - onDateSelected: Callback appelé quand une date est sélectionnée
 
-  /// 
+  ///
 
   /// FONCTIONNEMENT:
 
@@ -2478,7 +2202,7 @@ class _SouscriptionSolidaritePageState
 
   /// 4. Une fois la date sélectionnée, appelle onDateSelected avec la date choisie
 
-  /// 
+  ///
 
   /// CORRECTION DU BUG:
 
@@ -2486,23 +2210,22 @@ class _SouscriptionSolidaritePageState
 
   /// - Maintenant: Utilisation de Theme.of(context).copyWith() pour hériter du contexte parent
   Widget _buildDateField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required Function(DateTime) onDateSelected,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         GestureDetector(
           onTap: () async {
-
             final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: _clientDateNaissance ??
@@ -2510,7 +2233,6 @@ class _SouscriptionSolidaritePageState
               firstDate: DateTime(1950),
               lastDate: DateTime.now(),
               builder: (context, child) {
-
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: ColorScheme.light(
@@ -2518,17 +2240,16 @@ class _SouscriptionSolidaritePageState
                       onPrimary: blanc,
                       surface: blanc,
                       onSurface: bleuCoris,
-                    ), dialogTheme: DialogThemeData(backgroundColor: blanc),
+                    ),
+                    dialogTheme: DialogThemeData(backgroundColor: blanc),
                   ),
                   child: child!,
                 );
               },
             );
             if (picked != null) {
-
               onDateSelected(picked);
             }
-
           },
           child: AbsorbPointer(
             child: TextFormField(
@@ -2567,19 +2288,19 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildPhoneFieldWithIndicatif({
-
     required TextEditingController controller,
     required String label,
     required String selectedIndicatif,
     required Function(String?) onIndicatifChanged,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
             style: TextStyle(
-                fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris)),
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
         SizedBox(height: context.r(6)),
         Row(
           children: [
@@ -2596,13 +2317,12 @@ class _SouscriptionSolidaritePageState
                   value: selectedIndicatif,
                   isExpanded: true,
                   items: _indicatifs.map((String value) {
-
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child:
-                            Text(value, style: TextStyle(fontSize: context.sp(14))),
+                        child: Text(value,
+                            style: TextStyle(fontSize: context.sp(14))),
                       ),
                     );
                   }).toList(),
@@ -2636,15 +2356,12 @@ class _SouscriptionSolidaritePageState
                   ),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Ce champ est obligatoire';
                   }
 
                   if (!RegExp(r'^[0-9]{8,15}$')
                       .hasMatch(value.replaceAll(' ', ''))) {
-
                     return 'Numéro de téléphone invalide';
                   }
 
@@ -2659,14 +2376,12 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildDropdownField({
-
     required String value,
     required String label,
     required IconData icon,
     required List<String> items,
     required Function(String?) onChanged,
   }) {
-
     return DropdownButtonFormField<String>(
       initialValue: value,
       decoration: InputDecoration(
@@ -2705,7 +2420,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildDocumentUploadSection() {
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -2723,7 +2437,9 @@ class _SouscriptionSolidaritePageState
           SizedBox(width: context.r(12)),
           Text('Pièce d\'identité',
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w600, color: bleuCoris))
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris))
         ]),
         SizedBox(height: context.r(16)),
         GestureDetector(
@@ -2778,16 +2494,12 @@ class _SouscriptionSolidaritePageState
   }
 
   Future<void> _pickDocument() async {
-
     try {
-
       final picked = await IdentityDocumentPicker.pickDocuments(context);
       if (picked == null || picked.files.isEmpty) return;
 
       if (mounted) {
-
         setState(() {
-
           _pieceIdentiteFiles
             ..clear()
             ..addAll(picked.files);
@@ -2800,20 +2512,14 @@ class _SouscriptionSolidaritePageState
             ? '${_pieceIdentiteFiles.length} documents ajoutés avec succès'
             : 'Document ajouté avec succès');
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar('Erreur lors de la sélection du fichier');
       }
-
     }
-
   }
 
   void _showErrorSnackBar(String message) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -2828,7 +2534,6 @@ class _SouscriptionSolidaritePageState
   }
 
   void _showSuccessSnackBar(String message) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -2844,29 +2549,24 @@ class _SouscriptionSolidaritePageState
 
   // Méthode pour déterminer les étapes actives en fonction des membres
   List<Widget> _getActiveSteps() {
-
     List<Widget> steps = [];
 
     // Si commercial, ajouter la page d'informations client en premier
     if (_isCommercial) {
-
       steps.add(_buildStepClientInfo());
     }
 
     steps.add(_buildStep1());
 
     if (nbConjoints > 0) {
-
       steps.add(_buildStepConjoints());
     }
 
     if (nbEnfants > 0) {
-
       steps.add(_buildStepEnfants());
     }
 
     if (nbAscendants > 0) {
-
       steps.add(_buildStepAscendants());
     }
 
@@ -2879,7 +2579,6 @@ class _SouscriptionSolidaritePageState
 
   // Méthode pour obtenir le nombre total d'étapes
   int _getTotalSteps() {
-
     int total = 2; // Étape 1 et étape finale (bénéficiaire/contact)
     if (_isCommercial) total++; // Page client pour commercial
     if (nbConjoints > 0) total++;
@@ -2897,19 +2596,15 @@ class _SouscriptionSolidaritePageState
   /// si elles ne sont pas déjà disponibles dans _userData
 
   Future<Map<String, dynamic>> _loadUserDataForRecap() async {
-
     try {
-
       // Si _userData est déjà chargé et non vide, l'utiliser directement
       if (_userData.isNotEmpty) {
-
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé');
         // Retourner un map vide au lieu de lever une exception
         return <String, dynamic>{};
@@ -2919,32 +2614,25 @@ class _SouscriptionSolidaritePageState
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(Duration(seconds: 10), onTimeout: () {
-
         throw Exception('Timeout lors de la requête API');
       });
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['user']);
             debugPrint(
                 '✅ Données utilisateur: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -2956,24 +2644,19 @@ class _SouscriptionSolidaritePageState
           if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             final dataObj = data['data'] as Map<String, dynamic>;
             if (dataObj.containsKey('id') && dataObj.containsKey('email')) {
-
               final userData = Map<String, dynamic>.from(dataObj);
               debugPrint(
                   '✅ Données utilisateur depuis data: ${userData['nom']} ${userData['prenom']}');
               if (mounted) {
-
                 setState(() {
-
                   _userData = userData;
                 });
               }
 
               return userData;
             }
-
           }
 
           // 3) Cas nested avec user object: { data: { user: { ... } } }
@@ -2981,14 +2664,11 @@ class _SouscriptionSolidaritePageState
               data['data'] is Map &&
               data['data']['user'] != null &&
               data['data']['user'] is Map) {
-
             final userData = Map<String, dynamic>.from(data['data']['user']);
             debugPrint(
                 '✅ Données utilisateur depuis data.user: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -2998,14 +2678,11 @@ class _SouscriptionSolidaritePageState
 
           // 4) Direct user object: { id, civilite, nom, ... }
           if (data.containsKey('id') && data.containsKey('email')) {
-
             final userData = Map<String, dynamic>.from(data);
             debugPrint(
                 '✅ Données utilisateur directes: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData;
               });
             }
@@ -3016,12 +2693,9 @@ class _SouscriptionSolidaritePageState
           debugPrint(
               '⚠️ Réponse API inattendue (${response.statusCode}): ${response.body}');
         } else {
-
           debugPrint('⚠️ Format invalide (non-Map): ${response.body}');
         }
-
       } else {
-
         debugPrint('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
 
@@ -3029,24 +2703,20 @@ class _SouscriptionSolidaritePageState
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     } catch (e) {
-
       debugPrint(
           '❌ Erreur chargement données utilisateur pour récapitulatif: $e');
       // Fallback vers _userData en cas d'erreur - GARANTIR non-null
       final result = _userData.isNotEmpty ? _userData : <String, dynamic>{};
       return result;
     }
-
   }
 
   /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
 
   /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
   Map<String, String> _parseRibUnified(String rib) {
-
     final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
     return {
-
       'code_guichet': cleaned.length >= 5 ? cleaned.substring(0, 5) : '',
       'numero_compte': cleaned.length >= 16 ? cleaned.substring(5, 16) : '',
       'cle_rib': cleaned.length >= 18 ? cleaned.substring(16, 18) : '',
@@ -3055,7 +2725,6 @@ class _SouscriptionSolidaritePageState
 
   /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
-
     final cleaned = rib.replaceAll(RegExp(r'[^0-9]'), '');
     return cleaned.length == 18; // 5 + 11 + 2
   }
@@ -3063,12 +2732,10 @@ class _SouscriptionSolidaritePageState
   /// Formate l'entrée RIB en temps réel
 
   void _formatRibInput() {
-
     String text = _ribUnifiedController.text;
     String cleaned = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (cleaned.isEmpty) {
-
       _ribUnifiedController.value = TextEditingValue(
         text: '',
         selection: TextSelection.collapsed(offset: 0),
@@ -3081,7 +2748,6 @@ class _SouscriptionSolidaritePageState
 
     // Code guichet (5 chiffres)
     if (cleaned.isNotEmpty) {
-
       formatted +=
           cleaned.substring(0, cleaned.length > 5 ? 5 : cleaned.length);
       if (cleaned.length > 5) formatted += ' / ';
@@ -3089,7 +2755,6 @@ class _SouscriptionSolidaritePageState
 
     // Numéro de compte (11 chiffres)
     if (cleaned.length > 5) {
-
       formatted +=
           cleaned.substring(5, cleaned.length > 16 ? 16 : cleaned.length);
       if (cleaned.length > 16) formatted += ' / ';
@@ -3097,7 +2762,6 @@ class _SouscriptionSolidaritePageState
 
     // Clé RIB (2 chiffres)
     if (cleaned.length > 16) {
-
       formatted +=
           cleaned.substring(16, cleaned.length > 18 ? 18 : cleaned.length);
     }
@@ -3112,7 +2776,6 @@ class _SouscriptionSolidaritePageState
 
   /// 💳 ÉTAPE MODE DE PAIEMENT
   Widget _buildStepModePaiement() {
-
     return SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Column(
@@ -3186,14 +2849,12 @@ class _SouscriptionSolidaritePageState
             ),
             child: Column(
               children: _modePaiementOptions.map((mode) {
-
                 final isSelected = _selectedModePaiement == mode;
                 IconData icon;
                 Color iconColor;
                 Widget? customIconWidget;
 
                 switch (mode) {
-
                   case 'Virement':
                     icon = Icons.account_balance;
                     iconColor = Colors.blue;
@@ -3207,7 +2868,6 @@ class _SouscriptionSolidaritePageState
                       height: 32,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-
                         return Icon(Icons.water_drop,
                             color: iconColor, size: 28);
                       },
@@ -3222,7 +2882,6 @@ class _SouscriptionSolidaritePageState
                       height: 32,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-
                         return Icon(Icons.phone_android,
                             color: iconColor, size: 28);
                       },
@@ -3241,7 +2900,6 @@ class _SouscriptionSolidaritePageState
                       height: 32,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-
                         return Icon(Icons.account_balance_wallet,
                             color: iconColor, size: 28);
                       },
@@ -3254,9 +2912,7 @@ class _SouscriptionSolidaritePageState
 
                 return InkWell(
                   onTap: () {
-
                     setState(() {
-
                       _selectedModePaiement = mode;
                       // Réinitialiser les champs
                       _banqueController.clear();
@@ -3343,25 +2999,19 @@ class _SouscriptionSolidaritePageState
                   fillColor: Colors.grey[50],
                 ),
                 items: _banques.map((String banque) {
-
                   return DropdownMenuItem<String>(
                     value: banque,
                     child: Text(banque),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
-
                   setState(() {
-
                     _selectedBanque = newValue;
                     if (newValue != null && newValue != 'Autre') {
-
                       _banqueController.text = newValue;
                     } else if (newValue == 'Autre') {
-
                       _banqueController.text = '';
                     }
-
                   });
                 },
               ),
@@ -3433,7 +3083,6 @@ class _SouscriptionSolidaritePageState
                       height: 24,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-
                         return Icon(
                           Icons.phone_android,
                           color: _selectedModePaiement == 'Wave'
@@ -3557,7 +3206,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildStepRecap() {
-
     /**
      * MODIFICATION IMPORTANTE:
      * 
@@ -3574,22 +3222,18 @@ class _SouscriptionSolidaritePageState
         : FutureBuilder<Map<String, dynamic>>(
             future: _loadUserDataForRecap(),
             builder: (context, snapshot) {
-
               // Pour les clients, attendre le chargement des données
               if (snapshot.connectionState == ConnectionState.waiting) {
-
                 return Center(
                   child: CircularProgressIndicator(color: bleuCoris),
                 );
               }
 
               if (snapshot.hasError) {
-
                 debugPrint(
                     'Erreur chargement données récapitulatif: ${snapshot.error}');
                 // En cas d'erreur, essayer d'utiliser _userData si disponible
                 if (_userData.isNotEmpty) {
-
                   return _buildRecapContent(userData: _userData);
                 }
 
@@ -3614,18 +3258,13 @@ class _SouscriptionSolidaritePageState
 
               // Si userData est vide, recharger les données
               if (userData.isEmpty && !_isCommercial) {
-
                 // Recharger les données utilisateur
                 _loadUserDataForRecap().then((data) {
-
                   if (mounted && data.isNotEmpty) {
-
                     setState(() {
-
                       _userData = data;
                     });
                   }
-
                 });
                 return Center(
                     child: CircularProgressIndicator(color: bleuCoris));
@@ -3637,7 +3276,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-
     /**
      * CONSTRUCTION DU RÉCAPITULATIF:
      * 
@@ -3647,18 +3285,14 @@ class _SouscriptionSolidaritePageState
     Map<String, dynamic>? raw = _isCommercial ? null : (userData ?? _userData);
 
     String pick(List<String> keys) {
-
       if (raw == null) return '';
       for (final k in keys) {
-
         if (raw.containsKey(k) && raw[k] != null) {
-
           final v = raw[k];
           if (v is String && v.trim().isNotEmpty) return v;
           if (v is int || v is double) return v.toString();
           if (v is DateTime) return v.toIso8601String();
         }
-
       }
 
       return '';
@@ -3667,7 +3301,6 @@ class _SouscriptionSolidaritePageState
     // Ajout de variantes pour chaque champ afin de couvrir tous les cas
     final displayData = _isCommercial
         ? {
-
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
@@ -3678,9 +3311,7 @@ class _SouscriptionSolidaritePageState
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-
         : {
-
             'civilite': pick(['civilite', 'title', 'gender', 'genre']),
             'nom': pick([
               'nom',
@@ -3708,7 +3339,6 @@ class _SouscriptionSolidaritePageState
 
     // S'assurer que la prime est bien calculée avant affichage
     if (primeTotaleResult == 0) {
-
       _calculerPrime();
     }
 
@@ -3930,7 +3560,6 @@ class _SouscriptionSolidaritePageState
                 : null,
             documents: _pieceIdentiteFiles
                 .map((file) => {
-
                       'label': file.path.split(RegExp(r'[\\/]+')).last,
                       'path': file.path,
                     })
@@ -3973,8 +3602,8 @@ class _SouscriptionSolidaritePageState
               Text(
                   'Vérifiez attentivement toutes les informations ci-dessus. Une fois la souscription validée, certaines modifications ne seront plus possibles.',
                   textAlign: TextAlign.center,
-                  style:
-                      TextStyle(color: grisTexte, fontSize: context.sp(10), height: 1.4)),
+                  style: TextStyle(
+                      color: grisTexte, fontSize: context.sp(10), height: 1.4)),
             ]),
           ),
           SizedBox(height: context.r(20)),
@@ -3984,7 +3613,6 @@ class _SouscriptionSolidaritePageState
   }
 
   void _viewLocalDocument(File file, String displayLabel) {
-
     if (!mounted) return;
 
     Navigator.push(
@@ -4001,7 +3629,6 @@ class _SouscriptionSolidaritePageState
 
   Widget _buildRecapRow(String label, String value,
       {bool isHighlighted = false}) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -4024,7 +3651,6 @@ class _SouscriptionSolidaritePageState
 
   Widget _buildRecapSection(
       String title, IconData icon, Color color, List<Widget> children) {
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -4047,7 +3673,9 @@ class _SouscriptionSolidaritePageState
           SizedBox(width: context.r(10)),
           Text(title,
               style: TextStyle(
-                  fontSize: context.sp(16), fontWeight: FontWeight.w700, color: color)),
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w700,
+                  color: color)),
         ]),
         SizedBox(height: context.r(12)),
         ...children,
@@ -4056,15 +3684,15 @@ class _SouscriptionSolidaritePageState
   }
 
   Widget _buildSubsectionTitle(String title) {
-
     return Text(title,
         style: TextStyle(
-            fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(14)));
+            fontWeight: FontWeight.w600,
+            color: bleuCoris,
+            fontSize: context.sp(14)));
   }
 
   Widget _buildCombinedRecapRow(
       String label1, String value1, String label2, String value2) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
@@ -4073,10 +3701,14 @@ class _SouscriptionSolidaritePageState
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$label1 :',
               style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: context.sp(12))),
+                  fontWeight: FontWeight.w500,
+                  color: grisTexte,
+                  fontSize: context.sp(12))),
           Text(value1,
               style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris,
+                  fontSize: context.sp(12))),
         ])),
         SizedBox(width: context.r(12)),
         Expanded(
@@ -4084,23 +3716,28 @@ class _SouscriptionSolidaritePageState
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$label2 :',
               style: TextStyle(
-                  fontWeight: FontWeight.w500, color: grisTexte, fontSize: context.sp(12))),
+                  fontWeight: FontWeight.w500,
+                  color: grisTexte,
+                  fontSize: context.sp(12))),
           Text(value2,
               style: TextStyle(
-                  fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
+                  fontWeight: FontWeight.w600,
+                  color: bleuCoris,
+                  fontSize: context.sp(12))),
         ])),
       ]),
     );
   }
 
   Widget _buildMembreRecap(Membre membre) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(membre.nomPrenom,
             style: TextStyle(
-                fontWeight: FontWeight.w600, color: bleuCoris, fontSize: context.sp(12))),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris,
+                fontSize: context.sp(12))),
         Text(
             'Date de naissance: ${membre.dateNaissance.day.toString().padLeft(2, '0')}/${membre.dateNaissance.month.toString().padLeft(2, '0')}/${membre.dateNaissance.year}',
             style: TextStyle(color: grisTexte, fontSize: context.sp(11))),
@@ -4109,7 +3746,6 @@ class _SouscriptionSolidaritePageState
   }
 
   Future<void> _showSignatureAndPayment() async {
-
     // 1. Afficher le dialogue de signature
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
@@ -4122,7 +3758,6 @@ class _SouscriptionSolidaritePageState
 
     // Sauvegarder la signature
     setState(() {
-
       _clientSignature = signature;
     });
 
@@ -4132,58 +3767,46 @@ class _SouscriptionSolidaritePageState
   }
 
   void _showPaymentOptions() {
-
     if (mounted) {
-
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (context) => PaymentBottomSheet(
           onPayNow: (paymentMethod) {
-
             Navigator.pop(context);
             _processPayment(paymentMethod);
           },
           onPayLater: () {
-
             Navigator.pop(context);
             _saveAsProposition();
           },
         ),
       );
     }
-
   }
 
   void _showSuccessDialog(bool isPaid) {
-
     if (mounted) {
-
       showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => _SuccessDialog(isPaid: isPaid));
     }
-
   }
 
   bool _validateStepClientInfo() {
-
     if (_clientNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du client');
       return false;
     }
 
     if (_clientPrenomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
 
     if (_clientDateNaissance == null) {
-
       _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
@@ -4193,12 +3816,10 @@ class _SouscriptionSolidaritePageState
     if (maintenant.month < _clientDateNaissance!.month ||
         (maintenant.month == _clientDateNaissance!.month &&
             maintenant.day < _clientDateNaissance!.day)) {
-
       _clientAge = _clientAge - 1;
     }
 
     if (_clientAge < 18 || _clientAge > 65) {
-
       _showErrorSnackBar(
           'Âge du client non valide (18-65 ans requis). Âge calculé: $_clientAge ans');
       return false;
@@ -4206,7 +3827,6 @@ class _SouscriptionSolidaritePageState
 
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
@@ -4222,70 +3842,57 @@ class _SouscriptionSolidaritePageState
 
   /// Ascendants: 18+ ans
   bool _validateMembresAges() {
-
     final maintenant = DateTime.now();
 
     // Vérifier les enfants (12-21 ans)
     for (var i = 0; i < enfants.length; i++) {
-
       final enfant = enfants[i];
       int age = maintenant.year - enfant.dateNaissance.year;
       if (maintenant.month < enfant.dateNaissance.month ||
           (maintenant.month == enfant.dateNaissance.month &&
               maintenant.day < enfant.dateNaissance.day)) {
-
         age--;
       }
 
       if (age < 12 || age > 21) {
-
         _showErrorSnackBar(
             'Enfant ${i + 1}: Âge non valide (12-21 ans requis). Âge calculé: $age ans');
         return false;
       }
-
     }
 
     // Vérifier les conjoints (18+ ans)
     for (var i = 0; i < conjoints.length; i++) {
-
       final conjoint = conjoints[i];
       int age = maintenant.year - conjoint.dateNaissance.year;
       if (maintenant.month < conjoint.dateNaissance.month ||
           (maintenant.month == conjoint.dateNaissance.month &&
               maintenant.day < conjoint.dateNaissance.day)) {
-
         age--;
       }
 
       if (age < 18) {
-
         _showErrorSnackBar(
             'Conjoint ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
         return false;
       }
-
     }
 
     // Vérifier les ascendants (18+ ans)
     for (var i = 0; i < ascendants.length; i++) {
-
       final ascendant = ascendants[i];
       int age = maintenant.year - ascendant.dateNaissance.year;
       if (maintenant.month < ascendant.dateNaissance.month ||
           (maintenant.month == ascendant.dateNaissance.month &&
               maintenant.day < ascendant.dateNaissance.day)) {
-
         age--;
       }
 
       if (age < 18) {
-
         _showErrorSnackBar(
             'Ascendant ${i + 1}: Âge non valide (18 ans minimum requis). Âge calculé: $age ans');
         return false;
       }
-
     }
 
     return true;
@@ -4293,53 +3900,40 @@ class _SouscriptionSolidaritePageState
 
   /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
-
     if (_selectedModePaiement == null) {
-
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-
       if (_banqueController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
 
       if (_ribUnifiedController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer votre numéro RIB complet.');
         return false;
       }
 
       if (!_validateRibUnified(_ribUnifiedController.text)) {
-
         _showErrorSnackBar(
             'Le numéro RIB est invalide (18 chiffres attendus au format : 55555 / 11111111111 / 22).');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Prélèvement à la source') {
-
       if (_nomStructureController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer le nom de la structure.');
         return false;
       }
 
       if (_numeroMatriculeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer le numéro de matricule.');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone $_selectedModePaiement.');
         return false;
@@ -4347,7 +3941,6 @@ class _SouscriptionSolidaritePageState
 
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
@@ -4355,19 +3948,13 @@ class _SouscriptionSolidaritePageState
 
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
-
       }
-
     } else if (_selectedModePaiement == 'CORIS Money') {
-
       if (_corisMoneyPhoneController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone CORIS Money.');
         return false;
@@ -4375,52 +3962,42 @@ class _SouscriptionSolidaritePageState
 
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_corisMoneyPhoneController.text.trim())) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
       }
-
     }
 
     return true;
   }
 
   bool _validateStepBeneficiaire() {
-
     if (_isAideParCommercial) {
-
       if (_commercialNomPrenomController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez renseigner le nom et prénom du commercial');
         return false;
       }
 
       if (_commercialCodeApporteurController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez renseigner le code apporteur du commercial');
         return false;
       }
-
     }
 
     if (_beneficiaireNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du bénéficiaire');
       return false;
     }
 
     if (_beneficiaireDateNaissance == null) {
-
       _showErrorSnackBar(
           'Veuillez saisir la date de naissance du bénéficiaire');
       return false;
     }
 
     if (_beneficiaireContactController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le contact du bénéficiaire');
       return false;
     }
@@ -4429,71 +4006,53 @@ class _SouscriptionSolidaritePageState
   }
 
   void _nextStep() {
-
     // Valider la page client si c'est un commercial et qu'on est à l'étape 0
     if (_isCommercial && _currentStep == 0) {
-
       if (!_validateStepClientInfo()) {
-
         return; // Ne pas passer à l'étape suivante si la validation échoue
       }
-
     }
 
     // Valider l'étape bénéficiaire (position dynamique : juste avant mode paiement et recap)
     final beneficiaireStep = _getTotalSteps() - 3;
     if (_currentStep == beneficiaireStep) {
-
       if (!_validateStepBeneficiaire()) {
-
         return; // Ne pas passer à l'étape suivante si la validation échoue
       }
-
     }
 
     // Valider le mode de paiement si on est sur cette étape (avant-dernière étape avant récap)
     final modePaiementStep = _getTotalSteps() - 2;
     if (_currentStep == modePaiementStep) {
-
       if (!_validateStepModePaiement()) {
-
         return; // Ne pas passer au récap si le mode de paiement n'est pas validé
       }
-
     }
 
     if (_currentStep < _getTotalSteps() - 1) {
-
       setState(() => _currentStep++);
       _pageController.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
-
       // Dernière étape (récap), aller à la signature puis paiement
       if (!_validateMembresAges()) {
-
         return; // Valider les âges avant le paiement
       }
 
       _showSignatureAndPayment();
     }
-
   }
 
   void _previousStep() {
-
     if (_currentStep > 0) {
-
       setState(() => _currentStep--);
       _pageController.previousPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: fondGris,
@@ -4591,9 +4150,7 @@ class _SouscriptionSolidaritePageState
   }
 
   @override
-
   void dispose() {
-
     _beneficiaireDateNaissanceController.dispose();
     _clientProfessionController.dispose();
     _clientSecteurActiviteController.dispose();
@@ -4601,19 +4158,16 @@ class _SouscriptionSolidaritePageState
     _commercialCodeApporteurController.dispose();
     super.dispose();
   }
-
 }
 
 // Classes pour les dialogues
 
 class _LoadingDialog extends StatelessWidget {
-
   final String paymentMethod;
   const _LoadingDialog({required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4642,22 +4196,20 @@ class _LoadingDialog extends StatelessWidget {
           SizedBox(height: context.r(8)),
           Text('Paiement via $paymentMethod...',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: context.sp(14))),
+              style: TextStyle(
+                  color: Color(0xFF64748B), fontSize: context.sp(14))),
         ]),
       ),
     );
   }
-
 }
 
 class _SuccessDialog extends StatelessWidget {
-
   final bool isPaid;
   const _SuccessDialog({required this.isPaid});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4698,13 +4250,14 @@ class _SuccessDialog extends StatelessWidget {
                   : 'Votre proposition a été enregistrée avec succès. Vous pouvez effectuer le paiement plus tard depuis votre espace client.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: Color(0xFF64748B), fontSize: context.sp(14), height: 1.4)),
+                  color: Color(0xFF64748B),
+                  fontSize: context.sp(14),
+                  height: 1.4)),
           SizedBox(height: context.r(24)),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
                 onPressed: () {
-
                   // Retour à la page d'accueil client
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
@@ -4722,11 +4275,9 @@ class _SuccessDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class PaymentBottomSheet extends StatelessWidget {
-
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const PaymentBottomSheet(
@@ -4734,7 +4285,6 @@ class PaymentBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
         decoration: BoxDecoration(
             color: Colors.white,
@@ -4824,8 +4374,8 @@ class PaymentBottomSheet extends StatelessWidget {
                 ]))));
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -4855,15 +4405,15 @@ class PaymentBottomSheet extends StatelessWidget {
                             fontSize: context.sp(16))),
                     SizedBox(height: context.r(4)),
                     Text(subtitle,
-                        style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
+                        style: TextStyle(
+                            color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
 
-  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title,
+      String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -4888,7 +4438,6 @@ class PaymentBottomSheet extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-
                       print('❌ Erreur chargement image: $imagePath - $error');
                       return Icon(Icons.image_not_supported,
                           size: 32, color: Colors.grey);
@@ -4906,12 +4455,10 @@ class PaymentBottomSheet extends StatelessWidget {
                             fontSize: context.sp(16))),
                     SizedBox(height: context.r(4)),
                     Text(subtitle,
-                        style:
-                            TextStyle(color: Color(0xFF64748B), fontSize: context.sp(12)))
+                        style: TextStyle(
+                            color: Color(0xFF64748B), fontSize: context.sp(12)))
                   ])),
               Icon(Icons.arrow_forward_ios, color: Color(0xFF64748B), size: 16),
             ])));
   }
-
 }
-

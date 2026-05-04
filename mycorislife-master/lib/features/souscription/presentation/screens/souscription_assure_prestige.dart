@@ -18,7 +18,6 @@ import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
 import 'dart:typed_data';
 
 class SouscriptionPrestigePage extends StatefulWidget {
-
   final String? clientId; // ID du client si souscription par commercial
   final Map<String, dynamic>?
       clientData; // Données du client si souscription par commercial
@@ -27,7 +26,6 @@ class SouscriptionPrestigePage extends StatefulWidget {
   final Map<String, dynamic>? existingData; // Données existantes à préremplir
 
   const SouscriptionPrestigePage({
-
     super.key,
     this.clientId,
     this.clientData,
@@ -42,7 +40,6 @@ class SouscriptionPrestigePage extends StatefulWidget {
 
 class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     with TickerProviderStateMixin {
-
   // Charte graphique CORIS améliorée
 
   static const Color bleuCoris = Color(0xFF002B6B);
@@ -194,8 +191,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final TextEditingController _clientEmailController = TextEditingController();
   final TextEditingController _clientAdresseController =
       TextEditingController();
-  final TextEditingController _clientProfessionController = TextEditingController();
-  final TextEditingController _clientSecteurActiviteController = TextEditingController();
+  final TextEditingController _clientProfessionController =
+      TextEditingController();
+  final TextEditingController _clientSecteurActiviteController =
+      TextEditingController();
   final TextEditingController _clientNumeroPieceController =
       TextEditingController();
   String _selectedClientCivilite = 'Monsieur';
@@ -204,33 +203,23 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   final storage = const FlutterSecureStorage();
 
   @override
-
   void initState() {
-
     super.initState();
 
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
-
       _prefillFromExistingData();
     } else {
-
       // Chargez les données utilisateur dès l'initialisation
       _loadUserData().then((data) {
-
         if (mounted) {
-
           setState(() {}); // Rafraîchir l'UI
         }
-
       }).catchError((e) {
-
         if (mounted) {
-
           _showErrorSnackBar(
               'Erreur lors du chargement des données utilisateur: $e');
         }
-
       });
     }
 
@@ -241,9 +230,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
     // Vérifier si c'est un commercial qui fait la souscription
     final args =
@@ -257,33 +244,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         isCommercialArg || isCommercialProps || isCommercialExistingData;
 
     if (shouldEnableCommercial && !_isCommercial) {
-
       setState(() {
-
         _isCommercial = true;
         _currentStep = 0;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-
         if (mounted) {
-
           _pageController.jumpToPage(0);
         }
-
       });
     }
 
     if (isCommercialArg) {
-
       // Si on est en mode modification (avec existingData), pré-remplir tout
       if (args['existingData'] != null) {
-
         // Le pré-remplissage complet est déjà géré dans initState via _prefillFromExistingData
       }
 
       // Sinon, pré-remplir uniquement les champs client (nouvelle souscription)
       else if (args['clientInfo'] != null) {
-
         final clientInfo = args['clientInfo'] as Map<String, dynamic>;
         _clientNomController.text = clientInfo['nom'] ?? '';
         _clientPrenomController.text = clientInfo['prenom'] ?? '';
@@ -296,29 +275,21 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             clientInfo['numero_piece_identite'] ?? '';
 
         if (clientInfo['civilite'] != null) {
-
           _selectedClientCivilite = clientInfo['civilite'];
         }
 
         // Extraire l'indicatif du téléphone si présent
         final telephone = clientInfo['telephone'] ?? '';
         if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
           final parts = telephone.split(' ');
           if (parts.isNotEmpty) {
-
             _selectedClientIndicatif = parts[0];
             if (parts.length > 1) {
-
               _clientTelephoneController.text = parts.sublist(1).join(' ');
             }
-
           }
-
         }
-
       }
-
     }
 
     _animationController = AnimationController(
@@ -339,30 +310,23 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // Ajouter un délai pour s'assurer que tout est initialisé avant le calcul
     Future.delayed(Duration(milliseconds: 100), () {
-
       _recalculerValeurs();
       if (mounted) {
-
         setState(() {}); // Forcer le rafraîchissement de l'interface
       }
-
     });
   }
 
   Future<Map<String, dynamic>> _loadUserData() async {
-
     try {
-
       // Si les données sont déjà chargées, les retourner
       if (_userData.isNotEmpty) {
-
         debugPrint('✅ Utilisation des données utilisateur déjà chargées');
         return _userData;
       }
 
       final token = await storage.read(key: 'token');
       if (token == null) {
-
         debugPrint('❌ Token non trouvé');
         return {};
       }
@@ -371,24 +335,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/users/profile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
         },
       );
 
       if (response.statusCode == 200) {
-
         final data = jsonDecode(response.body);
         if (data != null && data is Map) {
-
           Map<String, dynamic>? userData;
 
           // 1) Cas standard: { success: true, user: { ... } }
           if (data['success'] == true &&
               data['user'] != null &&
               data['user'] is Map) {
-
             userData = Map<String, dynamic>.from(data['user']);
           }
 
@@ -396,31 +356,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           else if (data['success'] == true &&
               data['data'] != null &&
               data['data'] is Map) {
-
             userData = Map<String, dynamic>.from(data['data']);
           }
 
           // 3) Direct user object: { id, civilite, nom, ... }
           else if (data.containsKey('id') && data.containsKey('email')) {
-
             userData = Map<String, dynamic>.from(data);
           }
 
           if (userData != null && userData.isNotEmpty) {
-
             debugPrint(
                 '✅ Données utilisateur chargées: ${userData['nom']} ${userData['prenom']}');
             if (mounted) {
-
               setState(() {
-
                 _userData = userData!;
               });
             }
 
             return userData;
           }
-
         }
 
         debugPrint('⚠️ Réponse API vide ou mal formatée');
@@ -430,22 +384,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       debugPrint('❌ Erreur serveur: ${response.statusCode}');
       return {};
     } catch (e) {
-
       debugPrint('❌ Erreur lors du chargement du profil: $e');
       return {};
     }
-
   }
 
   void _prefillFromExistingData() {
-
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
-
       _isCommercial = true;
       final clientInfo = data['client_info'] as Map<String, dynamic>;
 
@@ -460,32 +410,24 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           clientInfo['numero_piece_identite'] ?? '';
 
       if (clientInfo['civilite'] != null) {
-
         _selectedClientCivilite = clientInfo['civilite'];
       }
 
       // Extraire l'indicatif du téléphone si présent
       final telephone = clientInfo['telephone'] ?? '';
       if (telephone.isNotEmpty && telephone.startsWith('+')) {
-
         final parts = telephone.split(' ');
         if (parts.isNotEmpty) {
-
           _selectedClientIndicatif = parts[0];
           if (parts.length > 1) {
-
             _clientTelephoneController.text = parts.sublist(1).join(' ');
           }
-
         }
-
       }
-
     }
 
     // Montant du versement initial
     if (data['montant_versement'] != null) {
-
       final montant = data['montant_versement'] is int
           ? data['montant_versement'].toDouble()
           : data['montant_versement'];
@@ -494,68 +436,51 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // Durée du contrat
     if (data['duree_contrat'] != null) {
-
       _dureeContratController.text = data['duree_contrat'].toString();
     }
 
     // Unité de durée (ans ou mois)
     if (data['unite_duree'] != null) {
-
       _selectedUniteDuree = data['unite_duree'];
     }
 
     // Dates
     if (data['date_effet'] != null) {
-
       try {
-
         _dateEffetContrat = DateTime.parse(data['date_effet']);
         _dateEffetController.text =
             DateFormat('dd/MM/yyyy').format(_dateEffetContrat!);
       } catch (e) {
-
         debugPrint('Erreur parsing date_effet: $e');
       }
-
     }
 
     // Bénéficiaire
     if (data['beneficiaire'] != null) {
-
       final benef = data['beneficiaire'];
       _beneficiaireNomController.text = benef['nom'] ?? '';
       if (benef['contact'] != null) {
-
         final contact = benef['contact'].toString();
         // Extraire l'indicatif et le numéro
         if (contact.startsWith('+')) {
-
           final parts = contact.split(' ');
           if (parts.length >= 2) {
-
             _selectedBeneficiaireIndicatif = parts[0];
             _beneficiaireContactController.text = parts.sublist(1).join(' ');
           }
-
         } else {
-
           _beneficiaireContactController.text = contact;
         }
-
       }
 
       if (benef['date_naissance'] != null) {
-
         try {
-
           _beneficiaireDateNaissance = DateTime.parse(benef['date_naissance']);
           _beneficiaireDateNaissanceController.text =
               DateFormat('dd/MM/yyyy').format(_beneficiaireDateNaissance!);
         } catch (e) {
-
           debugPrint('Erreur parsing date_naissance beneficiaire: $e');
         }
-
       }
 
       _selectedLienParente = benef['lien_parente'] ?? 'Conjoint';
@@ -563,26 +488,19 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // Contact d'urgence
     if (data['contact_urgence'] != null) {
-
       final contact = data['contact_urgence'];
       _personneContactNomController.text = contact['nom'] ?? '';
       if (contact['contact'] != null) {
-
         final tel = contact['contact'].toString();
         if (tel.startsWith('+')) {
-
           final parts = tel.split(' ');
           if (parts.length >= 2) {
-
             _selectedContactIndicatif = parts[0];
             _personneContactTelController.text = parts.sublist(1).join(' ');
           }
-
         } else {
-
           _personneContactTelController.text = tel;
         }
-
       }
 
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
@@ -590,7 +508,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     if (data['assistance_commerciale'] != null &&
         data['assistance_commerciale'] is Map) {
-
       final assistance = data['assistance_commerciale'];
       _isAideParCommercial = assistance['is_aide_par_commercial'] == true;
       _commercialNomPrenomController.text =
@@ -601,14 +518,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // 💳 MODE DE PAIEMENT - Pré-remplissage
     if (data['mode_paiement'] != null) {
-
       _selectedModePaiement = data['mode_paiement'];
 
       if (data['infos_paiement'] != null) {
-
         final infos = data['infos_paiement'];
         if (_selectedModePaiement == 'Virement') {
-
           _banqueController.text = infos['banque'] ?? '';
           // Construire le RIB unifié à partir des 3 champs
           final codeGuichet = infos['code_guichet'] ?? '';
@@ -617,37 +531,27 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           if (codeGuichet.isNotEmpty &&
               numeroCompte.isNotEmpty &&
               cleRib.isNotEmpty) {
-
             _ribUnifiedController.text =
                 '$codeGuichet / $numeroCompte / $cleRib';
           }
-
         } else if (_selectedModePaiement == 'Wave' ||
             _selectedModePaiement == 'Orange Money') {
-
           _numeroMobileMoneyController.text = infos['numero_telephone'] ?? '';
         }
-
       }
-
     }
 
     // Recalculer les valeurs
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
       _recalculerValeurs();
       if (mounted) {
-
         setState(() {});
       }
-
     });
   }
 
   @override
-
   void dispose() {
-
     _animationController.dispose();
     _progressController.dispose();
     _pageController.dispose();
@@ -683,13 +587,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   String _formatMontant(double montant) {
-
     final rounded = montant.round();
     return "${rounded.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
   }
 
   String _formatNumber(double number) {
-
     final rounded = number.round();
     return rounded.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -698,31 +600,24 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _formatMontantInput() {
-
     final text = _montantVersementController.text.replaceAll(' ', '');
     if (text.isNotEmpty) {
-
       final value = double.tryParse(text);
       if (value != null) {
-
         _montantVersementController.text = _formatNumber(value);
         _montantVersementController.selection = TextSelection.fromPosition(
           TextPosition(offset: _montantVersementController.text.length),
         );
       }
-
     }
-
   }
 
   /// Parse le RIB unifié au format: XXXX / XXXXXXXXXXX / XX
 
   /// Retourne une map avec {code_guichet, numero_compte, cle_rib}
   Map<String, String> _parseRibUnified(String rib) {
-
     final parts = rib.split('/').map((p) => p.trim()).toList();
     return {
-
       'code_guichet': parts.isNotEmpty ? parts[0] : '',
       'numero_compte': parts.length > 1 ? parts[1] : '',
       'cle_rib': parts.length > 2 ? parts[2] : '',
@@ -731,7 +626,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// Valide le format du RIB unifié
   bool _validateRibUnified(String rib) {
-
     final parts = _parseRibUnified(rib);
     final codeGuichet = parts['code_guichet'] ?? '';
     final numeroCompte = parts['numero_compte'] ?? '';
@@ -748,12 +642,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   /// Formate l'entrée RIB en temps réel
 
   void _formatRibInput() {
-
     final text = _ribUnifiedController.text;
     final onlyDigits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (onlyDigits.isEmpty) {
-
       _ribUnifiedController.text = '';
       return;
     }
@@ -761,44 +653,35 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     // Construire le format: XXXXX / XXXXXXXXXXX / XX (5 chiffres / 11 chiffres / 2 chiffres)
     final buffer = StringBuffer();
     if (onlyDigits.isNotEmpty) {
-
       buffer.write(onlyDigits.substring(0, min(5, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 5) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(5, min(16, onlyDigits.length)));
     }
 
     if (onlyDigits.length > 16) {
-
       buffer.write(' / ');
       buffer.write(onlyDigits.substring(16, min(18, onlyDigits.length)));
     }
 
     final formatted = buffer.toString();
     if (formatted != text) {
-
       _ribUnifiedController.text = formatted;
       _ribUnifiedController.selection = TextSelection.fromPosition(
         TextPosition(offset: formatted.length),
       );
     }
-
   }
 
   Future<void> _pickDocument() async {
-
     try {
-
       final picked = await IdentityDocumentPicker.pickDocuments(context);
       if (picked == null || picked.files.isEmpty) return;
 
       if (mounted) {
-
         setState(() {
-
           _pieceIdentiteFiles
             ..clear()
             ..addAll(picked.files);
@@ -810,26 +693,19 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       }
 
       if (mounted) {
-
         _showSuccessSnackBar(_pieceIdentiteFiles.length > 1
             ? '${_pieceIdentiteFiles.length} documents ont été téléchargés avec succès.'
             : 'Votre pièce d\'identité a été téléchargée avec succès.');
       }
-
     } catch (e) {
-
       if (mounted) {
-
         _showErrorSnackBar(
             'Une erreur s\'est produite lors de la sélection du fichier. Veuillez réessayer.');
       }
-
     }
-
   }
 
   void _showErrorSnackBar(String message) {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -878,7 +754,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _showSuccessSnackBar(String message) {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -927,7 +802,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Future<void> _showSignatureAndPayment() async {
-
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
@@ -935,12 +809,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     if (signature == null) {
-
       return; // L'utilisateur a annulé
     }
 
     setState(() {
-
       _clientSignature = signature;
     });
 
@@ -951,19 +823,16 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _showPaymentOptions() async {
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _PaymentBottomSheet(
         onPayNow: (paymentMethod) {
-
           Navigator.pop(context);
           _processPayment(paymentMethod);
         },
         onPayLater: () {
-
           Navigator.pop(context);
           _saveAsProposition();
         },
@@ -974,14 +843,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   /// Sauvegarde les données de souscription pour Coris Assure Prestige
 
   Future<int> _saveSubscriptionData() async {
-
     try {
-
       final subscriptionService = SubscriptionService();
 
       // Préparer les données de souscription spécifiques à Coris Assure Prestige
       final subscriptionData = {
-
         'product_type': 'coris_assure_prestige',
         'montant':
             double.parse(_montantVersementController.text.replaceAll(' ', ''))
@@ -995,7 +861,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         'capital_deces': _capitalDeces.toInt(),
         'prime_deces_annuelle': _primeDecesAnnuelle.toInt(),
         'beneficiaire': {
-
           'nom': _beneficiaireNomController.text.trim(),
           'contact':
               '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
@@ -1003,14 +868,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           'lien_parente': _selectedLienParente,
         },
         'contact_urgence': {
-
           'nom': _personneContactNomController.text.trim(),
-          'contact':
-              _personneContactTelController.text.trim(),
+          'contact': _personneContactTelController.text.trim(),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
-
           'is_aide_par_commercial': _isAideParCommercial,
           'commercial_nom_prenom': _isAideParCommercial
               ? _commercialNomPrenomController.text.trim()
@@ -1021,53 +883,41 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         },
         'date_effet': _dateEffetContrat?.toIso8601String(),
         'date_echeance': _dateEcheanceContrat?.toIso8601String(),
-        'piece_identite': _pieceIdentite?.path.split('/').last ?? '',
         // 💳 MODE DE PAIEMENT
         'mode_paiement': _selectedModePaiement,
         'infos_paiement': _selectedModePaiement == 'Virement'
             ? {
-
                 'banque': _banqueController.text.trim(),
                 ..._parseRibUnified(_ribUnifiedController.text.trim()),
               }
-
             : (_selectedModePaiement == 'Wave' ||
                     _selectedModePaiement == 'Orange Money')
                 ? {
-
                     'numero_telephone':
                         _numeroMobileMoneyController.text.trim(),
                   }
-
                 : _selectedModePaiement == 'Prélèvement à la source'
                     ? {
-
                         'nom_structure': _nomStructureController.text.trim(),
                         'numero_matricule':
                             _numeroMatriculeController.text.trim(),
                       }
-
                     : _selectedModePaiement == 'CORIS Money'
                         ? {
-
                             'numero_telephone':
                                 _corisMoneyPhoneController.text.trim(),
                           }
-
                         : null,
       };
 
       // Ajouter la signature si elle existe
       if (_clientSignature != null) {
-
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
       // Si c'est un commercial, ajouter les infos client
       if (_isCommercial) {
-
         subscriptionData['client_info'] = {
-
           'nom': _clientNomController.text.trim(),
           'prenom': _clientPrenomController.text.trim(),
           'lieu_naissance': _clientLieuNaissanceController.text.trim(),
@@ -1086,13 +936,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       // Si on modifie une proposition existante, mettre à jour au lieu de créer
       final http.Response response;
       if (widget.subscriptionId != null) {
-
         response = await subscriptionService.updateSubscription(
           widget.subscriptionId!,
           subscriptionData,
         );
       } else {
-
         response =
             await subscriptionService.createSubscription(subscriptionData);
       }
@@ -1102,7 +950,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       if ((widget.subscriptionId != null && response.statusCode != 200) ||
           (widget.subscriptionId == null && response.statusCode != 201) ||
           !responseData['success']) {
-
         throw Exception(
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
@@ -1110,17 +957,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
       return widget.subscriptionId ?? responseData['data']['id'];
     } catch (e) {
-
       rethrow;
     }
-
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,
       {String? paymentMethod}) async {
-
     try {
-
       final subscriptionService = SubscriptionService();
       final response = await subscriptionService.updatePaymentStatus(
         subscriptionId,
@@ -1131,7 +974,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode != 200 || !responseData['success']) {
-
         throw Exception(responseData['message'] ??
             'Erreur lors de la mise à jour du statut');
       }
@@ -1139,15 +981,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       debugPrint(
           'Statut mis à jour: ${paymentSuccess ? 'contrat' : 'proposition'}');
     } catch (e) {
-
       debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
-
   }
 
   Future<bool> _simulatePayment(String paymentMethod) async {
-
     // Simulation d'un délai de paiement
     await Future.delayed(const Duration(seconds: 2));
 
@@ -1156,48 +995,40 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _processPayment(String paymentMethod) async {
-
     if (_isProcessing) return;
 
     setState(() {
-
       _isProcessing = true;
     });
 
     // Si CORIS Money est sélectionné, utiliser le modal de paiement
     if (paymentMethod == 'CORIS Money') {
-
       try {
-
         // ÉTAPE 1: Sauvegarder la souscription
         final subscriptionId = await _saveSubscriptionData();
 
         // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-        if (_pieceIdentite != null) {
-
+        if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
           try {
-
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-
             debugPrint(
                 '⚠️ Erreur upload document (non bloquant): $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                  content: Text(
+                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
               );
             }
           }
-
         }
 
         // Afficher le modal de paiement CorisMoney
         if (mounted) {
-
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -1206,36 +1037,25 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               montant: _primeDecesAnnuelle,
               description: 'Paiement prime CORIS ASSURE PRESTIGE',
               onPaymentSuccess: () {
-
                 if (mounted) {
-
                   Navigator.pop(context);
                   _showSuccessDialog(true);
                 }
-
               },
             ),
           );
         }
-
       } catch (e) {
-
         debugPrint('❌ Erreur lors du processus: $e');
         if (mounted) {
-
           _showErrorSnackBar('Erreur lors du traitement: $e');
         }
-
       } finally {
-
         if (mounted) {
-
           setState(() {
-
             _isProcessing = false;
           });
         }
-
       }
 
       return;
@@ -1248,36 +1068,30 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     try {
-
       // ÉTAPE 1: Sauvegarder la souscription
       final subscriptionId = await _saveSubscriptionData();
 
       // ÉTAPE 1.5: Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
         }
-
       }
 
       if (paymentMethod == 'Wave') {
-
         if (mounted) {
-
           Navigator.pop(context);
         }
 
@@ -1299,84 +1113,64 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           paymentMethod: paymentMethod);
 
       if (mounted) {
-
         Navigator.pop(context);
       }
 
       if (paymentSuccess) {
-
         _showSuccessDialog(true);
       } else {
-
         _showErrorSnackBar(
             'Paiement échoué. Votre proposition a été sauvegardée.');
       }
-
     } catch (e) {
-
       if (mounted) {
-
         Navigator.pop(context);
       }
 
       _showErrorSnackBar('Erreur lors du traitement: $e');
     } finally {
-
       if (mounted) {
-
         setState(() {
-
           _isProcessing = false;
         });
       }
-
     }
-
   }
 
   void _saveAsProposition() async {
-
     try {
-
       // Sauvegarde avec statut 'proposition' par défaut
       final subscriptionId = await _saveSubscriptionData();
 
       // Upload du document pièce d'identité si présent
-      if (_pieceIdentite != null) {
-
+      if (_pieceIdentite != null || _pieceIdentiteFiles.isNotEmpty) {
         try {
-
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-
           debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                content: Text(
+                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
             );
           }
         }
-
       }
 
       _showSuccessDialog(false);
     } catch (e) {
-
       _showErrorSnackBar('Erreur lors de la sauvegarde: $e');
     }
-
   }
 
   /// Upload le document pièce d'identité vers le serveur
 
   Future<void> _uploadDocument(int subscriptionId) async {
-
     try {
-
       debugPrint('📤 Upload document pour souscription $subscriptionId');
       final subscriptionService = SubscriptionService();
       final paths = _pieceIdentiteFiles.isNotEmpty
@@ -1388,7 +1182,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
       Map<String, dynamic> responseData = {};
       for (final filePath in paths) {
-
         final response = await subscriptionService.uploadDocument(
           subscriptionId,
           filePath,
@@ -1398,56 +1191,41 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         responseData = localData;
 
         if (response.statusCode != 200 || !localData['success']) {
-
           debugPrint('❌ Erreur upload: ${localData['message']}');
           throw Exception(
               localData['message'] ?? 'Erreur lors de l\'upload du document');
         }
-
       }
 
       // Récupérer le label original si présent dans la réponse
       try {
-
         final updated = responseData['data']?['subscription'];
         if (updated != null) {
-
           final souscriptiondata = updated['souscriptiondata'];
           if (souscriptiondata != null) {
-
             if (souscriptiondata is Map) {
-
               _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
             } else if (souscriptiondata is String) {
-
               try {
-
                 final parsed = jsonDecode(souscriptiondata);
                 _pieceIdentiteLabel = parsed['piece_identite_label'];
               } catch (_) {}
             }
-
           }
-
         }
-
       } catch (e) {
-
         debugPrint(
             '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
-
       debugPrint('❌ Exception upload document: $e');
       rethrow;
     }
-
   }
 
   void _showSuccessDialog(bool isPaid) {
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1456,7 +1234,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _selectDateEffet() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -1467,19 +1244,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     if (picked != null && mounted) {
-
       setState(() {
-
         _dateEffetContrat = picked;
         _dateEffetController.text = DateFormat('dd/MM/yyyy').format(picked);
         _updateEcheanceDate();
       });
     }
-
   }
 
   void _selectBeneficiaireDateNaissance() async {
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _beneficiaireDateNaissance ?? DateTime(2000),
@@ -1490,26 +1263,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     );
 
     if (picked != null && mounted) {
-
       setState(() {
-
         _beneficiaireDateNaissance = picked;
         _beneficiaireDateNaissanceController.text =
             DateFormat('dd/MM/yyyy').format(picked);
       });
     }
-
   }
 
   void _updateEcheanceDate() {
-
     if (_dureeContratController.text.isNotEmpty && _dateEffetContrat != null) {
-
       final duree = int.tryParse(_dureeContratController.text) ?? 0;
       final dureeMois = _selectedUniteDuree == 'Années' ? duree * 12 : duree;
 
       setState(() {
-
         _dateEcheanceContrat = DateTime(
           _dateEffetContrat!.year,
           _dateEffetContrat!.month + dureeMois,
@@ -1517,46 +1284,35 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         );
       });
     }
-
   }
 
   void _recalculerValeurs() {
-
     // Calculer le capital décès et la prime décès annuelle
     try {
-
       final montantText = _montantVersementController.text.replaceAll(' ', '');
       final montant = double.tryParse(montantText) ?? 0;
 
       if (montant > 0) {
-
         // Capital décès = 1,5 é— Versement initial
         _capitalDeces = montant * multiplicateurCapital;
 
         // Prime annuelle = 0,6685% é— Capital décès
         _primeDecesAnnuelle = _capitalDeces * tauxPrimeAnnuel;
       } else {
-
         _capitalDeces = 0;
         _primeDecesAnnuelle = 0;
       }
 
       if (mounted) {
-
         setState(() {});
       }
-
     } catch (e) {
-
       _capitalDeces = 0;
       _primeDecesAnnuelle = 0;
       if (mounted) {
-
         setState(() {});
       }
-
     }
-
   }
 
   // =================================================================
@@ -1564,45 +1320,31 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // =================================================================
 
   void _nextStep() {
-
     final maxStep = _isCommercial ? 4 : 3;
     if (_currentStep < maxStep) {
-
       bool canProceed = false;
 
       if (_isCommercial) {
-
         if (_currentStep == 0 && _validateStepClientInfo()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       } else {
-
         if (_currentStep == 0 && _validateStep1()) {
-
           canProceed = true;
         } else if (_currentStep == 1 && _validateStep2()) {
-
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
-
           canProceed = true;
         }
-
       }
 
       if (canProceed) {
-
         setState(() => _currentStep++);
         _progressController.forward();
         _animationController.reset();
@@ -1612,15 +1354,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           curve: Curves.easeInOutCubic,
         );
       }
-
     }
-
   }
 
   void _previousStep() {
-
     if (_currentStep > 0) {
-
       setState(() => _currentStep--);
       _progressController.reverse();
       _animationController.reset();
@@ -1630,32 +1368,26 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         curve: Curves.easeInOutCubic,
       );
     }
-
   }
 
   bool _validateStepClientInfo() {
-
     if (_clientNomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le nom du client');
       return false;
     }
 
     if (_clientPrenomController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le prénom du client');
       return false;
     }
 
     if (_clientDateNaissance == null) {
-
       _showErrorSnackBar('Veuillez saisir la date de naissance du client');
       return false;
     }
 
     // Email non obligatoire pour le commercial
     if (_clientTelephoneController.text.trim().isEmpty) {
-
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
     }
@@ -1664,12 +1396,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   bool _validateStep1() {
-
     // ðŸŸ¦ VALIDATION SPÉCIFIQUE é€ CORIS ASSURE PRESTIGE
     if (_montantVersementController.text.trim().isEmpty ||
         _dureeContratController.text.trim().isEmpty ||
         _dateEffetContrat == null) {
-
       _showErrorSnackBar(
           'Veuillez compléter tous les champs obligatoires avant de continuer.');
       return false;
@@ -1679,7 +1409,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     final montant = double.tryParse(montantText);
 
     if (montant == null || montant <= 0) {
-
       _showErrorSnackBar(
           'Le montant saisi est invalide. Veuillez entrer un montant positif.');
       return false;
@@ -1687,7 +1416,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // ðŸŸ¦ VÉRIFICATION DU MONTANT MINIMAL DE 250 000 F
     if (montant < montantMinimalVersement) {
-
       _showErrorSnackBar(
           'Le montant minimal du versement initial est de ${_formatMontant(montantMinimalVersement)}.');
       return false;
@@ -1695,7 +1423,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     final duree = int.tryParse(_dureeContratController.text);
     if (duree == null || duree <= 0) {
-
       _showErrorSnackBar('La durée du contrat est invalide.');
       return false;
     }
@@ -1704,23 +1431,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   bool _validateStep2() {
-
     if (_isAideParCommercial) {
-
       if (_commercialNomPrenomController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez renseigner le nom et prénom du commercial.');
         return false;
       }
 
       if (_commercialCodeApporteurController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez renseigner le code apporteur du commercial.');
         return false;
       }
-
     }
 
     if (_beneficiaireNomController.text.trim().isEmpty ||
@@ -1728,7 +1450,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         _beneficiaireDateNaissance == null ||
         _personneContactNomController.text.trim().isEmpty ||
         _personneContactTelController.text.trim().isEmpty) {
-
       _showErrorSnackBar(
           'Veuillez renseigner tous les contacts et informations de bénéficiaire.');
       return false;
@@ -1736,7 +1457,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     // La pièce d'identité n'est obligatoire QUE pour une nouvelle souscription
     if (_pieceIdentite == null && widget.subscriptionId == null) {
-
       _showErrorSnackBar(
           'Le téléchargement d\'une pièce d\'identité est obligatoire pour continuer.');
       return false;
@@ -1745,7 +1465,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     // Validation des numéros de téléphone
     if (!RegExp(r'^[0-9]{8,15}$')
         .hasMatch(_beneficiaireContactController.text)) {
-
       _showErrorSnackBar(
           'Le numéro du bénéficiaire semble invalide. Veuillez vérifier.');
       return false;
@@ -1753,7 +1472,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
     if (!RegExp(r'^\+?[0-9]{7,15}$')
         .hasMatch(_personneContactTelController.text)) {
-
       _showErrorSnackBar(
           'Le numéro de contact d\'urgence semble invalide. Veuillez vérifier.');
       return false;
@@ -1764,39 +1482,30 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// 💳 VALIDATION MODE DE PAIEMENT
   bool _validateStepModePaiement() {
-
     if (_selectedModePaiement == null) {
-
       _showErrorSnackBar('Veuillez sélectionner un mode de paiement.');
       return false;
     }
 
     if (_selectedModePaiement == 'Virement') {
-
       if (_banqueController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer le nom de votre banque.');
         return false;
       }
 
       if (_ribUnifiedController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez entrer votre RIB complet.');
         return false;
       }
 
       if (!_validateRibUnified(_ribUnifiedController.text.trim())) {
-
         _showErrorSnackBar(
             'Format RIB invalide. Format attendu: 55555 / 11111111111 / 22 (5 chiffres / 11 chiffres / 2 chiffres)');
         return false;
       }
-
     } else if (_selectedModePaiement == 'Wave' ||
         _selectedModePaiement == 'Orange Money') {
-
       if (_numeroMobileMoneyController.text.trim().isEmpty) {
-
         _showErrorSnackBar(
             'Veuillez entrer votre numéro de téléphone $_selectedModePaiement.');
         return false;
@@ -1804,7 +1513,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
       if (!RegExp(r'^[0-9]{8,10}$')
           .hasMatch(_numeroMobileMoneyController.text.trim())) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone semble invalide (8 à 10 chiffres attendus).');
         return false;
@@ -1812,45 +1520,33 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
       // Validation spécifique pour Orange Money : doit commencer par 07
       if (_selectedModePaiement == 'Orange Money') {
-
         if (!_numeroMobileMoneyController.text.trim().startsWith('07')) {
-
           _showErrorSnackBar('Le numéro Orange Money doit commencer par 07.');
           return false;
         }
-
       }
-
     } else if (_selectedModePaiement == 'Prélèvement à la source') {
-
       if (_nomStructureController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le nom de la structure');
         return false;
       }
 
       if (_numeroMatriculeController.text.trim().isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner votre numéro de matricule');
         return false;
       }
-
     } else if (_selectedModePaiement == 'CORIS Money') {
-
       final phone = _corisMoneyPhoneController.text.trim();
       if (phone.isEmpty) {
-
         _showErrorSnackBar('Veuillez renseigner le numéro de téléphone');
         return false;
       }
 
       if (phone.length < 8) {
-
         _showErrorSnackBar(
             'Le numéro de téléphone doit contenir au moins 8 chiffres');
         return false;
       }
-
     }
 
     return true;
@@ -1862,13 +1558,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: grisLeger,
       resizeToAvoidBottomInset: true,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-
           return <Widget>[
             SliverAppBar(
               expandedHeight: 120,
@@ -1968,7 +1662,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildModernProgressIndicator() {
-
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2082,11 +1775,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// Page séparée pour les informations client (uniquement pour les commerciaux)
   Widget _buildStepClientInfo() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2107,9 +1798,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           icon: Icons.person_outline,
                           items: ['Monsieur', 'Madame', 'Mademoiselle'],
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedClientCivilite = value!;
                             });
                           },
@@ -2133,9 +1822,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           icon: Icons.cake_outlined,
                           selectedDate: _clientDateNaissance,
                           onDateSelected: (date) {
-
                             setState(() {
-
                               _clientDateNaissance = date;
                               _clientDateNaissanceController.text =
                                   '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -2154,9 +1841,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           label: 'Téléphone du client',
                           selectedIndicatif: _selectedClientIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedClientIndicatif = value;
                             });
                           },
@@ -2205,11 +1890,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildStep1() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2303,7 +1986,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildMontantVersementField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2320,11 +2002,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           controller: _montantVersementController,
           keyboardType: TextInputType.number,
           onChanged: (value) {
-
             _recalculerValeurs();
           },
           onEditingComplete: () {
-
             _formatMontantInput();
           },
           decoration: InputDecoration(
@@ -2347,21 +2027,17 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             errorStyle: TextStyle(fontSize: context.sp(12)),
           ),
           validator: (value) {
-
             if (value == null || value.trim().isEmpty) {
-
               return 'Le montant est obligatoire';
             }
 
             final montantText = value.replaceAll(' ', '');
             final montant = double.tryParse(montantText);
             if (montant == null || montant <= 0) {
-
               return 'Montant invalide';
             }
 
             if (montant < montantMinimalVersement) {
-
               return 'Minimum ${_formatMontant(montantMinimalVersement)}';
             }
 
@@ -2373,7 +2049,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildDureeContratField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2393,7 +2068,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 controller: _dureeContratController,
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
-
                   _updateEcheanceDate();
                 },
                 decoration: InputDecoration(
@@ -2416,15 +2090,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   errorStyle: TextStyle(fontSize: context.sp(12)),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'La durée est obligatoire';
                   }
 
                   final duree = int.tryParse(value);
                   if (duree == null || duree <= 0) {
-
                     return 'Durée invalide';
                   }
 
@@ -2447,23 +2118,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   icon: Icon(Icons.arrow_drop_down, size: 20, color: bleuCoris),
                   items: _uniteDureeOptions.map((option) {
-
                     return DropdownMenuItem<String>(
                       value: option,
                       child: Text(option),
                     );
                   }).toList(),
                   onChanged: (value) {
-
                     if (value != null) {
-
                       setState(() {
-
                         _selectedUniteDuree = value;
                         _updateEcheanceDate();
                       });
                     }
-
                   },
                 ),
               ),
@@ -2475,7 +2141,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildDateEffetField() {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2522,9 +2187,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
               validator: (value) {
-
                 if (value == null || value.trim().isEmpty) {
-
                   return 'La date d\'effet est obligatoire';
                 }
 
@@ -2538,11 +2201,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildStep2() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -2570,9 +2231,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           label: 'Contact du bénéficiaire *',
                           selectedIndicatif: _selectedBeneficiaireIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedBeneficiaireIndicatif = value;
                             });
                           },
@@ -2605,9 +2264,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           ),
                           onTap: _selectBeneficiaireDateNaissance,
                           validator: (value) {
-
                             if (value == null || value.isEmpty) {
-
                               return 'Veuillez sélectionner la date de naissance';
                             }
 
@@ -2621,9 +2278,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParente = value!;
                             });
                           },
@@ -2646,9 +2301,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           label: 'Contact téléphonique *',
                           selectedIndicatif: _selectedContactIndicatif,
                           onIndicatifChanged: (value) {
-
                             setState(() {
-
                               _selectedContactIndicatif = value;
                             });
                           },
@@ -2660,9 +2313,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           icon: Icons.link,
                           items: _lienParenteOptions,
                           onChanged: (value) {
-
                             setState(() {
-
                               _selectedLienParenteUrgence = value!;
                             });
                           },
@@ -2682,7 +2333,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildAssistanceCommercialeSection() {
-
     return _buildFormSection(
       'Assistance commerciale',
       Icons.support_agent,
@@ -2700,9 +2350,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           value: true,
           groupValue: _isAideParCommercial,
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
             });
           },
@@ -2714,16 +2362,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           value: false,
           groupValue: _isAideParCommercial,
           onChanged: (value) {
-
             setState(() {
-
               _isAideParCommercial = value ?? false;
               if (!_isAideParCommercial) {
-
                 _commercialNomPrenomController.clear();
                 _commercialCodeApporteurController.clear();
               }
-
             });
           },
           title: const Text('Non'),
@@ -2753,13 +2397,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // =================================================================
 
   Widget _buildPhoneFieldWithIndicatif({
-
     required TextEditingController controller,
     required String label,
     required String selectedIndicatif,
     required ValueChanged<String> onIndicatifChanged,
   }) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2787,7 +2429,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                   isExpanded: true,
                   icon: Icon(Icons.arrow_drop_down, size: 20, color: bleuCoris),
                   items: _indicatifOptions.map((option) {
-
                     return DropdownMenuItem<String>(
                       value: option['code'],
                       child: Padding(
@@ -2800,12 +2441,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     );
                   }).toList(),
                   onChanged: (value) {
-
                     if (value != null) {
-
                       onIndicatifChanged(value);
                     }
-
                   },
                 ),
               ),
@@ -2835,14 +2473,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 ),
                 validator: (value) {
-
                   if (value == null || value.trim().isEmpty) {
-
                     return 'Le numéro de téléphone est obligatoire';
                   }
 
                   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(value)) {
-
                     return 'Numéro de téléphone invalide';
                   }
 
@@ -2857,7 +2492,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2896,14 +2530,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildModernTextField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
     ValueChanged<String>? onChanged,
   }) {
-
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -2936,9 +2568,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
       validator: (value) {
-
         if (value == null || value.trim().isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -2948,17 +2578,14 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildDatePickerField({
-
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required DateTime? selectedDate,
     required ValueChanged<DateTime> onDateSelected,
   }) {
-
     return GestureDetector(
       onTap: () async {
-
         final DateTime now = DateTime.now();
         final DateTime initial =
             selectedDate ?? now.subtract(Duration(days: 365 * 25));
@@ -2971,10 +2598,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         );
 
         if (picked != null) {
-
           onDateSelected(picked);
         }
-
       },
       child: AbsorbPointer(
         child: _buildModernTextField(
@@ -2988,14 +2613,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildDropdownField({
-
     required String? value,
     required String label,
     required IconData icon,
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-
     final validValue = (value != null && items.contains(value)) ? value : null;
 
     return DropdownButtonFormField<String>(
@@ -3028,7 +2651,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       ),
       items: items.map((String value) {
-
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -3036,9 +2658,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       }).toList(),
       onChanged: onChanged,
       validator: (value) {
-
         if (value == null || value.isEmpty) {
-
           return 'Ce champ est obligatoire';
         }
 
@@ -3048,7 +2668,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildDocumentUploadSection() {
-
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3145,11 +2764,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// 💳 ÉTAPE MODE DE PAIEMENT (identique à la page Étude)
   Widget _buildStepModePaiement() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3228,14 +2845,12 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                     ),
                     child: Column(
                       children: _modePaiementOptions.map((mode) {
-
                         final isSelected = _selectedModePaiement == mode;
                         IconData icon;
                         Color iconColor;
                         Widget? customIconWidget;
 
                         switch (mode) {
-
                           case 'Virement':
                             icon = Icons.account_balance;
                             iconColor = Colors.blue;
@@ -3249,7 +2864,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.water_drop,
                                     color: iconColor, size: 28);
                               },
@@ -3264,7 +2878,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.phone_android,
                                     color: iconColor, size: 28);
                               },
@@ -3283,7 +2896,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 32,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(Icons.account_balance_wallet,
                                     color: iconColor, size: 28);
                               },
@@ -3296,9 +2908,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
                         return InkWell(
                           onTap: () {
-
                             setState(() {
-
                               _selectedModePaiement = mode;
                               // Réinitialiser les champs
                               _banqueController.clear();
@@ -3393,25 +3003,19 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                           fillColor: Colors.grey[50],
                         ),
                         items: _banques.map((String banque) {
-
                           return DropdownMenuItem<String>(
                             value: banque,
                             child: Text(banque),
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
-
                           setState(() {
-
                             _selectedBanque = newValue;
                             if (newValue != null && newValue != 'Autre') {
-
                               _banqueController.text = newValue;
                             } else if (newValue == 'Autre') {
-
                               _banqueController.text = '';
                             }
-
                           });
                         },
                       ),
@@ -3496,7 +3100,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                               height: 24,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-
                                 return Icon(
                                   Icons.phone_android,
                                   color: _selectedModePaiement == 'Wave'
@@ -3625,11 +3228,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// ðŸŸ¦ 4. PAGE DE RÉCAPITULATIF (avec informations spécifiques à Coris Assure Prestige)
   Widget _buildStep3() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -3643,10 +3244,8 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       : FutureBuilder<Map<String, dynamic>>(
                           future: _loadUserData(),
                           builder: (context, snapshot) {
-
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
-
                               return Center(
                                 child:
                                     CircularProgressIndicator(color: bleuCoris),
@@ -3654,7 +3253,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                             }
 
                             if (snapshot.hasError) {
-
                               debugPrint(
                                   '❌ Erreur FutureBuilder: ${snapshot.error}');
                               return Center(
@@ -3670,13 +3268,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                                     Text(
                                       '${snapshot.error}',
                                       style: TextStyle(
-                                          fontSize: context.sp(12), color: grisTexte),
+                                          fontSize: context.sp(12),
+                                          color: grisTexte),
                                       textAlign: TextAlign.center,
                                     ),
                                     SizedBox(height: context.r(16)),
                                     ElevatedButton(
                                       onPressed: () => setState(() {
-
                                         _userData = {};
                                       }),
                                       child: Text('Réessayer'),
@@ -3690,12 +3288,10 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
                             // Si toujours vide, afficher un message et permettre de continuer
                             if (userData.isEmpty) {
-
                               debugPrint(
                                   '⚠️ Données utilisateur vides, affichage avec données minimales');
                               // Utiliser des données minimales pour permettre l'affichage
                               return _buildRecapContent(userData: {
-
                                 'nom': 'Non disponible',
                                 'prenom': '',
                                 'email': '',
@@ -3714,16 +3310,13 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildRecapContent({Map<String, dynamic>? userData}) {
-
     // S'assurer que les calculs sont effectués avant d'afficher
     if (_capitalDeces == 0 || _primeDecesAnnuelle == 0) {
-
       _recalculerValeurs();
     }
 
     final displayData = _isCommercial
         ? {
-
             'civilite': _selectedClientCivilite,
             'nom': _clientNomController.text,
             'prenom': _clientPrenomController.text,
@@ -3734,7 +3327,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             'lieu_naissance': _clientLieuNaissanceController.text,
             'adresse': _clientAdresseController.text,
           }
-
         : (userData ?? _userData);
 
     return ListView(
@@ -3903,7 +3495,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
               : null,
           documents: _pieceIdentiteFiles
               .map((file) => {
-
                     'label': file.path.split(RegExp(r'[\\/]+')).last,
                     'path': file.path,
                   })
@@ -3935,9 +3526,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   void _viewLocalDocument(File? documentFile, String fileName) {
-
     if (documentFile == null) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -3972,7 +3561,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   }
 
   Widget _buildNavigationButtons() {
-
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -4064,11 +3652,9 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
   /// Page étape 4: Paiement (identique à la page Étude)
   Widget _buildStep4() {
-
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-
         return Transform.translate(
           offset: Offset(0, _slideAnimation.value),
           child: Opacity(
@@ -4188,12 +3774,15 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF8C00), size: 20),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Color(0xFFFF8C00), size: 20),
                           SizedBox(width: context.r(8)),
                           Expanded(
                             child: Text(
                               'Aucun document d\'identité ajouté. Vous pourrez l\'ajouter depuis les détails de votre proposition.',
-                              style: TextStyle(color: const Color(0xFF7D4B00), fontSize: context.sp(13)),
+                              style: TextStyle(
+                                  color: const Color(0xFF7D4B00),
+                                  fontSize: context.sp(13)),
                             ),
                           ),
                         ],
@@ -4394,7 +3983,6 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       },
     );
   }
-
 }
 
 // =================================================================
@@ -4402,13 +3990,11 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 // =================================================================
 
 class _LoadingDialog extends StatelessWidget {
-
   final String paymentMethod;
   const _LoadingDialog({required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4458,17 +4044,14 @@ class _LoadingDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _SuccessDialog extends StatelessWidget {
-
   final bool isPaid;
   const _SuccessDialog({required this.isPaid});
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -4528,7 +4111,6 @@ class _SuccessDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/client_home', (route) => false);
                 },
@@ -4553,22 +4135,18 @@ class _SuccessDialog extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _PaymentBottomSheet extends StatelessWidget {
-
   final Function(String) onPayNow;
   final VoidCallback onPayLater;
   const _PaymentBottomSheet({
-
     required this.onPayNow,
     required this.onPayLater,
   });
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -4687,8 +4265,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOption(BuildContext context, String title, IconData icon,
+      Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4745,8 +4323,8 @@ class _PaymentBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentOptionWithImage(BuildContext context, String title, String imagePath, Color color, String subtitle, VoidCallback onTap) {
-
+  Widget _buildPaymentOptionWithImage(BuildContext context, String title,
+      String imagePath, Color color, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -4773,7 +4351,6 @@ class _PaymentBottomSheet extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-
                   print('❌ Erreur chargement image: $imagePath - $error');
                   return Icon(Icons.image_not_supported,
                       size: 32, color: Colors.grey);
@@ -4814,6 +4391,4 @@ class _PaymentBottomSheet extends StatelessWidget {
       ),
     );
   }
-
 }
-
