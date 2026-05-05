@@ -10,9 +10,10 @@ import 'dart:typed_data';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_payment_handler.dart';
 import 'package:mycorislife/core/utils/identity_document_picker.dart';
+import 'package:mycorislife/core/utils/phone_with_indicatif.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
-import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
+import '../widgets/signature_dialog_syncfusion.dart' as signature_dialog_file;
 
 // Couleurs globales
 const Color bleuCoris = Color(0xFF002B6B);
@@ -193,7 +194,6 @@ class _SouscriptionSolidaritePageState
   String _selectedLienParente = 'Conjoint(e)';
   String _selectedLienParenteUrgence = 'Conjoint(e)';
   String _selectedBeneficiaireIndicatif = '+221';
-  final String _selectedContactIndicatif = '+221';
   DateTime? _beneficiaireDateNaissance;
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
@@ -558,16 +558,8 @@ class _SouscriptionSolidaritePageState
   /// - isCommercial: true si c'est un commercial qui fait la souscription
 
   /// - clientInfo: Map contenant les informations du client (si un client existant est sélectionné)
-
   ///
 
-  /// FLUX:
-
-  /// - Si isCommercial = true : Active le mode commercial et affiche les champs client
-
-  /// - Si clientInfo existe : Pré-remplit tous les champs avec les données du client
-
-  /// - Si isCommercial = false : Charge les données de l'utilisateur connecté (mode client normal)
 
   @override
   void didChangeDependencies() {
@@ -662,7 +654,7 @@ class _SouscriptionSolidaritePageState
             }
           } catch (e) {
             // En cas d'erreur de parsing, afficher un message dans la console
-            print('Erreur parsing date de naissance: $e');
+            debugPrint('Erreur parsing date de naissance: $e');
           }
         }
 
@@ -872,7 +864,9 @@ class _SouscriptionSolidaritePageState
     }
 
     _personneContactNomController.text = data['contact_urgence_nom'] ?? '';
-    _personneContactTelController.text = data['contact_urgence_tel'] ?? '';
+    _personneContactTelController.text = normalizeInternationalPhoneNumber(
+      (data['contact_urgence_tel'] ?? '').toString(),
+    );
 
     if (data['assistance_commerciale'] != null &&
         data['assistance_commerciale'] is Map) {
@@ -884,7 +878,6 @@ class _SouscriptionSolidaritePageState
           assistance['commercial_code_apporteur']?.toString() ?? '';
     }
 
-    // Calculer la prime avec les données préremplies
     _calculerPrime();
   }
 
@@ -974,7 +967,9 @@ class _SouscriptionSolidaritePageState
         },
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
-          'contact': _personneContactTelController.text.trim(),
+          'contact': normalizeInternationalPhoneNumber(
+            _personneContactTelController.text,
+          ),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -1999,11 +1994,9 @@ class _SouscriptionSolidaritePageState
                   icon: Icons.person_outline,
                 ),
                 SizedBox(height: context.r(16)),
-                _buildModernTextField(
+                _buildInternationalPhoneField(
                   controller: _personneContactTelController,
-                  label: 'Contact téléphonique (ex: +2250707070707)',
-                  icon: Icons.phone,
-                  keyboardType: TextInputType.phone,
+                  label: 'Contact téléphonique',
                 ),
                 SizedBox(height: context.r(16)),
                 _buildDropdownField(
@@ -2375,6 +2368,59 @@ class _SouscriptionSolidaritePageState
     );
   }
 
+  Widget _buildInternationalPhoneField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
+        SizedBox(height: context.r(6)),
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            hintText: '+2250500000000',
+            hintStyle: TextStyle(fontSize: context.sp(14)),
+            prefixIcon: Icon(Icons.phone_outlined,
+                size: 20, color: bleuCoris.withValues(alpha: 0.7)),
+            filled: true,
+            fillColor: fondCarte,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: bleuCoris, width: 1.5),
+            ),
+          ),
+          validator: (value) {
+            final normalizedValue =
+                normalizeInternationalPhoneNumber(value ?? '');
+            if (normalizedValue.isEmpty) {
+              return 'Ce champ est obligatoire';
+            }
+
+            if (!RegExp(r'^\+[0-9]{8,18}$').hasMatch(normalizedValue)) {
+              return 'Saisissez le numéro complet avec indicatif';
+            }
+
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildDropdownField({
     required String value,
     required String label,
@@ -2514,7 +2560,10 @@ class _SouscriptionSolidaritePageState
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sélection du fichier');
+        final message = e.toString().replaceFirst('Exception: ', '').trim();
+        _showErrorSnackBar(message.isNotEmpty
+            ? message
+            : 'Erreur lors de la sélection du fichier');
       }
     }
   }
@@ -2924,7 +2973,7 @@ class _SouscriptionSolidaritePageState
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? bleuCoris.withOpacity(0.1)
+                          ? bleuCoris.withValues(alpha: 0.1)
                           : Colors.transparent,
                       border: Border(
                         bottom: BorderSide(
@@ -2940,7 +2989,7 @@ class _SouscriptionSolidaritePageState
                           width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: iconColor.withOpacity(0.1),
+                            color: iconColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
@@ -3476,7 +3525,9 @@ class _SouscriptionSolidaritePageState
               _buildRecapRow(
                 'Contact',
                 _personneContactTelController.text.isNotEmpty
-                    ? _personneContactTelController.text
+                    ? normalizeInternationalPhoneNumber(
+                        _personneContactTelController.text,
+                      )
                     : 'Non renseigné',
               ),
               _buildRecapRow(
@@ -3750,7 +3801,7 @@ class _SouscriptionSolidaritePageState
     final Uint8List? signature = await showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const SignatureDialogFile.SignatureDialog(),
+      builder: (context) => const signature_dialog_file.SignatureDialog(),
     );
 
     // Si l'utilisateur annule la signature, on arrête
@@ -3788,6 +3839,7 @@ class _SouscriptionSolidaritePageState
 
   void _showSuccessDialog(bool isPaid) {
     if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       showDialog(
           context: context,
           barrierDismissible: false,
@@ -4438,7 +4490,8 @@ class PaymentBottomSheet extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      print('❌ Erreur chargement image: $imagePath - $error');
+                        debugPrint(
+                          '❌ Erreur chargement image: $imagePath - $error');
                       return Icon(Icons.image_not_supported,
                           size: 32, color: Colors.grey);
                     },

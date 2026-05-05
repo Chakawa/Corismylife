@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 import 'package:mycorislife/services/subscription_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
@@ -1332,6 +1333,88 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     }).toList();
   }
 
+  String _extractUploadErrorMessage(Object error) {
+    final raw = error.toString().replaceFirst('Exception: ', '').trim();
+    if (raw.isEmpty) {
+      return 'Impossible de televerser le document pour le moment.';
+    }
+    return raw;
+  }
+
+  Future<void> _uploadMissingIdentityDocuments() async {
+    try {
+      final picked = await IdentityDocumentPicker.pickDocuments(context);
+      if (picked == null || picked.files.isEmpty) return;
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: bleuCoris),
+        ),
+      );
+
+      final responses = await _service.uploadDocuments(
+        widget.subscriptionId,
+        picked.files.map((file) => file.path).toList(),
+      );
+
+      int successCount = 0;
+      String? serverMessage;
+      for (final response in responses) {
+        try {
+          final payload = jsonDecode(response.body) as Map<String, dynamic>;
+          if (response.statusCode == 200 && payload['success'] == true) {
+            successCount++;
+          } else {
+            serverMessage ??= payload['message']?.toString();
+          }
+        } catch (_) {
+          serverMessage ??= 'Reponse serveur invalide pendant l\'upload.';
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (successCount == 0) {
+        throw Exception(
+          serverMessage ?? 'Aucun document n\'a ete televerse.',
+        );
+      }
+
+      await _loadSubscriptionData();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            successCount > 1
+                ? '$successCount documents televerses avec succes'
+                : 'Document televerse avec succes',
+          ),
+          backgroundColor: vertSucces,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (error) {
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_extractUploadErrorMessage(error)),
+          backgroundColor: rougeCoris,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   Widget _buildDocumentsSection() {
 
     // Chercher piece_identite dans tous les endroits possibles
@@ -1475,14 +1558,47 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
     // Calculate total document count - seulement compter les documents uniques dans la liste
     final totalDocuments = normalizedDocsList?.length ?? 0;
 
-    return SubscriptionRecapWidgets.buildDocumentsSection(
+    final documentsSection = SubscriptionRecapWidgets.buildDocumentsSection(
       pieceIdentite: null,
       documents: normalizedDocsList,
       onDocumentTapWithInfo: (path, label) => _viewDocument(path, label),
       onDocumentTap: actualFilename != null
           ? () => _viewDocument(actualFilename, displayLabel)
           : null,
-      documentCount: totalDocuments, // Compte seulement les documents uniques
+      documentCount: totalDocuments,
+    );
+
+    if (totalDocuments > 0) {
+      return documentsSection;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        documentsSection,
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _uploadMissingIdentityDocuments,
+          icon: const Icon(Icons.upload_file_rounded),
+          label: const Text('Ajouter la piece d\'identite'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: bleuCoris,
+            side: const BorderSide(color: bleuCoris),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Si aucun document n\'apparait ici, vous pouvez le televerser maintenant puis reouvrir le detail.',
+          style: TextStyle(
+            color: grisTexte,
+            fontSize: context.sp(12),
+          ),
+        ),
+      ],
     );
   }
 

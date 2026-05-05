@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/features/auth/presentation/screens/two_fa_settings_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/kyc_documents_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/attach_proposal_screen.dart';
@@ -8,6 +7,7 @@ import 'photo_viewer_page.dart';
 import 'package:mycorislife/features/client/presentation/screens/settings_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/edit_profile_screen.dart';
 import 'package:mycorislife/features/client/presentation/screens/help_support_screen.dart';
+import 'package:mycorislife/services/document_service.dart';
 import 'package:mycorislife/services/user_service.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
@@ -276,7 +276,7 @@ class _ProfilPageState extends State<ProfilPage> {
                     radius: context.r(34),
                     backgroundImage: _photoUrl != null
                         ? NetworkImage(
-                            '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl')
+                        DocumentService.getPhotoUrl(_photoUrl))
                         : null,
                     backgroundColor: const Color(0xFFF0F4F8),
                     child: _photoUrl == null

@@ -456,17 +456,32 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max
+    fileSize: 10 * 1024 * 1024 // 10MB max
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
+    const allowedExtensions = ['.jpeg', '.jpg', '.png', '.gif', '.webp', '.heic', '.heif'];
+    const allowedMimes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+      'image/heif-sequence'
+    ];
+    const extension = path.extname(file.originalname).toLowerCase();
+    const normalizedMime = (file.mimetype || '')
+      .replace('image/heif-sequence', 'image/heif')
+      .replace('image/heic-sequence', 'image/heic');
+    const hasAllowedExtension = allowedExtensions.includes(extension);
+    const hasAllowedMime = allowedMimes.includes(file.mimetype) || allowedMimes.includes(normalizedMime);
+    const mimeLooksLikeImage = (file.mimetype || '').startsWith('image/');
+
+    if (hasAllowedExtension && (hasAllowedMime || mimeLooksLikeImage)) {
       return cb(null, true);
     } else {
-      cb(new Error('Seules les images (jpeg, jpg, png, gif) sont autorisées'));
+      cb(new Error('Seules les images jpeg, jpg, png, gif, webp, heic et heif sont autorisées'));
     }
   }
 }).single('photo');

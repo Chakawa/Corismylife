@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:mycorislife/features/client/presentation/screens/document_viewer_page.dart';
 import 'package:mycorislife/core/widgets/subscription_recap_widgets.dart';
 import 'package:mycorislife/core/utils/identity_document_picker.dart';
+import 'package:mycorislife/core/utils/phone_with_indicatif.dart';
 import 'package:mycorislife/features/souscription/presentation/widgets/questionnaire_medical_dynamic_widget.dart';
 import 'package:mycorislife/services/questionnaire_medical_service.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
@@ -106,7 +107,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
   String _selectedBeneficiaireIndicatif = '+225'; // Côte d'Ivoire par défaut
-  final String _selectedContactIndicatif = '+225'; // Côte d'Ivoire par défaut
   final List<Map<String, String>> _indicatifOptions = [
     {'code': '+225', 'pays': 'Côte d\'Ivoire'},
     {'code': '+226', 'pays': 'Burkina Faso'},
@@ -1370,7 +1370,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final contact = data['contact_urgence'];
       _personneContactNomController.text = contact['nom'] ?? '';
       if (contact['contact'] != null) {
-        _personneContactTelController.text = contact['contact'].toString();
+        _personneContactTelController.text = normalizeInternationalPhoneNumber(
+          contact['contact'].toString(),
+        );
       }
 
       _selectedLienParenteUrgence = contact['lien_parente'] ?? 'Parent';
@@ -2588,7 +2590,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         },
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
-          'contact': _personneContactTelController.text.trim(),
+          'contact': normalizeInternationalPhoneNumber(
+            _personneContactTelController.text,
+          ),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -3001,6 +3005,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   }
 
   void _showSuccessDialog(bool isPaid) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -4084,11 +4089,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: context.r(16)),
-                        _buildModernTextField(
+                        _buildInternationalPhoneField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique (ex: +2250707070707)',
-                          icon: Icons.phone,
-                          keyboardType: TextInputType.phone,
+                          label: 'Contact téléphonique',
                         ),
                         SizedBox(height: context.r(16)),
                         _buildDropdownField(
@@ -4213,6 +4216,63 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInternationalPhoneField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: context.sp(14),
+            fontWeight: FontWeight.w600,
+            color: SouscriptionEtudePageState.bleuCoris,
+          ),
+        ),
+        SizedBox(height: context.r(6)),
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            hintText: '+2250500000000',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: grisLeger),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: grisLeger),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                  color: SouscriptionEtudePageState.bleuCoris, width: 1.5),
+            ),
+            filled: true,
+            fillColor: fondCarte,
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          ),
+          validator: (value) {
+            final normalizedValue =
+                normalizeInternationalPhoneNumber(value ?? '');
+            if (normalizedValue.isEmpty) {
+              return 'Le numéro de téléphone est obligatoire';
+            }
+
+            if (!RegExp(r'^\+[0-9]{8,18}$').hasMatch(normalizedValue)) {
+              return 'Numéro complet avec indicatif invalide';
+            }
+
+            return null;
+          },
         ),
       ],
     );
@@ -5357,7 +5417,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             SubscriptionRecapWidgets.buildRecapRow(
               'Téléphone',
               _personneContactTelController.text.isNotEmpty
-                  ? _personneContactTelController.text
+                  ? normalizeInternationalPhoneNumber(
+                      _personneContactTelController.text,
+                    )
                   : 'Non renseigné',
             ),
           ],

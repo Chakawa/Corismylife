@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
+import 'package:mycorislife/services/document_service.dart';
 import 'package:mycorislife/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:mycorislife/config/app_config.dart';
 import 'photo_viewer_page.dart';
 
 /// Page de modification du profil utilisateur
@@ -129,6 +131,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   /// Sélectionne et upload une photo de profil
+  Future<String> _normalizePhotoForUpload(String sourcePath) async {
+    try {
+      final sourceFile = File(sourcePath);
+      final bytes = await sourceFile.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        return sourcePath;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final normalizedPath =
+          '${tempDir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final normalizedFile = File(normalizedPath);
+      await normalizedFile.writeAsBytes(
+        img.encodeJpg(decoded, quality: 90),
+        flush: true,
+      );
+      return normalizedPath;
+    } catch (error) {
+      debugPrint('⚠️ Normalisation JPEG impossible, envoi du fichier original: $error');
+      return sourcePath;
+    }
+  }
+
   Future<void> _pickAndUploadPhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -171,7 +197,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       // Utiliser l'image recadrée si disponible, sinon l'originale
-      final imagePathToUpload = croppedFile?.path ?? image.path;
+      final imagePathToUpload =
+          await _normalizePhotoForUpload(croppedFile?.path ?? image.path);
       setState(() {
         _selectedPhoto = File(imagePathToUpload);
         _isUploadingPhoto = true;
@@ -283,7 +310,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fit: BoxFit.cover)
                                       : _photoUrl != null
                                           ? Image.network(
-                                              '${AppConfig.baseUrl.replaceAll('/api', '')}$_photoUrl',
+                                              DocumentService.getPhotoUrl(_photoUrl),
                                               fit: BoxFit.cover,
                                               errorBuilder: (_, __, ___) =>
                                                   const Icon(Icons.person,

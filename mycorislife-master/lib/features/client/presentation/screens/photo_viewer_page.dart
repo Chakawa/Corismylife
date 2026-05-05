@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
+import 'package:mycorislife/services/document_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'dart:io';
-import '../../../../config/app_config.dart';
 
 class PhotoViewerPage extends StatelessWidget {
   final String? photoUrl;
@@ -58,7 +58,7 @@ class PhotoViewerPage extends StatelessWidget {
                     imageProvider: NetworkImage(
                       photoUrl!.startsWith('http')
                           ? photoUrl!
-                          : '${AppConfig.baseUrl.replaceAll('/api', '')}$photoUrl',
+                        : DocumentService.getPhotoUrl(photoUrl),
                     ),
                     minScale: PhotoViewComputedScale.contained,
                     maxScale: PhotoViewComputedScale.covered * 3,

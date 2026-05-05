@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -19,7 +20,7 @@ class IdentityDocumentPickerResult {
 class IdentityDocumentPicker {
   IdentityDocumentPicker._();
 
-  static const int _maxFileSizeBytes = 5 * 1024 * 1024;
+  static const int _maxFileSizeBytes = 10 * 1024 * 1024;
   static final ImagePicker _imagePicker = ImagePicker();
 
   static Future<IdentityDocumentPickerResult?> pickDocuments(
@@ -208,6 +209,21 @@ class IdentityDocumentPicker {
     return source.copy(destPath);
   }
 
+  static Future<File> _convertCameraImageToJpeg(File source, String name) async {
+    final dir = await getApplicationSupportDirectory();
+    final destPath = '${dir.path}/$name';
+    final bytes = await source.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      return _copyToPersistentDir(source, name);
+    }
+
+    final jpgBytes = img.encodeJpg(decoded, quality: 90);
+    final outFile = File(destPath);
+    await outFile.writeAsBytes(jpgBytes, flush: true);
+    return outFile;
+  }
+
   static Future<IdentityDocumentPickerResult?> _pickFromFiles(
     BuildContext context,
   ) async {
@@ -243,7 +259,7 @@ class IdentityDocumentPicker {
           context,
           title: 'Fichier trop volumineux',
           message:
-              'Le fichier ${item.name} depasse 5 Mo. Merci de choisir un fichier plus leger.',
+              'Le fichier ${item.name} depasse 10 Mo. Merci de choisir un fichier plus leger.',
         );
         return null;
       }
@@ -307,7 +323,7 @@ class IdentityDocumentPicker {
             context,
             title: 'Photo trop volumineuse',
             message:
-                'La photo du $side depasse 5 Mo. Reprenez une photo plus legere.',
+                'La photo du $side depasse 10 Mo. Reprenez une photo plus legere.',
           );
           continue;
         }
@@ -336,9 +352,9 @@ class IdentityDocumentPicker {
           continue;
         }
 
-        // Copier vers un emplacement persistant pour éviter la suppression
-        // du fichier temporaire de la caméra avant l'upload
-        final persistentFile = await _copyToPersistentDir(
+        // Normaliser en JPEG persistant pour éviter les formats exotiques
+        // et la suppression du fichier temporaire avant l'upload.
+        final persistentFile = await _convertCameraImageToJpeg(
           file,
           '${DateTime.now().millisecondsSinceEpoch}_id_${side.toLowerCase()}.jpg',
         );

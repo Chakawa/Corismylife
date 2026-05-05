@@ -439,11 +439,31 @@ class UserService {
 
       request.headers['Authorization'] = 'Bearer $token';
 
+      final extension = imagePath.toLowerCase().split('.').last;
+      MediaType mediaType;
+      switch (extension) {
+        case 'png':
+          mediaType = MediaType('image', 'png');
+          break;
+        case 'gif':
+          mediaType = MediaType('image', 'gif');
+          break;
+        case 'webp':
+          mediaType = MediaType('image', 'webp');
+          break;
+        case 'heic':
+        case 'heif':
+          mediaType = MediaType('image', 'heic');
+          break;
+        default:
+          mediaType = MediaType('image', 'jpeg');
+      }
+
       request.files.add(
         await http.MultipartFile.fromPath(
           'photo',
           imagePath,
-          contentType: MediaType('image', 'jpeg'),
+          contentType: mediaType,
         ),
       );
 

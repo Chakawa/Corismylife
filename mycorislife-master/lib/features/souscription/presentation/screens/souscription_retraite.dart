@@ -13,6 +13,7 @@ import '../../../client/presentation/screens/document_viewer_page.dart';
 import '../../../../services/connectivity_service.dart';
 import '../../../../services/local_data_service.dart';
 import '../../../../core/widgets/subscription_recap_widgets.dart';
+import 'package:mycorislife/core/utils/phone_with_indicatif.dart';
 import 'package:intl/intl.dart';
 import 'package:mycorislife/core/utils/identity_document_picker.dart';
 import '../widgets/signature_dialog_syncfusion.dart' as SignatureDialogFile;
@@ -168,7 +169,6 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   DateTime? _dateEffetContrat;
   DateTime? _dateEcheanceContrat;
   String _selectedBeneficiaireIndicatif = '+225';
-  String _selectedContactIndicatif = '+225';
 
   File? _pieceIdentite;
   String? _pieceIdentiteLabel;
@@ -949,14 +949,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
 
         if (contactUrgence['contact'] != null) {
-          final contact = contactUrgence['contact'].toString();
-          final parts = contact.split(' ');
-          if (parts.length >= 2) {
-            _selectedContactIndicatif = parts[0];
-            _personneContactTelController.text = parts.sublist(1).join(' ');
-          } else {
-            _personneContactTelController.text = contact;
-          }
+            _personneContactTelController.text = normalizeInternationalPhoneNumber(
+              contactUrgence['contact'].toString(),
+            );
         }
 
         if (contactUrgence['lien_parente'] != null) {
@@ -1478,7 +1473,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sélection du fichier');
+        final message = e.toString().replaceFirst('Exception: ', '').trim();
+        _showErrorSnackBar(message.isNotEmpty
+            ? message
+            : 'Erreur lors de la sélection du fichier');
       }
     }
   }
@@ -2129,6 +2127,59 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     );
   }
 
+  Widget _buildInternationalPhoneField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w600,
+                color: bleuCoris)),
+        SizedBox(height: context.r(6)),
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            hintText: '+2250500000000',
+            hintStyle: TextStyle(fontSize: context.sp(14)),
+            prefixIcon: Icon(Icons.phone_outlined,
+                size: 20, color: bleuCoris.withValues(alpha: 0.7)),
+            filled: true,
+            fillColor: fondCarte,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: bleuCoris, width: 1.5),
+            ),
+          ),
+          validator: (value) {
+            final normalizedValue =
+                normalizeInternationalPhoneNumber(value ?? '');
+            if (normalizedValue.isEmpty) {
+              return 'Ce champ est obligatoire';
+            }
+
+            if (!RegExp(r'^\+[0-9]{8,18}$').hasMatch(normalizedValue)) {
+              return 'Saisissez le numéro complet avec indicatif';
+            }
+
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildModernProgressIndicator() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2769,12 +2820,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           icon: Icons.person_outline,
                         ),
                         SizedBox(height: context.r(16)),
-                        // Champ téléphone urgence (avec indicatif dans le numéro)
-                        _buildModernTextField(
+                        _buildInternationalPhoneField(
                           controller: _personneContactTelController,
-                          label: 'Contact téléphonique (ex: +2250707070707)',
-                          icon: Icons.phone,
-                          keyboardType: TextInputType.phone,
+                          label: 'Contact téléphonique',
                         ),
                         SizedBox(height: context.r(16)),
                         _buildDropdownField(
@@ -3897,7 +3945,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           SubscriptionRecapWidgets.buildRecapRow(
             'Contact',
             _personneContactTelController.text.isNotEmpty
-                ? _personneContactTelController.text
+                ? normalizeInternationalPhoneNumber(
+                    _personneContactTelController.text,
+                  )
                 : 'Non renseigné',
           ),
           SubscriptionRecapWidgets.buildRecapRow(
@@ -4680,7 +4730,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         },
         'contact_urgence': {
           'nom': _personneContactNomController.text.trim(),
-          'contact': _personneContactTelController.text.trim(),
+          'contact': normalizeInternationalPhoneNumber(
+            _personneContactTelController.text,
+          ),
           'lien_parente': _selectedLienParenteUrgence,
         },
         'assistance_commerciale': {
@@ -5007,6 +5059,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   void _showSuccessDialog(bool isPaid) {
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     showDialog(
         context: context,
         barrierDismissible: false,
