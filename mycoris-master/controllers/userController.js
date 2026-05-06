@@ -1,8 +1,8 @@
 const pool = require('../db');
 const bcrypt = require('bcrypt');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharedUpload = require('../config/multer');
 
 /// ============================================
 /// CONTRÔLEUR UTILISATEUR
@@ -436,70 +436,40 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-/**
- * Configuration de multer pour l'upload de photos
- */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/profiles';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + req.user.id + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// La route photo de profil partage la meme configuration Multer que les
+// documents d'identite pour garder le meme filtrage iPhone/Android et le meme
+// schema de nommage. On accepte aussi l'ancien champ `photo` pour compatibilite.
+const uploadProfilePhoto = sharedUpload.fields([
+  { name: 'profile_photo', maxCount: 1 },
+  { name: 'photo', maxCount: 1 }
+]);
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB max
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedExtensions = ['.jpeg', '.jpg', '.png', '.gif', '.webp', '.heic', '.heif'];
-    const allowedMimes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/heic',
-      'image/heif',
-      'image/heif-sequence'
-    ];
-    const extension = path.extname(file.originalname).toLowerCase();
-    const normalizedMime = (file.mimetype || '')
-      .replace('image/heif-sequence', 'image/heif')
-      .replace('image/heic-sequence', 'image/heic');
-    const hasAllowedExtension = allowedExtensions.includes(extension);
-    const hasAllowedMime = allowedMimes.includes(file.mimetype) || allowedMimes.includes(normalizedMime);
-    const mimeLooksLikeImage = (file.mimetype || '').startsWith('image/');
-
-    if (hasAllowedExtension && (hasAllowedMime || mimeLooksLikeImage)) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Seules les images jpeg, jpg, png, gif, webp, heic et heif sont autorisées'));
-    }
-  }
-}).single('photo');
+function getUploadedProfileFile(req) {
+  return req.files?.profile_photo?.[0] || req.files?.photo?.[0] || req.file || null;
+}
 
 /**
  * Upload de la photo de profil
  */
 exports.uploadPhoto = (req, res) => {
-  upload(req, res, async (err) => {
+  uploadProfilePhoto(req, res, async (err) => {
     if (err) {
       console.error('❌ Erreur upload:', err);
       return res.status(400).json({
         success: false,
-        message: err.message || 'Erreur lors de l\'upload'
+        message: err.message || 'Erreur lors de l\'upload',
+        diagnostic: {
+          route: 'users.upload-photo',
+          code: err.code || null,
+          field: err.field || 'profile_photo',
+          reason: err.message || null,
+        }
       });
     }
+
+    const uploadedFile = getUploadedProfileFile(req);
     
-    if (!req.file) {
+    if (!uploadedFile) {
       return res.status(400).json({
         success: false,
         message: 'Aucun fichier fourni'
@@ -508,10 +478,10 @@ exports.uploadPhoto = (req, res) => {
     
     try {
       const userId = req.user.id;
-      const photoUrl = ('/uploads/profiles/' + req.file.filename).trim();
+      const photoUrl = ('/uploads/profiles/' + uploadedFile.filename).trim();
       
       console.log('📸 Upload photo pour utilisateur:', userId);
-      console.log('📁 Fichier:', req.file.filename);
+      console.log('📁 Fichier:', uploadedFile.filename);
       console.log('📂 URL:', photoUrl);
       
       // Récupérer l'ancienne photo pour la supprimer
@@ -520,7 +490,7 @@ exports.uploadPhoto = (req, res) => {
       
       if (oldPhotoResult.rows.length > 0 && oldPhotoResult.rows[0].photo_url) {
         const oldPhotoUrl = oldPhotoResult.rows[0].photo_url;
-        // Extraire le nom du fichier de l'URL
+        // On supprime l'ancien fichier seulement apres avoir valide le nouveau.
         const oldFileName = oldPhotoUrl.split('/').pop();
         const oldPhotoPath = path.join(__dirname, '../uploads/profiles', oldFileName);
         
@@ -551,8 +521,8 @@ exports.uploadPhoto = (req, res) => {
       console.error('❌ Erreur lors de l\'enregistrement de la photo:', error);
       
       // Supprimer le fichier uploadé en cas d'erreur
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
+      if (uploadedFile && fs.existsSync(uploadedFile.path)) {
+        fs.unlinkSync(uploadedFile.path);
       }
       
       res.status(500).json({

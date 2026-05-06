@@ -5481,14 +5481,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint(
-                '⚠️ Erreur upload document (non bloquant): $uploadError');
-            // On continue même si l'upload échoue
+            debugPrint('⚠️ Upload document non bloquant: $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                      'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
@@ -5538,13 +5536,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -5598,13 +5595,12 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -5636,19 +5632,10 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               : <String>[]);
       if (paths.isEmpty) return;
 
-      Map<String, dynamic> responseData = {};
-      for (final filePath in paths) {
-        final response = await subscriptionService.uploadDocument(
-          subscriptionId,
-          filePath,
-        );
-        responseData = jsonDecode(response.body) as Map<String, dynamic>;
-        if (response.statusCode != 200 || !responseData['success']) {
-          debugPrint('❌ Erreur upload: ${responseData['message']}');
-          throw Exception(responseData['message'] ??
-              'Erreur lors de l\'upload du document');
-        }
-      }
+      final responsePayloads =
+          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
+      final responseData =
+          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
 
       // Récupérer le label original si présent dans la réponse
       try {

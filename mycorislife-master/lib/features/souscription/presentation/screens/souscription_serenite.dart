@@ -6012,13 +6012,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint(
-                '⚠️ Erreur upload document (non bloquant): $uploadError');
+            debugPrint('⚠️ Upload document non bloquant: $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                      'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
@@ -6087,12 +6086,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -6166,12 +6165,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -6203,34 +6202,10 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
               : <String>[]);
       if (paths.isEmpty) return;
 
-      final responses =
-          await subscriptionService.uploadDocuments(subscriptionId, paths);
-
-      int successCount = 0;
-      Map<String, dynamic> responseData = {};
-      for (final response in responses) {
-        try {
-          final localData = jsonDecode(response.body) as Map<String, dynamic>;
-          responseData = localData;
-          if (response.statusCode == 200 && localData['success'] == true) {
-            successCount++;
-          } else {
-            debugPrint(
-                '❌ Erreur upload (${response.statusCode}): ${localData['message']}');
-          }
-        } catch (parseError) {
-          debugPrint('❌ Erreur parsing réponse upload: $parseError');
-        }
-      }
-
-      if (successCount == 0 && paths.isNotEmpty) {
-        throw Exception(
-            'Aucun document uploadé avec succès (${paths.length} fichier(s) tentés)');
-      }
-      if (successCount < paths.length) {
-        debugPrint(
-            '⚠️ Upload partiel: $successCount/${paths.length} fichier(s) uploadés');
-      }
+      final responsePayloads =
+          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
+      final responseData =
+          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
 
       // Récupérer le label original si présent dans la réponse
       try {
@@ -6253,7 +6228,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
 
-      debugPrint('✅ $successCount document(s) uploadé(s) avec succès');
+      debugPrint('✅ ${responsePayloads.length} document(s) uploadé(s) avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
       rethrow;

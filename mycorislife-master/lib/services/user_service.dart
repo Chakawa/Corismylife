@@ -419,7 +419,9 @@ class UserService {
 
   }
 
-  /// Upload une photo de profil
+  /// Upload une photo de profil deja normalisee en JPEG si possible.
+  /// Le backend accepte aussi l'ancien champ `photo`, mais on envoie
+  /// desormais `profile_photo` pour converger avec la configuration partagee.
 
   static Future<String> uploadPhoto(String imagePath) async {
 
@@ -459,9 +461,16 @@ class UserService {
           mediaType = MediaType('image', 'jpeg');
       }
 
+      final file = File(imagePath);
+      final exists = await file.exists();
+      final fileSize = exists ? await file.length() : null;
+      debugPrint(
+        '📤 Upload photo diagnostic | file=${imagePath.split(Platform.pathSeparator).last} | exists=$exists | size=${fileSize ?? 'unknown'}',
+      );
+
       request.files.add(
         await http.MultipartFile.fromPath(
-          'photo',
+          'profile_photo',
           imagePath,
           contentType: mediaType,
         ),
@@ -470,6 +479,9 @@ class UserService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       final data = json.decode(response.body);
+      debugPrint(
+        '📥 Upload photo diagnostic | status=${response.statusCode} | body=${response.body}',
+      );
 
       if (response.statusCode == 200 && data['success'] == true) {
 

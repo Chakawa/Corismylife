@@ -3962,7 +3962,17 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document: $uploadError');
+            debugPrint('⚠️ Upload document non bloquant: $uploadError');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
+                  backgroundColor: Color(0xFFFF8C00),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           }
         }
 
@@ -4023,8 +4033,17 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
       }
 
@@ -4094,8 +4113,17 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
+                backgroundColor: Color(0xFFFF8C00),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
       }
 
@@ -4123,94 +4151,51 @@ class SouscriptionFamilisPageState extends State<SouscriptionFamilisPage>
 
       debugPrint('Nombre de fichiers: ${paths.length}');
 
-      // Vérifier que le fichier existe
-      for (final filePath in paths) {
-        final file = File(filePath);
-        if (!await file.exists()) {
-          throw Exception('Le fichier n\'existe pas: $filePath');
-        }
-      }
-
-      debugPrint('✅ Fichiers prêts pour upload');
-
       final subscriptionService = SubscriptionService();
-      final responses =
-          await subscriptionService.uploadDocuments(subscriptionId, paths);
-      Map<String, dynamic> responseData = {};
-      String? errorMsg;
+      final responsePayloads =
+          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
+      final responseData =
+          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
 
-      for (final response in responses) {
-        debugPrint('Reponse serveur - Status: ${response.statusCode}');
-        debugPrint('Reponse serveur - Body: ${response.body}');
+      debugPrint('✅ Documents uploadés avec succès');
 
-        final localData = jsonDecode(response.body) as Map<String, dynamic>;
-        responseData = localData;
-
-        if (response.statusCode != 200 || !(localData['success'] == true)) {
-          errorMsg = localData['message']?.toString() ?? 'Erreur inconnue';
-        }
-      }
-
-      if (errorMsg != null) {
-        debugPrint('❌ Erreur upload: $errorMsg');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur upload document: $errorMsg'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-      } else {
-        debugPrint('✅ Documents uploadés avec succès');
-
-        // Récupérer le label original si présent dans la réponse
-        try {
-          final updated = responseData['data']?['subscription'];
-          if (updated != null) {
-            final souscriptiondata = updated['souscriptiondata'];
-            if (souscriptiondata != null) {
-              if (souscriptiondata is Map) {
-                _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
-              } else if (souscriptiondata is String) {
-                try {
-                  final parsed = jsonDecode(souscriptiondata);
-                  _pieceIdentiteLabel = parsed['piece_identite_label'];
-                } catch (_) {}
-              }
+      // Récupérer le label original si présent dans la réponse
+      try {
+        final updated = responseData['data']?['subscription'];
+        if (updated != null) {
+          final souscriptiondata = updated['souscriptiondata'];
+          if (souscriptiondata != null) {
+            if (souscriptiondata is Map) {
+              _pieceIdentiteLabel = souscriptiondata['piece_identite_label'];
+            } else if (souscriptiondata is String) {
+              try {
+                final parsed = jsonDecode(souscriptiondata);
+                _pieceIdentiteLabel = parsed['piece_identite_label'];
+              } catch (_) {}
             }
           }
-        } catch (e) {
-          debugPrint(
-              '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
         }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                paths.length > 1
-                    ? '✅ Documents uploadés avec succès'
-                    : '✅ Document uploadé avec succès',
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
+      } catch (e) {
+        debugPrint(
+            '⚠️ Impossible de lire piece_identite_label depuis la réponse: $e');
       }
-    } catch (e) {
-      debugPrint('❌ Exception upload document: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            content: Text(
+              paths.length > 1
+                  ? '✅ Documents uploadés avec succès'
+                  : '✅ Document uploadé avec succès',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
+    } catch (e) {
+      debugPrint('❌ Exception upload document: $e');
+      rethrow;
     }
   }
 

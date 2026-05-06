@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mycorislife/core/utils/responsive.dart';
 import 'package:mycorislife/services/document_service.dart';
 import 'package:mycorislife/services/user_service.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'photo_viewer_page.dart';
@@ -130,31 +130,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// Sélectionne et upload une photo de profil
+  /// Convertit la photo choisie en JPEG stable avant upload.
+  /// Cela evite les echecs sur iPhone quand la galerie fournit du HEIC/HEIF.
   Future<String> _normalizePhotoForUpload(String sourcePath) async {
     try {
-      final sourceFile = File(sourcePath);
-      final bytes = await sourceFile.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) {
-        return sourcePath;
-      }
-
       final tempDir = await getTemporaryDirectory();
       final normalizedPath =
           '${tempDir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final normalizedFile = File(normalizedPath);
-      await normalizedFile.writeAsBytes(
-        img.encodeJpg(decoded, quality: 90),
-        flush: true,
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        sourcePath,
+        normalizedPath,
+        format: CompressFormat.jpeg,
+        quality: 86,
+        minWidth: 1200,
+        minHeight: 1200,
+        autoCorrectionAngle: true,
+        keepExif: false,
+        numberOfRetries: 3,
       );
-      return normalizedPath;
+
+      if (compressed == null) {
+        return sourcePath;
+      }
+
+      return compressed.path;
     } catch (error) {
       debugPrint('⚠️ Normalisation JPEG impossible, envoi du fichier original: $error');
       return sourcePath;
     }
   }
 
+  /// Selectionne, recadre puis envoie la photo de profil en gardant un chemin
+  /// local temporaire pour l'aperçu pendant l'upload.
   Future<void> _pickAndUploadPhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -263,11 +270,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      bottomNavigationBar: _isLoading
+          ? null
+          : SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: _buildSaveButton(),
+            ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -318,7 +332,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                       color: bleuCoris),
                                             )
                                           : Container(
-                                              color: bleuCoris.withOpacity(0.1),
+                                              color: bleuCoris.withValues(alpha: 0.1),
                                               child: const Icon(Icons.person,
                                                   size: 50, color: bleuCoris),
                                             ),
@@ -330,7 +344,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                   ),
                                   child: const Center(
                                     child:
@@ -368,7 +382,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 'Maintenez appuyé pour voir',
                                 style: TextStyle(
                                     fontSize: context.sp(11),
-                                    color: grisTexte.withOpacity(0.7)),
+                                  color: grisTexte.withValues(alpha: 0.7)),
                               ),
                           ],
                         ),
@@ -447,40 +461,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         icon: Icons.location_on_outlined,
                         maxLines: 3,
                       ),
-                      SizedBox(height: context.r(40)),
-                      // Bouton de sauvegarde
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isSaving ? null : _saveProfile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: bleuCoris,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: _isSaving
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: blanc,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  'Enregistrer les modifications',
-                                  style: TextStyle(
-                                    fontSize: context.sp(16),
-                                    fontWeight: FontWeight.w600,
-                                    color: blanc,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      SizedBox(height: context.r(20)),
+                      SizedBox(height: context.r(24)),
                     ],
                   ),
                 ),
@@ -511,7 +492,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -546,7 +527,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           color: isSelected ? bleuCoris : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? bleuCoris : grisTexte.withOpacity(0.3),
+            color: isSelected ? bleuCoris : grisTexte.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -578,7 +559,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -604,6 +585,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             vertical: 16,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isSaving ? null : _saveProfile,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bleuCoris,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: _isSaving
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: blanc,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                'Enregistrer les modifications',
+                style: TextStyle(
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: blanc,
+                ),
+              ),
       ),
     );
   }

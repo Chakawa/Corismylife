@@ -667,9 +667,9 @@ exports.uploadDocument = async (req, res) => {
       });
     }
     
-    // Mettre à jour:
-    // 1) les champs historiques (piece_identite, piece_identite_url, piece_identite_label)
-    // 2) la collection multi-documents (piece_identite_documents)
+    // On conserve les champs historiques pour les anciens ecrans de lecture,
+    // tout en alimentant la collection `piece_identite_documents` pour les
+    // nouveaux parcours recto/verso ou multi-documents.
     const originalName = req.file.originalname || req.file.filename;
     const newDocument = {
       filename: fileName,
@@ -867,10 +867,10 @@ exports.getDocument = async (req, res) => {
       });
     }
     
-    // Résolution robuste du fichier:
-    // 1) nom demandé normalisé,
-    // 2) nom stocké en base,
-    // 3) basename de l'URL stockée.
+    // Resolution robuste du document:
+    // 1) le nom demande par le client,
+    // 2) les noms references en base,
+    // 3) les fallback de migration si le schema de nommage a change.
     const dbDocName = subscription.doc_name
       ? path.basename(String(subscription.doc_name).split('\\').join('/'))
       : null;
@@ -878,7 +878,8 @@ exports.getDocument = async (req, res) => {
       ? path.basename(String(subscription.doc_url).split('\\').join('/'))
       : null;
 
-    // Extraire tous les noms de fichiers depuis piece_identite_documents (multi-upload)
+    // Les anciens comptes peuvent avoir un seul champ, les nouveaux un tableau.
+    // On aplatit tout en une liste de candidats avant la recherche disque.
     const allDocFilenames = [];
     try {
       let pieceIdentiteDocs = subscription.piece_identite_documents;
@@ -927,10 +928,13 @@ exports.getDocument = async (req, res) => {
     if (!resolvedFilePath) {
       for (const folder of searchFolders) {
         if (!fs.existsSync(folder)) continue;
-        const userPrefix = `identity_${subscription.user_id}_`;
+        const legacyUserPrefix = `identity_${subscription.user_id}_`;
+        const subscriptionPrefix = `identity_${id}_`;
         const userFiles = fs
           .readdirSync(folder)
-          .filter((name) => name.startsWith(userPrefix));
+          .filter((name) =>
+            name.startsWith(legacyUserPrefix) || name.startsWith(subscriptionPrefix)
+          );
 
         if (userFiles.length > 0) {
           userFiles.sort();

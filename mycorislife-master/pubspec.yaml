@@ -39,6 +39,7 @@ dependencies:
   # signature: ^5.5.0  # Widget de signature manuscrite - REMPLACÉ PAR SYNCFUSION
 
   path: any
+  flutter_image_compress: ^2.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

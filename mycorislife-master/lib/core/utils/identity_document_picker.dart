@@ -4,13 +4,17 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 class IdentityDocumentPickerResult {
   final List<File> files;
   final List<String> labels;
+
+  /// `files` contient les chemins persistants reellement envoyables au backend.
+  /// `labels` conserve les libelles utilisateurs a remonter dans l'UI.
   IdentityDocumentPickerResult({
     required this.files,
     required this.labels,
@@ -21,12 +25,17 @@ class IdentityDocumentPicker {
   IdentityDocumentPicker._();
 
   static const int _maxFileSizeBytes = 10 * 1024 * 1024;
+  static const int _targetImageSizeBytes = 4 * 1024 * 1024;
+  static const int _targetImageQualityStart = 88;
+  static const int _targetImageQualityMin = 52;
+  static const int _targetImageMinDimension = 1800;
   static final ImagePicker _imagePicker = ImagePicker();
 
   static Future<IdentityDocumentPickerResult?> pickDocuments(
     BuildContext context,
   ) async {
     final source = await _showSourceChoice(context);
+    if (!context.mounted) return null;
     if (source == null) return null;
     if (source == _DocumentSource.files) {
       return _pickFromFiles(context);
@@ -209,19 +218,135 @@ class IdentityDocumentPicker {
     return source.copy(destPath);
   }
 
-  static Future<File> _convertCameraImageToJpeg(File source, String name) async {
+  static String _sanitizeStem(String raw) {
+    final cleaned = raw
+        .trim()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    return cleaned.isEmpty ? 'document' : cleaned;
+  }
+
+  static String _buildPersistentName(String label, String extension) {
+    final stem = _sanitizeStem(p.basenameWithoutExtension(label));
+    final safeExt = extension.startsWith('.') ? extension : '.$extension';
+    return '${DateTime.now().millisecondsSinceEpoch}_${stem.toLowerCase()}$safeExt';
+  }
+
+  static Future<File> _writeBytesToPersistentDir(
+    Uint8List bytes,
+    String name,
+  ) async {
     final dir = await getApplicationSupportDirectory();
     final destPath = '${dir.path}/$name';
-    final bytes = await source.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      return _copyToPersistentDir(source, name);
+    final file = File(destPath);
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
+  static bool _isPdfName(String fileName) {
+    return p.extension(fileName).toLowerCase() == '.pdf';
+  }
+
+  static bool _isImageName(String fileName) {
+    const imageExtensions = {
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.heic',
+      '.heif',
+      '.bmp',
+    };
+    return imageExtensions.contains(p.extension(fileName).toLowerCase());
+  }
+
+  /// Les PDF sont seulement recopies dans un emplacement persistant pour eviter
+  /// qu'un fichier temporaire Android/iOS disparaisse avant l'upload.
+  static Future<File> _preparePdfDocument(
+    File source,
+    String originalLabel,
+  ) async {
+    final targetName = _buildPersistentName(originalLabel, '.pdf');
+    return _copyToPersistentDir(source, targetName);
+  }
+
+  static Future<File> _prepareImageDocument(
+    File source,
+    String originalLabel,
+  ) async {
+    // Toute image est convertie en JPEG stable pour neutraliser les formats
+    // natifs des telephones (HEIC/HEIF/WebP) avant l'envoi multipart.
+    final dir = await getApplicationSupportDirectory();
+    final baseName = _buildPersistentName(originalLabel, '.jpg');
+    int quality = _targetImageQualityStart;
+
+    while (true) {
+      final candidatePath =
+          '${dir.path}/${quality}_${DateTime.now().millisecondsSinceEpoch}_$baseName';
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        source.absolute.path,
+        candidatePath,
+        format: CompressFormat.jpeg,
+        quality: quality,
+        minWidth: _targetImageMinDimension,
+        minHeight: _targetImageMinDimension,
+        autoCorrectionAngle: true,
+        keepExif: false,
+        numberOfRetries: 3,
+      );
+
+      if (compressed == null) {
+        final fallbackName = _buildPersistentName(originalLabel, '.jpg');
+        return _copyToPersistentDir(source, fallbackName);
+      }
+
+      final candidateFile = File(compressed.path);
+      final candidateSize = await candidateFile.length();
+
+      if (candidateSize <= _targetImageSizeBytes ||
+          quality <= _targetImageQualityMin) {
+        return candidateFile;
+      }
+
+      try {
+        if (await candidateFile.exists()) {
+          await candidateFile.delete();
+        }
+      } catch (_) {}
+
+      quality -= 8;
+    }
+  }
+
+  static Future<File> _preparePersistentDocument(
+    File source,
+    String originalLabel,
+  ) async {
+    // Le backend attend soit un PDF, soit une image deja normalisee.
+    if (_isPdfName(originalLabel)) {
+      return _preparePdfDocument(source, originalLabel);
     }
 
-    final jpgBytes = img.encodeJpg(decoded, quality: 90);
-    final outFile = File(destPath);
-    await outFile.writeAsBytes(jpgBytes, flush: true);
-    return outFile;
+    return _prepareImageDocument(source, originalLabel);
+  }
+
+  static Future<File> _materializePickedInput(
+    PlatformFile item,
+  ) async {
+    // Sur certains telephones `path` est null et seul `bytes` est disponible.
+    if (item.path != null) {
+      return File(item.path!);
+    }
+
+    if (item.bytes != null) {
+      final ext = p.extension(item.name).isEmpty ? '.bin' : p.extension(item.name);
+      final targetName = _buildPersistentName(item.name, ext);
+      return _writeBytesToPersistentDir(item.bytes!, targetName);
+    }
+
+    throw StateError('Fichier introuvable');
   }
 
   static Future<IdentityDocumentPickerResult?> _pickFromFiles(
@@ -229,44 +354,42 @@ class IdentityDocumentPicker {
   ) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
       allowMultiple: true,
       withData: true,
     );
     if (result == null) return null;
+
     final files = <File>[];
     final labels = <String>[];
-    final dir = await getApplicationSupportDirectory();
     for (final item in result.files) {
-      File file;
-      if (item.path != null) {
-        // Copier vers un emplacement persistant pour éviter les suppressions
-        // de fichiers temporaires sur Android
-        final destPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${item.name}';
-        file = await File(item.path!).copy(destPath);
-      } else if (item.bytes != null) {
-        // Fallback : écrire les bytes (chemin null sur Android 10+)
-        final destPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${item.name}';
-        file = File(destPath);
-        await file.writeAsBytes(item.bytes!);
-      } else {
-        continue;
+      if (!_isPdfName(item.name) && !_isImageName(item.name)) {
+        if (!context.mounted) return null;
+        await _showInfoDialog(
+          context,
+          title: 'Format non pris en charge',
+          message:
+              'Le fichier ${item.name} doit etre un PDF ou une image compatible.',
+        );
+        return null;
       }
-      final fileSize = await file.length();
+
+      final rawFile = await _materializePickedInput(item);
+      final preparedFile = await _preparePersistentDocument(rawFile, item.name);
+      final fileSize = await preparedFile.length();
       if (fileSize > _maxFileSizeBytes) {
         if (!context.mounted) return null;
         await _showInfoDialog(
           context,
           title: 'Fichier trop volumineux',
           message:
-              'Le fichier ${item.name} depasse 10 Mo. Merci de choisir un fichier plus leger.',
+              'Le fichier ${item.name} reste trop volumineux apres preparation. Merci de choisir une image ou un PDF plus leger.',
         );
         return null;
       }
 
-      final isImage = _isImageFile(file.path);
-      if (isImage) {
-        final quality = await _checkImageQuality(file);
+      if (_isImageName(item.name)) {
+        final quality = await _checkImageQuality(preparedFile);
         if (!quality.ok) {
           if (!context.mounted) return null;
           await _showInfoDialog(
@@ -279,7 +402,7 @@ class IdentityDocumentPicker {
         }
       }
 
-      files.add(file);
+      files.add(preparedFile);
       labels.add(item.name);
     }
 
@@ -303,10 +426,11 @@ class IdentityDocumentPicker {
           message:
               'Prenez la photo du $side de la piece d\'identite dans un environnement bien eclaire.',
         );
+
         final shot = await _imagePicker.pickImage(
           source: ImageSource.camera,
           imageQuality: 95,
-          maxWidth: 2500,
+          maxWidth: 3200,
         );
         if (shot == null) {
           if (!context.mounted) return null;
@@ -315,20 +439,24 @@ class IdentityDocumentPicker {
           continue;
         }
 
-        final file = File(shot.path);
-        final fileSize = await file.length();
+        final rawFile = File(shot.path);
+        final persistentFile = await _prepareImageDocument(
+          rawFile,
+          'piece_identite_$side.jpg',
+        );
+        final fileSize = await persistentFile.length();
         if (fileSize > _maxFileSizeBytes) {
           if (!context.mounted) return null;
           await _showInfoDialog(
             context,
             title: 'Photo trop volumineuse',
             message:
-                'La photo du $side depasse 10 Mo. Reprenez une photo plus legere.',
+                'La photo du $side reste trop lourde apres compression. Reprenez la photo dans un meilleur cadrage.',
           );
           continue;
         }
 
-        final quality = await _checkImageQuality(file);
+        final quality = await _checkImageQuality(persistentFile);
         if (!quality.ok) {
           if (!context.mounted) return null;
           await _showInfoDialog(
@@ -341,8 +469,9 @@ class IdentityDocumentPicker {
         }
 
         if (!context.mounted) return null;
-        final readable = await _confirmReadable(context, file, side);
+        final readable = await _confirmReadable(context, persistentFile, side);
         if (!readable) {
+          if (!context.mounted) return null;
           await _showInfoDialog(
             context,
             title: 'Reprise necessaire',
@@ -352,12 +481,6 @@ class IdentityDocumentPicker {
           continue;
         }
 
-        // Normaliser en JPEG persistant pour éviter les formats exotiques
-        // et la suppression du fichier temporaire avant l'upload.
-        final persistentFile = await _convertCameraImageToJpeg(
-          file,
-          '${DateTime.now().millisecondsSinceEpoch}_id_${side.toLowerCase()}.jpg',
-        );
         files.add(persistentFile);
         labels.add('Piece identite - $side');
         validated = true;
@@ -497,11 +620,6 @@ class IdentityDocumentPicker {
         ],
       ),
     );
-  }
-
-  static bool _isImageFile(String path) {
-    final p = path.toLowerCase();
-    return p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png');
   }
 
   static Future<_ImageQualityResult> _checkImageQuality(File file) async {

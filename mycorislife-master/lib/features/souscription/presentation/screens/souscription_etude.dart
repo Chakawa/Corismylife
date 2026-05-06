@@ -2752,12 +2752,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           try {
             await _uploadDocument(subscriptionId);
           } catch (uploadError) {
-            debugPrint('⚠️ Erreur upload document: $uploadError');
+            debugPrint('⚠️ Upload document non bloquant: $uploadError');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                      'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                   backgroundColor: Color(0xFFFF8C00),
                   duration: Duration(seconds: 5),
                 ),
@@ -2829,13 +2829,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -2924,13 +2923,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         try {
           await _uploadDocument(subscriptionId);
         } catch (uploadError) {
-          debugPrint('⚠️ Erreur upload document (non bloquant): $uploadError');
-          // On continue même si l'upload échoue
+          debugPrint('⚠️ Upload document non bloquant: $uploadError');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '⚠️ Document non envoyé. Vous pourrez le téléverser depuis les détails de votre proposition.'),
+                    'Document non telecharge. La souscription continue et vous pourrez l\'envoyer plus tard.'),
                 backgroundColor: Color(0xFFFF8C00),
                 duration: Duration(seconds: 5),
               ),
@@ -2958,19 +2956,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
               : <String>[]);
       if (paths.isEmpty) return;
 
-      final responses =
-          await subscriptionService.uploadDocuments(subscriptionId, paths);
-      Map<String, dynamic> responseData = {};
-
-      for (final response in responses) {
-        final localData = jsonDecode(response.body) as Map<String, dynamic>;
-        responseData = localData;
-        if (response.statusCode != 200 || !(localData['success'] == true)) {
-          debugPrint('❌ Erreur upload: ${localData['message']}');
-          throw Exception(
-              localData['message'] ?? 'Erreur lors de l\'upload du document');
-        }
-      }
+        final responsePayloads =
+          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
+        final responseData =
+          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
 
       // Si le serveur renvoie le subscription mis à jour, récupérer le label original
       try {
@@ -2999,7 +2988,6 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       debugPrint('✅ Document uploadé avec succès');
     } catch (e) {
       debugPrint('❌ Exception upload document: $e');
-      // Ne pas bloquer la souscription si l'upload échoue
       rethrow;
     }
   }

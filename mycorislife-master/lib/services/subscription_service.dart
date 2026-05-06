@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -10,6 +11,86 @@ import 'package:mycorislife/models/contrat.dart';
 class SubscriptionService {
   static String get baseUrl => AppConfig.baseUrl;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
+
+  Map<String, dynamic> _decodeUploadBody(String rawBody) {
+    try {
+      final decoded = jsonDecode(rawBody);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {'raw': decoded};
+    } catch (_) {
+      return {'raw': rawBody};
+    }
+  }
+
+  String _buildUploadFailureMessage({
+    required int subscriptionId,
+    required String filePath,
+    required http.Response response,
+    required Map<String, dynamic> responseData,
+  }) {
+    final fileName = filePath.split(Platform.pathSeparator).last;
+    final serverMessage = responseData['message']?.toString().trim();
+    final diagnostic = responseData['diagnostic'];
+    final diagnosticText = diagnostic is Map<String, dynamic>
+        ? diagnostic.entries
+            .where((entry) => entry.value != null && '${entry.value}'.isNotEmpty)
+            .map((entry) => '${entry.key}=${entry.value}')
+            .join(', ')
+        : '';
+
+    return [
+      'Echec upload document',
+      'subscriptionId=$subscriptionId',
+      'file=$fileName',
+      'status=${response.statusCode}',
+      if (serverMessage != null && serverMessage.isNotEmpty) 'message=$serverMessage',
+      if (diagnosticText.isNotEmpty) 'diagnostic={$diagnosticText}',
+    ].join(' | ');
+  }
+
+  Future<List<Map<String, dynamic>>> uploadDocumentsChecked(
+    int subscriptionId,
+    List<String> filePaths,
+  ) async {
+    final payloads = <Map<String, dynamic>>[];
+
+    for (final filePath in filePaths) {
+      final file = File(filePath);
+      final fileName = file.uri.pathSegments.isNotEmpty
+          ? file.uri.pathSegments.last
+          : filePath.split(Platform.pathSeparator).last;
+      final exists = await file.exists();
+      final fileSize = exists ? await file.length() : null;
+
+      debugPrint(
+        '📤 Upload diagnostic | subscriptionId=$subscriptionId | file=$fileName | exists=$exists | size=${fileSize ?? 'unknown'}',
+      );
+
+      final response = await uploadDocument(subscriptionId, filePath);
+      final responseData = _decodeUploadBody(response.body);
+
+      debugPrint(
+        '📥 Upload diagnostic | subscriptionId=$subscriptionId | file=$fileName | status=${response.statusCode} | body=${response.body}',
+      );
+
+      if (response.statusCode != 200 || responseData['success'] != true) {
+        throw Exception(
+          _buildUploadFailureMessage(
+            subscriptionId: subscriptionId,
+            filePath: filePath,
+            response: response,
+            responseData: responseData,
+          ),
+        );
+      }
+
+      payloads.add(responseData);
+    }
+
+    return payloads;
+  }
 
   /// Crée une nouvelle souscription
   ///
@@ -131,7 +212,9 @@ class SubscriptionService {
     }
   }
 
-  // Uploader un document
+  /// Envoie un document d'identite deja prepare par le picker centralise.
+  /// Le champ multipart reste `document` car c'est celui attendu par la route
+  /// backend `/subscriptions/:id/upload-document`.
   Future<http.Response> uploadDocument(
       int subscriptionId, String filePath) async {
     final token = await storage.read(key: 'token');
@@ -140,7 +223,8 @@ class SubscriptionService {
       Uri.parse('$baseUrl/subscriptions/$subscriptionId/upload-document'),
     );
     request.headers['Authorization'] = 'Bearer $token';
-    // Déterminer le type MIME en fonction de l'extension du fichier
+    // Le picker convertit deja les photos exotiques en JPEG. Ici on garde un
+    // fallback de MIME defensif pour les fichiers encore presents en HEIC/HEIF.
     final extension = filePath.toLowerCase().split('.').last;
     String contentType;
     if (extension == 'pdf') {

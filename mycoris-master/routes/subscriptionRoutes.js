@@ -33,7 +33,13 @@ router.post('/:id/upload-document', verifyToken, (req, res, next) => {
       // Erreur multer (type de fichier non supporté, taille trop grande, etc.)
       return res.status(400).json({
         success: false,
-        message: err.message || 'Erreur lors de l\'upload du fichier'
+        message: err.message || 'Erreur lors de l\'upload du fichier',
+        diagnostic: {
+          route: 'subscriptions.upload-document',
+          code: err.code || null,
+          field: err.field || 'document',
+          reason: err.message || null,
+        }
       });
     }
     next();
