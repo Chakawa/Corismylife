@@ -944,8 +944,17 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
 
   /// Sauvegarde les données de souscription pour Mon Bon Plan Coris
 
+  Future<int>? _pendingSaveSubscriptionFuture;
+
   Future<int> _saveSubscriptionData() async {
-    try {
+    final existingSave = _pendingSaveSubscriptionFuture;
+    if (existingSave != null) {
+      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      return existingSave;
+    }
+
+    Future<int> saveOperation() async {
+      try {
       final subscriptionService = SubscriptionService();
 
       // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
@@ -1058,11 +1067,18 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
-      return widget.subscriptionId ?? responseData['data']['id'];
-    } catch (e) {
-      rethrow;
+        // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
+        return widget.subscriptionId ?? responseData['data']['id'];
+      } catch (e) {
+        rethrow;
+      } finally {
+        _pendingSaveSubscriptionFuture = null;
+      }
     }
+
+    final saveFuture = saveOperation();
+    _pendingSaveSubscriptionFuture = saveFuture;
+    return saveFuture;
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,

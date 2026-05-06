@@ -4710,8 +4710,17 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
   }
 
+  Future<int>? _pendingSaveSubscriptionFuture;
+
   Future<int> _saveSubscriptionData() async {
-    try {
+    final existingSave = _pendingSaveSubscriptionFuture;
+    if (existingSave != null) {
+      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      return existingSave;
+    }
+
+    Future<int> saveOperation() async {
+      try {
       final subscriptionService = SubscriptionService();
 
       final subscriptionData = {
@@ -4812,12 +4821,19 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNER l'ID de la souscription (créée ou mise à jour)
-      return widget.subscriptionId ?? responseData['data']['id'];
-    } catch (e) {
-      debugPrint('Erreur sauvegarde souscription: $e');
-      rethrow;
+        // RETOURNER l'ID de la souscription (créée ou mise à jour)
+        return widget.subscriptionId ?? responseData['data']['id'];
+      } catch (e) {
+        debugPrint('Erreur sauvegarde souscription: $e');
+        rethrow;
+      } finally {
+        _pendingSaveSubscriptionFuture = null;
+      }
     }
+
+    final saveFuture = saveOperation();
+    _pendingSaveSubscriptionFuture = saveFuture;
+    return saveFuture;
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,

@@ -31,6 +31,7 @@
 const pool = require('../db');  // Pool de connexions PostgreSQL (gestion automatique des connexions)
 const { generatePolicyNumber } = require('../utils/helpers');  // Fonction utilitaire pour générer un numéro de police unique (format: PROD-YYYY-XXXXX)
 const PDFDocument = require('pdfkit'); // Bibliothèque pour générer des PDF dynamiques (utilisée pour les propositions/contrats)
+const crypto = require('crypto');
 const fs = require('fs');  // Module Node.js pour les opérations sur le système de fichiers
 const path = require('path');  // Module Node.js pour manipuler les chemins de fichiers
 const {
@@ -41,6 +42,42 @@ const {
   notifyContractGenerated,
   notifySubscriptionModified
 } = require('../services/notificationHelper');  // Helper pour créer des notifications automatiques
+
+const DUPLICATE_SUBSCRIPTION_WINDOW_SECONDS = 30;
+
+function sanitizeSubscriptionFingerprintSource(value) {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeSubscriptionFingerprintSource);
+  }
+
+  if (value && typeof value === 'object') {
+    const sanitized = {};
+    for (const key of Object.keys(value).sort()) {
+      if (
+        key === 'signature_path' ||
+        key === 'piece_identite' ||
+        key === 'piece_identite_url' ||
+        key === 'piece_identite_label' ||
+        key === 'piece_identite_documents'
+      ) {
+        continue;
+      }
+
+      sanitized[key] = sanitizeSubscriptionFingerprintSource(value[key]);
+    }
+    return sanitized;
+  }
+
+  return value;
+}
+
+function buildSubscriptionFingerprint(subscriptionData) {
+  const normalizedPayload = JSON.stringify(
+    sanitizeSubscriptionFingerprintSource(subscriptionData)
+  );
+
+  return crypto.createHash('sha256').update(normalizedPayload).digest('hex');
+}
 
 /**
  * ===============================================
@@ -148,6 +185,57 @@ exports.createSubscription = async (req, res) => {
       }
     }
     
+    // Supprimer les champs piece_identite* qui proviennent de l'app Flutter :
+    // ils contiennent des noms de fichiers locaux (sur le téléphone) non valides côté serveur.
+    // Ces champs sont UNIQUEMENT définis par la route uploadDocument après l'envoi réel du fichier.
+    delete subscriptionData.piece_identite;
+    delete subscriptionData.piece_identite_url;
+    delete subscriptionData.piece_identite_label;
+    delete subscriptionData.piece_identite_documents;
+
+    const requestFingerprint = buildSubscriptionFingerprint(subscriptionData);
+    const duplicateCandidateQuery = `
+      SELECT *
+      FROM subscriptions
+      WHERE user_id = $1
+        AND produit_nom = $2
+        AND statut = 'proposition'
+        AND date_creation >= NOW() - ($3 * INTERVAL '1 second')
+      ORDER BY date_creation DESC
+      LIMIT 5
+    `;
+
+    const duplicateCandidateResult = await pool.query(duplicateCandidateQuery, [
+      userId,
+      product_type,
+      DUPLICATE_SUBSCRIPTION_WINDOW_SECONDS,
+    ]);
+
+    const duplicateSubscription = duplicateCandidateResult.rows.find((row) => {
+      try {
+        return buildSubscriptionFingerprint(row.souscriptiondata) === requestFingerprint;
+      } catch (error) {
+        console.error('❌ Erreur calcul fingerprint duplication:', error.message);
+        return false;
+      }
+    });
+
+    if (duplicateSubscription) {
+      console.log(
+        '⚠️ Requête de souscription dupliquée ignorée:',
+        `user=${userId}`,
+        `produit=${product_type}`,
+        `existingId=${duplicateSubscription.id}`
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Requête dupliquée détectée, proposition existante réutilisée.',
+        data: duplicateSubscription,
+        deduplicated: true,
+      });
+    }
+
     // Générer un numéro de police unique pour cette souscription
     // Format: PROD-YYYY-XXXXX (ex: SER-2025-00123)
     const numeroPolice = await generatePolicyNumber(product_type);
@@ -188,14 +276,6 @@ exports.createSubscription = async (req, res) => {
         // On continue même si la signature échoue
       }
     }
-    
-    // Supprimer les champs piece_identite* qui proviennent de l'app Flutter :
-    // ils contiennent des noms de fichiers locaux (sur le téléphone) non valides côté serveur.
-    // Ces champs sont UNIQUEMENT définis par la route uploadDocument après l'envoi réel du fichier.
-    delete subscriptionData.piece_identite;
-    delete subscriptionData.piece_identite_url;
-    delete subscriptionData.piece_identite_label;
-    delete subscriptionData.piece_identite_documents;
 
     // Requête SQL pour insérer la nouvelle souscription
     // IMPORTANT : Le statut par défaut est "proposition" (pas encore payé)

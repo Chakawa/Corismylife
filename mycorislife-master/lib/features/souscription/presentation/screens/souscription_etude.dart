@@ -2562,8 +2562,17 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
   /// Si subscriptionId existe, met à jour la souscription existante
 
+  Future<int>? _pendingSaveSubscriptionFuture;
+
   Future<int> _saveSubscriptionData() async {
-    try {
+    final existingSave = _pendingSaveSubscriptionFuture;
+    if (existingSave != null) {
+      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      return existingSave;
+    }
+
+    Future<int> saveOperation() async {
+      try {
       final subscriptionService = SubscriptionService();
 
       // Calculer la durée en mois (jusqu'à 17 ans)
@@ -2681,11 +2690,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
             responseData['message'] ?? 'Erreur lors de la sauvegarde');
       }
 
-      // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
-      return widget.subscriptionId ?? responseData['data']['id'];
-    } catch (e) {
-      rethrow; // Correction: utiliser rethrow au lieu de throw
+        // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
+        return widget.subscriptionId ?? responseData['data']['id'];
+      } catch (e) {
+        rethrow; // Correction: utiliser rethrow au lieu de throw
+      } finally {
+        _pendingSaveSubscriptionFuture = null;
+      }
     }
+
+    final saveFuture = saveOperation();
+    _pendingSaveSubscriptionFuture = saveFuture;
+    return saveFuture;
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,

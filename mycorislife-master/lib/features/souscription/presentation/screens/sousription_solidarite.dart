@@ -919,8 +919,17 @@ class _SouscriptionSolidaritePageState
 
   // MÉTHODES CRITIQUES POUR LE STATUT DE PAIEMENT
 
+  Future<int>? _pendingSaveSubscriptionFuture;
+
   Future<int> _saveSubscriptionData() async {
-    try {
+    final existingSave = _pendingSaveSubscriptionFuture;
+    if (existingSave != null) {
+      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      return existingSave;
+    }
+
+    Future<int> saveOperation() async {
+      try {
       final subscriptionService = SubscriptionService();
 
       // Convertir les listes de membres en format JSON
@@ -1022,8 +1031,8 @@ class _SouscriptionSolidaritePageState
               responseData['message'] ?? 'Erreur lors de la modification');
         }
 
-        // Retourner l'ID existant
-        return widget.subscriptionId!;
+          // Retourner l'ID existant
+          return widget.subscriptionId!;
       } else {
         // Mode création : INSERT
         debugPrint('âž• Mode CRÉATION');
@@ -1036,13 +1045,20 @@ class _SouscriptionSolidaritePageState
               responseData['message'] ?? 'Erreur lors de la sauvegarde');
         }
 
-        // RETOURNER l'ID de la souscription créée
-        return responseData['data']['id'];
+          // RETOURNER l'ID de la souscription créée
+          return responseData['data']['id'];
+        }
+      } catch (e) {
+        debugPrint('Erreur sauvegarde souscription: $e');
+        rethrow;
+      } finally {
+        _pendingSaveSubscriptionFuture = null;
       }
-    } catch (e) {
-      debugPrint('Erreur sauvegarde souscription: $e');
-      rethrow;
     }
+
+    final saveFuture = saveOperation();
+    _pendingSaveSubscriptionFuture = saveFuture;
+    return saveFuture;
   }
 
   Future<void> _updatePaymentStatus(int subscriptionId, bool paymentSuccess,

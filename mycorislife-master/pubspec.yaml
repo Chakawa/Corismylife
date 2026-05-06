@@ -1,6 +1,6 @@
 name: mycorislife
 description: Application mobile pour Coris Assurance Vie Côte d'Ivoire
-version: 1.0.2+3
+version: 1.0.3+4
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
