@@ -4,13 +4,13 @@
 
 /// ===============================================
 
-/// 
+///
 
 /// Page unifiée permettant d'afficher les détails d'un contrat
 
 /// accessible à la fois par les commerciaux ET les clients.
 
-/// 
+///
 
 /// FONCTIONNALITÉS :
 
@@ -22,7 +22,7 @@
 
 /// - Compatible commercial et client (vérification backend)
 
-/// 
+///
 
 /// ⚠️ UNIFORMISATION DES CHAMPS (IMPORTANT) :
 
@@ -36,7 +36,7 @@
 
 /// - Ne PAS utiliser contratDetails['statut'] (ancienne convention, maintenant dépréciée)
 
-/// 
+///
 
 /// SÉCURITÉ :
 
@@ -46,7 +46,7 @@
 
 /// - Le backend vérifie automatiquement les droits d'accès
 
-/// 
+///
 
 /// DESIGN :
 
@@ -63,9 +63,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/contract_police_key.dart';
+import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
 
 class ContratDetailsUnifiedPage extends StatefulWidget {
-
   final Map<String, dynamic> contrat;
 
   const ContratDetailsUnifiedPage({super.key, required this.contrat});
@@ -77,7 +78,6 @@ class ContratDetailsUnifiedPage extends StatefulWidget {
 
 class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     with TickerProviderStateMixin {
-
   final storage = const FlutterSecureStorage();
   Map<String, dynamic>? contratDetails;
   List<Map<String, dynamic>> beneficiaires = [];
@@ -91,51 +91,43 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
   // Mapping des codes produits
   final Map<String, Map<String, dynamic>> productConfig = {
-
     '242': {
-
       'name': 'ÉPARGNE BONUS',
       'icon': Icons.savings,
       'color': Color(0xFF8B5CF6),
       'gradient': [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
     },
     '202': {
-
       'name': 'CORIS SÉRÉNITÉ',
       'icon': Icons.health_and_safety,
       'color': Color(0xFF002B6B),
       'gradient': [Color(0xFF002B6B), Color(0xFF004080)],
     },
     '200': {
-
       'name': 'CORIS FAMILIS',
       'icon': Icons.family_restroom,
       'color': Color(0xFFF59E0B),
       'gradient': [Color(0xFFF59E0B), Color(0xFFEA8800)],
     },
     '240': {
-
       'name': 'CORIS RETRAITE',
       'icon': Icons.elderly,
       'color': Color(0xFF10B981),
       'gradient': [Color(0xFF10B981), Color(0xFF059669)],
     },
     '225': {
-
       'name': 'CORIS SOLIDARITÉ',
       'icon': Icons.volunteer_activism,
       'color': Color(0xFF002B6B),
       'gradient': [Color(0xFF002B6B), Color(0xFF004080)],
     },
     '246': {
-
       'name': 'CORIS ÉTUDE',
       'icon': Icons.school,
       'color': Color(0xFF8B5CF6),
       'gradient': [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
     },
     '205': {
-
       'name': 'CORIS FLEX EMPRUNTEUR',
       'icon': Icons.home,
       'color': Color(0xFFEF4444),
@@ -144,16 +136,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   };
 
   @override
-
   void initState() {
-
     super.initState();
     _setupAnimations();
     _loadContratDetails();
   }
 
   void _setupAnimations() {
-
     _headerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -183,11 +172,9 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   Future<void> _loadContratDetails() async {
-
     print('🔍 [DETAILS] ========== DÉBUT CHARGEMENT ==========');
 
     try {
-
       final token = await storage.read(key: 'token');
       final role = await storage.read(key: 'role');
 
@@ -197,23 +184,24 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       if (token == null) throw Exception('Token non trouvé');
 
       setState(() {
-
         userRole = role;
         isLoading = true;
       });
 
       final numepoli = widget.contrat['numepoli'];
+      final codeinte = widget.contrat['codeinte'];
       print('📄 [DETAILS] Numéro de police: $numepoli');
+      print('🏷️ [DETAILS] Code intermédiaire: $codeinte');
       print('📦 [DETAILS] Contrat complet: ${widget.contrat}');
 
       final encodedNumepoli = Uri.encodeComponent(numepoli?.toString() ?? '');
-      final url = '${AppConfig.baseUrl}/commercial/contrat_details/$encodedNumepoli';
-      print('🌐 [DETAILS] URL: $url');
+      final encodedCodeinte = Uri.encodeComponent(codeinte?.toString() ?? '');
 
+      final url =
+          '${AppConfig.baseUrl}/contrats/commercial/contrat_details/$encodedNumepoli/$encodedCodeinte';
       final response = await http.get(
         Uri.parse(url),
         headers: {
-
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
@@ -223,14 +211,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       print('📨 [DETAILS] Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-
         final data = json.decode(response.body);
         print('✅ [DETAILS] Données décodées: ${data.keys}');
         print('📋 [DETAILS] Contrat: ${data['contrat']}');
         print('👥 [DETAILS] Bénéficiaires: ${data['beneficiaires']}');
 
         setState(() {
-
           contratDetails = data['contrat'];
           beneficiaires =
               List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
@@ -241,14 +227,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
         _headerAnimationController.forward();
         _contentAnimationController.forward();
       } else {
-
         print('❌ [DETAILS] Erreur HTTP ${response.statusCode}');
         print('📄 [DETAILS] Body erreur: ${response.body}');
         throw Exception('Erreur ${response.statusCode}: ${response.body}');
       }
-
     } catch (e, stackTrace) {
-
       print('❌ [DETAILS] EXCEPTION: $e');
       print('📍 [DETAILS] Stack trace: $stackTrace');
       setState(() => isLoading = false);
@@ -259,11 +242,9 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   Map<String, dynamic> _getProductConfig() {
-
     final codeprod = contratDetails?['codeprod']?.toString();
     return productConfig[codeprod] ??
         {
-
           'name': 'Produit $codeprod',
           'icon': Icons.description,
           'color': Color(0xFF002B6B),
@@ -290,14 +271,20 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   String _formatMontant(dynamic montant) {
-
     if (montant == null) return '0 FCFA';
     final num = double.tryParse(montant.toString()) ?? 0;
     return '${num.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} FCFA';
   }
 
-  void _showError(String message) {
+  String _formatImpayesEnMois(dynamic impaye) {
+    if (impaye == null) return '0 Primes';
 
+    final num value = double.tryParse(impaye.toString()) ?? 0;
+
+    return '${value.toStringAsFixed(0)} Primes';
+  }
+
+  void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -316,7 +303,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   void _copyToClipboard(String text) {
-
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -336,9 +322,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   @override
-
   void dispose() {
-
     _headerAnimationController.dispose();
     _contentAnimationController.dispose();
     super.dispose();
@@ -346,9 +330,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
   @override
   Widget build(BuildContext context) {
-
     if (isLoading) {
-
       return Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         body: Center(
@@ -393,7 +375,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     }
 
     if (contratDetails == null) {
-
       return Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
@@ -413,7 +394,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
               SizedBox(height: context.r(16)),
               Text(
                 'Aucune donnée disponible',
-                style: TextStyle(fontSize: context.sp(18), color: Colors.grey[600]),
+                style: TextStyle(
+                    fontSize: context.sp(18), color: Colors.grey[600]),
               ),
             ],
           ),
@@ -424,7 +406,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     final config = _getProductConfig();
     // Utilisation du champ 'etat' depuis la base de données (uniformisation)
     print('🔍 [ETAT] contratDetails etat: ${contratDetails?['etat']}');
-    print('🔍 [ETAT] toLowerCase: ${contratDetails?['etat']?.toString().toLowerCase()}');
+    print(
+        '🔍 [ETAT] toLowerCase: ${contratDetails?['etat']?.toString().toLowerCase()}');
     final isActif =
         contratDetails?['etat']?.toString().toLowerCase() == 'actif';
     print('🔍 [ETAT] isActif: $isActif');
@@ -544,19 +527,23 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                               Icons.calendar_today,
                             ),
                           if (contratDetails?['dateeffet'] != null &&
-                              (contratDetails?['dateeche'] != null || contratDetails?['dateecheance'] != null))
+                              (contratDetails?['dateeche'] != null ||
+                                  contratDetails?['dateecheance'] != null))
                             _buildInfoRow(
                               'Durée du contrat',
                               _calculateDuree(
                                 contratDetails?['dateeffet'],
-                                contratDetails?['dateeche'] ?? contratDetails?['dateecheance'],
+                                contratDetails?['dateeche'] ??
+                                    contratDetails?['dateecheance'],
                               ),
                               Icons.schedule,
                             ),
-                          if (contratDetails?['dateeche'] != null || contratDetails?['dateecheance'] != null)
+                          if (contratDetails?['dateeche'] != null ||
+                              contratDetails?['dateecheance'] != null)
                             _buildInfoRow(
                               'Date d\'échéance',
-                              _formatDate(contratDetails?['dateeche'] ?? contratDetails?['dateecheance']),
+                              _formatDate(contratDetails?['dateeche'] ??
+                                  contratDetails?['dateecheance']),
                               Icons.event_busy,
                             ),
                           if (contratDetails?['periodicite'] != null)
@@ -593,7 +580,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                             Icons.phone,
                             canCopy: true,
                           ),
-                          if (contratDetails?['telephone2'] != null && contratDetails!['telephone2'].toString().trim().isNotEmpty)
+                          if (contratDetails?['telephone2'] != null &&
+                              contratDetails!['telephone2']
+                                  .toString()
+                                  .trim()
+                                  .isNotEmpty)
                             _buildInfoRow(
                               'Téléphone 2',
                               contratDetails!['telephone2'].toString(),
@@ -617,7 +608,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
                       SizedBox(height: context.r(16)),
 
-                      // Informations financières
+                      // Informations financière
                       _buildModernCard(
                         title: 'Informations Financières',
                         icon: Icons.account_balance_wallet_outlined,
@@ -630,17 +621,17 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                               Icons.trending_up,
                             ),
                           // Afficher Prime OU Rente selon ce qui est disponible
-                          if (contratDetails?['prime'] != null && 
-                              (contratDetails?['prime'].toString() != '0' && 
-                               contratDetails?['prime'].toString() != '0.0'))
+                          if (contratDetails?['prime'] != null &&
+                              (contratDetails?['prime'].toString() != '0' &&
+                                  contratDetails?['prime'].toString() != '0.0'))
                             _buildInfoRow(
                               'Prime',
                               _formatMontant(contratDetails?['prime']),
                               Icons.payments,
                             ),
-                          if (contratDetails?['rente'] != null && 
-                              (contratDetails?['rente'].toString() != '0' && 
-                               contratDetails?['rente'].toString() != '0.0'))
+                          if (contratDetails?['rente'] != null &&
+                              (contratDetails?['rente'].toString() != '0' &&
+                                  contratDetails?['rente'].toString() != '0.0'))
                             _buildInfoRow(
                               'Rente',
                               _formatMontant(contratDetails?['rente']),
@@ -648,12 +639,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                             ),
                           _buildInfoRow(
                             'Montant Encaissé',
-                            _formatMontant(contratDetails?['montant_encaisse'] ?? 0),
+                            _formatMontant(
+                                contratDetails?['montant_encaisse'] ?? 0),
                             Icons.money,
                           ),
                           _buildInfoRow(
                             'Impayé',
-                            _formatMontant(contratDetails?['impaye'] ?? 0),
+                            _formatImpayesEnMois(contratDetails?['impaye']),
                             Icons.warning_amber,
                           ),
                         ],
@@ -669,7 +661,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                           icon: Icons.people_outline,
                           color: const Color(0xFF002B6B),
                           children: beneficiaires.map((benef) {
-
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Row(
@@ -689,10 +680,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                                   SizedBox(width: context.r(12)),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          benef['nom_benef'] ?? benef['nom'] ?? 'N/A',
+                                          benef['nom_benef'] ??
+                                              benef['nom'] ??
+                                              'N/A',
                                           style: TextStyle(
                                             fontSize: context.sp(15),
                                             fontWeight: FontWeight.w600,
@@ -706,11 +700,14 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF002B6B).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(6),
+                                            color: const Color(0xFF002B6B)
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            _getBeneficiaireType(benef['type_beneficiaires']),
+                                            _getBeneficiaireType(
+                                                benef['type_beneficiaires']),
                                             style: TextStyle(
                                               fontSize: context.sp(12),
                                               fontWeight: FontWeight.w600,
@@ -777,13 +774,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   Widget _buildModernCard({
-
     required String title,
     required IconData icon,
     required Color color,
     required List<Widget> children,
   }) {
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -845,7 +840,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
   Widget _buildInfoRow(String label, String value, IconData icon,
       {bool canCopy = false}) {
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -901,10 +895,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   String _getBeneficiaireType(String? type) {
-
     if (type == null) return 'N/A';
     switch (type.toUpperCase()) {
-
       case 'D':
         return 'Décès';
       case 'V':
@@ -912,17 +904,15 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       default:
         return type;
     }
-
   }
 
   // Calcul de la durée entre la date d'effet et la date d'échéance (en mois)
   String _calculateDuree(dynamic dateEffet, dynamic dateEcheance) {
-
     print('📊 [DUREE] dateEffet: $dateEffet (${dateEffet.runtimeType})');
-    print('📊 [DUREE] dateEcheance: $dateEcheance (${dateEcheance.runtimeType})');
+    print(
+        '📊 [DUREE] dateEcheance: $dateEcheance (${dateEcheance.runtimeType})');
 
     if (dateEffet == null || dateEcheance == null) {
-
       print('❌ [DUREE] Une des dates est null');
       return 'N/A';
     }
@@ -950,7 +940,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     }
 
     try {
-
       final debut = _parseAnyDate(dateEffet);
       final fin = _parseAnyDate(dateEcheance);
 
@@ -964,7 +953,6 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
       // Ajuster si le jour d'échéance est avant le jour d'effet
       if (fin.day < debut.day) {
-
         moisTotal--;
       }
 
@@ -978,16 +966,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       print('✅ [DUREE] Résultat: $moisTotal mois');
       return '$moisTotal mois';
     } catch (e) {
-
       print('❌ [DUREE] Erreur: $e');
       return 'N/A';
     }
-
   }
 
   // Widget pour afficher le statut du contrat avec badge
   Widget _buildStatusRow(String label, String etat, bool isActif) {
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1002,7 +987,8 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
             child: Icon(
               isActif ? Icons.check_circle : Icons.cancel,
               size: 20,
-              color: isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+              color:
+                  isActif ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
             ),
           ),
           SizedBox(width: context.r(12)),
@@ -1060,18 +1046,62 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   }
 
   Widget? _buildFloatingActions(Color color) {
+    final details = contratDetails ?? widget.contrat;
+    final numepoli = details['numepoli']?.toString();
+    final codeinte = details['codeinte']?.toString();
+    final source = details['source']?.toString();
+    final subscriptionId = int.tryParse(
+      '${details['subscription_id'] ?? details['id'] ?? ''}',
+    );
+    final prime = double.tryParse('${details['prime'] ?? ''}') ?? 0;
 
-    // Plus de boutons dans les détails de contrats
-    return null;
+    if (numepoli == null || numepoli.isEmpty || prime <= 0) {
+      return null;
+    }
+
+    final isAppSub = ContractPoliceKey.isAppSubscriptionContrat(
+      source: source,
+      subscriptionId: subscriptionId,
+      codeinte: codeinte,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            ContractPaymentFlow.showSearchAndAmountDialog(
+              context,
+              initialPolicyNumber: numepoli,
+              initialCodeinte: codeinte,
+              initialSource: source,
+              knownSubscriptionId: isAppSub ? subscriptionId : null,
+              initialAmount: prime,
+              skipSearchDialog: true,
+              onPaymentSuccess: _loadContratDetails,
+            );
+          },
+          icon: const Icon(Icons.payment),
+          label: const Text('Payer ma cotisation'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF002B6B),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // ignore: unused_element
   Widget _buildActionButton(
       String label, IconData icon, Color color, bool isPrimary) {
-
     return ElevatedButton(
       onPressed: () {
-
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1111,6 +1141,4 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       ),
     );
   }
-
 }
-

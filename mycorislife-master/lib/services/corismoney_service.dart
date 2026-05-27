@@ -123,12 +123,15 @@ class CorisMoneyService {
 
   Future<Map<String, dynamic>> processPayment({
 
-    required int subscriptionId,
+    int? subscriptionId,
     required String codePays,
     required String telephone,
     required double montant,
     required String codeOTP,
     String? description,
+    String? numeroPolice,
+    String? numepoli,
+    String? codeinte,
   }) async {
 
     try {
@@ -144,12 +147,19 @@ class CorisMoneyService {
         },
         body: jsonEncode({
 
-          'subscriptionId': subscriptionId,
+          if (subscriptionId != null) 'subscriptionId': subscriptionId,
           'codePays': codePays,
           'telephone': telephone,
-          'montant': montant,
+          'montant': montant.round(),
           'codeOTP': codeOTP,
-          'description': description ?? 'Paiement souscription #$subscriptionId',
+          'description': description ??
+              (subscriptionId != null
+                  ? 'Paiement souscription #$subscriptionId'
+                  : 'Paiement contrat'),
+          if (numeroPolice != null && numeroPolice.isNotEmpty)
+            'numeroPolice': numeroPolice,
+          if (numepoli != null && numepoli.isNotEmpty) 'numepoli': numepoli,
+          if (codeinte != null && codeinte.isNotEmpty) 'codeinte': codeinte,
         }),
       );
 

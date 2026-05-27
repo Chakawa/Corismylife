@@ -4,32 +4,92 @@ import 'package:mycorislife/config/routes.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
+import 'package:mycorislife/services/payment_resume_coordinator.dart';
 import 'package:mycorislife/services/download_notification_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 
+/// Au cold start iOS, [PlatformDispatcher.views] peut être vide un instant ;
+/// [views.first] provoque une exception → crash avant [runApp] (écran noir).
+Future<void> syncPreferredOrientationsToDisplay() async {
+  try {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+      ]);
+      return;
+    }
+    final view = views.first;
+    final logicalSize = view.physicalSize / view.devicePixelRatio;
+    final isTablet = logicalSize.shortestSide >= 600;
+    await SystemChrome.setPreferredOrientations(
+      isTablet
+          ? const [
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+              DeviceOrientation.landscapeLeft,
+              DeviceOrientation.landscapeRight,
+            ]
+          : const [
+              DeviceOrientation.portraitUp,
+            ],
+    );
+  } catch (e, st) {
+    debugPrint(
+        'syncPreferredOrientationsToDisplay: portrait par défaut — $e\n$st');
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialiser le service de connectivité
-  ConnectivityService().initialize();
-  // Initialiser les notifications de téléchargement
-  await DownloadNotificationService.initialize();
-  final view = WidgetsBinding.instance.platformDispatcher.views.first;
-  final logicalSize = view.physicalSize / view.devicePixelRatio;
-  final isTablet = logicalSize.shortestSide >= 600;
-  await SystemChrome.setPreferredOrientations(
-    isTablet
-        ? const [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]
-        : const [
-            DeviceOrientation.portraitUp,
-          ],
-  );
-  runApp(const MyCorisLifeApp());
+  // Initialiser le service de connectivité (tolérant aux erreurs)
+  try {
+    ConnectivityService().initialize();
+  } catch (e, st) {
+    debugPrint('⚠️ Impossible d\'initialiser la connectivité: $e\n$st');
+  }
+  // Initialiser les notifications de téléchargement (ne doit pas bloquer le démarrage)
+  // ❌ TEMPORAIREMENT DÉSACTIVÉ POUR TEST iOS (écran blanc possible)
+// À réactiver après correction du plugin notifications
+  // try {
+  //   await DownloadNotificationService.initialize();
+  // } catch (e, st) {
+  //   debugPrint('⚠️ Impossible d\'initialiser les notifications: $e\n$st');
+  // }
+  await syncPreferredOrientationsToDisplay();
+  // Setup global error handlers to capture startup errors (useful for release/TestFlight)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // Forward to zone to ensure it's captured by runZonedGuarded
+    Zone.current.handleUncaughtError(
+        details.exception, details.stack ?? StackTrace.empty);
+  };
+
+  runZonedGuarded(() {
+    // Fallback UI for uncaught framework errors (shows a simple message instead of white screen)
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              'Une erreur est survenue au démarrage. Vérifiez les logs via Xcode/TestFlight.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.red[700]),
+            ),
+          ),
+        ),
+      );
+    };
+    runApp(const MyCorisLifeApp());
+  }, (error, stack) {
+    // Log to console - visible in device logs / Xcode Organizer
+    debugPrint('🔥 Erreur non gérée capturée: $error');
+    debugPrint('🔥 Stack: $stack');
+  });
 }
 
 class MyCorisLifeApp extends StatefulWidget {
@@ -62,6 +122,10 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
     _initScreenLockListener();
     _resetInactivityTimer();
     _startSessionStatusMonitoring();
+    // Après le 1er frame, [views] est en général disponible (iPhone/iPad).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      syncPreferredOrientationsToDisplay();
+    });
   }
 
   @override
@@ -183,6 +247,7 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
     } else if (state == AppLifecycleState.resumed) {
       // L'app revient au premier plan
       debugPrint('🔄 App resumed');
+      unawaited(PaymentResumeCoordinator.instance.checkOnAppResume());
       // Vérifier UNIQUEMENT le timeout de 5 minutes en arrière-plan
       // Le verrouillage d'écran est géré par ACTION_USER_PRESENT (plugin natif)
       if (_pausedTime != null) {
@@ -225,13 +290,14 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         final clampedScale = mq.textScaler.scale(1.0).clamp(0.85, 1.10);
+        final shellChild = child ?? const SizedBox.shrink();
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(clampedScale)),
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerDown: (_) => _resetInactivityTimer(),
             onPointerMove: (_) => _resetInactivityTimer(),
-            child: _AppResponsiveShell(child: child!),
+            child: _AppResponsiveShell(child: shellChild),
           ),
         );
       },

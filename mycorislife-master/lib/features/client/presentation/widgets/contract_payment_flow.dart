@@ -4,6 +4,8 @@ import 'package:mycorislife/services/contrat_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mycorislife/services/orange_money_payment_handler.dart';
+import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 class ContractPaymentFlow {
 
@@ -17,12 +19,68 @@ class ContractPaymentFlow {
 
   static Future<void> showSearchAndAmountDialog(
     BuildContext context, {
-
     String? initialPolicyNumber,
+    String? initialCodeinte,
+    String? initialSource,
     int? knownSubscriptionId,
     double? initialAmount,
+    bool skipSearchDialog = false,
     VoidCallback? onPaymentSuccess,
   }) async {
+    if (skipSearchDialog) {
+      final numeroPolice = (initialPolicyNumber ?? '').trim();
+      final montant = initialAmount;
+      if (numeroPolice.isEmpty) {
+        _showInfo(
+          context,
+          'Numéro de police manquant pour le paiement.',
+          isError: true,
+        );
+        return;
+      }
+      if (montant == null || montant <= 0) {
+        _showInfo(
+          context,
+          'Montant invalide pour le paiement.',
+          isError: true,
+        );
+        return;
+      }
+
+      final effectiveMontant = TestModeHelper.applyTestModeIfNeeded(
+        montant,
+        context: 'ContractPaymentFlow.skipSearchDialog',
+      );
+
+      final contract = await _resolveContract(
+        numeroPolice: numeroPolice,
+        knownSubscriptionId: knownSubscriptionId,
+        codeinte: initialCodeinte,
+      );
+
+      if (!context.mounted) return;
+
+      if (contract == null) {
+        _showInfo(
+          context,
+          'Aucun contrat trouvé pour ce numéro de police.',
+          isError: true,
+        );
+        return;
+      }
+
+      final resolvedSubscriptionId =
+          knownSubscriptionId ?? contract.subscriptionId ?? contract.id;
+
+      await _showPaymentOptions(
+        context,
+        subscriptionId: resolvedSubscriptionId,
+        numeroPolice: contract.numepoli ?? numeroPolice,
+        montant: effectiveMontant,
+        onPaymentSuccess: onPaymentSuccess,
+      );
+      return;
+    }
 
     final policyController =
         TextEditingController(text: initialPolicyNumber ?? '');
@@ -207,6 +265,7 @@ class ContractPaymentFlow {
                                   final contract = await _resolveContract(
                                     numeroPolice: numeroPolice,
                                     knownSubscriptionId: knownSubscriptionId,
+                                    codeinte: initialCodeinte,
                                   );
 
                                   if (!context.mounted) return;
@@ -285,49 +344,64 @@ class ContractPaymentFlow {
   }
 
   static Future<Contrat?> _resolveContract({
-
     required String numeroPolice,
     required int? knownSubscriptionId,
+    String? codeinte,
   }) async {
-
     final service = ContratService();
     final contrats = await service.getContrats();
 
     final normalizedInput = _normalizePolicy(numeroPolice);
     if (normalizedInput.isEmpty) return null;
 
+    final normalizedCodeinte = (codeinte ?? '').trim().toUpperCase();
+
     if (knownSubscriptionId != null) {
-
       for (final contrat in contrats) {
-
-        if (contrat.id == knownSubscriptionId || contrat.subscriptionId == knownSubscriptionId) {
-
+        if (contrat.id == knownSubscriptionId ||
+            contrat.subscriptionId == knownSubscriptionId) {
           return contrat;
         }
-
       }
+    }
 
+    bool matchesPolicy(Contrat contrat) {
+      final policy = _normalizePolicy(contrat.numepoli ?? '');
+      if (policy != normalizedInput) return false;
+      if (normalizedCodeinte.isEmpty) return true;
+      final contratCodeinte = (contrat.codeinte ?? '').trim().toUpperCase();
+      return contratCodeinte == normalizedCodeinte;
     }
 
     for (final contrat in contrats) {
-
-      final policy = _normalizePolicy(contrat.numepoli ?? '');
-      if (policy == normalizedInput) {
-
+      if (matchesPolicy(contrat)) {
         return contrat;
       }
+    }
 
+    if (normalizedCodeinte.isNotEmpty) {
+      for (final contrat in contrats) {
+        final policy = _normalizePolicy(contrat.numepoli ?? '');
+        if (policy.contains(normalizedInput) ||
+            normalizedInput.contains(policy)) {
+          final contratCodeinte = (contrat.codeinte ?? '').trim().toUpperCase();
+          if (contratCodeinte == normalizedCodeinte) {
+            return contrat;
+          }
+        }
+      }
+    }
+
+    if (normalizedCodeinte.isNotEmpty) {
+      return null;
     }
 
     for (final contrat in contrats) {
-
       final policy = _normalizePolicy(contrat.numepoli ?? '');
       if (policy.contains(normalizedInput) ||
           normalizedInput.contains(policy)) {
-
         return contrat;
       }
-
     }
 
     return null;
@@ -432,50 +506,57 @@ class ContractPaymentFlow {
                       );
                     },
                   ),
-                  // const SizedBox(height: 12),
-                  // _buildPaymentOptionWithImage(
-                  //   context,
-                  //   'Orange Money',
-                  //   'assets/images/icone_orange_money.jpeg',
-                  //   Colors.orange,
-                  //   'Paiement mobile Orange',
-                  //   onTap: () {
-
-                  //     Navigator.pop(context);
-                  //     _showInfo(
-                  //       context,
-                  //       'Paiement Orange Money bientôt disponible. Utilisez CORIS Money pour le moment.',
-                  //     );
-                  //   },
-                  // ),
-                  // const SizedBox(height: 12),
-                  // _buildPaymentOptionWithImage(
-                  //   context,
-                  //   'CORIS Money',
-                  //   'assets/images/icone_corismoney.jpeg',
-                  //   const Color(0xFF1E3A8A),
-                  //   'Paiement via CORIS Money',
-                  //   onTap: () {
-
-                  //     Navigator.pop(context);
-                  //     showDialog(
-                  //       context: context,
-                  //       barrierDismissible: false,
-                  //       builder: (_) => CorisMoneyPaymentModal(
-                  //         subscriptionId: subscriptionId,
-                  //         montant: montant,
-                  //         description:
-                  //             'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
-                  //         onPaymentSuccess: () {
-
-                  //           _showInfo(
-                  //               context, 'Paiement effectué avec succès.');
-                  //           onPaymentSuccess?.call();
-                  //         },
-                  //       ),
-                  //     );
-                  //   },
-                  // ),
+                  const SizedBox(height: 12),
+                  _buildPaymentOptionWithImage(
+                    context,
+                    'Orange Money',
+                    'assets/images/icone_orange_money.jpeg',
+                    Colors.orange,
+                    'Paiement mobile Orange',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      try {
+                        await OrangeMoneyPaymentHandler.startPayment(
+                          context,
+                          subscriptionId: subscriptionId!,
+                          amount: montant,
+                          description:
+                              'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+                          onSuccess: () {
+                            onPaymentSuccess?.call();
+                          },
+                        );
+                      } catch (e) {
+                        _showInfo(context, 'Erreur lancement Orange Money: $e', isError: true);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPaymentOptionWithImage(
+                    context,
+                    'CORIS Money',
+                    'assets/images/icone_corismoney.jpeg',
+                    const Color(0xFF1E3A8A),
+                    'Paiement via CORIS Money',
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => CorisMoneyPaymentModal(
+                          subscriptionId: subscriptionId,
+                          montant: montant,
+                          description:
+                              'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+                          onPaymentSuccess: () {
+                            _showInfo(
+                                context, 'Paiement effectué avec succès.');
+                            onPaymentSuccess?.call();
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

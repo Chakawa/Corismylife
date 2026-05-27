@@ -336,13 +336,18 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   Future<void> _payPrime(Contrat contrat) async {
 
+    final isAppSub = _isAppSubscriptionContract(contrat);
+
     await ContractPaymentFlow.showSearchAndAmountDialog(
       context,
       initialPolicyNumber: contrat.numepoli,
-      knownSubscriptionId: _resolveSubscriptionId(contrat),
+      initialCodeinte: contrat.codeinte,
+      initialSource: contrat.source,
+      knownSubscriptionId:
+          isAppSub ? _resolveSubscriptionId(contrat) : null,
       initialAmount: contrat.prime,
+      skipSearchDialog: true,
       onPaymentSuccess: () {
-
         _loadContrats();
       },
     );

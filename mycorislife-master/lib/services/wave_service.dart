@@ -73,12 +73,15 @@ class WaveService {
 
   Future<Map<String, dynamic>> createCheckoutSession({
 
-    required int subscriptionId,
+    int? subscriptionId,
     required double amount,
     String? description,
     String? customerPhone,
     String? successUrl,
     String? errorUrl,
+    String? numeroPolice,
+    String? numepoli,
+    String? codeinte,
   }) async {
 
     try {
@@ -108,12 +111,16 @@ class WaveService {
         },
         body: jsonEncode({
 
-          'subscriptionId': subscriptionId,
-          'amount': effectiveAmount,
+          if (subscriptionId != null) 'subscriptionId': subscriptionId,
+          'amount': effectiveAmount.round(),
           'description': description,
           'customerPhone': customerPhone,
           if (successUrl != null) 'successUrl': successUrl,
           if (errorUrl != null) 'errorUrl': errorUrl,
+          if (numeroPolice != null && numeroPolice.isNotEmpty)
+            'numeroPolice': numeroPolice,
+          if (numepoli != null && numepoli.isNotEmpty) 'numepoli': numepoli,
+          if (codeinte != null && codeinte.isNotEmpty) 'codeinte': codeinte,
         }),
       );
 

@@ -156,8 +156,16 @@ class DocumentService {
       return '${AppConfig.baseUrl}/users/photo/$photoUrl';
     }
 
-    // Si c'est un chemin relatif (ex: /uploads/profiles/...) — pas de /api
-    return '${AppConfig.baseUrl.replaceAll('/api', '')}$photoUrl';
+    // Si c'est un chemin relatif (ex: /uploads/profiles/...), extraire le nom
+    // et utiliser la route publique qui sert la photo: GET /api/users/photo/:filename
+    if (photoUrl.startsWith('/uploads/')) {
+      final parts = photoUrl.split('/');
+      final justFilename = parts.last;
+      return '${AppConfig.baseUrl}/users/photo/$justFilename';
+    }
+
+    // Sinon, préfixer par baseUrl (qui inclut /api en dev/prod selon config)
+    return '${AppConfig.baseUrl}$photoUrl';
   }
 
   /// Télécharger un document depuis le serveur
