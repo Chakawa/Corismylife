@@ -4,11 +4,10 @@ import 'package:mycorislife/services/contrat_service.dart';
 import 'package:mycorislife/services/wave_service.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:mycorislife/services/orange_money_payment_handler.dart';
-import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
+// import 'package:mycorislife/services/orange_money_payment_handler.dart';
+// import 'package:mycorislife/core/widgets/corismoney_payment_modal.dart';
 
 class ContractPaymentFlow {
-
   static const Color _bleuCoris = Color(0xFF002B6B);
 
   static const Color _bleuSecondaire = Color(0xFF1E4A8C);
@@ -95,10 +94,8 @@ class ContractPaymentFlow {
     await showDialog(
       context: context,
       builder: (dialogContext) {
-
         return StatefulBuilder(
           builder: (context, setDialogState) {
-
             return AlertDialog(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
@@ -227,14 +224,12 @@ class ContractPaymentFlow {
                           onPressed: isSearching
                               ? null
                               : () async {
-
                                   final numeroPolice =
                                       policyController.text.trim();
                                   final montant = double.tryParse(
                                       amountController.text.trim());
 
                                   if (numeroPolice.isEmpty) {
-
                                     _showInfo(
                                       context,
                                       'Veuillez saisir le numéro de police.',
@@ -244,7 +239,6 @@ class ContractPaymentFlow {
                                   }
 
                                   if (montant == null || montant <= 0) {
-
                                     _showInfo(
                                       context,
                                       'Veuillez saisir un montant valide.',
@@ -273,7 +267,6 @@ class ContractPaymentFlow {
                                   setDialogState(() => isSearching = false);
 
                                   if (contract == null) {
-
                                     _showInfo(
                                       context,
                                       'Aucun contrat trouvé pour ce numéro de police.',
@@ -284,8 +277,10 @@ class ContractPaymentFlow {
 
                                   Navigator.of(dialogContext).pop();
 
-                                    final resolvedSubscriptionId =
-                                      knownSubscriptionId ?? contract.subscriptionId ?? contract.id;
+                                  final resolvedSubscriptionId =
+                                      knownSubscriptionId ??
+                                          contract.subscriptionId ??
+                                          contract.id;
 
                                   await _showPaymentOptions(
                                     context,
@@ -338,7 +333,6 @@ class ContractPaymentFlow {
   }
 
   static String _normalizePolicy(String value) {
-
     final lower = value.toLowerCase().trim();
     return lower.replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
@@ -409,15 +403,12 @@ class ContractPaymentFlow {
 
   static Future<void> _showPaymentOptions(
     BuildContext context, {
-
     required int? subscriptionId,
     required String numeroPolice,
     required double montant,
     VoidCallback? onPaymentSuccess,
   }) async {
-
     if (subscriptionId == null) {
-
       _showInfo(
         context,
         'Ce contrat ne possède pas de référence de souscription exploitable.',
@@ -431,7 +422,6 @@ class ContractPaymentFlow {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -495,7 +485,6 @@ class ContractPaymentFlow {
                     Colors.blue,
                     'Paiement mobile sécurisé',
                     onTap: () {
-
                       Navigator.pop(context);
                       _startWavePayment(
                         context,
@@ -506,57 +495,57 @@ class ContractPaymentFlow {
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                    context,
-                    'Orange Money',
-                    'assets/images/icone_orange_money.jpeg',
-                    Colors.orange,
-                    'Paiement mobile Orange',
-                    onTap: () async {
-                      Navigator.pop(context);
-                      try {
-                        await OrangeMoneyPaymentHandler.startPayment(
-                          context,
-                          subscriptionId: subscriptionId!,
-                          amount: montant,
-                          description:
-                              'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
-                          onSuccess: () {
-                            onPaymentSuccess?.call();
-                          },
-                        );
-                      } catch (e) {
-                        _showInfo(context, 'Erreur lancement Orange Money: $e', isError: true);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPaymentOptionWithImage(
-                    context,
-                    'CORIS Money',
-                    'assets/images/icone_corismoney.jpeg',
-                    const Color(0xFF1E3A8A),
-                    'Paiement via CORIS Money',
-                    onTap: () {
-                      Navigator.pop(context);
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => CorisMoneyPaymentModal(
-                          subscriptionId: subscriptionId,
-                          montant: montant,
-                          description:
-                              'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
-                          onPaymentSuccess: () {
-                            _showInfo(
-                                context, 'Paiement effectué avec succès.');
-                            onPaymentSuccess?.call();
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                  // const SizedBox(height: 12),
+                  // _buildPaymentOptionWithImage(
+                  //   context,
+                  //   'Orange Money',
+                  //   'assets/images/icone_orange_money.jpeg',
+                  //   Colors.orange,
+                  //   'Paiement mobile Orange',
+                  //   onTap: () async {
+                  //     Navigator.pop(context);
+                  //     try {
+                  //       await OrangeMoneyPaymentHandler.startPayment(
+                  //         context,
+                  //         subscriptionId: subscriptionId!,
+                  //         amount: montant,
+                  //         description:
+                  //             'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+                  //         onSuccess: () {
+                  //           onPaymentSuccess?.call();
+                  //         },
+                  //       );
+                  //     } catch (e) {
+                  //       _showInfo(context, 'Erreur lancement Orange Money: $e', isError: true);
+                  //     }
+                  //   },
+                  // ),
+                  // const SizedBox(height: 12),
+                  // _buildPaymentOptionWithImage(
+                  //   context,
+                  //   'CORIS Money',
+                  //   'assets/images/icone_corismoney.jpeg',
+                  //   const Color(0xFF1E3A8A),
+                  //   'Paiement via CORIS Money',
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     showDialog(
+                  //       context: context,
+                  //       barrierDismissible: false,
+                  //       builder: (_) => CorisMoneyPaymentModal(
+                  //         subscriptionId: subscriptionId,
+                  //         montant: montant,
+                  //         description:
+                  //             'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
+                  //         onPaymentSuccess: () {
+                  //           _showInfo(
+                  //               context, 'Paiement effectué avec succès.');
+                  //           onPaymentSuccess?.call();
+                  //         },
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                 ],
               ),
             ),
@@ -572,10 +561,8 @@ class ContractPaymentFlow {
     String imagePath,
     Color color,
     String subtitle, {
-
     required VoidCallback onTap,
   }) {
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -642,10 +629,8 @@ class ContractPaymentFlow {
   static void _showInfo(
     BuildContext context,
     String message, {
-
     bool isError = false,
   }) {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -657,13 +642,11 @@ class ContractPaymentFlow {
 
   static Future<void> _startWavePayment(
     BuildContext context, {
-
     required int subscriptionId,
     required String numeroPolice,
     required double montant,
     VoidCallback? onPaymentSuccess,
   }) async {
-
     final waveService = WaveService();
 
     _showInfo(context, 'Initialisation du paiement Wave...');
@@ -676,10 +659,10 @@ class ContractPaymentFlow {
     );
 
     if (!(createResult['success'] == true)) {
-
       _showInfo(
         context,
-        createResult['message']?.toString() ?? 'Impossible de démarrer le paiement Wave.',
+        createResult['message']?.toString() ??
+            'Impossible de démarrer le paiement Wave.',
         isError: true,
       );
       return;
@@ -691,7 +674,6 @@ class ContractPaymentFlow {
     final transactionId = data['transactionId']?.toString();
 
     if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
-
       _showInfo(
         context,
         'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}',
@@ -702,7 +684,6 @@ class ContractPaymentFlow {
 
     final waveUri = Uri.tryParse(launchUrlValue);
     if (waveUri == null) {
-
       _showInfo(context, 'URL Wave invalide.', isError: true);
       return;
     }
@@ -713,7 +694,6 @@ class ContractPaymentFlow {
     );
 
     if (!launched) {
-
       launched = await launchUrl(
         waveUri,
         mode: LaunchMode.platformDefault,
@@ -721,7 +701,6 @@ class ContractPaymentFlow {
     }
 
     if (!launched) {
-
       launched = await launchUrl(
         waveUri,
         mode: LaunchMode.inAppWebView,
@@ -729,7 +708,6 @@ class ContractPaymentFlow {
     }
 
     if (!launched) {
-
       _showInfo(
         context,
         'Impossible d\'ouvrir Wave. URL: $launchUrlValue',
@@ -738,10 +716,10 @@ class ContractPaymentFlow {
       return;
     }
 
-    _showInfo(context, 'Paiement Wave lancé. Vérification du statut en cours...');
+    _showInfo(
+        context, 'Paiement Wave lancé. Vérification du statut en cours...');
 
     for (int attempt = 0; attempt < 8; attempt++) {
-
       await Future.delayed(const Duration(seconds: 3));
 
       final statusResult = await waveService.getCheckoutStatus(
@@ -751,7 +729,6 @@ class ContractPaymentFlow {
       );
 
       if (!(statusResult['success'] == true)) {
-
         continue;
       }
 
@@ -759,14 +736,12 @@ class ContractPaymentFlow {
       final status = (statusData['status'] ?? '').toString().toUpperCase();
 
       if (status == 'SUCCESS') {
-
         _showInfo(context, 'Paiement Wave confirmé avec succès.');
         onPaymentSuccess?.call();
         return;
       }
 
       if (status == 'FAILED') {
-
         _showInfo(
           context,
           'Le paiement Wave a échoué ou a été annulé.',
@@ -774,7 +749,6 @@ class ContractPaymentFlow {
         );
         return;
       }
-
     }
 
     _showInfo(
@@ -782,6 +756,4 @@ class ContractPaymentFlow {
       'Paiement initié. Confirmation en attente, vérifiez à nouveau dans quelques instants.',
     );
   }
-
 }
-

@@ -218,8 +218,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
         setState(() {
           contratDetails = data['contrat'];
-          beneficiaires =
-              List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []);
+          beneficiaires = _filterBeneficiairesForContract(
+            List<Map<String, dynamic>>.from(data['beneficiaires'] ?? []),
+            numepoli: numepoli?.toString(),
+            codeinte: codeinte?.toString(),
+          );
           isLoading = false;
         });
 
@@ -239,6 +242,29 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
     }
 
     print('🔍 [DETAILS] ========== FIN CHARGEMENT ==========');
+  }
+
+  /// Filtre de sécurité : un même numepoli peut exister sur plusieurs contrats legacy.
+  List<Map<String, dynamic>> _filterBeneficiairesForContract(
+    List<Map<String, dynamic>> raw, {
+    String? numepoli,
+    String? codeinte,
+  }) {
+    final police = (numepoli ?? '').trim().toUpperCase();
+    final inte = (codeinte ?? '').trim().toUpperCase();
+    if (police.isEmpty) return raw;
+
+    return raw.where((benef) {
+      final benefPolice =
+          (benef['numepoli'] ?? '').toString().trim().toUpperCase();
+      if (benefPolice.isNotEmpty && benefPolice != police) {
+        return false;
+      }
+      if (inte.isEmpty) return true;
+      final benefInte =
+          (benef['codeinte'] ?? '').toString().trim().toUpperCase();
+      return benefInte == inte;
+    }).toList();
   }
 
   Map<String, dynamic> _getProductConfig() {
