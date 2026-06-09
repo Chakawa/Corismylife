@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/core/widgets/country_selector.dart';
@@ -293,10 +294,9 @@ class _LoginScreenState extends State<LoginScreen>
 
           errorMessage = 'Serveur inaccessible. Veuillez réessayer plus tard.';
         } else {
-
-          // Message générique avec l'erreur technique
-          errorMessage =
-              'Erreur lors de la connexion. ${e.toString().replaceAll('Exception: ', '')}';
+          // Message générique pour l'utilisateur. Logguer les détails en debug.
+          if (kDebugMode) debugPrint('Login error: ${e.toString()}');
+          errorMessage = 'Erreur lors de la connexion. Veuillez réessayer plus tard.';
         }
 
         _showErrorSnackbar(errorMessage);
@@ -320,22 +320,33 @@ class _LoginScreenState extends State<LoginScreen>
 
     try {
 
+      final uri = Uri.parse('${AppConfig.baseUrl}/auth/2fa-status');
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/auth/2fa-status'),
+        uri,
         headers: {
-
           'Authorization': 'Bearer ${await AuthService.getToken()}',
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      if (response.statusCode == 200) {
+      if (kDebugMode) {
+        debugPrint('LoginScreen._check2FAStatus -> GET $uri');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body snippet: ${response.body.length > 400 ? response.body.substring(0, 400) : response.body}');
+      }
 
-        return json.decode(response.body);
+      if (response.statusCode == 200) {
+        try {
+          final decoded = json.decode(response.body) as Map<String, dynamic>;
+          return decoded;
+        } on FormatException {
+          if (kDebugMode) debugPrint('LoginScreen._check2FAStatus: non-JSON body: ${response.body}');
+          return {'enabled': false};
+        }
       }
 
     } catch (e) {
-
       debugPrint('Erreur vérification 2FA: $e');
     }
 
@@ -348,19 +359,29 @@ class _LoginScreenState extends State<LoginScreen>
 
     try {
 
+      final uri = Uri.parse('${AppConfig.baseUrl}/auth/request-2fa-otp');
       final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/request-2fa-otp'),
-        headers: {'Content-Type': 'application/json'},
+        uri,
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
         body: json.encode({'userId': userId}),
       );
 
-      if (response.statusCode == 200) {
+      if (kDebugMode) {
+        debugPrint('LoginScreen._request2FAOtp -> POST $uri');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body snippet: ${response.body.length > 400 ? response.body.substring(0, 400) : response.body}');
+      }
 
-        return json.decode(response.body);
+      if (response.statusCode == 200) {
+        try {
+          return json.decode(response.body) as Map<String, dynamic>;
+        } on FormatException {
+          if (kDebugMode) debugPrint('LoginScreen._request2FAOtp: non-JSON body: ${response.body}');
+          return {'success': false};
+        }
       }
 
     } catch (e) {
-
       debugPrint('Erreur envoi OTP 2FA: $e');
     }
 

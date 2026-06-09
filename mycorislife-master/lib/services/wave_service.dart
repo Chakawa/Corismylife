@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:mycorislife/config/app_config.dart';
+import 'package:mycorislife/core/utils/error_message_helper.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
 
 class WaveService {
-
   static String get baseUrl => AppConfig.baseUrl;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -20,7 +20,6 @@ class WaveService {
 
   /// d'erreur exploitable à l'UI.
   Map<String, dynamic> _safeDecodeMap(String body) {
-
     final decoded = jsonDecode(body);
     if (decoded is Map<String, dynamic>) return decoded;
     if (decoded is Map) return Map<String, dynamic>.from(decoded);
@@ -35,7 +34,6 @@ class WaveService {
 
   /// `session_id`, etc. On normalise pour le reste du flux.
   String _extractSessionId(Map<String, dynamic> payload) {
-
     return (payload['sessionId'] ??
             payload['session_id'] ??
             payload['id'] ??
@@ -53,14 +51,18 @@ class WaveService {
 
   /// `wave_launch_url`, `checkout_url`, etc.
   String _extractLaunchUrl(Map<String, dynamic> payload) {
-
     return (payload['launchUrl'] ??
-            payload['wave_launch_url'] ??
-            payload['launch_url'] ??
-            payload['checkout_url'] ??
-            payload['url'] ??
-            '')
-        .toString();
+        payload['wave_launch_url'] ??
+        payload['launch_url'] ??
+        payload['checkout_url'] ??
+        payload['checkoutUrl'] ??
+        payload['checkoutURL'] ??
+        payload['checkoutLink'] ??
+        payload['redirect_url'] ??
+        payload['redirectUrl'] ??
+        payload['url'] ??
+        '')
+      .toString();
   }
 
   /// Crée une session de paiement Wave et renvoie une réponse normalisée.
@@ -72,7 +74,6 @@ class WaveService {
   /// afin que les écrans Flutter n'aient pas à gérer plusieurs formats.
 
   Future<Map<String, dynamic>> createCheckoutSession({
-
     int? subscriptionId,
     required double amount,
     String? description,
@@ -83,9 +84,7 @@ class WaveService {
     String? numepoli,
     String? codeinte,
   }) async {
-
     try {
-
       // Forçage global du mode test pour tous les paiements Wave.
       final effectiveAmount = TestModeHelper.applyTestModeIfNeeded(
         amount,
@@ -94,9 +93,7 @@ class WaveService {
 
       final token = await _storage.read(key: 'token');
       if (token == null || token.isEmpty) {
-
         return {
-
           'success': false,
           'message': 'Session expirée. Veuillez vous reconnecter.',
         };
@@ -105,12 +102,10 @@ class WaveService {
       final response = await http.post(
         Uri.parse('$baseUrl/payment/wave/create-session'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-
           if (subscriptionId != null) 'subscriptionId': subscriptionId,
           'amount': effectiveAmount.round(),
           'description': description,
@@ -134,12 +129,9 @@ class WaveService {
       final normalizedLaunchUrl = _extractLaunchUrl(payload);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-
         return {
-
           'success': true,
           'data': {
-
             ...payload,
             'sessionId': normalizedSessionId,
             'launchUrl': normalizedLaunchUrl,
@@ -149,20 +141,20 @@ class WaveService {
       }
 
       return {
-
         'success': false,
         'message': data['message'] ?? 'Échec création session Wave',
         'error': data['error'],
       };
     } catch (e) {
-
       return {
-
         'success': false,
-        'message': 'Erreur réseau Wave: $e',
+        'message': ErrorMessageHelper.forUser(
+          e,
+          fallback: ErrorMessageHelper.paymentFailed,
+          context: 'WaveService.createCheckoutSession',
+        ),
       };
     }
-
   }
 
   /// Vérifie le statut d'une session Wave.
@@ -174,26 +166,20 @@ class WaveService {
   /// et permet de déclencher la confirmation du contrat quand le statut passe à SUCCESS.
 
   Future<Map<String, dynamic>> getCheckoutStatus({
-
     required String sessionId,
     int? subscriptionId,
     String? transactionId,
   }) async {
-
     try {
-
       final token = await _storage.read(key: 'token');
       if (token == null || token.isEmpty) {
-
         return {
-
           'success': false,
           'message': 'Session expirée. Veuillez vous reconnecter.',
         };
       }
 
       final query = <String, String>{
-
         if (subscriptionId != null) 'subscriptionId': '$subscriptionId',
         if (transactionId != null && transactionId.isNotEmpty)
           'transactionId': transactionId,
@@ -205,7 +191,6 @@ class WaveService {
       final response = await http.get(
         uri,
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
@@ -214,9 +199,7 @@ class WaveService {
       final data = _safeDecodeMap(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-
         return {
-
           'success': true,
           'data': data['data'] ?? data,
           'message': data['message'] ?? 'Statut Wave récupéré',
@@ -224,20 +207,20 @@ class WaveService {
       }
 
       return {
-
         'success': false,
         'message': data['message'] ?? 'Impossible de récupérer le statut Wave',
         'error': data['error'],
       };
     } catch (e) {
-
       return {
-
         'success': false,
-        'message': 'Erreur réseau Wave: $e',
+        'message': ErrorMessageHelper.forUser(
+          e,
+          fallback: ErrorMessageHelper.paymentFailed,
+          context: 'WaveService.getCheckoutStatus',
+        ),
       };
     }
-
   }
 
   /// 🎉 Finaliser le paiement Wave réussi:
@@ -251,14 +234,10 @@ class WaveService {
   /// @returns {success, message, data{subscriptionId, statut, montant, client}}
 
   Future<Map<String, dynamic>> confirmWavePayment(int subscriptionId) async {
-
     try {
-
       final token = await _storage.read(key: 'token');
       if (token == null || token.isEmpty) {
-
         return {
-
           'success': false,
           'message': 'Session expirée. Veuillez vous reconnecter.',
         };
@@ -267,7 +246,6 @@ class WaveService {
       final response = await http.post(
         Uri.parse('$baseUrl/payment/confirm-wave-payment/$subscriptionId'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
@@ -276,9 +254,7 @@ class WaveService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-
         return {
-
           'success': true,
           'data': data['data'] ?? data,
           'message': data['message'] ?? 'Paiement confirmé avec succès',
@@ -286,20 +262,20 @@ class WaveService {
       }
 
       return {
-
         'success': false,
         'message': data['message'] ?? 'Impossible de confirmer le paiement',
         'error': data['error'],
       };
     } catch (e) {
-
       return {
-
         'success': false,
-        'message': 'Erreur réseau lors de la confirmation: $e',
+        'message': ErrorMessageHelper.forUser(
+          e,
+          fallback: ErrorMessageHelper.paymentFailed,
+          context: 'WaveService.confirmWavePayment',
+        ),
       };
     }
-
   }
 
   /// Réconcilie les paiements Wave en attente pour l'utilisateur connecté.
@@ -311,14 +287,10 @@ class WaveService {
   /// paiements qui auraient pu être confirmés pendant que l'app était en arrière-plan.
 
   Future<Map<String, dynamic>> reconcileWavePayments() async {
-
     try {
-
       final token = await _storage.read(key: 'token');
       if (token == null || token.isEmpty) {
-
         return {
-
           'success': false,
           'message': 'Session expirée. Veuillez vous reconnecter.',
         };
@@ -327,7 +299,6 @@ class WaveService {
       final response = await http.post(
         Uri.parse('$baseUrl/payment/wave/reconcile'),
         headers: {
-
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
@@ -336,9 +307,7 @@ class WaveService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-
         return {
-
           'success': true,
           'data': data['data'] ?? data,
           'message': data['message'] ?? 'Réconciliation Wave terminée',
@@ -346,20 +315,19 @@ class WaveService {
       }
 
       return {
-
         'success': false,
         'message': data['message'] ?? 'Échec réconciliation Wave',
         'error': data['error'],
       };
     } catch (e) {
-
       return {
-
         'success': false,
-        'message': 'Erreur réseau réconciliation Wave: $e',
+        'message': ErrorMessageHelper.forUser(
+          e,
+          fallback: ErrorMessageHelper.generic,
+          context: 'WaveService.reconcileWavePayments',
+        ),
       };
     }
-
   }
-
 }

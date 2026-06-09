@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mycorislife/models/contrat.dart';
 import 'package:mycorislife/services/contrat_service.dart';
+import 'package:mycorislife/core/utils/error_message_helper.dart';
 import 'package:mycorislife/services/wave_service.dart';
 import 'package:mycorislife/utils/test_mode_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -68,13 +69,37 @@ class ContractPaymentFlow {
         return;
       }
 
-      final resolvedSubscriptionId =
-          knownSubscriptionId ?? contract.subscriptionId ?? contract.id;
+      int? resolvedSubscriptionId;
+      if (knownSubscriptionId != null) {
+        // Si knownSubscriptionId correspond bien à une subscriptionId (et non à l'id du contrat),
+        // on l'utilise uniquement dans ce cas.
+        if (contract.subscriptionId != null && contract.subscriptionId == knownSubscriptionId) {
+          resolvedSubscriptionId = knownSubscriptionId;
+        } else {
+          resolvedSubscriptionId = null;
+        }
+      } else {
+        resolvedSubscriptionId = contract.subscriptionId;
+      }
+
+      if (resolvedSubscriptionId == null) {
+        // Pas de subscriptionId — on tente quand même le paiement via numéro de police et codeinte.
+        await _showPaymentOptions(
+          context,
+          subscriptionId: null,
+          numeroPolice: contract.numepoli ?? numeroPolice,
+          codeinte: contract.codeinte,
+          montant: effectiveMontant,
+          onPaymentSuccess: onPaymentSuccess,
+        );
+        return;
+      }
 
       await _showPaymentOptions(
         context,
         subscriptionId: resolvedSubscriptionId,
         numeroPolice: contract.numepoli ?? numeroPolice,
+        codeinte: contract.codeinte,
         montant: effectiveMontant,
         onPaymentSuccess: onPaymentSuccess,
       );
@@ -277,16 +302,36 @@ class ContractPaymentFlow {
 
                                   Navigator.of(dialogContext).pop();
 
-                                  final resolvedSubscriptionId =
-                                      knownSubscriptionId ??
-                                          contract.subscriptionId ??
-                                          contract.id;
+                                  int? resolvedSubscriptionId;
+                                  if (knownSubscriptionId != null) {
+                                    if (contract.subscriptionId != null && contract.subscriptionId == knownSubscriptionId) {
+                                      resolvedSubscriptionId = knownSubscriptionId;
+                                    } else {
+                                      resolvedSubscriptionId = null;
+                                    }
+                                  } else {
+                                    resolvedSubscriptionId = contract.subscriptionId;
+                                  }
+
+                                  if (resolvedSubscriptionId == null) {
+                                    // Pas de subscriptionId — on tente le paiement via numéro de police et codeinte.
+                                    await _showPaymentOptions(
+                                      context,
+                                      subscriptionId: null,
+                                      numeroPolice: contract.numepoli ?? numeroPolice,
+                                      codeinte: contract.codeinte,
+                                      montant: effectiveMontant,
+                                      onPaymentSuccess: onPaymentSuccess,
+                                    );
+                                    return;
+                                  }
 
                                   await _showPaymentOptions(
                                     context,
                                     subscriptionId: resolvedSubscriptionId,
                                     numeroPolice:
                                         contract.numepoli ?? numeroPolice,
+                                    codeinte: contract.codeinte,
                                     montant: effectiveMontant,
                                     onPaymentSuccess: onPaymentSuccess,
                                   );
@@ -405,23 +450,20 @@ class ContractPaymentFlow {
     BuildContext context, {
     required int? subscriptionId,
     required String numeroPolice,
+    String? codeinte,
     required double montant,
     VoidCallback? onPaymentSuccess,
   }) async {
-    if (subscriptionId == null) {
-      _showInfo(
-        context,
-        'Ce contrat ne possède pas de référence de souscription exploitable.',
-        isError: true,
-      );
-      return;
-    }
+    // On autorise le paiement même si la `subscriptionId` est absente:
+    // dans ce cas, la création de session Wave se fera via `numeroPolice`.
+
+    final parentContext = context;
 
     await showModalBottomSheet(
-      context: context,
+      context: parentContext,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -479,17 +521,18 @@ class ContractPaymentFlow {
                   ),
                   const SizedBox(height: 20),
                   _buildPaymentOptionWithImage(
-                    context,
+                    sheetContext,
                     'Wave',
                     'assets/images/icone_wave.jpeg',
                     Colors.blue,
                     'Paiement mobile sécurisé',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _startWavePayment(
-                        context,
+                    onTap: () async {
+                      Navigator.pop(sheetContext);
+                      await _startWavePayment(
+                        parentContext,
                         subscriptionId: subscriptionId,
                         numeroPolice: numeroPolice,
+                        codeinte: codeinte,
                         montant: montant,
                         onPaymentSuccess: onPaymentSuccess,
                       );
@@ -642,118 +685,174 @@ class ContractPaymentFlow {
 
   static Future<void> _startWavePayment(
     BuildContext context, {
-    required int subscriptionId,
-    required String numeroPolice,
+    int? subscriptionId,
+    String? numeroPolice,
+    String? codeinte,
     required double montant,
     VoidCallback? onPaymentSuccess,
   }) async {
-    final waveService = WaveService();
+    try {
+      if (!context.mounted) return;
 
-    _showInfo(context, 'Initialisation du paiement Wave...');
+      final waveService = WaveService();
 
-    final createResult = await waveService.createCheckoutSession(
-      subscriptionId: subscriptionId,
-      amount: montant,
-      description:
-          'Paiement contrat $numeroPolice (${montant.toStringAsFixed(0)} FCFA)',
-    );
+      _showInfo(context, 'Initialisation du paiement Wave...');
 
-    if (!(createResult['success'] == true)) {
-      _showInfo(
-        context,
-        createResult['message']?.toString() ??
-            'Impossible de démarrer le paiement Wave.',
-        isError: true,
-      );
-      return;
-    }
-
-    final data = createResult['data'] as Map<String, dynamic>? ?? {};
-    final launchUrlValue = data['launchUrl']?.toString();
-    final sessionId = data['sessionId']?.toString() ?? '';
-    final transactionId = data['transactionId']?.toString();
-
-    if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
-      _showInfo(
-        context,
-        'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}',
-        isError: true,
-      );
-      return;
-    }
-
-    final waveUri = Uri.tryParse(launchUrlValue);
-    if (waveUri == null) {
-      _showInfo(context, 'URL Wave invalide.', isError: true);
-      return;
-    }
-
-    bool launched = await launchUrl(
-      waveUri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched) {
-      launched = await launchUrl(
-        waveUri,
-        mode: LaunchMode.platformDefault,
-      );
-    }
-
-    if (!launched) {
-      launched = await launchUrl(
-        waveUri,
-        mode: LaunchMode.inAppWebView,
-      );
-    }
-
-    if (!launched) {
-      _showInfo(
-        context,
-        'Impossible d\'ouvrir Wave. URL: $launchUrlValue',
-        isError: true,
-      );
-      return;
-    }
-
-    _showInfo(
-        context, 'Paiement Wave lancé. Vérification du statut en cours...');
-
-    for (int attempt = 0; attempt < 8; attempt++) {
-      await Future.delayed(const Duration(seconds: 3));
-
-      final statusResult = await waveService.getCheckoutStatus(
-        sessionId: sessionId,
+      final createResult = await waveService.createCheckoutSession(
         subscriptionId: subscriptionId,
-        transactionId: transactionId,
+        amount: montant,
+        description:
+            'Paiement contrat ${numeroPolice ?? ''} (${montant.toStringAsFixed(0)} FCFA)',
+        numeroPolice: numeroPolice,
+        codeinte: codeinte,
       );
 
-      if (!(statusResult['success'] == true)) {
-        continue;
-      }
+      if (!context.mounted) return;
 
-      final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
-      final status = (statusData['status'] ?? '').toString().toUpperCase();
-
-      if (status == 'SUCCESS') {
-        _showInfo(context, 'Paiement Wave confirmé avec succès.');
-        onPaymentSuccess?.call();
-        return;
-      }
-
-      if (status == 'FAILED') {
+      if (!(createResult['success'] == true)) {
         _showInfo(
           context,
-          'Le paiement Wave a échoué ou a été annulé.',
+          ErrorMessageHelper.sanitizeServerMessage(
+            createResult['message']?.toString(),
+            fallback: ErrorMessageHelper.paymentFailed,
+          ),
           isError: true,
         );
         return;
       }
-    }
 
-    _showInfo(
-      context,
-      'Paiement initié. Confirmation en attente, vérifiez à nouveau dans quelques instants.',
-    );
+      final data = createResult['data'] as Map<String, dynamic>? ?? {};
+      final launchUrlValue = data['launchUrl']?.toString();
+      final sessionId = data['sessionId']?.toString() ?? '';
+      final transactionId = data['transactionId']?.toString();
+
+      if (launchUrlValue == null ||
+          launchUrlValue.isEmpty ||
+          sessionId.isEmpty) {
+        _showInfo(
+          context,
+          ErrorMessageHelper.paymentIncomplete,
+          isError: true,
+        );
+        return;
+      }
+
+      final waveUri = Uri.tryParse(launchUrlValue);
+      if (waveUri == null) {
+        _showInfo(context, 'URL Wave invalide.', isError: true);
+        return;
+      }
+
+      bool launched = false;
+      if (await canLaunchUrl(waveUri)) {
+        launched = await launchUrl(
+          waveUri,
+          mode: LaunchMode.externalApplication,
+        );
+      }
+
+      if (!launched) {
+        launched = await launchUrl(
+          waveUri,
+          mode: LaunchMode.platformDefault,
+        );
+      }
+
+      if (!launched) {
+        launched = await launchUrl(
+          waveUri,
+          mode: LaunchMode.inAppWebView,
+        );
+      }
+
+      if (!launched) {
+        _showInfo(
+          context,
+          'Impossible d\'ouvrir l\'application Wave. Vérifiez qu\'elle est installée.',
+          isError: true,
+        );
+        return;
+      }
+
+      if (!context.mounted) return;
+
+      _showInfo(
+        context,
+        'Paiement Wave lancé. Retournez à l\'application après paiement.',
+      );
+
+      for (int attempt = 0; attempt < 40; attempt++) {
+        await Future.delayed(const Duration(seconds: 3));
+
+        if (!context.mounted) return;
+
+        final statusResult = await waveService.getCheckoutStatus(
+          sessionId: sessionId,
+          subscriptionId: subscriptionId,
+          transactionId: transactionId,
+        );
+
+        if (!(statusResult['success'] == true)) {
+          continue;
+        }
+
+        final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
+        final status = (statusData['status'] ?? '').toString().toUpperCase();
+
+        if (status == 'SUCCESS') {
+          // Si nous avons une subscriptionId, tenter la confirmation serveur.
+          if (subscriptionId != null) {
+            try {
+              final confirmResult = await waveService.confirmWavePayment(subscriptionId);
+              if (confirmResult['success'] == true) {
+                _showInfo(context, 'Paiement Wave confirmé avec succès.');
+                onPaymentSuccess?.call();
+                return;
+              } else {
+                _showInfo(context, 'Paiement Wave confirmé localement. Vérifiez la confirmation serveur.',);
+                onPaymentSuccess?.call();
+                return;
+              }
+            } catch (_) {
+              _showInfo(context, 'Paiement Wave confirmé localement. Vérifiez la confirmation serveur.',);
+              onPaymentSuccess?.call();
+              return;
+            }
+          } else {
+            _showInfo(context, 'Paiement Wave confirmé (numéro police).');
+            onPaymentSuccess?.call();
+            return;
+          }
+        }
+
+        if (status == 'FAILED') {
+          _showInfo(
+            context,
+            'Le paiement Wave a échoué ou a été annulé.',
+            isError: true,
+          );
+          return;
+        }
+      }
+
+      if (!context.mounted) return;
+
+      _showInfo(
+        context,
+        'Paiement initié. Confirmation en attente, vérifiez à nouveau dans quelques instants.',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      _showInfo(
+        context,
+        ErrorMessageHelper.forUser(
+          e,
+          fallback: ErrorMessageHelper.paymentFailed,
+          context: 'ContractPaymentFlow._startWavePayment',
+        ),
+        isError: true,
+      );
+    }
   }
 }

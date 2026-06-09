@@ -125,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = emailController.text.trim();
     if (email.isEmpty) {
       setState(() => emailErrorMessage = null);
-      return; // L'email est optionnel
+      return; // L'email n'est pas encore renseigné
     }
 
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
@@ -726,7 +726,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             _buildTextField(
-                              'Adresse e-mail (optionnel)',
+                              'Adresse e-mail',
                               emailController,
                               icon: Icons.email,
                               inputType: TextInputType.emailAddress,
@@ -740,16 +740,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 });
                               },
                               validator: (value) {
-                                // L'email est optionnel
-                                if (value == null || value.isEmpty) {
-                                  return null; // Pas d'erreur si vide
+                                if (value == null || value.trim().isEmpty) {
+                                  return "Veuillez entrer votre adresse e-mail.";
                                 }
-                                // Si fourni, vérifier le format
                                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                                     .hasMatch(value)) {
                                   return "Veuillez entrer un email valide.";
                                 }
-                                // Vérifier si l'email est déjà utilisé
                                 if (emailErrorMessage != null) {
                                   return emailErrorMessage;
                                 }
@@ -981,17 +978,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               fontSize: fontSize,
                             ),
                             _buildTextField(
-                              'Profession (optionnel)',
+                              'Profession',
                               professionController,
                               icon: Icons.work_outline,
                               hintText: 'Ex: Enseignant, Médecin, Commerçant',
+                              validator: (value) => value!.trim().isEmpty
+                                  ? "Veuillez entrer la profession."
+                                  : null,
                               fontSize: fontSize,
                             ),
                             _buildTextField(
-                              "Secteur d'activité (optionnel)",
+                              "Secteur d'activité",
                               secteurActiviteController,
                               icon: Icons.business_center_outlined,
                               hintText: "Ex: Éducation, Santé, Commerce",
+                              validator: (value) => value!.trim().isEmpty
+                                  ? "Veuillez entrer le secteur d'activité."
+                                  : null,
                               fontSize: fontSize,
                             ),
                           ],

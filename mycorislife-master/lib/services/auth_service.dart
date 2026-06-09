@@ -49,19 +49,42 @@ class AuthService {
       try {
         // Faire la requête POST vers l'endpoint de connexion
         // Timeout porté à 15 secondes pour mieux tolérer les réseaux lents
-        final response = await http.post(
-          Uri.parse('$apiBase/auth/login'),
-          body: jsonEncode({'email': email, 'password': password}),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(
+        final uri = Uri.parse('$apiBase/auth/login');
+        final response = await http
+            .post(
+              uri,
+              body: jsonEncode({'email': email, 'password': password}),
+              headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            )
+            .timeout(
           const Duration(seconds: 15),
           onTimeout: () {
             throw Exception(
                 'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet ou réessayez plus tard.');
           },
         );
-        // Décoder la réponse JSON
-        final data = jsonDecode(response.body);
+        // Debug: log response details in debug mode to help diagnostiquer
+        if (kDebugMode) {
+          try {
+            final snippet = response.body.length > 800
+                ? response.body.substring(0, 800)
+                : response.body;
+            debugPrint('AuthService.login -> POST $uri');
+            debugPrint('Status: ${response.statusCode}');
+            debugPrint('Headers: ${response.headers}');
+            debugPrint('Body snippet: $snippet');
+          } catch (_) {}
+        }
+
+        // Décoder la réponse JSON — si elle n'est pas JSON, ne pas exposer
+        // le HTML à l'utilisateur, mais logguer en debug.
+        Map<String, dynamic> data;
+        try {
+          data = jsonDecode(response.body) as Map<String, dynamic>;
+        } on FormatException {
+          if (kDebugMode) debugPrint('AuthService.login: réponse non-JSON: ${response.body}');
+          throw Exception('Réponse inattendue du serveur. Veuillez contacter le support.');
+        }
         // Vérifier si la connexion a réussi (code 200 et success = true)
         if (response.statusCode == 200 && data['success']) {
           // Sauvegarder le token JWT de manière sécurisée
@@ -187,29 +210,45 @@ class AuthService {
   static Future<String?> sendOtp(
       String telephone, Map<String, dynamic> userData) async {
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/send-otp'),
-        body: jsonEncode({
-          'telephone': telephone,
-          'userData': userData,
-        }),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final uri = Uri.parse('${AppConfig.baseUrl}/auth/send-otp');
+      final response = await http
+          .post(
+            uri,
+            body: jsonEncode({
+              'telephone': telephone,
+              'userData': userData,
+            }),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (kDebugMode) {
+        debugPrint('AuthService.sendOtp -> POST $uri');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Headers: ${response.headers}');
+        debugPrint('Body snippet: ${response.body.length > 400 ? response.body.substring(0, 400) : response.body}');
+      }
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success']) {
-          // En developpement, le serveur peut retourner le code OTP
-          return data['otpCode'];
-        } else {
+        try {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          if (data['success']) {
+            return data['otpCode'];
+          }
           throw Exception(data['message'] ?? 'Erreur lors de l\'envoi du code OTP');
+        } on FormatException {
+          if (kDebugMode) debugPrint('AuthService.sendOtp: réponse non-JSON: ${response.body}');
+          throw Exception('Code OTP non envoyé. Veuillez réessayer.');
         }
       }
-      // Reponse non-200 : recuperer le message du serveur
+
+      // Reponse non-200 : essayer d'extraire message JSON sinon message générique
       try {
-        final errData = jsonDecode(response.body);
+        final errData = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(errData['message'] ?? 'Erreur lors de l\'envoi du code OTP');
-      } catch (_) {
-        throw Exception('Erreur lors de l\'envoi du code OTP');
+      } on FormatException {
+        if (kDebugMode) debugPrint('AuthService.sendOtp non-200 non-JSON body: ${response.body}');
+        throw Exception('Code OTP non envoyé. HTTP ${response.statusCode}.');
       }
     } catch (e) {
       rethrow;
@@ -226,19 +265,33 @@ class AuthService {
   static Future<void> verifyOtpAndRegister(
       String telephone, String otpCode) async {
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/verify-otp'),
-        body: jsonEncode({
-          'telephone': telephone,
-          'otpCode': otpCode,
-        }),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 201 && data['success']) {
-        return; // Succès
-      } else {
+      final uri = Uri.parse('${AppConfig.baseUrl}/auth/verify-otp');
+      final response = await http
+          .post(
+            uri,
+            body: jsonEncode({
+              'telephone': telephone,
+              'otpCode': otpCode,
+            }),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (kDebugMode) {
+        debugPrint('AuthService.verifyOtpAndRegister -> POST $uri');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body snippet: ${response.body.length > 400 ? response.body.substring(0, 400) : response.body}');
+      }
+
+      try {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (response.statusCode == 201 && data['success']) {
+          return; // Succès
+        }
         throw Exception(data['message'] ?? 'Code OTP incorrect');
+      } on FormatException {
+        if (kDebugMode) debugPrint('AuthService.verifyOtpAndRegister: réponse non-JSON: ${response.body}');
+        throw Exception('Réponse inattendue du serveur lors de la vérification OTP.');
       }
     } catch (e) {
       // Toujours retransmettre le vrai message d'erreur (backend ou réseau)
@@ -282,31 +335,42 @@ class AuthService {
     try {
       // Faire la requête POST vers l'endpoint d'inscription
       // Timeout porté à 10 secondes
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/register'),
-        body: jsonEncode(userData),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
+      final uri = Uri.parse('${AppConfig.baseUrl}/auth/register');
+      final response = await http
+          .post(
+            uri,
+            body: jsonEncode(userData),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          )
+          .timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           throw Exception(
               'Le serveur met trop de temps à répondre. Vérifiez votre connexion Internet.');
         },
       );
-      final data = jsonDecode(response.body);
-      // Vérifier si l'inscription a réussi (code 201 et success = true)
-      if (response.statusCode != 201 || !data['success']) {
-        // Gérer les erreurs spécifiques
-        if (response.statusCode == 409) {
-          throw Exception(
-              'Cet email est déjà utilisé. Veuillez utiliser un autre email.');
-        } else if (response.statusCode == 400) {
-          throw Exception(data['message'] ??
-              'Données invalides. Veuillez vérifier les informations saisies.');
-        } else {
-          throw Exception(data['message'] ??
-              'Échec de l\'inscription. Veuillez réessayer.');
+      if (kDebugMode) {
+        debugPrint('AuthService.registerClient -> POST $uri');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body snippet: ${response.body.length > 400 ? response.body.substring(0, 400) : response.body}');
+      }
+
+      try {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        // Vérifier si l'inscription a réussi (code 201 et success = true)
+        if (response.statusCode != 201 || !data['success']) {
+          // Gérer les erreurs spécifiques
+          if (response.statusCode == 409) {
+            throw Exception('Cet email est déjà utilisé. Veuillez utiliser un autre email.');
+          } else if (response.statusCode == 400) {
+            throw Exception(data['message'] ?? 'Données invalides. Veuillez vérifier les informations saisies.');
+          } else {
+            throw Exception(data['message'] ?? 'Échec de l\'inscription. Veuillez réessayer.');
+          }
         }
+      } on FormatException {
+        if (kDebugMode) debugPrint('AuthService.registerClient: réponse non-JSON: ${response.body}');
+        throw Exception('Réponse inattendue du serveur lors de l\'inscription. Veuillez réessayer.');
       }
     } on SocketException {
       throw Exception(

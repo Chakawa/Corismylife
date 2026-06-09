@@ -2283,8 +2283,10 @@ class PropositionDetailPageState extends State<PropositionDetailPage>
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Impossible d\'ouvrir Wave. URL: $launchUrlValue'),
+          const SnackBar(
+            content: Text(
+              'Impossible d\'ouvrir l\'application Wave. Vérifiez qu\'elle est installée.',
+            ),
             backgroundColor: Colors.red,
           ),
         );

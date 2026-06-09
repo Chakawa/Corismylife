@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mycorislife/core/utils/error_message_helper.dart';
 import 'package:mycorislife/services/wave_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,9 +24,11 @@ class WavePaymentHandler {
   static Future<bool> startPayment(
     BuildContext context, {
 
-    required int subscriptionId,
+    int? subscriptionId,
     required double amount,
     required String description,
+    String? numeroPolice,
+    String? codeinte,
     FutureOr<void> Function()? onSuccess,
   }) async {
 
@@ -44,6 +47,8 @@ class WavePaymentHandler {
         subscriptionId: subscriptionId,
         amount: amount,
         description: description,
+        numeroPolice: numeroPolice,
+        codeinte: codeinte,
       );
 
       if (!(createResult['success'] == true)) {
@@ -51,8 +56,10 @@ class WavePaymentHandler {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              createResult['message']?.toString() ??
-                  'Impossible de démarrer le paiement Wave.',
+              ErrorMessageHelper.sanitizeServerMessage(
+                createResult['message']?.toString(),
+                fallback: ErrorMessageHelper.paymentFailed,
+              ),
             ),
             backgroundColor: Colors.red,
           ),
@@ -68,9 +75,8 @@ class WavePaymentHandler {
       if (launchUrlValue == null || launchUrlValue.isEmpty || sessionId.isEmpty) {
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Réponse Wave incomplète (URL/session). Détail: ${createResult['message'] ?? 'n/a'}'),
+          const SnackBar(
+            content: Text(ErrorMessageHelper.paymentIncomplete),
             backgroundColor: Colors.red,
           ),
         );
@@ -109,8 +115,10 @@ class WavePaymentHandler {
       if (!launched) {
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Impossible d\'ouvrir Wave. URL: $launchUrlValue'),
+          const SnackBar(
+            content: Text(
+              'Impossible d\'ouvrir l\'application Wave. Vérifiez qu\'elle est installée.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -147,14 +155,16 @@ class WavePaymentHandler {
 
         debugPrint('📊 Tentative ${attempt + 1}/40: Statut Wave = $status');
 
+
         if (status == 'SUCCESS') {
 
           // Paiement confirmé: on finalise côté backend (statut contrat + SMS).
           try {
 
-            final confirmResult = await service.confirmWavePayment(subscriptionId);
+            if (subscriptionId != null) {
+              final confirmResult = await service.confirmWavePayment(subscriptionId);
 
-            if (confirmResult['success'] == true) {
+              if (confirmResult['success'] == true) {
 
               final confirmData = confirmResult['data'] as Map<String, dynamic>? ?? {};
 
@@ -196,13 +206,29 @@ class WavePaymentHandler {
               }
 
               return true;
+              } else {
+
+                // Confirmation potentiellement asynchrone: pas de message transitoire.
+                if (onSuccess != null) {
+
+                  await onSuccess();
+                }
+
+                return true;
+              }
             } else {
-
-              // Confirmation potentiellement asynchrone: pas de message transitoire.
+              // Pas de subscriptionId: certains contrats peuvent être payés sans subscription.
+              // On considère le paiement localement comme réussi et on déclenche onSuccess.
               if (onSuccess != null) {
-
                 await onSuccess();
               }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Paiement Wave confirmé (contrat sans subscription).'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
 
               return true;
             }
@@ -217,12 +243,12 @@ class WavePaymentHandler {
                 duration: Duration(seconds: 5),
               ),
             );
-            if (onSuccess != null) {
+              if (onSuccess != null) {
 
-              await onSuccess();
-            }
+                await onSuccess();
+              }
 
-            return true;
+              return true;
           }
 
         }
@@ -253,7 +279,13 @@ class WavePaymentHandler {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur Wave: $e'),
+          content: Text(
+            ErrorMessageHelper.forUser(
+              e,
+              fallback: ErrorMessageHelper.paymentFailed,
+              context: 'WavePaymentHandler.startPayment',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

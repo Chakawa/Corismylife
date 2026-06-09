@@ -2,16 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mycorislife/services/orange_money_service.dart';
+import 'package:mycorislife/services/payment_resume_coordinator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrangeMoneyPaymentHandler {
   /// Lance un paiement Orange Money de bout en bout depuis l'UI.
   static Future<bool> startPayment(
     BuildContext context, {
-    required int subscriptionId,
+    int? subscriptionId,
     required double amount,
     required String description,
+    String? numeroPolice,
+    String? numepoli,
+    String? codeinte,
     FutureOr<void> Function()? onSuccess,
+    PaymentResumeCallback? onResumeResult,
   }) async {
     try {
       final service = OrangeMoneyService();
@@ -23,9 +28,7 @@ class OrangeMoneyPaymentHandler {
         ),
       );
 
-      // Sanitize description client-side to avoid invalid chars (e.g. '#')
-      String _sanitizeReference(String raw) {
-        if (raw == null) return 'PaiementCORIS';
+      String sanitizeReference(String raw) {
         var s = raw.replaceAll(RegExp(r'[^A-Za-z0-9 \-_.]'), ' ');
         s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
         if (s.isEmpty) return 'PaiementCORIS';
@@ -33,13 +36,15 @@ class OrangeMoneyPaymentHandler {
         return s;
       }
 
-      final sanitizedDescription = _sanitizeReference(description);
+      final sanitizedDescription = sanitizeReference(description);
 
-      // Use backend default success/cancel URLs (no mobile deep-links)
       final createResult = await service.createPaymentSession(
         subscriptionId: subscriptionId,
         amount: amount,
         description: sanitizedDescription,
+        numeroPolice: numeroPolice,
+        numepoli: numepoli,
+        codeinte: codeinte,
       );
 
       if (!(createResult['success'] == true)) {
@@ -58,7 +63,8 @@ class OrangeMoneyPaymentHandler {
       final data = createResult['data'] as Map<String, dynamic>? ?? {};
       final paymentUrlValue = data['payment_url']?.toString();
       final payToken = data['pay_token']?.toString() ?? '';
-      final transactionId = data['txnid']?.toString();
+      final transactionId =
+          data['txnid']?.toString() ?? data['transactionId']?.toString();
 
       if (paymentUrlValue == null ||
           paymentUrlValue.isEmpty ||
@@ -73,6 +79,23 @@ class OrangeMoneyPaymentHandler {
         return false;
       }
 
+      PaymentResumeCoordinator.instance.registerOrange(
+        subscriptionId: subscriptionId,
+        payToken: payToken,
+        transactionId: transactionId,
+        onComplete: (result) async {
+          if (context.mounted) {
+            PaymentResumeCoordinator.showResultSnackBar(context, result);
+          }
+          if (result.status == PaymentResumeStatus.success) {
+            if (onSuccess != null) await onSuccess();
+          }
+          if (onResumeResult != null) {
+            await onResumeResult(result);
+          }
+        },
+      );
+
       final uri = Uri.tryParse(paymentUrlValue);
       if (uri == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,23 +107,23 @@ class OrangeMoneyPaymentHandler {
         return false;
       }
 
-      bool launched = false;
+      var launched = false;
       if (await canLaunchUrl(uri)) {
         launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-
       if (!launched) {
         launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
-
       if (!launched) {
         launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
       }
 
       if (!launched) {
+        PaymentResumeCoordinator.instance.clear();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Impossible d\'ouvrir Orange Money. URL: $paymentUrlValue'),
+            content: Text(
+                'Impossible d\'ouvrir Orange Money. Vérifiez que l\'application est installée.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -110,103 +133,15 @@ class OrangeMoneyPaymentHandler {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              '🔄 Paiement Orange Money lancé. Retournez à l\'application après paiement pour confirmation automatique.'),
+              'Paiement Orange Money lancé. Revenez à l\'application après paiement pour confirmation.'),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 5),
         ),
       );
 
-      for (int attempt = 0; attempt < 40; attempt++) {
-        await Future.delayed(const Duration(seconds: 3));
-
-        final statusResult = await service.getPaymentStatus(
-          payToken: payToken,
-          subscriptionId: subscriptionId,
-          transactionId: transactionId,
-        );
-
-        if (!(statusResult['success'] == true)) {
-          continue;
-        }
-
-        final statusData = statusResult['data'] as Map<String, dynamic>? ?? {};
-        final status = (statusData['status'] ?? '').toString().toUpperCase();
-
-        if (status == 'SUCCESS') {
-          try {
-            final confirmResult = await service.confirmPayment(
-              subscriptionId: subscriptionId,
-              payToken: payToken,
-              transactionId: transactionId,
-            );
-
-            if (confirmResult['success'] == true) {
-              final confirmData = confirmResult['data'] as Map<String, dynamic>? ?? {};
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '✅ Paiement Orange Money confirmé avec succès !',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Montant: ${confirmData['montant'] ?? amount} FCFA',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: const Color(0xFF10B981),
-                  duration: const Duration(seconds: 8),
-                ),
-              );
-
-              if (onSuccess != null) {
-                await onSuccess();
-              }
-
-              return true;
-            } else {
-              if (onSuccess != null) {
-                await onSuccess();
-              }
-              return true;
-            }
-          } catch (confirmError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                    '✅ Paiement réussi. Vérifiez vos contrats pour la confirmation.'),
-                backgroundColor: Color(0xFF10B981),
-                duration: Duration(seconds: 5),
-              ),
-            );
-            if (onSuccess != null) {
-              await onSuccess();
-            }
-
-            return true;
-          }
-        }
-
-        if (status == 'FAILED') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Paiement Orange Money échoué ou annulé.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 5),
-            ),
-          );
-          return false;
-        }
-      }
-
-      return false;
+      return true;
     } catch (e) {
+      PaymentResumeCoordinator.instance.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur paiement Orange Money: $e'),
