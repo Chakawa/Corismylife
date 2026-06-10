@@ -330,6 +330,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
     'Enfant',
     'Conjoint',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -2142,7 +2143,8 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
         }
 
         if (contactUrgence['contact'] != null) {
-          _personneContactTelController.text = normalizeInternationalPhoneNumber(
+          _personneContactTelController.text =
+              normalizeInternationalPhoneNumber(
             contactUrgence['contact'].toString(),
           );
         }
@@ -4426,8 +4428,7 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             isDense: true,
-            contentPadding:
-                EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             hintText: '+2250500000000',
             hintStyle: TextStyle(fontSize: context.sp(14)),
             prefixIcon: Icon(Icons.phone_outlined,
@@ -5327,118 +5328,120 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
   Future<int> _saveSubscriptionData() async {
     final existingSave = _pendingSaveSubscriptionFuture;
     if (existingSave != null) {
-      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      debugPrint(
+          '⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
       return existingSave;
     }
 
     Future<int> saveOperation() async {
       try {
-      final subscriptionService = SubscriptionService();
+        final subscriptionService = SubscriptionService();
 
-      final subscriptionData = {
-        'product_type': 'flex_emprunteur',
-        'type_pret': _selectedTypePret,
-        'capital': _parseDouble(_capitalController.text),
-        'duree': _parseInt(_dureeController.text),
-        'duree_type': _selectedDureeType,
-        'garantie_prevoyance': _garantiePrevoyance,
-        'garantie_perte_emploi': _garantiePerteEmploi,
-        'capital_prevoyance': _garantiePrevoyance
-            ? _parseDouble(_capitalPrevoyanceController.text)
-            : 0,
-        'capital_perte_emploi': _garantiePerteEmploi
-            ? _parseDouble(_capitalPerteEmploiController.text)
-            : 0,
-        'prime_prevoyance': _primePrevoyance,
-        'prime_perte_emploi': _primePerteEmploi,
-        'beneficiaire': {
-          'nom': _beneficiaireNomController.text.trim(),
-          'contact':
-              '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
-          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
-          'lien_parente': _selectedLienParente,
-        },
-        'contact_urgence': {
-          'nom': _personneContactNomController.text.trim(),
-          'contact': normalizeInternationalPhoneNumber(
-            _personneContactTelController.text,
-          ),
-          'lien_parente': _selectedLienParenteUrgence,
-        },
-        'assistance_commerciale': {
-          'is_aide_par_commercial': _isAideParCommercial,
-          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
-          'commercial_code_apporteur':
-              _commercialCodeApporteurController.text.trim(),
-        },
-        'prime_annuelle': _calculatedPrime,
-        'capital_garanti': _calculatedCapital,
-        'date_effet': _dateEffetContrat?.toIso8601String(),
-        'date_echeance': _dateEcheanceContrat?.toIso8601String(),
-        'mode_paiement': _selectedModePaiement,
-        'infos_paiement': _selectedModePaiement == 'Virement'
-            ? {
-                'banque': _banqueController.text.trim(),
-                'rib': _ribUnifiedController.text.trim(),
-              }
-            : _selectedModePaiement == 'Prélèvement à la source'
-                ? {
-                    'nom_structure': _nomStructureController.text.trim(),
-                    'numero_matricule': _numeroMatriculeController.text.trim(),
-                  }
-                : _selectedModePaiement == 'CORIS Money'
-                    ? {
-                        'telephone': _corisMoneyPhoneController.text.trim(),
-                      }
-                    : (_selectedModePaiement == 'Wave' ||
-                            _selectedModePaiement == 'Orange Money')
-                        ? {
-                            'telephone':
-                                _numeroMobileMoneyController.text.trim(),
-                          }
-                        : null,
-      };
-
-      // Ajouter la signature si elle existe
-      if (_clientSignature != null) {
-        subscriptionData['signature'] = base64Encode(_clientSignature!);
-      }
-
-      // Si c'est un commercial, ajouter les infos client
-      if (_isCommercial) {
-        subscriptionData['client_info'] = {
-          'nom': _clientNomController.text.trim(),
-          'prenom': _clientPrenomController.text.trim(),
-          'date_naissance':
-              _clientDateNaissance?.toIso8601String().split('T').first,
-          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
-          'telephone':
-              '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
-          'email': _clientEmailController.text.trim(),
-          'adresse': _clientAdresseController.text.trim(),
-          'profession': _clientProfessionController.text.trim(),
-          'secteur_activite': _clientSecteurActiviteController.text.trim(),
-          'civilite': _selectedClientCivilite,
-          'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+        final subscriptionData = {
+          'product_type': 'flex_emprunteur',
+          'type_pret': _selectedTypePret,
+          'capital': _parseDouble(_capitalController.text),
+          'duree': _parseInt(_dureeController.text),
+          'duree_type': _selectedDureeType,
+          'garantie_prevoyance': _garantiePrevoyance,
+          'garantie_perte_emploi': _garantiePerteEmploi,
+          'capital_prevoyance': _garantiePrevoyance
+              ? _parseDouble(_capitalPrevoyanceController.text)
+              : 0,
+          'capital_perte_emploi': _garantiePerteEmploi
+              ? _parseDouble(_capitalPerteEmploiController.text)
+              : 0,
+          'prime_prevoyance': _primePrevoyance,
+          'prime_perte_emploi': _primePerteEmploi,
+          'beneficiaire': {
+            'nom': _beneficiaireNomController.text.trim(),
+            'contact':
+                '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
+            'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
+            'lien_parente': _selectedLienParente,
+          },
+          'contact_urgence': {
+            'nom': _personneContactNomController.text.trim(),
+            'contact': normalizeInternationalPhoneNumber(
+              _personneContactTelController.text,
+            ),
+            'lien_parente': _selectedLienParenteUrgence,
+          },
+          'assistance_commerciale': {
+            'is_aide_par_commercial': _isAideParCommercial,
+            'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+            'commercial_code_apporteur':
+                _commercialCodeApporteurController.text.trim(),
+          },
+          'prime_annuelle': _calculatedPrime,
+          'capital_garanti': _calculatedCapital,
+          'date_effet': _dateEffetContrat?.toIso8601String(),
+          'date_echeance': _dateEcheanceContrat?.toIso8601String(),
+          'mode_paiement': _selectedModePaiement,
+          'infos_paiement': _selectedModePaiement == 'Virement'
+              ? {
+                  'banque': _banqueController.text.trim(),
+                  'rib': _ribUnifiedController.text.trim(),
+                }
+              : _selectedModePaiement == 'Prélèvement à la source'
+                  ? {
+                      'nom_structure': _nomStructureController.text.trim(),
+                      'numero_matricule':
+                          _numeroMatriculeController.text.trim(),
+                    }
+                  : _selectedModePaiement == 'CORIS Money'
+                      ? {
+                          'telephone': _corisMoneyPhoneController.text.trim(),
+                        }
+                      : (_selectedModePaiement == 'Wave' ||
+                              _selectedModePaiement == 'Orange Money')
+                          ? {
+                              'telephone':
+                                  _numeroMobileMoneyController.text.trim(),
+                            }
+                          : null,
         };
-      }
 
-      final http.Response response;
-      if (widget.subscriptionId != null) {
-        response = await subscriptionService.updateSubscription(
-            widget.subscriptionId!, subscriptionData);
-      } else {
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
-      }
+        // Ajouter la signature si elle existe
+        if (_clientSignature != null) {
+          subscriptionData['signature'] = base64Encode(_clientSignature!);
+        }
 
-      final responseData = jsonDecode(response.body);
+        // Si c'est un commercial, ajouter les infos client
+        if (_isCommercial) {
+          subscriptionData['client_info'] = {
+            'nom': _clientNomController.text.trim(),
+            'prenom': _clientPrenomController.text.trim(),
+            'date_naissance':
+                _clientDateNaissance?.toIso8601String().split('T').first,
+            'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
+            'email': _clientEmailController.text.trim(),
+            'adresse': _clientAdresseController.text.trim(),
+            'profession': _clientProfessionController.text.trim(),
+            'secteur_activite': _clientSecteurActiviteController.text.trim(),
+            'civilite': _selectedClientCivilite,
+            'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+          };
+        }
 
-      if ((response.statusCode != 201 && response.statusCode != 200) ||
-          !responseData['success']) {
-        throw Exception(
-            responseData['message'] ?? 'Erreur lors de la sauvegarde');
-      }
+        final http.Response response;
+        if (widget.subscriptionId != null) {
+          response = await subscriptionService.updateSubscription(
+              widget.subscriptionId!, subscriptionData);
+        } else {
+          response =
+              await subscriptionService.createSubscription(subscriptionData);
+        }
+
+        final responseData = jsonDecode(response.body);
+
+        if ((response.statusCode != 201 && response.statusCode != 200) ||
+            !responseData['success']) {
+          throw Exception(
+              responseData['message'] ?? 'Erreur lors de la sauvegarde');
+        }
 
         return widget.subscriptionId ?? responseData['data']['id'];
       } catch (e) {
@@ -5648,10 +5651,11 @@ class SouscriptionFlexPageState extends State<SouscriptionFlexPage>
               : <String>[]);
       if (paths.isEmpty) return;
 
-      final responsePayloads =
-          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
-      final responseData =
-          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
+      final responsePayloads = await subscriptionService.uploadDocumentsChecked(
+          subscriptionId, paths);
+      final responseData = responsePayloads.isNotEmpty
+          ? responsePayloads.last
+          : <String, dynamic>{};
 
       // Récupérer le label original si présent dans la réponse
       try {

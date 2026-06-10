@@ -242,8 +242,10 @@ class _SouscriptionSolidaritePageState
     'Enfant',
     'Parent',
     'Frère/Sœur',
+    'Ayant Droit',
     'Autre'
   ];
+  static const double FRAIS_ACCESSOIRES = 5000; // 5000 F CFA
 
   final List<String> _indicatifs = [
     '+221',
@@ -1036,8 +1038,10 @@ class _SouscriptionSolidaritePageState
       } else {
         // Mode création : INSERT
         debugPrint('âž• Mode CRÉATION');
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
+        // Ajouter les frais accessoires et le montant à régler pour les nouvelles souscriptions
+        subscriptionData['frais_accessoires'] = FRAIS_ACCESSOIRES.toInt();
+        subscriptionData['montant_a_regler'] = (primeTotaleResult + FRAIS_ACCESSOIRES).toInt();
+        response = await subscriptionService.createSubscription(subscriptionData);
         responseData = jsonDecode(response.body);
 
         if (response.statusCode != 201 || !responseData['success']) {
@@ -1133,7 +1137,7 @@ class _SouscriptionSolidaritePageState
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: primeTotaleResult,
+          amount: primeTotaleResult + FRAIS_ACCESSOIRES,
           description: 'Paiement prime CORIS SOLIDARITÉ',
           onSuccess: () => _showSuccessDialog(true),
         );
@@ -3459,10 +3463,15 @@ class _SouscriptionSolidaritePageState
             _buildCombinedRecapRow('Produit', 'CORIS SOLIDARITÉ', 'Périodicité',
                 selectedPeriodicite),
             _buildCombinedRecapRow(
-                'Capital garanti',
-                '${_formatNumber(selectedCapital!)} FCFA',
-                'Prime totale',
-                '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
+              'Capital garanti',
+              '${_formatNumber(selectedCapital!)} FCFA',
+              'Prime totale',
+              '${_formatNumber(primeTotaleResult.toInt())} FCFA'),
+            _buildCombinedRecapRow(
+              'Frais accessoires',
+              '${_formatNumber(FRAIS_ACCESSOIRES.toInt())} FCFA',
+              'Total à régler',
+              '${_formatNumber((primeTotaleResult + FRAIS_ACCESSOIRES).toInt())} FCFA'),
             _buildCombinedRecapRow(
                 'Date d\'effet',
                 _formatDate(_dateEffetContrat),

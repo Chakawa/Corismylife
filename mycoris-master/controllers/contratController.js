@@ -115,6 +115,7 @@ exports.getContratsByTelephone = async (req, res) => {
         codeappo,
         numepoli,
         duree,
+        unitdure,
         dateeffet,
         dateeche,
         periodicite,
@@ -205,6 +206,7 @@ exports.getContratsByCodeApporteur = async (req, res) => {
         codeappo,
         numepoli,
         duree,
+        unitdure,
         dateeffet,
         dateeche,
         periodicite,
@@ -288,7 +290,12 @@ exports.getContratDetailsByNumepoli = async (req, res) => {
           s.code_apporteur AS codeappo,
           s.code_apporteur AS code_apporteur,
           COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
-          NULL::int AS duree,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'duree', '') ~ '^[0-9]+$'
+              THEN (s.souscriptiondata->>'duree')::int
+            ELSE NULL::int
+          END AS duree,
+          NULLIF(s.souscriptiondata->>'unitdure', '') AS unitdure,
           s.date_creation AS datesous,
           COALESCE(s.date_validation, s.date_creation) AS dateeffet,
           NULL::timestamp AS dateeche,
@@ -765,6 +772,7 @@ exports.getMesContrats = async (req, res) => {
           codeappo,
           numepoli,
           duree,
+          unitdure,
           dateeffet,
           dateeche,
           periodicite,
@@ -818,6 +826,7 @@ exports.getMesContrats = async (req, res) => {
           codeappo,
           numepoli,
           duree,
+          unitdure,
           dateeffet,
           dateeche,
           periodicite,
@@ -875,7 +884,12 @@ exports.getMesContrats = async (req, res) => {
           NULL::text AS codeinte,
           s.code_apporteur AS codeappo,
           COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
-          NULL::int AS duree,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'duree', '') ~ '^[0-9]+$'
+              THEN (s.souscriptiondata->>'duree')::int
+            ELSE NULL::int
+          END AS duree,
+          NULLIF(s.souscriptiondata->>'unitdure', '') AS unitdure,
           COALESCE(s.date_validation, s.date_creation) AS dateeffet,
           NULL::timestamp AS dateeche,
           COALESCE(
@@ -998,7 +1012,12 @@ exports.getMesContrats = async (req, res) => {
           NULL::text AS codeinte,
           s.code_apporteur AS codeappo,
           COALESCE(s.numero_police, s.payment_transaction_id, 'SUB-' || s.id::text) AS numepoli,
-          NULL::int AS duree,
+          CASE
+            WHEN COALESCE(s.souscriptiondata->>'duree', '') ~ '^[0-9]+$'
+              THEN (s.souscriptiondata->>'duree')::int
+            ELSE NULL::int
+          END AS duree,
+          NULLIF(s.souscriptiondata->>'unitdure', '') AS unitdure,
           COALESCE(s.date_validation, s.date_creation) AS dateeffet,
           NULL::timestamp AS dateeche,
           COALESCE(

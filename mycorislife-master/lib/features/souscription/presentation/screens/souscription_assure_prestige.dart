@@ -62,6 +62,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   static const Color orangeWarning = Color(0xFFF59E0B);
 
   static const Color bleuClair = Color(0xFFE8F4FD);
+  static const double FRAIS_ACCESSOIRES = 5000; // 5000 F CFA
 
   final PageController _pageController = PageController();
   late AnimationController _animationController;
@@ -94,6 +95,17 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
   // Variables pour les calculs spécifiques à Coris Assure Prestige
   double _capitalDeces = 0.0;
   double _primeDecesAnnuelle = 0.0;
+  String? _montantErrorText;
+  String? _step1ErrorText;
+  String? _subscriptionStatut;
+
+  static const String _primeInvalidMsg =
+      'La prime saisie est invalide. Veuillez saisir un montant valide.';
+  static const String _primeConditionsMsg =
+      'Veuillez respecter les conditions de prime minimales avant de continuer.';
+  static const String _capitalTooLowMsg =
+      'Veuillez choisir un capital plus élevé, car la prime mensuelle minimale doit être de 10 000 F CFA.';
+  static const double _primeAnnuelleMinimale = 120000;
 
   // Constantes pour les calculs
 
@@ -128,6 +140,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     'Conjoint',
     'Enfant',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -393,6 +406,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
+    _subscriptionStatut = data['statut']?.toString();
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
@@ -937,6 +951,14 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
         };
       }
 
+      final isPaid =
+          (_subscriptionStatut ?? '').toLowerCase() == 'contrat';
+      if (widget.subscriptionId == null || !isPaid) {
+        subscriptionData['frais_accessoires'] = FRAIS_ACCESSOIRES.toInt();
+        subscriptionData['montant_a_regler'] =
+            (_primeDecesAnnuelle + FRAIS_ACCESSOIRES).toInt();
+      }
+
       // Si on modifie une proposition existante, mettre à jour au lieu de créer
       final http.Response response;
       if (widget.subscriptionId != null) {
@@ -945,8 +967,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
           subscriptionData,
         );
       } else {
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
+        response = await subscriptionService.createSubscription(subscriptionData);
       }
 
       final responseData = jsonDecode(response.body);
@@ -1044,7 +1065,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             barrierDismissible: false,
             builder: (context) => CorisMoneyPaymentModal(
               subscriptionId: subscriptionId,
-              montant: _primeDecesAnnuelle,
+              montant: _primeDecesAnnuelle + FRAIS_ACCESSOIRES,
               description: 'Paiement prime CORIS ASSURE PRESTIGE',
               onPaymentSuccess: () {
                 if (mounted) {
@@ -1326,16 +1347,24 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
       if (_isCommercial) {
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
-        } else if (_currentStep == 1 && _validateStep1()) {
-          canProceed = true;
+        } else if (_currentStep == 1) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
           canProceed = true;
         }
       } else {
-        if (_currentStep == 0 && _validateStep1()) {
-          canProceed = true;
+        if (_currentStep == 0) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
@@ -1423,6 +1452,20 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
     final duree = int.tryParse(_dureeContratController.text);
     if (duree == null || duree <= 0) {
       _showErrorSnackBar('La durée du contrat est invalide.');
+      return false;
+    }
+
+    setState(() {
+      _step1ErrorText = null;
+      _montantErrorText = null;
+    });
+
+    _recalculerValeurs();
+    if (_primeDecesAnnuelle < _primeAnnuelleMinimale) {
+      setState(() {
+        _montantErrorText = _capitalTooLowMsg;
+        _step1ErrorText = _primeConditionsMsg;
+      });
       return false;
     }
 
@@ -1937,6 +1980,18 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
 
                           // ðŸŸ¦ 1. MONTANT DU VERSEMENT INITIAL
                           _buildMontantVersementField(),
+                          if (_step1ErrorText != null)
+                            Padding(
+                              padding: EdgeInsets.only(top: context.r(8)),
+                              child: Text(
+                                _step1ErrorText!,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           SizedBox(height: context.r(16)),
 
                           // ðŸŸ¦ 2. DURÉE DU CONTRAT AVEC UNITÉ
@@ -2013,6 +2068,7 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20, color: bleuCoris.withAlpha(179)),
             suffixText: 'CFA',
+            errorText: _montantErrorText,
             filled: true,
             fillColor: bleuClair.withAlpha(77),
             border: OutlineInputBorder(
@@ -3417,6 +3473,63 @@ class SouscriptionPrestigePageState extends State<SouscriptionPrestigePage>
                 _dateEcheanceContrat != null
                     ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
                     : 'Non définie'),
+            Container(
+              margin: EdgeInsets.only(top: context.r(12)),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: grisLeger,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Frais de création de contrat',
+                    style: TextStyle(
+                      color: grisTexte,
+                      fontSize: context.sp(13),
+                    ),
+                  ),
+                  Text(
+                    '+ ${_formatMontant(FRAIS_ACCESSOIRES)}',
+                    style: TextStyle(
+                      color: rougeCoris,
+                      fontSize: context.sp(13),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.only(top: context.r(12)),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: bleuCoris,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Montant total à régler',
+                    style: TextStyle(
+                      color: blanc,
+                      fontSize: context.sp(14),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    _formatMontant(_primeDecesAnnuelle + FRAIS_ACCESSOIRES),
+                    style: TextStyle(
+                      color: blanc,
+                      fontSize: context.sp(16),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
 

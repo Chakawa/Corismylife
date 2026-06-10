@@ -10,6 +10,7 @@ class Contrat {
   final String? codeappo;
   final String? numepoli;
   final int? duree;
+  final String? unitdure;
   final DateTime? dateeffet;
   final DateTime? dateeche;
   final String? periodicite;
@@ -44,6 +45,7 @@ class Contrat {
     this.codeappo,
     this.numepoli,
     this.duree,
+    this.unitdure,
     this.dateeffet,
     this.dateeche,
     this.periodicite,
@@ -84,6 +86,7 @@ class Contrat {
         codeappo: json['codeappo']?.toString(),
         numepoli: json['numepoli']?.toString(),
         duree: json['duree'] is int ? json['duree'] : (json['duree'] != null ? int.tryParse(json['duree'].toString()) : null),
+        unitdure: json['unitdure']?.toString(),
         dateeffet: _parseDate(json['dateeffet']),
         dateeche: _parseDate(json['dateeche']),
         periodicite: json['periodicite']?.toString(),
@@ -190,6 +193,7 @@ class Contrat {
       'codeappo': codeappo,
       'numepoli': numepoli,
       'duree': duree,
+      'unitdure': unitdure,
       'dateeffet': dateeffet?.toIso8601String(),
       'dateeche': dateeche?.toIso8601String(),
       'periodicite': periodicite,

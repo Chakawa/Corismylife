@@ -65,6 +65,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mycorislife/config/app_config.dart';
 import 'package:mycorislife/core/utils/contract_police_key.dart';
 import 'package:mycorislife/features/client/presentation/widgets/contract_payment_flow.dart';
+import 'package:mycorislife/services/contract_service.dart';
 
 class ContratDetailsUnifiedPage extends StatefulWidget {
   final Map<String, dynamic> contrat;
@@ -83,6 +84,7 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
   List<Map<String, dynamic>> beneficiaires = [];
   bool isLoading = true;
   String? userRole;
+  final ContractService _contractService = ContractService();
 
   late AnimationController _headerAnimationController;
   late AnimationController _contentAnimationController;
@@ -552,18 +554,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                               _formatDate(contratDetails?['dateeffet']),
                               Icons.calendar_today,
                             ),
-                          if (contratDetails?['dateeffet'] != null &&
-                              (contratDetails?['dateeche'] != null ||
-                                  contratDetails?['dateecheance'] != null))
-                            _buildInfoRow(
-                              'Durée du contrat',
-                              _calculateDuree(
-                                contratDetails?['dateeffet'],
-                                contratDetails?['dateeche'] ??
-                                    contratDetails?['dateecheance'],
-                              ),
-                              Icons.schedule,
-                            ),
+                          _buildInfoRow(
+                            _getDurationLabel(),
+                            _getDurationDisplay(),
+                            Icons.schedule,
+                          ),
                           if (contratDetails?['dateeche'] != null ||
                               contratDetails?['dateecheance'] != null)
                             _buildInfoRow(
@@ -572,10 +567,10 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                                   contratDetails?['dateecheance']),
                               Icons.event_busy,
                             ),
-                          if (contratDetails?['periodicite'] != null)
+                          if (_getPeriodiciteRaw() != null)
                             _buildInfoRow(
                               'Périodicité',
-                              contratDetails?['periodicite'],
+                              _getPeriodicite(),
                               Icons.repeat,
                             ),
                           if (contratDetails?['domiciliation'] != null)
@@ -930,6 +925,106 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       default:
         return type;
     }
+  }
+
+  String? _getPeriodiciteRaw() {
+    if (contratDetails == null) return null;
+    final raw = contratDetails?['periodicite'] ??
+        ((contratDetails?['souscriptiondata']) is Map
+            ? (contratDetails?['souscriptiondata'] as Map)['periodicite']
+            : null);
+    if (raw == null) return null;
+    final formatted = raw.toString().trim();
+    return formatted.isEmpty ? null : formatted;
+  }
+
+  String _getPeriodicite() {
+    return _contractService.formatPeriodicite(_getPeriodiciteRaw());
+  }
+
+  String _formatDurationUnit(dynamic rawUnit) {
+    if (rawUnit == null) return '';
+    final unit = rawUnit.toString().trim().toUpperCase();
+    switch (unit) {
+      case 'M':
+      case 'MOIS':
+      case 'MONTH':
+      case 'MONTHS':
+      case 'MONTHLY':
+        return 'mois';
+      case 'A':
+      case 'AN':
+      case 'ANS':
+      case 'ANNEE':
+      case 'ANNÉE':
+      case 'ANNEES':
+      case 'ANNÉES':
+      case 'ANNUEL':
+      case 'ANNUELLE':
+        return 'ans';
+      case 'T':
+      case 'TRIMESTRE':
+      case 'TRIMESTRES':
+        return 'trimestres';
+      default:
+        return rawUnit.toString();
+    }
+  }
+
+  String _getDurationLabel() {
+    final codeprod = contratDetails?['codeprod']?.toString().trim();
+    if (codeprod == '202') {
+      return 'Durée de cotisation';
+    }
+    return 'Durée du contrat';
+  }
+
+  String _getDurationDisplay() {
+    if (contratDetails == null) return 'Pas de durée inscrite';
+
+    dynamic dureeRaw = contratDetails?['duree'];
+    if ((dureeRaw == null || dureeRaw.toString().trim().isEmpty) &&
+        (contratDetails?['souscriptiondata']) is Map) {
+      dureeRaw = (contratDetails?['souscriptiondata'] as Map)['duree'];
+    }
+
+    int? dureeValue;
+    if (dureeRaw != null) {
+      if (dureeRaw is num) {
+        dureeValue = dureeRaw.toInt();
+      } else {
+        final cleaned = dureeRaw.toString().replaceAll(RegExp(r'[^0-9]'), '');
+        if (cleaned.isNotEmpty) {
+          dureeValue = int.tryParse(cleaned);
+        }
+      }
+    }
+
+    dynamic rawUnit = contratDetails?['unitdure'] ??
+        contratDetails?['unite_duree'] ??
+        contratDetails?['duree_type'];
+    if ((contratDetails?['souscriptiondata']) is Map) {
+      final sousData = contratDetails?['souscriptiondata'] as Map;
+      rawUnit ??= sousData['unitdure'];
+      rawUnit ??= sousData['unite_duree'];
+      rawUnit ??= sousData['duree_type'];
+    }
+
+    final unitLabel = _formatDurationUnit(rawUnit);
+
+    if (dureeValue == null || dureeValue <= 0) {
+      if (contratDetails?['dateeffet'] != null &&
+          (contratDetails?['dateeche'] != null ||
+              contratDetails?['dateecheance'] != null)) {
+        return _calculateDuree(
+          contratDetails?['dateeffet'],
+          contratDetails?['dateeche'] ?? contratDetails?['dateecheance'],
+        );
+      }
+      return 'Pas de durée inscrite';
+    }
+
+    return unitLabel.isEmpty ? '$dureeValue' : '$dureeValue $unitLabel';
   }
 
   // Calcul de la durée entre la date d'effet et la date d'échéance (en mois)

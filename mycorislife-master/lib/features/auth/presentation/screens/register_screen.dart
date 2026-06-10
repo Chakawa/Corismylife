@@ -172,11 +172,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
+        "email": emailController.text.trim(),
       };
-      // Ajouter l'email seulement s'il est fourni
-      if (emailController.text.trim().isNotEmpty) {
-        payload["email"] = emailController.text.trim();
-      }
       if (professionController.text.trim().isNotEmpty) {
         payload["profession"] = professionController.text.trim();
       }
@@ -295,11 +292,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
+        "email": emailController.text.trim(),
       };
-      // Ajouter l'email seulement s'il est fourni
-      if (emailController.text.trim().isNotEmpty) {
-        payload["email"] = emailController.text.trim();
-      }
       if (professionController.text.trim().isNotEmpty) {
         payload["profession"] = professionController.text.trim();
       }
@@ -1503,11 +1497,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             "$selectedIndicatif${telephoneController.text.replaceAll(RegExp(r'[^0-9]'), '')}",
         "adresse": adresseController.text.trim(),
         "pays": selectedPays ?? "Côte d'Ivoire",
+        "email": emailController.text.trim(),
       };
-      // Ajouter l'email seulement s'il est fourni
-      if (emailController.text.trim().isNotEmpty) {
-        payload["email"] = emailController.text.trim();
-      }
       if (professionController.text.trim().isNotEmpty) {
         payload["profession"] = professionController.text.trim();
       }

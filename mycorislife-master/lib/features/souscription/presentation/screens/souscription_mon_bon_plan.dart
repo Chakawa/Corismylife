@@ -131,6 +131,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
     'Conjoint',
     'Enfant',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -949,123 +950,124 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
   Future<int> _saveSubscriptionData() async {
     final existingSave = _pendingSaveSubscriptionFuture;
     if (existingSave != null) {
-      debugPrint('⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
+      debugPrint(
+          '⚠️ Sauvegarde déjà en cours, réutilisation de la requête active');
       return existingSave;
     }
 
     Future<int> saveOperation() async {
       try {
-      final subscriptionService = SubscriptionService();
+        final subscriptionService = SubscriptionService();
 
-      // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
-      final subscriptionData = {
-        'product_type': 'mon_bon_plan_coris',
-        'montant':
-            double.parse(_montantCotisationController.text.replaceAll(' ', ''))
-                .toInt(),
-        'montant_cotisation':
-            double.parse(_montantCotisationController.text.replaceAll(' ', ''))
-                .toInt(),
-        'periodicite': _selectedPeriodicite,
-        'duree': int.tryParse(_dureeController.text) ?? 0,
-        'duree_type': _selectedDureeType,
-        'beneficiaire': {
-          'nom': _beneficiaireNomController.text.trim(),
-          'contact':
-              '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
-          'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
-          'lien_parente': _selectedLienParente,
-        },
-        'contact_urgence': {
-          'nom': _personneContactNomController.text.trim(),
-          'contact': normalizeInternationalPhoneNumber(
-            _personneContactTelController.text,
-          ),
-          'lien_parente': _selectedLienParenteUrgence,
-        },
-        'assistance_commerciale': {
-          'is_aide_par_commercial': _isAideParCommercial,
-          'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
-          'commercial_code_apporteur':
-              _commercialCodeApporteurController.text.trim(),
-        },
-        'date_effet': _dateEffetContrat?.toIso8601String(),
-        // 💳 MODE DE PAIEMENT
-        'mode_paiement': _selectedModePaiement,
-        'infos_paiement': _selectedModePaiement == 'Virement'
-            ? () {
-                final parsed =
-                    _parseRibUnified(_ribUnifiedController.text.trim());
-                return {
-                  'banque': _banqueController.text.trim(),
-                  'code_guichet': parsed['code_guichet'] ?? '',
-                  'numero_compte': parsed['numero_compte'] ?? '',
-                  'cle_rib': parsed['cle_rib'] ?? '',
-                };
-              }()
-            : (_selectedModePaiement == 'Wave' ||
-                    _selectedModePaiement == 'Orange Money')
-                ? {
-                    'numero_telephone':
-                        _numeroMobileMoneyController.text.trim(),
-                  }
-                : _selectedModePaiement == 'Prélèvement à la source'
-                    ? {
-                        'nom_structure': _nomStructureController.text.trim(),
-                        'numero_matricule':
-                            _numeroMatriculeController.text.trim(),
-                      }
-                    : _selectedModePaiement == 'CORIS Money'
-                        ? {
-                            'numero_telephone':
-                                _corisMoneyPhoneController.text.trim(),
-                          }
-                        : null,
-      };
-
-      // Ajouter la signature si elle existe
-      if (_clientSignature != null) {
-        subscriptionData['signature'] = base64Encode(_clientSignature!);
-      }
-
-      // Si c'est un commercial, ajouter les infos client
-      if (_isCommercial) {
-        subscriptionData['client_info'] = {
-          'nom': _clientNomController.text.trim(),
-          'prenom': _clientPrenomController.text.trim(),
-          'lieu_naissance': _clientLieuNaissanceController.text.trim(),
-          'telephone':
-              '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
-          'email': _clientEmailController.text.trim(),
-          'adresse': _clientAdresseController.text.trim(),
-          'profession': _clientProfessionController.text.trim(),
-          'secteur_activite': _clientSecteurActiviteController.text.trim(),
-          'civilite': _selectedClientCivilite,
-          'date_naissance': _clientDateNaissance?.toIso8601String(),
-          'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+        // Préparer les données de souscription spécifiques à Mon Bon Plan Coris
+        final subscriptionData = {
+          'product_type': 'mon_bon_plan_coris',
+          'montant': double.parse(
+                  _montantCotisationController.text.replaceAll(' ', ''))
+              .toInt(),
+          'montant_cotisation': double.parse(
+                  _montantCotisationController.text.replaceAll(' ', ''))
+              .toInt(),
+          'periodicite': _selectedPeriodicite,
+          'duree': int.tryParse(_dureeController.text) ?? 0,
+          'duree_type': _selectedDureeType,
+          'beneficiaire': {
+            'nom': _beneficiaireNomController.text.trim(),
+            'contact':
+                '$_selectedBeneficiaireIndicatif ${_beneficiaireContactController.text.trim()}',
+            'date_naissance': _beneficiaireDateNaissance?.toIso8601String(),
+            'lien_parente': _selectedLienParente,
+          },
+          'contact_urgence': {
+            'nom': _personneContactNomController.text.trim(),
+            'contact': normalizeInternationalPhoneNumber(
+              _personneContactTelController.text,
+            ),
+            'lien_parente': _selectedLienParenteUrgence,
+          },
+          'assistance_commerciale': {
+            'is_aide_par_commercial': _isAideParCommercial,
+            'commercial_nom_prenom': _commercialNomPrenomController.text.trim(),
+            'commercial_code_apporteur':
+                _commercialCodeApporteurController.text.trim(),
+          },
+          'date_effet': _dateEffetContrat?.toIso8601String(),
+          // 💳 MODE DE PAIEMENT
+          'mode_paiement': _selectedModePaiement,
+          'infos_paiement': _selectedModePaiement == 'Virement'
+              ? () {
+                  final parsed =
+                      _parseRibUnified(_ribUnifiedController.text.trim());
+                  return {
+                    'banque': _banqueController.text.trim(),
+                    'code_guichet': parsed['code_guichet'] ?? '',
+                    'numero_compte': parsed['numero_compte'] ?? '',
+                    'cle_rib': parsed['cle_rib'] ?? '',
+                  };
+                }()
+              : (_selectedModePaiement == 'Wave' ||
+                      _selectedModePaiement == 'Orange Money')
+                  ? {
+                      'numero_telephone':
+                          _numeroMobileMoneyController.text.trim(),
+                    }
+                  : _selectedModePaiement == 'Prélèvement à la source'
+                      ? {
+                          'nom_structure': _nomStructureController.text.trim(),
+                          'numero_matricule':
+                              _numeroMatriculeController.text.trim(),
+                        }
+                      : _selectedModePaiement == 'CORIS Money'
+                          ? {
+                              'numero_telephone':
+                                  _corisMoneyPhoneController.text.trim(),
+                            }
+                          : null,
         };
-      }
 
-      // Si on modifie une proposition existante, mettre à jour au lieu de créer
-      final http.Response response;
-      if (widget.subscriptionId != null) {
-        response = await subscriptionService.updateSubscription(
-          widget.subscriptionId!,
-          subscriptionData,
-        );
-      } else {
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
-      }
+        // Ajouter la signature si elle existe
+        if (_clientSignature != null) {
+          subscriptionData['signature'] = base64Encode(_clientSignature!);
+        }
 
-      final responseData = jsonDecode(response.body);
+        // Si c'est un commercial, ajouter les infos client
+        if (_isCommercial) {
+          subscriptionData['client_info'] = {
+            'nom': _clientNomController.text.trim(),
+            'prenom': _clientPrenomController.text.trim(),
+            'lieu_naissance': _clientLieuNaissanceController.text.trim(),
+            'telephone':
+                '$_selectedClientIndicatif ${_clientTelephoneController.text.trim()}',
+            'email': _clientEmailController.text.trim(),
+            'adresse': _clientAdresseController.text.trim(),
+            'profession': _clientProfessionController.text.trim(),
+            'secteur_activite': _clientSecteurActiviteController.text.trim(),
+            'civilite': _selectedClientCivilite,
+            'date_naissance': _clientDateNaissance?.toIso8601String(),
+            'numero_piece_identite': _clientNumeroPieceController.text.trim(),
+          };
+        }
 
-      if ((widget.subscriptionId != null && response.statusCode != 200) ||
-          (widget.subscriptionId == null && response.statusCode != 201) ||
-          !responseData['success']) {
-        throw Exception(
-            responseData['message'] ?? 'Erreur lors de la sauvegarde');
-      }
+        // Si on modifie une proposition existante, mettre à jour au lieu de créer
+        final http.Response response;
+        if (widget.subscriptionId != null) {
+          response = await subscriptionService.updateSubscription(
+            widget.subscriptionId!,
+            subscriptionData,
+          );
+        } else {
+          response =
+              await subscriptionService.createSubscription(subscriptionData);
+        }
+
+        final responseData = jsonDecode(response.body);
+
+        if ((widget.subscriptionId != null && response.statusCode != 200) ||
+            (widget.subscriptionId == null && response.statusCode != 201) ||
+            !responseData['success']) {
+          throw Exception(
+              responseData['message'] ?? 'Erreur lors de la sauvegarde');
+        }
 
         // RETOURNEZ l'ID de la souscription (créée ou mise à jour)
         return widget.subscriptionId ?? responseData['data']['id'];
@@ -1303,10 +1305,11 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
               : <String>[]);
       if (paths.isEmpty) return;
 
-      final responsePayloads =
-          await subscriptionService.uploadDocumentsChecked(subscriptionId, paths);
-      final responseData =
-          responsePayloads.isNotEmpty ? responsePayloads.last : <String, dynamic>{};
+      final responsePayloads = await subscriptionService.uploadDocumentsChecked(
+          subscriptionId, paths);
+      final responseData = responsePayloads.isNotEmpty
+          ? responsePayloads.last
+          : <String, dynamic>{};
 
       // Récupérer le label original si présent dans la réponse
       try {
@@ -2744,8 +2747,7 @@ class SouscriptionBonPlanPageState extends State<SouscriptionBonPlanPage>
             ),
             filled: true,
             fillColor: fondCarte,
-            contentPadding:
-                EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           ),
           validator: (value) {
             final normalizedValue =

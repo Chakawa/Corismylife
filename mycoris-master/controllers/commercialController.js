@@ -678,6 +678,7 @@ exports.getMesContratsCommercial = async (req, res) => {
         c.dateeche as dateecheance,
         c.datenaissance,
         c.duree,
+        c.unitdure,
         c.periodicite,
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
         TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom,
@@ -859,6 +860,7 @@ exports.getContratsActifs = async (req, res) => {
         c.dateeche as dateecheance,
         c.datenaissance,
         c.duree,
+        c.unitdure,
         c.periodicite,
         TRIM(SPLIT_PART(c.nom_prenom, ' ', 1)) as prenom,
         TRIM(SUBSTRING(c.nom_prenom FROM POSITION(' ' IN c.nom_prenom) + 1)) as nom
@@ -1045,6 +1047,7 @@ exports.getContratDetails = async (req, res) => {
         c.dateeche as dateecheance,
         c.datenaissance,
         c.duree,
+        c.unitdure,
         c.periodicite,
         c.domiciliation,
         c.capital,

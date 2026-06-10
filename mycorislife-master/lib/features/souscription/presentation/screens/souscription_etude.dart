@@ -78,6 +78,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   static const Color orangeWarning = Color(0xFFF59E0B);
 
   static const Color bleuClair = Color(0xFFE8F4FD);
+  
+  // 💰 FRAIS ACCESSOIRES
+  static const double FRAIS_ACCESSOIRES = 5000; // 5000 F CFA
+  
   final PageController _pageController = PageController();
   late AnimationController _animationController;
   late AnimationController _progressController;
@@ -134,6 +138,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
   final List<File> _pieceIdentiteFiles = [];
   // Variable pour éviter les soumissions multiples
   bool _isProcessing = false;
+  String? _step1ErrorText;
+  String? _montantErrorText;
+  String? _subscriptionStatut;
+
+  static const String _primeInvalidMsg =
+      'La prime saisie est invalide. Veuillez saisir un montant valide.';
+  static const String _primeConditionsMsg =
+      'Veuillez respecter les conditions de prime minimales avant de continuer.';
 
   // Signature du client
   Uint8List? _clientSignature; // Signature en bytes pour le PDF
@@ -185,6 +197,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     'Enfant',
     'Conjoint',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -196,6 +209,14 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     'Semestriel',
     'Annuel'
   ];
+
+  // Primes minimales par périodicité
+  final Map<String, int> _minPrimes = {
+    'mensuel': 10000,
+    'trimestriel': 30000,
+    'semestriel': 60000,
+    'annuel': 120000,
+  };
   // Tableau tarifaire pour les rentes fixes (identique à simulation-etude.dart)
   final Map<int, Map<int, double>> tarifRenteFixe = {
     18: {
@@ -1013,6 +1034,9 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     // _dureeController.addListener(_verifierCapitalSousRisqueAuto);
     // _montantController.addListener(_verifierCapitalSousRisqueAuto);
 
+    // Initialiser la périodicité par défaut en cas d'absence de données
+    _selectedPeriodicite = 'Mensuel';
+
     // Si on modifie une proposition existante, préremplir avec les données
     if (widget.existingData != null) {
       _prefillFromExistingData();
@@ -1216,6 +1240,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
+    _subscriptionStatut = data['statut']?.toString();
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
     if (data['client_info'] != null) {
@@ -1329,9 +1354,25 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
     // Périodicité
     if (data['periodicite'] != null) {
-      String periodicite = data['periodicite'].toString().toLowerCase();
-      _selectedPeriodicite =
-          periodicite[0].toUpperCase() + periodicite.substring(1);
+      final periodicite = data['periodicite'].toString().toLowerCase();
+      switch (periodicite) {
+        case 'mensuel':
+          _selectedPeriodicite = 'Mensuel';
+          break;
+        case 'trimestriel':
+          _selectedPeriodicite = 'Trimestriel';
+          break;
+        case 'semestriel':
+          _selectedPeriodicite = 'Semestriel';
+          break;
+        case 'annuel':
+          _selectedPeriodicite = 'Annuel';
+          break;
+        default:
+          _selectedPeriodicite = 'Mensuel';
+      }
+    } else {
+      _selectedPeriodicite = 'Mensuel';
     }
 
     // Bénéficiaire
@@ -1510,10 +1551,10 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           _selectedPeriodicite = 'Annuel';
           break;
         default:
-          _selectedPeriodicite = _periodiciteOptions.first;
+          _selectedPeriodicite = 'Mensuel';
       }
     } else {
-      _selectedPeriodicite = _periodiciteOptions.first;
+      _selectedPeriodicite = 'Mensuel';
     }
 
     // Date d'effet par défaut (aujourd'hui)
@@ -2077,8 +2118,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         // Pour les commerciaux: step 0 = infos client, step 1 = paramètres, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
-        } else if (_currentStep == 1 && _validateStep1()) {
-          canProceed = true;
+        } else if (_currentStep == 1) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
           _recalculerValeurs();
@@ -2115,8 +2160,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         }
       } else {
         // Pour les clients: step 0 = paramètres, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap
-        if (_currentStep == 0 && _validateStep1()) {
-          canProceed = true;
+        if (_currentStep == 0) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
           _recalculerValeurs();
@@ -2213,7 +2262,12 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       return false;
     }
 
-    // Email non obligatoire pour le commercial
+    // Email obligatoire pour la création du compte
+    if (_clientEmailController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir l\'email du client (obligatoire)');
+      return false;
+    }
+
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
@@ -2245,12 +2299,19 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     }
 
     // Valider les champs de souscription
+    setState(() {
+      _step1ErrorText = null;
+      _montantErrorText = null;
+    });
+
     if (_dureeController.text.trim().isEmpty ||
         _montantController.text.trim().isEmpty ||
         _selectedPeriodicite == null ||
         _dateEffetContrat == null) {
-      _showErrorSnackBar(
-          'Veuillez compléter tous les champs obligatoires avant de continuer.');
+      setState(() {
+        _step1ErrorText =
+            'Veuillez compléter tous les champs obligatoires avant de continuer.';
+      });
       return false;
     }
 
@@ -2264,11 +2325,28 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
     final montant =
         double.tryParse(_montantController.text.replaceAll(' ', ''));
     if (montant == null || montant <= 0) {
-      _showErrorSnackBar(
-          'Le montant saisi est invalide. Veuillez entrer un montant positif.');
+      setState(() {
+        _montantErrorText =
+            'Le montant saisi est invalide. Veuillez entrer un montant positif.';
+      });
       return false;
     }
 
+    // Vérifier que le montant respecte le minimum
+    final periodiciteKey = _selectedPeriodicite?.toLowerCase() ?? 'mensuel';
+    final minPrime = _minPrimes[periodiciteKey] ?? 10000;
+    if (montant < minPrime) {
+      setState(() {
+        _montantErrorText = _primeInvalidMsg;
+        _step1ErrorText = _primeConditionsMsg;
+      });
+      return false;
+    }
+
+    setState(() {
+      _step1ErrorText = null;
+      _montantErrorText = null;
+    });
     return true;
   }
 
@@ -2583,8 +2661,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
       final subscriptionData = {
         'product_type': 'coris_etude',
         'duree_mois': dureeMois,
-        'montant':
-            double.parse(_montantController.text.replaceAll(' ', '')).toInt(),
+        'montant': (double.parse(_montantController.text.replaceAll(' ', '')) + FRAIS_ACCESSOIRES).toInt(),
         'periodicite': _selectedPeriodicite?.toLowerCase(),
         'mode_souscription':
             _selectedMode.toLowerCase().replaceAll('mode ', ''),
@@ -2671,14 +2748,21 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
 
       // Si on modifie une proposition existante, mettre à jour au lieu de créer
       final http.Response response;
+      final isPaid =
+          (_subscriptionStatut ?? '').toLowerCase() == 'contrat';
+      if (widget.subscriptionId == null || !isPaid) {
+        subscriptionData['frais_accessoires'] = FRAIS_ACCESSOIRES.toInt();
+        subscriptionData['montant_a_regler'] =
+            (_primeCalculee + FRAIS_ACCESSOIRES).toInt();
+      }
+
       if (widget.subscriptionId != null) {
         response = await subscriptionService.updateSubscription(
           widget.subscriptionId!,
           subscriptionData,
         );
       } else {
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
+        response = await subscriptionService.createSubscription(subscriptionData);
       }
 
       final responseData = jsonDecode(response.body);
@@ -2790,7 +2874,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
           barrierDismissible: false,
           builder: (context) => CorisMoneyPaymentModal(
             subscriptionId: subscriptionId,
-            montant: _primeCalculee,
+            montant: _primeCalculee + FRAIS_ACCESSOIRES,
             description: 'Paiement prime CORIS ÉTUDE',
             onPaymentSuccess: () {
               // Le modal se ferme automatiquement
@@ -2867,7 +2951,8 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: TestModeHelper.applyTestModeIfNeeded(_primeCalculee,
+          amount: TestModeHelper.applyTestModeIfNeeded(
+              _primeCalculee + FRAIS_ACCESSOIRES,
               context: 'souscription_etude'),
           description: 'Paiement prime CORIS ÉTUDE',
           onSuccess: () => _showSuccessDialog(true),
@@ -3620,6 +3705,18 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                           _buildAgeEnfantField(),
                           SizedBox(height: context.r(16)),
                           _buildPeriodiciteDropdown(),
+                          if (_step1ErrorText != null)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: context.r(12), top: context.r(6)),
+                              child: Text(
+                                _step1ErrorText!,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           SizedBox(height: context.r(16)),
                           _buildMontantField(),
                           SizedBox(height: context.r(16)),
@@ -3930,6 +4027,7 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                 size: 20,
                 color: bleuCoris.withAlpha(179)), // .withOpacity(0.7) remplacé
             suffixText: 'CFA',
+            errorText: _montantErrorText,
             filled: true,
             fillColor: bleuClair.withAlpha(77), // .withOpacity(0.3) remplacé
             border: OutlineInputBorder(
@@ -5741,6 +5839,67 @@ class SouscriptionEtudePageState extends State<SouscriptionEtudePage>
                             color: vertSucces,
                             fontSize: context.sp(28),
                             fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: context.r(12)),
+                        // Frais accessoires
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: grisLeger,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Frais de création de contrat',
+                                style: TextStyle(
+                                  color: grisTexte,
+                                  fontSize: context.sp(13),
+                                ),
+                              ),
+                              Text(
+                                '+ ${_formatMontant(FRAIS_ACCESSOIRES)}',
+                                style: TextStyle(
+                                  color: rougeCoris,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: context.r(12)),
+                        // Montant total à régler
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: bleuCoris,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Montant total à régler',
+                                style: TextStyle(
+                                  color: blanc,
+                                  fontSize: context.sp(14),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                _formatMontant(
+                                  (double.tryParse(_montantController.text) ?? 0) + FRAIS_ACCESSOIRES,
+                                ),
+                                style: TextStyle(
+                                  color: blanc,
+                                  fontSize: context.sp(16),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

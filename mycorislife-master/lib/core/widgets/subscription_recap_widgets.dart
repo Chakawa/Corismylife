@@ -379,10 +379,10 @@ class SubscriptionRecapWidgets {
         buildCombinedRecapRow(
             'Produit', productName, 'Prime $periodicite', formatMontant(prime)),
         buildCombinedRecapRow(
-            'Capital au terme',
-            formatMontant(capital),
-            'Durée du contrat',
-            '$duree ${dureeType == 'années' ? 'ans' : 'mois'}'),
+          'Capital au terme',
+          formatMontant(capital),
+          'Durée de cotisation',
+          '$duree ${dureeType == 'années' ? 'ans' : 'mois'}'),
         buildCombinedRecapRow(
             'Date d\'effet',
             dateEffet != null ? formatDate(dateEffet) : 'Non définie',

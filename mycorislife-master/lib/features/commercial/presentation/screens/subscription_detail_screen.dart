@@ -952,11 +952,28 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       final capitalDeces = souscriptionData['capital_deces'] ?? 0;
       final primeDecesAnnuelle = souscriptionData['prime_deces_annuelle'] ?? 0;
       final duree = souscriptionData['duree'] ??
-          souscriptionData['duree_contrat'] ??
-          'Non définie';
-      final uniteDuree = souscriptionData['duree_type'] ??
-          souscriptionData['unite_duree'] ??
-          'ans';
+          souscriptionData['duree_contrat'];
+      // Supporter plusieurs variantes de colonne: unitdure, unite_duree, duree_type
+      String rawUnit = (souscriptionData['unitdure'] ??
+              souscriptionData['unite_duree'] ??
+              souscriptionData['duree_type'] ??
+              '')
+          .toString()
+          .trim();
+      String uniteDuree;
+      switch (rawUnit.toUpperCase()) {
+        case 'M':
+          uniteDuree = 'mois';
+          break;
+        case 'A':
+          uniteDuree = 'ans';
+          break;
+        case 'T':
+          uniteDuree = 'trimestres';
+          break;
+        default:
+          uniteDuree = rawUnit.isNotEmpty ? rawUnit : 'ans';
+      }
       final dateEffet = souscriptionData['date_effet'];
       final dateEcheance = souscriptionData['date_echeance'];
 
@@ -975,7 +992,7 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             'Montant du versement initial',
             _formatMontant(versementInitial),
             'Durée du contrat',
-            '$duree $uniteDuree',
+            '${duree != null ? '$duree $uniteDuree' : 'Pas de durée inscrite'}',
           ),
           _buildCombinedRecapRow(
             'Capital décès',
@@ -1061,6 +1078,54 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       );
     }
 
+    // Pour CORIS SÉRÉNITÉ (afficher durée de cotisation au lieu de durée du contrat)
+    if (productType.contains('serenite') || productType.contains('sérénité')) {
+      final prime = souscriptionData['prime'] ?? souscriptionData['prime_totale'] ?? 0;
+      final capital = souscriptionData['capital'] ?? 0;
+      final duree = souscriptionData['duree'];
+      final rawUnit = (souscriptionData['unitdure'] ?? souscriptionData['unite_duree'] ?? souscriptionData['duree_type'] ?? '').toString().trim();
+      String unitLabel;
+      switch (rawUnit.toUpperCase()) {
+        case 'M':
+          unitLabel = 'mois';
+          break;
+        case 'A':
+          unitLabel = 'ans';
+          break;
+        case 'T':
+          unitLabel = 'trimestres';
+          break;
+        default:
+          unitLabel = rawUnit.isNotEmpty ? rawUnit : '';
+      }
+
+      return _buildRecapSection(
+        'Produit souscrit - CORIS SÉRÉNITÉ',
+        Icons.security,
+        vertSucces,
+        [
+          _buildCombinedRecapRow(
+            'Produit',
+            'CORIS SÉRÉNITÉ',
+            'Prime',
+            _formatMontant(prime),
+          ),
+          _buildCombinedRecapRow(
+            'Capital garanti',
+            _formatMontant(capital),
+            'Durée de cotisation',
+            duree != null ? '$duree ${unitLabel}' : 'Pas de durée inscrite',
+          ),
+          _buildCombinedRecapRow(
+            'Date d\'effet',
+            _formatDate(souscriptionData['date_effet']?.toString()),
+            'Date d\'échéance',
+            _formatDate(souscriptionData['date_echeance']?.toString()),
+          ),
+        ],
+      );
+    }
+
     // Section générique pour les autres produits
     return _buildRecapSection(
       'Produit Souscrit',
@@ -1081,12 +1146,40 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
             _formatMontant(souscriptionData['prime']),
           ),
         if (souscriptionData['duree'] != null)
-          _buildCombinedRecapRow(
-            'Durée',
-            '${souscriptionData['duree']} ${souscriptionData['duree_type'] ?? ''}',
-            'Périodicité',
-            souscriptionData['periodicite'] ?? 'Non renseigné',
-          ),
+          () {
+            final rawUnit = (souscriptionData['unitdure'] ??
+                    souscriptionData['unite_duree'] ??
+                    souscriptionData['duree_type'] ??
+                    '')
+                .toString()
+                .trim();
+            String unitLabel;
+            switch (rawUnit.toUpperCase()) {
+              case 'M':
+                unitLabel = 'mois';
+                break;
+              case 'A':
+                unitLabel = 'ans';
+                break;
+              case 'T':
+                unitLabel = 'trimestres';
+                break;
+              default:
+                unitLabel = rawUnit.isNotEmpty ? rawUnit : '';
+            }
+
+            final dureeVal = souscriptionData['duree'];
+            final dureeDisplay = (dureeVal == null || dureeVal.toString().trim().isEmpty)
+                ? 'Pas de durée inscrite'
+                : '${dureeVal.toString()} ${unitLabel.isNotEmpty ? unitLabel : ''}';
+
+            return _buildCombinedRecapRow(
+              'Durée',
+              dureeDisplay,
+              'Périodicité',
+              souscriptionData['periodicite'] ?? 'Non renseigné',
+            );
+          }(),
         _buildCombinedRecapRow(
           'Date de création',
           _formatDate(subscription['date_creation']?.toString()),

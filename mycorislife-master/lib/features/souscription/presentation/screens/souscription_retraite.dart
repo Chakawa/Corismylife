@@ -89,6 +89,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   static const Color orangeCoris = Color(0xFFFF6B00);
 
+  // 💰 FRAIS ACCESSOIRES
+  static const double FRAIS_ACCESSOIRES = 5000; // 5000 F CFA
+
   final PageController _pageController = PageController();
   late AnimationController _animationController;
   late AnimationController _progressController;
@@ -108,6 +111,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
   int _dureeEnAnnees = 5;
   String _selectedUnite = 'années';
   Periode? _selectedPeriode; // Initialisé dans initState
+  String? _dureeErrorText;
+  String? _montantErrorText;
+  String? _step1ErrorText;
+  String? _subscriptionStatut;
+
+  static const String _primeInvalidMsg =
+      'La prime saisie est invalide. Veuillez saisir un montant valide.';
+  static const String _primeConditionsMsg =
+      'Veuillez respecter les conditions de prime minimales avant de continuer.';
+  static const String _capitalTooLowMsg =
+      'Veuillez choisir un capital plus élevé, car la prime mensuelle minimale doit être de 10 000 F CFA.';
+
   SimulationType _currentSimulation = SimulationType.parPrime;
   String _selectedSimulationType = 'Par Prime';
   double _calculatedPrime = 0.0;
@@ -215,6 +230,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     'Enfant',
     'Conjoint',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -223,10 +239,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
   // Primes minimales par périodicité
   final Map<String, int> minPrimes = {
-    'mensuel': 5000,
-    'trimestriel': 15000,
-    'semestriel': 30000,
-    'annuel': 60000,
+    'mensuel': 10000,
+    'trimestriel': 30000,
+    'semestriel': 60000,
+    'annuel': 120000,
   };
 
   // Table tarifaire: CAPITAL É€ TERME pour les primes de référence (identique à la simulation)
@@ -522,7 +538,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     super.initState();
 
     // Initialiser _selectedPeriode avec une valeur par défaut
-    _selectedPeriode = Periode.annuel;
+    _selectedPeriode = Periode.mensuel;
 
     // Initialisation des animations
     _animationController = AnimationController(
@@ -681,15 +697,9 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
               // Validation de la durée en années
               if (_dureeEnAnnees < 5) {
-                _showProfessionalDialog(
-                  title: 'Durée minimale requise',
-                  message:
-                      'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
                 setState(() {
+                  _dureeErrorText =
+                      'La durée minimale pour CORIS RETRAITE est de 5 ans.';
                   _calculatedPrime = 0.0;
                   _calculatedCapital = 0.0;
                 });
@@ -697,22 +707,25 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
               }
 
               if (_dureeEnAnnees > 50) {
-                _showProfessionalDialog(
-                  title: 'Durée maximale dépassée',
-                  message:
-                      'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
-                  icon: Icons.access_time,
-                  iconColor: orangeWarning,
-                  backgroundColor: orangeWarning,
-                );
                 setState(() {
+                  _dureeErrorText =
+                      'La durée maximale pour CORIS RETRAITE est de 50 ans.';
                   _calculatedPrime = 0.0;
                   _calculatedCapital = 0.0;
                 });
                 return;
               }
 
+              setState(() {
+                _dureeErrorText = null;
+              });
               _effectuerCalcul();
+            } else {
+              setState(() {
+                _dureeErrorText = 'Veuillez saisir une durée valide.';
+                _calculatedPrime = 0.0;
+                _calculatedCapital = 0.0;
+              });
             }
           }
         });
@@ -768,6 +781,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           case 'annuel':
             _selectedPeriode = Periode.annuel;
             break;
+          default:
+            _selectedPeriode = Periode.mensuel;
         }
       }
 
@@ -800,6 +815,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
+    _subscriptionStatut = data['statut']?.toString();
     debugPrint('🔄 Pré-remplissage depuis données existantes: ${data.keys}');
 
     // Détecter si c'est une souscription par commercial (présence de client_info)
@@ -888,6 +904,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           case 'annuel':
             _selectedPeriode = Periode.annuel;
             break;
+          default:
+            _selectedPeriode = Periode.mensuel;
         }
       }
 
@@ -1173,6 +1191,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
     }
   }
 
+  double _minPrimeForCurrentPeriodicite() {
+    return minPrimes[_getPeriodiciteKey()]?.toDouble() ?? 0.0;
+  }
+
   double calculatePremium(
       int duration, String periodicity, double desiredCapital) {
     if (duration < 5 || duration > 50) {
@@ -1397,34 +1419,29 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           int duree = int.tryParse(_dureeController.text) ?? 0;
           _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
 
-          // Validation de la durée en années
+          // Validation de la durée en années - afficher le message d'erreur dynamiquement
           if (_dureeEnAnnees < 5) {
-            _showProfessionalDialog(
-              title: 'Durée minimale requise',
-              message:
-                  'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée du contrat pour continuer.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
+            setState(() {
+              _dureeErrorText = 'La durée minimale pour CORIS RETRAITE est de 5 ans. Veuillez ajuster la durée.';
+            });
             _calculatedPrime = 0.0;
             _calculatedCapital = 0.0;
             return;
           }
 
           if (_dureeEnAnnees > 50) {
-            _showProfessionalDialog(
-              title: 'Durée maximale dépassée',
-              message:
-                  'La durée maximale pour CORIS RETRAITE est de 50 ans. Le contrat a été ajusté automatiquement.',
-              icon: Icons.access_time,
-              iconColor: orangeWarning,
-              backgroundColor: orangeWarning,
-            );
+            setState(() {
+              _dureeErrorText = 'La durée maximale pour CORIS RETRAITE est de 50 ans. Veuillez ajuster la durée.';
+            });
             _calculatedPrime = 0.0;
             _calculatedCapital = 0.0;
             return;
           }
+
+          // Réinitialiser le message d'erreur si la durée est valide
+          setState(() {
+            _dureeErrorText = null;
+          });
 
           _effectuerCalcul();
         }
@@ -1671,8 +1688,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         // Pour les commerciaux: step 0 = infos client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = recap
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
-        } else if (_currentStep == 1 && _validateStep1()) {
-          canProceed = true;
+        } else if (_currentStep == 1) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
@@ -1680,8 +1701,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         }
       } else {
         // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = recap
-        if (_currentStep == 0 && _validateStep1()) {
-          canProceed = true;
+        if (_currentStep == 0) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
@@ -1742,9 +1767,88 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       }
     }
 
+    setState(() {
+      _dureeErrorText = null;
+      _step1ErrorText = null;
+      _montantErrorText = null;
+    });
+
     if (_dureeController.text.trim().isEmpty) {
-      _showErrorSnackBar('Veuillez saisir une durée');
+      setState(() {
+        _dureeErrorText = 'Veuillez saisir une durée';
+      });
       return false;
+    }
+
+    final int? duree = int.tryParse(_dureeController.text.replaceAll(' ', ''));
+    if (duree == null) {
+      setState(() {
+        _dureeErrorText = 'Veuillez saisir une durée valide';
+      });
+      return false;
+    }
+
+    _dureeEnAnnees = _selectedUnite == 'années' ? duree : duree ~/ 12;
+    if (_dureeEnAnnees < 5) {
+      setState(() {
+        _dureeErrorText = 'La durée minimale pour CORIS RETRAITE est de 5 ans.';
+      });
+      return false;
+    }
+    if (_dureeEnAnnees > 50) {
+      setState(() {
+        _dureeErrorText = 'La durée maximale pour CORIS RETRAITE est de 50 ans.';
+      });
+      return false;
+    }
+
+    final minPrime = _minPrimeForCurrentPeriodicite();
+
+    if (_currentSimulation == SimulationType.parPrime) {
+      final prime =
+          double.tryParse(_primeController.text.replaceAll(' ', '')) ?? 0;
+      if (prime <= 0) {
+        setState(() {
+          _montantErrorText = 'Veuillez saisir une prime valide';
+          _step1ErrorText = 'Veuillez corriger le montant saisi.';
+        });
+        return false;
+      }
+
+      // Vérifier que la prime respecte le minimum
+      if (prime < minPrime) {
+        setState(() {
+          _montantErrorText = _primeInvalidMsg;
+          _step1ErrorText = _primeConditionsMsg;
+        });
+        return false;
+      }
+    } else {
+      final capital =
+          double.tryParse(_capitalController.text.replaceAll(' ', '')) ?? 0;
+      if (capital <= 0) {
+        setState(() {
+          _montantErrorText = 'Veuillez saisir un capital valide';
+          _step1ErrorText = 'Veuillez corriger le montant saisi.';
+        });
+        return false;
+      }
+
+      if (_calculatedPrime <= 0) {
+        setState(() {
+          _montantErrorText =
+              'Impossible de calculer une prime valide à partir du capital saisi.';
+        });
+        return false;
+      }
+
+      if (_calculatedPrime < minPrime) {
+        setState(() {
+          _montantErrorText = _capitalTooLowMsg;
+          _step1ErrorText = _primeConditionsMsg;
+        });
+        return false;
+      }
     }
 
     // Si c'est un commercial, on ne valide pas l'âge à l'étape 1 (les champs client ne sont pas encore remplis)
@@ -1816,7 +1920,12 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       return false;
     }
 
-    // Email non obligatoire pour le commercial
+    // Email obligatoire pour la création du compte
+    if (_clientEmailController.text.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez saisir l\'email du client (obligatoire)');
+      return false;
+    }
+
     if (_clientTelephoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir le téléphone du client');
       return false;
@@ -2448,6 +2557,18 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                           _buildSimulationTypeDropdown(),
                           SizedBox(height: context.r(16)),
 
+                          if (_step1ErrorText != null)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: context.r(12)),
+                              child: Text(
+                                _step1ErrorText!,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           // Champ pour la prime/capital
                           _buildMontantField(),
                           SizedBox(height: context.r(16)),
@@ -2580,6 +2701,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
             suffixText: 'FCFA',
             filled: true,
             fillColor: fondCarte,
+            errorText: _montantErrorText,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none),
@@ -2620,6 +2742,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                         size: 20, color: bleuCoris.withValues(alpha: 0.7)),
                     filled: true,
                     fillColor: fondCarte,
+                    errorText: _dureeErrorText,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none),
@@ -4370,6 +4493,65 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        SizedBox(height: context.r(12)),
+                        // Frais accessoires
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: grisLeger,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Frais de création de contrat',
+                                style: TextStyle(
+                                  color: grisTexte,
+                                  fontSize: context.sp(13),
+                                ),
+                              ),
+                              Text(
+                                '+ ${_formatMontant(FRAIS_ACCESSOIRES)}',
+                                style: TextStyle(
+                                  color: rougeCoris,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: context.r(12)),
+                        // Montant total à régler
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: bleuCoris,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Montant total à régler',
+                                style: TextStyle(
+                                  color: blanc,
+                                  fontSize: context.sp(14),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                _formatMontant(_calculatedPrime + FRAIS_ACCESSOIRES),
+                                style: TextStyle(
+                                  color: blanc,
+                                  fontSize: context.sp(16),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -4723,9 +4905,16 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
       try {
       final subscriptionService = SubscriptionService();
 
+      final isPaid =
+          (_subscriptionStatut ?? '').toLowerCase() == 'contrat';
+      final montantARegler = (widget.subscriptionId == null || !isPaid)
+          ? (_calculatedPrime + FRAIS_ACCESSOIRES).toInt()
+          : _calculatedPrime.toInt();
+
       final subscriptionData = {
         'product_type': 'coris_retraite',
         'prime': _calculatedPrime,
+        'montant_a_regler': montantARegler,
         'capital': _calculatedCapital,
         'duree': int.parse(_dureeController.text),
         'duree_type': _selectedUnite,
@@ -4805,6 +4994,10 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
 
       // Utiliser updateSubscription si on modifie, createSubscription sinon
       final http.Response response;
+      if (widget.subscriptionId == null || !isPaid) {
+        subscriptionData['frais_accessoires'] = FRAIS_ACCESSOIRES.toInt();
+      }
+
       if (widget.subscriptionId != null) {
         response = await subscriptionService.updateSubscription(
             widget.subscriptionId!, subscriptionData);
@@ -4903,7 +5096,7 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
           barrierDismissible: false,
           builder: (context) => CorisMoneyPaymentModal(
             subscriptionId: subscriptionId,
-            montant: _calculatedPrime,
+            montant: _calculatedPrime + FRAIS_ACCESSOIRES,
             description: 'Paiement prime CORIS RETRAITE',
             onPaymentSuccess: () {
               _showSuccessDialog(true);
@@ -4956,7 +5149,8 @@ class SouscriptionRetraitePageState extends State<SouscriptionRetraitePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: TestModeHelper.applyTestModeIfNeeded(_calculatedPrime,
+          amount: TestModeHelper.applyTestModeIfNeeded(
+              _calculatedPrime + FRAIS_ACCESSOIRES,
               context: 'souscription_retraite'),
           description: 'Paiement prime CORIS RETRAITE',
           onSuccess: () => _showSuccessDialog(true),

@@ -36,6 +36,7 @@ const Color grisLeger = Color(0xFFF1F5F9);
 const Color vertSucces = Color(0xFF10B981);
 const Color orangeWarning = Color(0xFFF59E0B);
 const Color orangeCoris = Color(0xFFFF6B00);
+const double FRAIS_ACCESSOIRES = 5000; // 5000 F CFA
 
 /// Page de souscription pour le produit CORIS SÉRÉNITÉ
 
@@ -103,6 +104,23 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
   String _selectedSimulationType = 'Par Capital';
   double _calculatedPrime = 0.0;
   double _calculatedCapital = 0.0;
+  String? _montantErrorText;
+  String? _step1ErrorText;
+  String? _subscriptionStatut;
+
+  static const String _primeInvalidMsg =
+      'La prime saisie est invalide. Veuillez saisir un montant valide.';
+  static const String _primeConditionsMsg =
+      'Veuillez respecter les conditions de prime minimales avant de continuer.';
+  static const String _capitalTooLowMsg =
+      'Veuillez choisir un capital plus élevé, car la prime mensuelle minimale doit être de 10 000 F CFA.';
+
+  final Map<String, int> _minPrimes = {
+    'mensuel': 10000,
+    'trimestriel': 30000,
+    'semestriel': 60000,
+    'annuel': 120000,
+  };
   final List<String> _indicatifs = [
     '+225',
     '+226',
@@ -214,6 +232,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     'Enfant',
     'Conjoint',
     'Parent',
+    'Ayant Droit',
     'Frère/Sœur',
     'Ami',
     'Autre'
@@ -1426,6 +1445,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     if (widget.existingData == null) return;
 
     final data = widget.existingData!;
+    _subscriptionStatut = data['statut']?.toString();
     debugPrint(
         '🔄 Pré-remplissage SÉRÉNITÉ depuis données existantes: ${data.keys}');
 
@@ -2161,6 +2181,23 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     }
   }
 
+  String _getPeriodiciteKey() {
+    switch (_selectedPeriode) {
+      case Periode.mensuel:
+        return 'mensuel';
+      case Periode.trimestriel:
+        return 'trimestriel';
+      case Periode.semestriel:
+        return 'semestriel';
+      case Periode.annuel:
+        return 'annuel';
+    }
+  }
+
+  double _minPrimeForCurrentPeriodicite() {
+    return _minPrimes[_getPeriodiciteKey()]?.toDouble() ?? 10000.0;
+  }
+
   // Méthodes pour la souscription
   String _formatMontant(double montant) {
     return "${montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]} ')} FCFA";
@@ -2629,8 +2666,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         // Pour les commerciaux: step 0 = client, step 1 = simulation, step 2 = bénéficiaire, step 3 = mode paiement, step 4 = questionnaire médical, step 5 = recap, step 6 = finalisation
         if (_currentStep == 0 && _validateStepClientInfo()) {
           canProceed = true;
-        } else if (_currentStep == 1 && _validateStep1()) {
-          canProceed = true;
+        } else if (_currentStep == 1) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 2 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 3 && _validateStepModePaiement()) {
@@ -2669,8 +2710,12 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         }
       } else {
         // Pour les clients: step 0 = simulation, step 1 = bénéficiaire, step 2 = mode paiement, step 3 = questionnaire médical, step 4 = recap, step 5 = finalisation
-        if (_currentStep == 0 && _validateStep1()) {
-          canProceed = true;
+        if (_currentStep == 0) {
+          if (_validateStep1()) {
+            canProceed = true;
+          } else if (_step1ErrorText == _primeConditionsMsg) {
+            _showErrorSnackBar(_primeConditionsMsg);
+          }
         } else if (_currentStep == 1 && _validateStep2()) {
           canProceed = true;
         } else if (_currentStep == 2 && _validateStepModePaiement()) {
@@ -2835,6 +2880,34 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
     if (_dureeController.text.trim().isEmpty) {
       _showErrorSnackBar('Veuillez saisir une durée');
       return false;
+    }
+
+    setState(() {
+      _step1ErrorText = null;
+      _montantErrorText = null;
+    });
+
+    _effectuerCalcul();
+    final minPrime = _minPrimeForCurrentPeriodicite();
+
+    if (_currentSimulation == SimulationType.parPrime) {
+      final prime =
+          double.tryParse(_primeController.text.replaceAll(' ', '')) ?? 0;
+      if (prime < minPrime) {
+        setState(() {
+          _montantErrorText = _primeInvalidMsg;
+          _step1ErrorText = _primeConditionsMsg;
+        });
+        return false;
+      }
+    } else {
+      if (_calculatedPrime < minPrime) {
+        setState(() {
+          _montantErrorText = _capitalTooLowMsg;
+          _step1ErrorText = _primeConditionsMsg;
+        });
+        return false;
+      }
     }
 
     return true;
@@ -3478,6 +3551,18 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
                           _buildSimulationTypeDropdown(),
                           SizedBox(height: context.r(16)),
 
+                          if (_step1ErrorText != null)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: context.r(12)),
+                              child: Text(
+                                _step1ErrorText!,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: context.sp(13),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           // Champ pour le capital/prime
                           _buildMontantField(),
                           SizedBox(height: context.r(16)),
@@ -3675,6 +3760,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             prefixIcon: Icon(Icons.monetization_on,
                 size: 20, color: bleuCoris.withValues(alpha: 0.7)),
             suffixText: 'FCFA',
+            errorText: _montantErrorText,
             filled: true,
             fillColor: fondCarte,
             border: OutlineInputBorder(
@@ -5437,6 +5523,63 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             _dateEcheanceContrat != null
                 ? '${_dateEcheanceContrat!.day}/${_dateEcheanceContrat!.month}/${_dateEcheanceContrat!.year}'
                 : 'Non définie'),
+        Container(
+          margin: EdgeInsets.only(top: context.r(12)),
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: grisLeger,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Frais de création de contrat',
+                style: TextStyle(
+                  color: grisTexte,
+                  fontSize: context.sp(13),
+                ),
+              ),
+              Text(
+                '+ ${_formatMontant(FRAIS_ACCESSOIRES)}',
+                style: TextStyle(
+                  color: rougeCoris,
+                  fontSize: context.sp(13),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.only(top: context.r(12)),
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: bleuCoris,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Montant total à régler',
+                style: TextStyle(
+                  color: blanc,
+                  fontSize: context.sp(14),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                _formatMontant(_calculatedPrime + FRAIS_ACCESSOIRES),
+                style: TextStyle(
+                  color: blanc,
+                  fontSize: context.sp(16),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ]),
       SizedBox(height: context.r(20)),
       _buildRecapSection(
@@ -5924,14 +6067,21 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         subscriptionData['signature'] = base64Encode(_clientSignature!);
       }
 
+      final isPaid =
+          (_subscriptionStatut ?? '').toLowerCase() == 'contrat';
+      if (widget.subscriptionId == null || !isPaid) {
+        subscriptionData['frais_accessoires'] = FRAIS_ACCESSOIRES.toInt();
+        subscriptionData['montant_a_regler'] =
+            (_calculatedPrime + FRAIS_ACCESSOIRES).toInt();
+      }
+
       // Utiliser updateSubscription si on modifie, createSubscription sinon
       final http.Response response;
       if (widget.subscriptionId != null) {
         response = await subscriptionService.updateSubscription(
             widget.subscriptionId!, subscriptionData);
       } else {
-        response =
-            await subscriptionService.createSubscription(subscriptionData);
+        response = await subscriptionService.createSubscription(subscriptionData);
       }
 
       final responseData = jsonDecode(response.body);
@@ -6051,7 +6201,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
             barrierDismissible: false,
             builder: (context) => CorisMoneyPaymentModal(
               subscriptionId: subscriptionId,
-              montant: _calculatedPrime,
+              montant: _calculatedPrime + FRAIS_ACCESSOIRES,
               description: 'Souscription CORIS SÉRÉNITÉ #$subscriptionId',
               onPaymentSuccess: () async {
                 // Le paiement a réussi via CorisMoney
@@ -6116,7 +6266,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         }
       }
 
-      if (paymentMethod == 'Wave') {
+        if (paymentMethod == 'Wave') {
         if (mounted) {
           Navigator.pop(context);
         }
@@ -6124,7 +6274,7 @@ class SouscriptionSerenitePageState extends State<SouscriptionSerenitePage>
         await WavePaymentHandler.startPayment(
           context,
           subscriptionId: subscriptionId,
-          amount: _calculatedPrime,
+          amount: _calculatedPrime + FRAIS_ACCESSOIRES,
           description: 'Paiement prime CORIS SÉRÉNITÉ',
           onSuccess: () => _showSuccessDialog(true),
         );

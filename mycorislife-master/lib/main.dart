@@ -5,7 +5,6 @@ import 'package:mycorislife/config/theme.dart';
 import 'package:mycorislife/services/auth_service.dart';
 import 'package:mycorislife/services/connectivity_service.dart';
 import 'package:mycorislife/services/payment_resume_coordinator.dart';
-import 'package:mycorislife/services/download_notification_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 
@@ -61,6 +60,15 @@ Future<void> main() async {
   //   debugPrint('⚠️ Impossible d\'initialiser les notifications: $e\n$st');
   // }
   await syncPreferredOrientationsToDisplay();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge,
+      overlays: SystemUiOverlay.values);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   // Setup global error handlers to capture startup errors (useful for release/TestFlight)
   FlutterError.onError = (FlutterErrorDetails details) {
     // Forward to zone to ensure it's captured by runZonedGuarded
@@ -292,7 +300,13 @@ class _MyCorisLifeAppState extends State<MyCorisLifeApp>
         final clampedScale = mq.textScaler.scale(1.0).clamp(0.85, 1.10);
         final shellChild = child ?? const SizedBox.shrink();
         return MediaQuery(
-          data: mq.copyWith(textScaler: TextScaler.linear(clampedScale)),
+          data: mq.copyWith(
+            textScaler: TextScaler.linear(clampedScale),
+            padding: EdgeInsets.zero,
+            viewPadding: EdgeInsets.zero,
+            viewInsets: mq.viewInsets,
+            systemGestureInsets: EdgeInsets.zero,
+          ),
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerDown: (_) => _resetInactivityTimer(),
@@ -323,37 +337,14 @@ class _AppResponsiveShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
     final width = mq.size.width;
-    // Sur tablette et grands écrans, on utilise bien toute la largeur
-    // disponible pour éviter l'effet "colonne étroite".
+    // Sur tablette et grands écrans, utiliser l'espace disponible sans marges
     if (width >= 600) {
-      final horizontalPadding = width >= 1024 ? 24.0 : 16.0;
       return SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: 8,
-          ),
-          child: child,
-        ),
+        child: child,
       );
     }
 
-    // Sur petits téléphones, on applique une légère réduction globale.
-    final scale = (width / 390).clamp(0.90, 1.0);
-    if (scale == 1.0) {
-      return child;
-    }
-
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Transform.scale(
-        alignment: Alignment.topCenter,
-        scale: scale,
-        child: SizedBox(
-          width: width / scale,
-          child: child,
-        ),
-      ),
-    );
+    // Sur petits téléphones, laisser l'application utiliser toute la largeur.
+    return child;
   }
 }
