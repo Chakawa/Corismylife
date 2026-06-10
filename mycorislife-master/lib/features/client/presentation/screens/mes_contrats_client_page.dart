@@ -180,6 +180,13 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
 
   }
 
+  String _formatEcheanceDate(dynamic dateValue) {
+    if (dateValue == null) return 'Non renseigné';
+    final formatted = _formatDate(dateValue);
+    if (formatted == 'N/A') return 'Non renseigné';
+    return formatted;
+  }
+
   String _getProductName(String? codeprod) {
 
     if (codeprod == null) return 'Produit CORIS';
@@ -787,7 +794,7 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
     final numpolice =
         '${contrat.numepoli ?? 'N/A'}-${contrat.codeinte ?? '000'}';
     final dateeffet = _formatDate(contrat.dateeffet);
-    final dateeche = _formatDate(contrat.dateeche);
+    final dateeche = _formatEcheanceDate(contrat.dateeche);
     final prime = _formatNumber(contrat.prime);
     final capital = _formatNumber(contrat.capital);
     final statut = _getStatutDisplay(contrat);
@@ -1041,22 +1048,20 @@ class _MesContratsClientPageState extends State<MesContratsClientPage> {
                       color: Color(0xFF64748B),
                     ),
                   ),
-                  if (dateeche != 'N/A') ...[
-                    SizedBox(width: context.r(16)),
-                    Icon(
-                      Icons.event_busy,
-                      size: 16,
+                  SizedBox(width: context.r(16)),
+                  Icon(
+                    Icons.event_busy,
+                    size: 16,
+                    color: Color(0xFF64748B),
+                  ),
+                  SizedBox(width: context.r(8)),
+                  Text(
+                    'Échéance: $dateeche',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
                       color: Color(0xFF64748B),
                     ),
-                    SizedBox(width: context.r(8)),
-                    Text(
-                      'Échéance: $dateeche',
-                      style: TextStyle(
-                        fontSize: context.sp(13),
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
               ),
 

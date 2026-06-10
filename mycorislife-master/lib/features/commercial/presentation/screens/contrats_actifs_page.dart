@@ -188,6 +188,13 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
     return date;
   }
 
+  String _formatEcheanceDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'Non renseigné';
+    final formatted = _formatDate(dateRaw);
+    if (formatted == 'N/A' || formatted.isEmpty) return 'Non renseigné';
+    return formatted;
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -438,26 +445,38 @@ class _ContratsActifsPageState extends State<ContratsActifsPage> {
                                             ),
                                           ],
                                         ),
-                                        if (contrat['dateeffet'] != null) ...[
-                                          SizedBox(height: context.r(8)),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.calendar_today,
-                                                size: 16,
+                                        SizedBox(height: context.r(8)),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_today,
+                                              size: 16,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                            SizedBox(width: context.r(8)),
+                                            Text(
+                                              'Effet: ${_formatDate(contrat['dateeffet'])}',
+                                              style: TextStyle(
+                                                fontSize: context.sp(13),
                                                 color: Color(0xFF64748B),
                                               ),
-                                              SizedBox(width: context.r(8)),
-                                              Text(
-                                                'Effet: ${_formatDate(contrat['dateeffet'])}',
-                                                style: TextStyle(
-                                                  fontSize: context.sp(13),
-                                                  color: Color(0xFF64748B),
-                                                ),
+                                            ),
+                                            SizedBox(width: context.r(16)),
+                                            const Icon(
+                                              Icons.event_busy,
+                                              size: 16,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                            SizedBox(width: context.r(8)),
+                                            Text(
+                                              'Échéance: ${_formatEcheanceDate(contrat['dateecheance'] ?? contrat['dateeche'])}',
+                                              style: TextStyle(
+                                                fontSize: context.sp(13),
+                                                color: Color(0xFF64748B),
                                               ),
-                                            ],
-                                          ),
-                                        ],
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),

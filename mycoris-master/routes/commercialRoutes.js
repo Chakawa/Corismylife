@@ -101,12 +101,14 @@ router.get('/contrats_actifs', verifyToken, commercialController.getContratsActi
 router.get('/details_client/:clientId', verifyToken, commercialController.getDetailsClient);
 
 /**
+ * GET /api/commercial/contrat_details/:numepoli/:codeinte
  * GET /api/commercial/contrat_details/:numepoli
  * Récupère les détails d'un contrat
  * Headers : Authorization: Bearer <token>
- * Params : numepoli (string)
+ * Params : numepoli (string), codeinte (string, optionnel)
  * Retour : { success: true, contrat: {...} }
  */
+router.get('/contrat_details/:numepoli/:codeinte', verifyToken, commercialController.getContratDetails);
 router.get('/contrat_details/:numepoli', verifyToken, commercialController.getContratDetails);
 
 module.exports = router;

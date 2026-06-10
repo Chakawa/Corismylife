@@ -198,9 +198,11 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
 
       final encodedNumepoli = Uri.encodeComponent(numepoli?.toString() ?? '');
       final encodedCodeinte = Uri.encodeComponent(codeinte?.toString() ?? '');
+      final codeinteStr = codeinte?.toString().trim() ?? '';
 
-      final url =
-          '${AppConfig.baseUrl}/contrats/commercial/contrat_details/$encodedNumepoli/$encodedCodeinte';
+      final url = codeinteStr.isNotEmpty
+          ? '${AppConfig.baseUrl}/contrats/commercial/contrat_details/$encodedNumepoli/$encodedCodeinte'
+          : '${AppConfig.baseUrl}/contrats/commercial/contrat_details/$encodedNumepoli';
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -296,6 +298,13 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
       }
     } catch (_) {}
     return date;
+  }
+
+  String _formatEcheanceDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'Non renseigné';
+    final formatted = _formatDate(dateRaw);
+    if (formatted == 'N/A' || formatted.isEmpty) return 'Non renseigné';
+    return formatted;
   }
 
   String _formatMontant(dynamic montant) {
@@ -559,14 +568,12 @@ class _ContratDetailsUnifiedPageState extends State<ContratDetailsUnifiedPage>
                             _getDurationDisplay(),
                             Icons.schedule,
                           ),
-                          if (contratDetails?['dateeche'] != null ||
-                              contratDetails?['dateecheance'] != null)
-                            _buildInfoRow(
-                              'Date d\'échéance',
-                              _formatDate(contratDetails?['dateeche'] ??
-                                  contratDetails?['dateecheance']),
-                              Icons.event_busy,
-                            ),
+                          _buildInfoRow(
+                            'Date d\'échéance',
+                            _formatEcheanceDate(contratDetails?['dateeche'] ??
+                                contratDetails?['dateecheance']),
+                            Icons.event_busy,
+                          ),
                           if (_getPeriodiciteRaw() != null)
                             _buildInfoRow(
                               'Périodicité',

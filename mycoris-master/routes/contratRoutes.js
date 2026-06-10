@@ -23,10 +23,13 @@ router.use(verifyToken);
 router.get('/mes-contrats', contratController.getMesContrats);
 
 /**
- * GET /api/commercial/contrat_details/:numepoli
+ * GET /api/contrats/commercial/contrat_details/:numepoli/:codeinte
+ * GET /api/contrats/commercial/contrat_details/:numepoli
  * Récupère les détails complets d'un contrat via le numéro de police
+ * Le codeinte permet de distinguer les contrats legacy partageant le même numepoli
  * Inclut les bénéficiaires
  */
+router.get('/commercial/contrat_details/:numepoli/:codeinte', contratController.getContratDetailsByNumepoli);
 router.get('/commercial/contrat_details/:numepoli', contratController.getContratDetailsByNumepoli);
 
 /**

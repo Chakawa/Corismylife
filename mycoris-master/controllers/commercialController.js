@@ -1024,12 +1024,21 @@ exports.getContratDetails = async (req, res) => {
     const codeApporteur = req.user.code_apporteur;
     const userTelephone = req.user.telephone;
     const numepoli = req.params.numepoli;
+    const codeinteFilter = (req.params.codeinte || '').toString().trim();
 
     console.log('🔍 [CONTRAT DETAILS] ========== DÉBUT ==========');
     console.log('👤 [CONTRAT DETAILS] Rôle:', userRole);
     console.log('📞 [CONTRAT DETAILS] Téléphone:', userTelephone);
     console.log('💼 [CONTRAT DETAILS] Code apporteur:', codeApporteur);
     console.log('📄 [CONTRAT DETAILS] Numéro police:', numepoli);
+    console.log('🏷️ [CONTRAT DETAILS] Code intermédiaire:', codeinteFilter || '(non fourni)');
+
+    const queryParams = [numepoli, codeApporteur || null, userTelephone || null];
+    let codeinteClause = '';
+    if (codeinteFilter) {
+      codeinteClause = ` AND UPPER(TRIM(COALESCE(c.codeinte, ''))) = UPPER(TRIM($4))`;
+      queryParams.push(codeinteFilter);
+    }
 
     // Récupérer tous les détails du contrat
     // ✅ Champ 'c.etat' retourné directement (anciennement aliasé en 'statut')
@@ -1070,13 +1079,11 @@ exports.getContratDetails = async (req, res) => {
           OR REPLACE(c.telephone1, ' ', '') = REPLACE($3, ' ', '')
           OR REPLACE(c.telephone2, ' ', '') = REPLACE($3, ' ', '')
         )
+        ${codeinteClause}
+      ORDER BY c.dateeffet DESC NULLS LAST
     `;
 
-    const result = await pool.query(query, [
-      numepoli, 
-      codeApporteur || null, 
-      userTelephone || null
-    ]);
+    const result = await pool.query(query, queryParams);
 
     console.log('📊 [CONTRAT DETAILS] Résultats trouvés dans contrats:', result.rows.length);
 
@@ -1197,13 +1204,15 @@ exports.getContratDetails = async (req, res) => {
       });
     }
 
+    const selectedRow = result.rows[0];
+
     const contratAvecNomProduit = {
-      ...result.rows[0],
-      nom_produit: produitsMap[result.rows[0].codeprod] || `Produit ${result.rows[0].codeprod}`,
-      dateeffet: formatDateDDMMYYYY(result.rows[0].dateeffet),
-      datesous: formatDateDDMMYYYY(result.rows[0].datesous || result.rows[0].dateeffet),
-      dateecheance: formatDateDDMMYYYY(result.rows[0].dateecheance),
-      datenaissance: formatDateDDMMYYYY(result.rows[0].datenaissance),
+      ...selectedRow,
+      nom_produit: produitsMap[selectedRow.codeprod] || `Produit ${selectedRow.codeprod}`,
+      dateeffet: formatDateDDMMYYYY(selectedRow.dateeffet),
+      datesous: formatDateDDMMYYYY(selectedRow.datesous || selectedRow.dateeffet),
+      dateecheance: formatDateDDMMYYYY(selectedRow.dateecheance),
+      datenaissance: formatDateDDMMYYYY(selectedRow.datenaissance),
     };
 
     // Récupérer les bénéficiaires du contrat

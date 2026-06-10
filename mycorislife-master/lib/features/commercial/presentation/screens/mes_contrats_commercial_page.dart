@@ -269,6 +269,13 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
     return date;
   }
 
+  String _formatEcheanceDate(dynamic dateRaw) {
+    if (dateRaw == null) return 'Non renseigné';
+    final formatted = _formatDate(dateRaw);
+    if (formatted == 'N/A' || formatted.isEmpty) return 'Non renseigné';
+    return formatted;
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -662,6 +669,18 @@ class _MesContratsCommercialPageState extends State<MesContratsCommercialPage>
                         SizedBox(width: context.r(8)),
                         Text(
                           'Effet: ${_formatDate(contrat['dateeffet'])}',
+                          style: TextStyle(
+                            fontSize: context.sp(13),
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(width: context.r(16)),
+                        const Icon(Icons.event_busy,
+                            size: 16, color: Color(0xFF64748B)),
+                        SizedBox(width: context.r(8)),
+                        Text(
+                          'Échéance: ${_formatEcheanceDate(contrat['dateecheance'] ?? contrat['dateeche'])}',
                           style: TextStyle(
                             fontSize: context.sp(13),
                             color: Color(0xFF64748B),

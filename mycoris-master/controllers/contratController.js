@@ -252,21 +252,35 @@ exports.getContratsByCodeApporteur = async (req, res) => {
  */
 exports.getContratDetailsByNumepoli = async (req, res) => {
   try {
-    const { numepoli } = req.params;
+    const { numepoli, codeinte } = req.params;
+    const codeinteFilter = (codeinte || '').toString().trim();
     
     console.log('=== RÉCUPÉRATION DÉTAILS CONTRAT PAR NUMEPOLI ===');
     console.log('📋 Numéro de police:', numepoli);
+    console.log('🏷️ Code intermédiaire:', codeinteFilter || '(non fourni)');
     console.log('👤 User ID:', req.user.id);
     console.log('🎭 Role:', req.user.role);
     
     // 1) Source legacy: table contrats
-    const contratQuery = `
+    const contratParams = [numepoli];
+    let contratQuery = `
       SELECT *, 'legacy'::text AS source
       FROM contrats
       WHERE UPPER(TRIM(numepoli)) = UPPER(TRIM($1))
     `;
 
-    let contratResult = await pool.query(contratQuery, [numepoli]);
+    if (codeinteFilter) {
+      contratQuery += ` AND UPPER(TRIM(COALESCE(codeinte, ''))) = UPPER(TRIM($2))`;
+      contratParams.push(codeinteFilter);
+    }
+
+    contratQuery += ` ORDER BY dateeffet DESC NULLS LAST`;
+
+    let contratResult = await pool.query(contratQuery, contratParams);
+
+    if (contratResult.rows.length > 1 && !codeinteFilter) {
+      contratResult.rows = [contratResult.rows[0]];
+    }
 
     // 2) Fallback source app: subscriptions (statut contrat/paid)
     if (contratResult.rows.length === 0) {
